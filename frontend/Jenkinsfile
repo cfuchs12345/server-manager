@@ -42,13 +42,12 @@ node {
     stage('Build') {
         //milestone()
         //sh 'ng build --prod --aot --sm --progress=false'
-         steps {
-            dir('frontend') {
-              nodejs(nodeJSInstallationName: 'Node 6.x', configId: '<config-file-provider-id>') {
-                  sh 'npm config ls'
-              }
-            }
+
+        dir('frontend') {
+          nodejs(nodeJSInstallationName: 'Node 6.x', configId: '<config-file-provider-id>') {
+              sh 'npm config ls'
           }
+        }
     }
 
     stage('Archive') {
