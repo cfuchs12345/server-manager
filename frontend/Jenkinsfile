@@ -8,22 +8,8 @@ node {
     sh 'npm --version'
 }
 
-properties(
-    [
-        [$class: 'BuildDiscarderProperty', strategy:
-          [$class: 'LogRotator', artifactDaysToKeepStr: '14', artifactNumToKeepStr: '5', daysToKeepStr: '30', numToKeepStr: '60']],
-        pipelineTriggers(
-          [
-              pollSCM('H/15 * * * *'),
-              cron('@daily'),
-          ]
-        )
-    ]
-)
 node {
     stage('Checkout') {
-        //disable to recycle workspace data to save time/bandwidth
-        deleteDir()
         checkout scm
     }
 
@@ -41,7 +27,6 @@ node {
 
     stage('Build') {
         //milestone()
-        //sh 'ng build --prod --aot --sm --progress=false'
 
         dir('frontend') {
           sh 'ng build'
@@ -53,8 +38,7 @@ node {
         //archive 'dist.tar.gz'
     }
 
-    stage('Deploy') {
-        //milestone()
-        echo "Deploying..."
+    stage('Crate Build Artifakt') {
+
     }
 }
