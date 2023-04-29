@@ -28,19 +28,25 @@ node {
     }
 
     stage('NPM Install') {
+       dir('frontend') {
           sh 'npm install'
+       }
     }
 
     stage('Lint') {
+       dir('frontend') {
         sh 'ng lint'
+       }
     }
 
     stage('Build') {
         //milestone()
         //sh 'ng build --prod --aot --sm --progress=false'
          steps {
-            nodejs(nodeJSInstallationName: 'Node 6.x', configId: '<config-file-provider-id>') {
-                sh 'npm config ls'
+            dir('frontend') {
+              nodejs(nodeJSInstallationName: 'Node 6.x', configId: '<config-file-provider-id>') {
+                  sh 'npm config ls'
+              }
             }
           }
     }
