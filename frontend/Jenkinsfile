@@ -44,7 +44,7 @@ node {
         //sh 'ng build --prod --aot --sm --progress=false'
 
         dir('frontend') {
-          sh 'ng build --prod --aot --sm --progress=false'
+          sh 'ng build'
         }
     }
 
