@@ -12,37 +12,47 @@ pipeline {
     }
     stages {
       stage('Checkout') {
-          checkout scm
+      steps {
+      }
       }
 
       stage('NPM Install') {
-        dir('frontend') {
-            sh 'npm install'
-        }
+      steps {
+          dir('frontend') {
+              sh 'npm install'
+          }
+      }
       }
 
       stage('Lint') {
+      steps {
         dir('frontend') {
         //sh 'ng lint'
         }
       }
+      }
 
       stage('Build') {
-          //milestone()
-
+      //milestone()
+      steps {
           dir('frontend') {
             nodejs(nodeJSInstallationName: 'Node JS') {
               sh 'ng build'
             }
           }
       }
+      }
 
       stage('Archive') {
+      steps {
       //sh 'tar -cvzf dist.tar.gz --strip-components=1 dist'
       //archive 'dist.tar.gz'
       }
+      }
 
       stage('Crate Build Artifakt') {
+      steps {
+      }
       }
 
       stage('Create Artifact') {
@@ -60,9 +70,9 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: 'target/server-manager-frontent.zip', fingerprint: true
+      archiveArtifacts artifacts: 'target/server-manager-frontent.zip', fingerprint: true
 
-            emailext body: 'Build executed',
+      emailext body: 'Build executed',
             recipientProviders: [developers(), requestor()],
             subject: 'jenkins build ${JOB_DESCRIPTION}: ${BUILD_STATUS}',
             to: 'christopher@christopherfuchs.de'
