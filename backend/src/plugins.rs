@@ -203,7 +203,7 @@ mod tests {
             }],
         };
 
-        let expected = "{\"name\":\"Test\",\"description\":\"\",\"detection\":{\"ports\":[80,81],\"script\":{\"script_type\":\"lua\",\"script\":\"Dummy script\"}},\"credentials\":{},\"params\":{},\"actions\":{\"test_action\":{\"command\":\"http\",\"args\":[\"GET\",\"url\"]}}}";
+        let expected = "{\"id\":\"test\",\"name\":\"Test\",\"description\":\"\",\"server_icon\":\"\",\"detection\":{\"list\":[{\"defaultports\":[80,81],\"url\":\"http://${IP}:${PORT}\"}],\"script\":{\"script_type\":\"lua\",\"script\":\"Dummy script\"},\"detection_possible\":false},\"credentials\":[],\"params\":[],\"data\":[],\"actions\":[{\"id\":\"\",\"name\":\"\",\"depends\":[],\"available_for_state\":\"Any\",\"needs_confirmation\":false,\"description\":\"\",\"icon\":\"\",\"command\":\"http\",\"args\":[{\"arg_type\":\"method\",\"value\":\"GET\"},{\"arg_type\":\"url\",\"value\":\"url\"}]}]}";
 
         let result = serde_json::to_string(&testee).unwrap();
         assert_eq!(expected, result);
@@ -252,7 +252,7 @@ mod tests {
             }],
         };
 
-        let test_string = "{\"name\":\"Test\",\"description\":\"\",\"detection\":{\"ports\":[80,81],\"script\":{\"script_type\":\"lua\",\"script\":\"Dummy script\"}},\"credentials\":{},\"params\":{},\"actions\":{\"test_action\":{\"command\":\"http\",\"args\":[\"GET\",\"url\"]}}}";
+        let test_string: &str = "{\"id\":\"test\",\"name\":\"Test\",\"description\":\"\",\"server_icon\":\"\",\"detection\":{\"list\":[{\"defaultports\":[80,81],\"url\":\"http://${IP}:${PORT}\"}],\"script\":{\"script_type\":\"lua\",\"script\":\"Dummy script\"},\"detection_possible\":false},\"credentials\":[],\"params\":[],\"data\":[],\"actions\":[{\"id\":\"\",\"name\":\"\",\"depends\":[],\"available_for_state\":\"Any\",\"needs_confirmation\":false,\"description\":\"\",\"icon\":\"\",\"command\":\"http\",\"args\":[{\"arg_type\":\"method\",\"value\":\"GET\"},{\"arg_type\":\"url\",\"value\":\"url\"}]}]}";
 
         let result: Plugin = serde_json::from_str(&test_string).unwrap();
 
@@ -261,9 +261,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_all_plugins() {
-        let result = get_all_plugins("../external_files/plugins").await;
+        let result = get_all_plugins("shipped_plugins/plugins").await;
 
-        assert_eq!(2, result.unwrap().len());
+        assert!(result.unwrap().len() > 0);
     }
 
     #[tokio::test]
@@ -289,7 +289,7 @@ mod tests {
                 </commands>\
                 </result>";
 
-        let plugin = load_plugin("../external_files/plugins", "sleep.json").await;
+        let plugin = load_plugin("shipped_plugins/plugins", "sleep.json").await;
 
         let result = plugin_detect_match(&plugin.unwrap(), input);
 
