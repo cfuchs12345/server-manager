@@ -513,8 +513,6 @@ mod tests {
     #[test]
     fn test_encode_bas64() {
         assert_eq!(encode_base64(&"USERNAME".to_string()), "VVNFUk5BTUU");
-
         assert_eq!(encode_base64(&"test:test".to_string()), "dGVzdDp0ZXN0");
-        assert_eq!(encode_base64(&"cfPkXYyADGWAimUFtG6g6YTYF7sckzOowz2vpQb4nR4Rv5Wyc8UzSYiEX3JjRaMsMG8GuipVd5G3W7zQ:fKreW9R548bI0918LWTQPDLCDWCjszlhpXNgLORPFaPeVK+RZ6HQn9o2znTLCuFijLKLHxvtkdtx5X32".to_string()), "dGVzdDp0ZXN0");
     }
 }
