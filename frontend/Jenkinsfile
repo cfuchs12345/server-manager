@@ -44,9 +44,7 @@ node {
         //sh 'ng build --prod --aot --sm --progress=false'
 
         dir('frontend') {
-          nodejs(nodeJSInstallationName: 'Node 6.x', configId: '<config-file-provider-id>') {
-              sh 'npm config ls'
-          }
+          sh 'ng build --prod --aot --sm --progress=false'
         }
     }
 
