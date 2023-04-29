@@ -102,16 +102,16 @@ pub async fn discover_features_of_all_servers(
     let mut tasks = Vec::new();
     for server in servers {
         let ipaddress = server.ipaddress.clone();
-        let accept_self_signed_certificates = accept_self_signed_certificates.clone();
+        let accept_self_signed_certificates = accept_self_signed_certificates;
         let plugin_base_path = plugin_base_path.clone();
 
         tasks.push(tokio::spawn(async move {
-            return discover_features(
+            discover_features(
                 ipaddress.as_str(),
-                &accept_self_signed_certificates,
+                accept_self_signed_certificates,
                 &plugin_base_path,
             )
-            .await;
+            .await
         }));
     }
 
@@ -122,7 +122,7 @@ pub async fn discover_features_of_all_servers(
         .iter()
         .map(move |r| r.as_ref().unwrap())
         .map(move |r| r.as_ref().unwrap().to_owned())
-        .filter(|f| f.features.len() > 0)
+        .filter(|f| !f.features.is_empty())
         .collect();
 
     Ok(res)
@@ -130,7 +130,7 @@ pub async fn discover_features_of_all_servers(
 
 pub async fn discover_features(
     ipaddress: &str,
-    accept_self_signed_certificates: &bool,
+    accept_self_signed_certificates: bool,
     plugin_base_path: &str,
 ) -> Result<FeaturesOfServer, std::io::Error> {
     let plugins = plugins::get_all_plugins(plugin_base_path).await.unwrap();
@@ -151,7 +151,7 @@ pub async fn discover_features(
         'outer: for detection_entry in &plugin.detection.list {
             log::debug!("current entry {}", detection_entry.url);
 
-            for url in get_urls_for_check(&detection_entry, ipaddress) {
+            for url in get_urls_for_check(detection_entry, ipaddress) {
                 log::debug!("checking url {} for plugin {}", &url, &plugin.name);
 
                 match client.get(&url).send().await {
@@ -217,7 +217,7 @@ async fn auto_discover_servers(
             for ipv4_addr in hosts {
                 let addr = IpAddr::V4(ipv4_addr);
 
-                let upstream_servers = socket_addresses.iter().map( |socket_addr| UpstreamServer::new(socket_addr.clone())).collect();
+                let upstream_servers = socket_addresses.iter().map( |socket_addr| UpstreamServer::new(*socket_addr)).collect();
 
                 tasks.push(tokio::spawn(discover_host(
                     addr,
@@ -272,13 +272,11 @@ async fn discover_host(
         false => vec![],
     };
 
-    let host_information = HostInformation {
-        is_running: is_running,
+    HostInformation {
+        is_running,
         ipaddress: addr.to_string(),
         dnsname: dnsnames.join(","),
-    };
-
-    host_information
+    }
 }
 
 async fn lookup_hostname(addr: IpAddr, upsstream_server: Vec<UpstreamServer>) -> Vec<String> {
@@ -326,9 +324,9 @@ async fn ping(addr: IpAddr, client: Client) -> bool {
 
 
 
-fn create_http_client(accept_self_signed_certificates: &bool) -> reqwest::Client {
+fn create_http_client(accept_self_signed_certificates: bool) -> reqwest::Client {
     reqwest::Client::builder()
-        .danger_accept_invalid_certs(accept_self_signed_certificates.clone())
+        .danger_accept_invalid_certs(accept_self_signed_certificates)
         .timeout(Duration::from_secs(1))
         .build()
         .unwrap()
@@ -353,19 +351,18 @@ fn create_feature_from_plugin(plugin: &Plugin) -> Feature {
         id: plugin.id.clone(),
         name: plugin.name.clone(),
         params: vec![],
-        credentials: vec![],
-        ..Default::default()
+        credentials: vec![]
     }
 }
 
 async fn check_plugin_match(input: &str, plugin: Plugin) -> bool {
-    match plugins::plugin_detect_match(&plugin, &input) {
+    match plugins::plugin_detect_match(&plugin, input) {
         Ok(res) => {
-            return res;
+            res
         }
         Err(err) => {
             error!("{:?}", err);
-            return false;
+            false
         }
     }
 }

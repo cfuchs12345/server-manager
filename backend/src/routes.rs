@@ -5,7 +5,6 @@ use actix_web::{web, get, put, post, HttpRequest, HttpResponse, Result};
 
 use crate::appdata::AppData;
 use crate::config_types::DNSServer;
-use crate::plugin_types::Plugin;
 use crate::{plugins, features, config};
 use crate::discover::{self};
 use crate::servers;
@@ -45,7 +44,7 @@ impl ParamsAsMap {
 
 #[get("/")]
 pub(crate) async fn index(_data: web::Data<AppData>, _req: HttpRequest) -> Result<HttpResponse, http::Error> {
-    print!("index\n");
+    println!("index");
     Ok(HttpResponse::Ok().finish())
 }
 
@@ -70,7 +69,7 @@ pub async fn post_networks_action(data: web::Data<AppData>, query: web::Json<Net
 
                 let dns_servers = match dns_server_result {
                     Ok(res) => {
-                        dns_servers_found = res.len() > 0;
+                        dns_servers_found = !res.is_empty();
                         res
                     },
                     Err(err) => {
@@ -162,7 +161,7 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
 
     match query.action_type {
         ServerActionType::FeatureScan => {
-            match discover::discover_features(&ipaddress, &accept_self_signed_certs, &plugin_base_path).await {
+            match discover::discover_features(&ipaddress, accept_self_signed_certs, &plugin_base_path).await {
                 Ok(list) => HttpResponse::Ok().json(list),
                 Err(err) =>  HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
             }            
@@ -232,7 +231,7 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
         ServerActionType::QueryData => {       
             let plugins_res = plugins::get_all_plugins(&plugin_base_path).await;
             if plugins_res.is_err() {
-                return HttpResponse::InternalServerError().body(format!("Could not load plugins"));
+                return HttpResponse::InternalServerError().body("Could not load plugins");
             }
 
 
@@ -275,7 +274,7 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
     }  
 }
 
-fn find_feature<'a>( feature_id: String, server: &'a Server) -> Option<&'a Feature> {
+fn find_feature( feature_id: String, server: &Server) -> Option<&Feature> {
     server.features.iter().find(|f| f.id == feature_id)
 }
 
@@ -313,7 +312,7 @@ pub async fn get_plugins(data: web::Data<AppData>, _req: HttpRequest) -> HttpRes
         Ok(path) => {            
             match plugins::get_all_plugins(path.as_str()).await {
                 Ok(list) => {
-                    return  HttpResponse::Ok().json(list)
+                    HttpResponse::Ok().json(list)
                 },
                 Err(err) => {
                     log::error!("Error {} {:?}", path, err);
@@ -339,7 +338,7 @@ pub async fn get_plugins_actions(data: web::Data<AppData>, query: web::Query<std
                     let persistence = &data.app_data_persistence;
 
                     match plugins::get_disabled_plugins(persistence).await {
-                        Ok(list) =>  return  HttpResponse::Ok().json(list),
+                        Ok(list) =>  HttpResponse::Ok().json(list),
                         Err(_err) => 
                             HttpResponse::InternalServerError().body("Cannot load disabled plugins")        
                     }

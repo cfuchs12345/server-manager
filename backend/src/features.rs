@@ -8,16 +8,15 @@ use reqwest::Response;
 use regex::Regex;
 use base64::{Engine as _, engine::general_purpose};
 use rlua::Lua;
-use wake_on_lan;
 use mac_address::MacAddress;
 use crate::conversion;
 use crate::plugin_types::{Plugin, Action, ArgDef, ParamDef, Data, DependsDef};
 use crate::server_types::{Feature, Param, Credential, Server};
 
 enum RegexType {
-    ParamRegex,
-    CredentialRegex,
-    Base64Regex
+    Param,
+    Credential,
+    Base64
 }
 
 #[derive (Debug)]
@@ -56,42 +55,42 @@ impl ActionOrDataInput {
 
 lazy_static! {
     static ref PARAM_REGEX : Regex = Regex::new(
-            RegexType::ParamRegex.get_pattern()
+            RegexType::Param.get_pattern()
         ).unwrap();
 
     static ref CREDENTIAL_REGEX : Regex = Regex::new(
-        RegexType::CredentialRegex.get_pattern()
+        RegexType::Credential.get_pattern()
     ).unwrap();
 
     static ref BASE64_REGEX : Regex = Regex::new(
-        RegexType::Base64Regex.get_pattern()
+        RegexType::Base64.get_pattern()
     ).unwrap();   
 }
 
 impl RegexType {
 	fn get_pattern(&self) -> &str {
 		match self {
-			RegexType::ParamRegex => r"(\$\{params\..*?\})",
-			RegexType::CredentialRegex =>  r"(\$\{credentials\..*?\})",            
-			RegexType::Base64Regex => r"(\$\{encode_base64\(.*?\)\})"
+			RegexType::Param => r"(\$\{params\..*?\})",
+			RegexType::Credential =>  r"(\$\{credentials\..*?\})",            
+			RegexType::Base64 => r"(\$\{encode_base64\(.*?\)\})"
 		}
 	}
 
     pub fn extract_placeholders(&self, input: String) -> Vec<String> {       
         let matches = match self {
-            RegexType::ParamRegex => PARAM_REGEX.find_iter(input.as_str()),
-            RegexType::CredentialRegex => CREDENTIAL_REGEX.find_iter(input.as_str()),
-            RegexType::Base64Regex => BASE64_REGEX.find_iter(input.as_str())
+            RegexType::Param => PARAM_REGEX.find_iter(input.as_str()),
+            RegexType::Credential => CREDENTIAL_REGEX.find_iter(input.as_str()),
+            RegexType::Base64 => BASE64_REGEX.find_iter(input.as_str())
         };
     
         matches.map(|mat| mat.as_str().to_owned()).collect()
     } 
 
-    pub fn strip_of_marker(&self, value: &String) -> String {
+    pub fn strip_of_marker(&self, value: &str) -> String {
         match self {
-			RegexType::ParamRegex => value.replace("${params.", "").replace("}", ""),
-			RegexType::CredentialRegex =>  value.replace("${credentials.", "").replace("}", ""),
-			RegexType::Base64Regex => value.replace("${encode_base64(", "").replace(")}", ""),
+			RegexType::Param => value.replace("${params.", "").replace('}', ""),
+			RegexType::Credential =>  value.replace("${credentials.", "").replace('}', ""),
+			RegexType::Base64 => value.replace("${encode_base64(", "").replace(")}", ""),
 		}
     }
 }
@@ -114,19 +113,19 @@ pub async fn execute_action( server: &Server, feature: &Feature, plugin: &Plugin
 }
 
 
-pub async fn execute_data_query( server: &Server, plugins: &Vec<Plugin>, accept_self_signed_certificates: bool, template_engine: &handlebars::Handlebars<'static>) -> Result<Vec<String>, Error> {
+pub async fn execute_data_query( server: &Server, plugins: &[Plugin], accept_self_signed_certificates: bool, template_engine: &handlebars::Handlebars<'static>) -> Result<Vec<String>, Error> {
     let mut results: Vec<String> = vec![];
 
     let tuples: Vec<(&Feature, &Plugin)> = server.features.iter().filter_map( |f| {
-        Some( (f, find_plugin_for_feature(&f, &plugins)?) )
+        Some( (f, find_plugin_for_feature(f, plugins)?) )
     }).collect();
     
     for tuple in tuples {
         for data in &tuple.1.data {
-            let res = execute_specific_data_query( server, tuple.1, tuple.0, &data, accept_self_signed_certificates ).await?;
+            let res = execute_specific_data_query( server, tuple.1, tuple.0, data, accept_self_signed_certificates ).await?;
 
             if !data.template.is_empty() {
-                let result = conversion::convert_json_to_html(data.template.as_str(), res, template_engine, &data)?;
+                let result = conversion::convert_json_to_html(data.template.as_str(), res, template_engine, data)?;
                 results.push(result);
             }                   
             else {
@@ -151,7 +150,7 @@ pub async fn check_condition_for_action_met(server: &Server, plugin: &Plugin, fe
             let mut res = true;
 
             for depends in &action.depends {
-                match find_data_for_action_depency(&depends, plugin) {
+                match find_data_for_action_depency(depends, plugin) {
                     Some(data) => {
                         let response =  execute_specific_data_query( server, plugin, feature, data, accept_self_signed_certificates).await?;
 
@@ -205,11 +204,11 @@ async fn execute_http_command(ipaddress: String, input: &ActionOrDataInput) -> R
     let method = find_arg(&input.args, "method");
     let headers = find_all_args(&input.args, "header" );
     
-    let normal_and_masked_url: (String,String) = replace(&url, &ipaddress, &input);
-    let normal_and_masked_body: (String,String) = replace(&body, &ipaddress, &input);
-    let normal_and_replaced_headers: Vec<(String, String)> = replace_list(headers, &ipaddress, &input);
+    let normal_and_masked_url: (String,String) = replace(url, &ipaddress, input);
+    let normal_and_masked_body: (String,String) = replace(body.clone(), &ipaddress, input);
+    let normal_and_replaced_headers: Vec<(String, String)> = replace_list(headers, &ipaddress, input);
 
-    if body.len() > 0 {
+    if !body.is_empty() {
         log::debug!("About to execute method {} on url {} with body {}", method, normal_and_masked_url.1, normal_and_masked_body.1);
 
         log::info!("About to execute method {} on url {} with body {}", method, normal_and_masked_url.0, normal_and_masked_body.0);
@@ -221,7 +220,7 @@ async fn execute_http_command(ipaddress: String, input: &ActionOrDataInput) -> R
     }
     
 
-    match execute_http_request(normal_and_masked_url.0, method, normal_and_replaced_headers, normal_and_masked_body.0, &input.accept_self_signed_ceritificates ).await {
+    match execute_http_request(normal_and_masked_url.0, method, normal_and_replaced_headers, normal_and_masked_body.0, input.accept_self_signed_ceritificates ).await {
         Ok(response) => {
             let text = response.text().await.unwrap_or_default();
             log::debug!("Response for http request to url {} was: {}", normal_and_masked_url.1, text);
@@ -266,9 +265,9 @@ async fn execute_wol_command(_ipaddress: String, input: &ActionOrDataInput) ->  
     }
 }
 
-async fn execute_http_request(url: String, method: String, headers: Vec<(String, String)>, body: String, accept_self_signed_certificates: &bool ) -> Result<Response, reqwest::Error>  {
+async fn execute_http_request(url: String, method: String, headers: Vec<(String, String)>, body: String, accept_self_signed_certificates: bool ) -> Result<Response, reqwest::Error>  {
     let client = reqwest::Client::builder()
-    .danger_accept_invalid_certs(accept_self_signed_certificates.clone())
+    .danger_accept_invalid_certs(accept_self_signed_certificates)
     .timeout(Duration::from_secs(1))
     .build()
     .unwrap();
@@ -294,7 +293,7 @@ fn headers_to_map(headers: Vec<(String, String)>) -> http::HeaderMap {
     let mut header_map: http::HeaderMap = http::HeaderMap::new();
 
     for header in headers {
-        let res = header.0.split_once("=");
+        let res = header.0.split_once('=');
 
         if res.is_none() {
             log::error!("Header {} is invalid. Container no equals sign (=)", header.1);
@@ -320,14 +319,14 @@ fn replace_list ( input_strings: Vec<String>, ipaddress: &str,  input: &ActionOr
     let mut result:Vec<(String, String)> = vec![];
 
     for input_string in input_strings {
-        let res = replace(&input_string, ipaddress, input);
+        let res = replace(input_string, ipaddress, input);
         result.push(res);
     }
 
     result
 }
-fn replace ( input_string: &String, ipaddress: &str,  input: &ActionOrDataInput) -> (String, String) {
-    let mut result : String = input_string.to_owned().clone();
+fn replace ( input_string: String, ipaddress: &str,  input: &ActionOrDataInput) -> (String, String) {
+    let mut result : String = input_string;
     let mut masked: String;
 
     result = result.replace( "${IP}", ipaddress);
@@ -338,14 +337,14 @@ fn replace ( input_string: &String, ipaddress: &str,  input: &ActionOrDataInput)
     result = replace_base64_encoded(result); // base 64 encode should happen on both idependently
     masked = replace_base64_encoded(masked); // actually the base 64 encoded masked version outputs an incorrect encoded value
 
-   (result.to_owned(), masked.to_owned())
+   (result, masked)
 }
 
 fn replace_param(input_string: String, input: &ActionOrDataInput) -> String {
     let mut result = input_string.clone();
 
-    for placeholder in RegexType::ParamRegex.extract_placeholders(input_string) {
-        let name = RegexType::ParamRegex.strip_of_marker(&placeholder);
+    for placeholder in RegexType::Param.extract_placeholders(input_string) {
+        let name = RegexType::Param.strip_of_marker(&placeholder);
 
         let replacement = get_param_value(name.as_str(), input);
 
@@ -363,15 +362,12 @@ fn replace_credentials(input_string: String, input: &ActionOrDataInput) -> (Stri
     let mut result = input_string.clone();
     let mut masked = input_string.clone();
 
-    for placeholder in RegexType::CredentialRegex.extract_placeholders(input_string) {
-        let name = RegexType::CredentialRegex.strip_of_marker(&placeholder);
+    for placeholder in RegexType::Credential.extract_placeholders(input_string) {
+        let name = RegexType::Credential.strip_of_marker(&placeholder);
 
-        let replacement = get_credential_value(name.as_str(), &input);
+        let replacement = get_credential_value(name.as_str(), input);
         
-        if replacement.is_some() {
-            
-            let replacement_tuple = replacement.unwrap();
-            
+        if let Some(replacement_tuple) = replacement {  
             result = result.replace(placeholder.as_str(), replacement_tuple.0.as_str());
             if replacement_tuple.1 {
                 masked = masked.replace(placeholder.as_str(), "******");
@@ -390,8 +386,8 @@ fn replace_credentials(input_string: String, input: &ActionOrDataInput) -> (Stri
 fn replace_base64_encoded(input: String) -> String {
     let mut result = input.clone();
 
-    for placeholder in RegexType::Base64Regex.extract_placeholders(input) {
-        let to_encode = RegexType::Base64Regex.strip_of_marker(&placeholder);
+    for placeholder in RegexType::Base64.extract_placeholders(input) {
+        let to_encode = RegexType::Base64.strip_of_marker(&placeholder);
 
         let replacement = encode_base64(&to_encode);
 
@@ -404,53 +400,45 @@ fn replace_base64_encoded(input: String) -> String {
 fn get_credential_value(name: &str, input: &ActionOrDataInput ) -> Option<(String, bool)> {
     let from_feature: Vec<(String, bool)> = input.credentials.iter().filter( |credential| credential.name == name).map(|credential| (credential.value.clone(), credential.encrypted )).collect();
 
-    let value: Option<(String, bool)> = match from_feature.iter().next() {
-        Some(value) => Some( (value.0.to_owned(), value.1) ),
-        None => None
-    };
-
-    value
+    from_feature.first().map(|value| (value.0.to_owned(), value.1))
 }
 
 
 fn get_param_value(name: &str, input: &ActionOrDataInput ) -> Option<String> {
     let from_feature: Vec<String> = input.params.iter().filter( |param| param.name == name).map(|param| param.value.clone()).collect();
 
-    let value: Option<String> = match from_feature.iter().next() {
+    let value: Option<String> = match from_feature.first() {
         Some(value) => Some(value.to_owned()),
         None => {
             let from_plugin: Vec<String> = input.default_params.iter().filter( |default_param| default_param.name == name).map(|default_param| default_param.default_value.clone()).collect();
 
-            match from_plugin.iter().next() {
-                Some(value) => Some(value.to_owned()),
-                None => None
-            }
+            from_plugin.first().map(|value| value.to_owned())
         }
     };
 
     value
 }
 
-fn encode_base64(placeholder: &String) -> String {
-    general_purpose::STANDARD_NO_PAD.encode( RegexType::Base64Regex.strip_of_marker(placeholder) )
+fn encode_base64(placeholder: &str) -> String {
+    general_purpose::STANDARD_NO_PAD.encode( RegexType::Base64.strip_of_marker(placeholder) )
 }
 
 
 
-fn find_arg(args: &Vec<ArgDef>, arg_type: &str) -> String {
+fn find_arg(args: &[ArgDef], arg_type: &str) -> String {
     let matched_args = find_all_args(args, arg_type);
 
     
-    matched_args.iter().next().unwrap_or("".to_string().borrow()).to_string()
+    matched_args.first().unwrap_or("".to_string().borrow()).to_string()
 }
 
-fn find_all_args(args: &Vec<ArgDef>, arg_type: &str) -> Vec<String> {
+fn find_all_args(args: &[ArgDef], arg_type: &str) -> Vec<String> {
     let matched_args = args.iter().filter( |arg_def| arg_def.arg_type == arg_type).map( |arg_def| arg_def.value.clone()).collect();
     
     matched_args
 }
 
-fn find_plugin_for_feature<'a> ( feature: &Feature, plugins: &'a Vec<Plugin> ) -> Option<&'a Plugin> {
+fn find_plugin_for_feature<'a> ( feature: &Feature, plugins: &'a [Plugin] ) -> Option<&'a Plugin> {
     plugins.iter().find( |p| p.id == feature.id)
 }
 
@@ -462,10 +450,7 @@ fn data_match(dependency: &DependsDef, input: &str) -> Result<bool, Error> {
     let script = dependency.script.clone();
     let script_type = dependency.script_type.clone();
 
-    let is_lua = match script_type.as_str() {
-        "lua" => true,
-        _ => false,
-    };
+    let is_lua = matches!(script_type.as_str(), "lua");
 
     if !is_lua {
         return Err(Error::from(std::io::Error::new(ErrorKind::Other, "Only LUA scripts are currently supported")));
@@ -496,18 +481,18 @@ mod tests {
 
     #[test]
     fn test_regex_param_extract() {
-        assert_eq!(  RegexType::ParamRegex.extract_placeholders("test ${params.test}".to_string()).len(), 1);
-        assert_ne!(  RegexType::ParamRegex.extract_placeholders( "test params.test".to_string()).len(), 1);
-        assert_eq!( RegexType::ParamRegex.extract_placeholders("${params.protocol}://${credentials.username}:${credentials.password}192.168.178.20:${params.port}/${params.command}".to_string()).len(), 3);
+        assert_eq!(  RegexType::Param.extract_placeholders("test ${params.test}".to_string()).len(), 1);
+        assert_ne!(  RegexType::Param.extract_placeholders( "test params.test".to_string()).len(), 1);
+        assert_eq!( RegexType::Param.extract_placeholders("${params.protocol}://${credentials.username}:${credentials.password}192.168.178.20:${params.port}/${params.command}".to_string()).len(), 3);
 
 
-        assert_eq!(  RegexType::Base64Regex.extract_placeholders("${encode_base64(USERNAME)}".to_string()).first().unwrap().to_owned(), "${encode_base64(USERNAME)}".to_owned());
+        assert_eq!(  RegexType::Base64.extract_placeholders("${encode_base64(USERNAME)}".to_string()).first().unwrap().to_owned(), "${encode_base64(USERNAME)}".to_owned());
     }
 
     #[test]
     fn test_regex_strip_of_marker() {
-        assert_eq!( RegexType::ParamRegex.strip_of_marker(&"${params.test}".to_string()), "test");
-        assert_eq!( RegexType::Base64Regex.strip_of_marker(&"${encode_base64(USERNAME)}".to_string()), "USERNAME");
+        assert_eq!( RegexType::Param.strip_of_marker(&"${params.test}".to_string()), "test");
+        assert_eq!( RegexType::Base64.strip_of_marker(&"${encode_base64(USERNAME)}".to_string()), "USERNAME");
     }
 
     #[test]

@@ -1,6 +1,6 @@
 use crate::{config_types::DNSServer, persistence::{Entry, Persistence}};
 
-const TABLE_DNS_SERVERS: &'static str = "dns_servers";
+const TABLE_DNS_SERVERS: &str = "dns_servers";
 
 fn json_to_dnsserver(json: &str) -> DNSServer {
     serde_json::from_str(json).unwrap()

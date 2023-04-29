@@ -10,7 +10,7 @@ use std::{fs::File, io::BufReader};
 use crate::persistence::{Persistence, Entry};
 use crate::plugin_types::Plugin;
 
-const TABLE_PLUGIN_CONFIG: &'static str = "plugin_config";
+const TABLE_PLUGIN_CONFIG: &str = "plugin_config";
 
 lazy_static! {
     static ref  PLUGIN_NAME_TO_FILENAME: Mutex<HashMap<String,String>> =  Mutex::new(HashMap::new());
@@ -40,7 +40,7 @@ pub async fn get_filename_for_plugin(feature_id: String, plugin_base_path: &str)
         }
     }
 
-    PLUGIN_NAME_TO_FILENAME.lock().await.get(&feature_id).map( |val| val.clone())
+    PLUGIN_NAME_TO_FILENAME.lock().await.get(&feature_id).cloned()
  }
 
 
@@ -50,12 +50,12 @@ pub async fn get_all_plugins(plugin_base_path: &str) -> Result<Vec<Plugin>, Erro
     let plugin_file_names = get_all_plugin_filenames(plugin_base_path)?;
 
     let plugins: Vec<Plugin> = join_all(plugin_file_names.iter().map(|plugin_file_name| async {
-        let plugin = load_plugin(&plugin_base_path, plugin_file_name)
+        let plugin = load_plugin(plugin_base_path, plugin_file_name)
             .await
             .unwrap();
 
             PLUGIN_NAME_TO_FILENAME.lock().await.insert(plugin.id.clone(), plugin_file_name.to_owned());
-        return plugin;
+        plugin
     }))
     .await;
 
@@ -67,10 +67,7 @@ pub fn plugin_detect_match(plugin: &Plugin, input: &str) -> Result<bool, Error> 
     let script = plugin.detection.script.script.clone();
     let script_type = plugin.detection.script.script_type.clone();
 
-    let is_lua = match script_type.as_str() {
-        "lua" => true,
-        _ => false,
-    };
+    let is_lua = matches!(script_type.as_str(), "lua");
 
     if !is_lua {
         return Err(Error::new(
@@ -103,7 +100,7 @@ pub async fn load_plugin(plugin_base_path: &str, plugin_file_name: &str) -> Resu
             match serde_json::from_reader(reader) {
                 Ok::<Plugin, _>(plugin) => {
                     log::debug!("plugin loaded: {:?}", plugin);
-                    return Ok(plugin);
+                    Ok(plugin)
                 }
                 Err(err) => {
                     log::error!("Error while parsing plugin file {} was: {}", plugin_file_name,  err);
@@ -117,12 +114,12 @@ pub async fn load_plugin(plugin_base_path: &str, plugin_file_name: &str) -> Resu
 
 pub async fn get_disabled_plugins(persistence: &Persistence) -> Result<Vec<String>, Error>{
     match persistence.get(TABLE_PLUGIN_CONFIG, "disabled_ids").await {
-        Ok(res) => Ok(res.value.split(",").into_iter().map( |e| e.to_string()).collect()),
+        Ok(res) => Ok(res.value.split(',').map( |e| e.to_string()).collect()),
         Err(_err) => {
-            return Err(Error::new(
+            Err(Error::new(
                 std::io::ErrorKind::Other,
                 "Could not load disabled plugins from database",
-            ));
+            ))
         }
     }
 }
@@ -135,21 +132,21 @@ pub async fn disable_plugins(persistence: &Persistence, plugin_ids: Vec<String>)
                 value: plugin_ids.join(",").to_string()
             }).await {
                 Ok(_res) => {
-                    return Ok(true);
+                    Ok(true)
                 },
                 Err(_err) => {
-                    return Err(Error::new(
+                    Err(Error::new(
                         std::io::ErrorKind::Other,
                         "Could not insert entry for disabled plugins",
-                    ));
+                    ))
                 }
             }                                
         },
         Err(_err) => {
-            return Err(Error::new(
+            Err(Error::new(
                 std::io::ErrorKind::Other,
                 "Could not delete old entry for disabled plugins",
-            ));
+            ))
         }
     }
 }

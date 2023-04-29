@@ -2,7 +2,7 @@ use crate::persistence::{Entry, Persistence};
 use crate::server_types::Server;
 
 
-const TABLE: &'static str = "servers";
+const TABLE: &str = "servers";
 
 fn json_to_server(json: &str) -> Server {
     serde_json::from_str(json).unwrap()
