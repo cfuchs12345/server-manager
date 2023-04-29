@@ -1,0 +1,131 @@
+pipeline {
+    agent {label 'docker-slave'}
+
+     parameters {
+            string(
+            name: "Branch_Name", 
+            defaultValue: 'master', 
+            description: '')
+            string(
+            name: "source_project_frontend",
+            defaultValue: 'Typescript/(Typescript) Server Manager Frontend',
+            description: 'source project that generates the angular executable',
+            )
+            string(
+            name: "source_project_backend",
+            defaultValue: 'Rust/(Rust) Server Manager Backend',
+            description: 'source project that generates the rust executable',
+            )
+            string(
+            name: "artifact_file_frontend",
+            defaultValue: 'target/server-manager-frontent.zip',
+            description: 'artifact name of the frontent project',
+            )      
+            string(
+            name: "artifact_file_backend",
+            defaultValue: 'target/server-manager-backend.zip',
+            description: 'artifact name of the backend project',
+            )        
+  
+            string(
+            name: "UBUNTU_VERSION", 
+            defaultValue: 'focal', 
+            description: 'version of ubuntu base image')
+            string(
+            name: "IMAGE_NAME", 
+            defaultValue: 'docker-server-manager', 
+            description: 'name of the image')
+            string(
+            name: "DOCKER_REGISTRY",
+            defaultValue: 'docker.registry.lan:5000',
+            description: 'registry location'
+            )
+    }
+
+    environment {
+        registry = ""
+        registryCredential = ''
+        dockerImage = ''
+    }
+
+
+    stages {
+        stage('Clean') {
+            steps {
+                 sh "docker image rm ${params.IMAGE_NAME}:latest || true"
+                 sh "docker image prune -a -f || true"
+                 sh "rm ${params.artifact_file_frontend} || true"
+                 sh "rm ${params.artifact_file_backend} || true"
+            }
+        }
+        stage('pull artifact') {
+            steps {
+                copyArtifacts projectName: "${params.source_project_frontend}", selector: lastSuccessful()
+                copyArtifacts projectName: "${params.source_project_backend}", selector: lastSuccessful()
+
+                unzip zipFile: "${params.artifact_file_frontend}"
+                unzip zipFile: "${params.artifact_file_backend}"
+            }
+        }
+         stage('checkout') {
+            steps {
+                dir ('private') {
+                   echo 'step to checkout private config'
+                }
+            }
+        }
+
+        stage('Build image') {
+            steps {
+                // merge private static content with content from public project, all together is copied into the image by the Dockerfile
+                //sh "cp private/.env .env"
+                //sh "cp private/labels labels"
+
+                script {
+                echo "Bulding docker images"
+                def buildArgs = """\
+                --build-arg UBUNTU_VERSION=${params.UBUNTU_VERSION} \
+                --build-arg HTTP_PORT=8080 \
+                -f Dockerfile \
+                --no-cache \
+                ."""
+                docker.build(
+                   "${params.IMAGE_NAME}:$BUILD_NUMBER",
+                   buildArgs)
+                }
+            }
+        }
+        stage('Tag image') {
+            steps {
+                script {
+                    echo "Tagging docker image"
+                    sh "docker tag ${params.IMAGE_NAME}:$BUILD_NUMBER ${params.DOCKER_REGISTRY}/${params.IMAGE_NAME}:latest";
+                }
+            }
+        }
+        stage('Deploy Image') {
+            steps{
+                script {
+                    echo "Push docker image to local registry"
+                    sh "docker push ${params.DOCKER_REGISTRY}/${params.IMAGE_NAME}:latest"
+                    echo "Deleting local image"
+                    sh "docker rmi ${params.IMAGE_NAME}:$BUILD_NUMBER || true"
+                    sh "docker rmi ${params.DOCKER_REGISTRY}/${params.IMAGE_NAME}:$BUILD_NUMBER || true"
+                }
+            }
+        }
+        stage('Create Artifact') {
+            steps {
+                echo "creating artifact with docker scripts and config"
+            }
+        }
+    }
+    post{
+        always{
+            emailext body: 'Build executed',
+            recipientProviders: [developers(), requestor()],
+            subject: 'jenkins build ${JOB_DESCRIPTION}: ${BUILD_STATUS}',
+            to: 'christopher@christopherfuchs.de'
+        }
+    }
+}
