@@ -1,4 +1,8 @@
-#!groovy
+agent {
+        label 'rust-slave'
+}
+
+tools {nodejs "Node JS"}
 
 properties(
     [
@@ -29,7 +33,13 @@ node {
 
     stage('Build') {
         //milestone()
-        sh 'ng build --prod --aot --sm --progress=false'
+        //sh 'ng build --prod --aot --sm --progress=false'
+
+
+         withNPM() {
+            sh "npm install"
+            sh "ng build --prod"
+          }
     }
 
     stage('Archive') {
