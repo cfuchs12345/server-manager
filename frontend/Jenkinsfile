@@ -66,7 +66,7 @@ pipeline {
           steps {
         sh 'mkdir -p target/zipfile_content'
         echo 'copying resources for zip file into target/zipfile_content'
-        sh 'cp -r frontent/dist/angular-project target/zipfile_content'
+        sh 'cp -r frontend/dist/angular-project target/zipfile_content'
         //sh "cp -r templates target/zipfile_content"
         //sh "cp target/release/rustwebserver target/zipfile_content"
         echo 'creating zip file'
