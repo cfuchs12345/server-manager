@@ -46,17 +46,17 @@ node {
     }
 
     stage("Create Artifact") {
-            steps {
-                sh "mkdir -p target/zipfile_content"
-                echo "copying resources for zip file into target/zipfile_content"
-                sh "cp -r frontent/dist/angular-project target/zipfile_content"
-                //sh "cp -r templates target/zipfile_content"
-                //sh "cp target/release/rustwebserver target/zipfile_content"
-                echo "creating zip file"
-                zip zipFile: "target/server-manager-frontent.zip", archive: true, dir: "target/zipfile_content", overwrite: true
-            }
+        steps {
+            sh "mkdir -p target/zipfile_content"
+            echo "copying resources for zip file into target/zipfile_content"
+            sh "cp -r frontent/dist/angular-project target/zipfile_content"
+            //sh "cp -r templates target/zipfile_content"
+            //sh "cp target/release/rustwebserver target/zipfile_content"
+            echo "creating zip file"
+            zip zipFile: "target/server-manager-frontent.zip", archive: true, dir: "target/zipfile_content", overwrite: true
         }
     }
+
     post{
         always{
             archiveArtifacts artifacts: 'target/server-manager-frontent.zip', fingerprint: true
