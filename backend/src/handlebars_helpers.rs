@@ -31,32 +31,24 @@ fn sort_fct(
                 
                 
                 sorted_array.sort_by( |a, b| {
-                    let a_prop = a[property].as_str();
-                    let b_prop = b[property].as_str();
+                    let a_opt = a[property].as_str();
+                    let b_opt = b[property].as_str();
 
-                    if a_prop.is_some() && b_prop.is_some() { // string property
-                        let a_i64 =  a_prop.unwrap().parse::<i64>();
-                        let b_i64 =  b_prop.unwrap().parse::<i64>();
+                    if let (Some(a), Some(b)) = (a_opt, b_opt) {
+                        let a_i64_res =  a.parse::<i64>();
+                        let b_i64_res =  b.parse::<i64>();
 
-                        if a_i64.is_ok() && b_i64.is_ok() {
-                            a_i64.unwrap().partial_cmp(&b_i64.unwrap()).unwrap()
+                        if let (Ok(a_i64), Ok(b_i64)) = (a_i64_res, b_i64_res) {
+                            a_i64.partial_cmp(&b_i64).unwrap_or(Ordering::Less)
                         }
                         else { // normal string sort
-                            a_prop.unwrap().partial_cmp(b_prop.unwrap()).unwrap()
-                        }                    
+                            a.partial_cmp(b).unwrap_or(Ordering::Less)
+                        }       
                     }
-                    else { // numeric property
-                        let a_prop = a[property].as_i64();
-                        let b_prop = b[property].as_i64();
-    
-                        if a_prop.is_some() && b_prop.is_some() {
-                            a_prop.unwrap().partial_cmp(&b_prop.unwrap()).unwrap()
-                        }
-                        else {                            
-                            log::error!("Properties with name {} has an unknown type that cannot be sorted", property);
-                            Ordering::Less
-                        }
-                    }                
+                    else {                            
+                        log::error!("Properties with name {} has an unknown type that cannot be sorted", property);
+                        Ordering::Less
+                    }
                 });
 
                 let str = serde_json::to_string(&sorted_array).unwrap();

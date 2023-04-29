@@ -1,8 +1,6 @@
-use actix_web::HttpResponse;
 use actix_web::{middleware::Logger, web, App, HttpServer, HttpRequest, Result};
 use actix_files as fs;
 use handlebars::no_escape;
-use core::panic;
 use std::path::PathBuf;
 use config::Config;
 
@@ -84,8 +82,11 @@ async fn named_file_svg(req: HttpRequest) -> Result<fs::NamedFile> {
 fn handle_named_file(file: &str) -> std::result::Result<fs::NamedFile, actix_web::Error> {
     let path_found = fs::NamedFile::open(file);
     match path_found {
-        Ok(f) => Ok(f),
-        Err(e) => Err(actix_web::error::ErrorNotFound(""))
+        Ok(file) => Ok(file),
+        Err(err) => {
+            log::error!("File not found {}. Error was: {}", file, err);
+            Err(actix_web::error::ErrorNotFound(""))
+        }
     }
 }
 

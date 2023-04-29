@@ -1,7 +1,7 @@
 use std::io::ErrorKind;
 use std::{time::Duration, borrow::Borrow};
 use actix_web::Error;
-use http::StatusCode;
+use http::{StatusCode};
 use lazy_static::lazy_static;
 use http::{response::Builder};
 use reqwest::Response;
@@ -301,15 +301,25 @@ fn headers_to_map(headers: Vec<(String, String)>) -> http::HeaderMap {
         }
         let split = res.unwrap();
 
-        let name = http::header::HeaderName::from_lowercase(split.0.to_lowercase().as_bytes());
-        let value = http::header::HeaderValue::from_str(split.1);
+        let name_res = http::header::HeaderName::from_lowercase(split.0.to_lowercase().as_bytes());
+        let value_res = http::header::HeaderValue::from_str(split.1);
 
-        if name.is_err() || value.is_err() {
-            log::error!("Header {} is invalid", header.1);
+        match name_res {
+            Ok(name) => {
+                match value_res {
+                    Ok(value) => {
+                        header_map.insert(name, value);
+                    },
+                    Err(err) => {
+                        log::error!("Header {} is invalid {}", header.1, err);
+                    }
+                }                
+            }, 
+            Err(err) => {
+                log::error!("Header {} is invalid {}", header.1, err);
+            }
         }
-        else {
-            header_map.insert(name.unwrap(), value.unwrap());
-        }
+
     }
 
     header_map
@@ -346,10 +356,10 @@ fn replace_param(input_string: String, input: &ActionOrDataInput) -> String {
     for placeholder in RegexType::Param.extract_placeholders(input_string) {
         let name = RegexType::Param.strip_of_marker(&placeholder);
 
-        let replacement = get_param_value(name.as_str(), input);
+        let replacement_option = get_param_value(name.as_str(), input);
 
-        if replacement.is_some() {
-            result = result.replace(placeholder.as_str(), replacement.unwrap().as_str());
+        if let Some(replacement) = replacement_option  {
+            result = result.replace(placeholder.as_str(), replacement.as_str());
         }
         else {
             log::error!("Found no replacement for placeholder {}", placeholder);

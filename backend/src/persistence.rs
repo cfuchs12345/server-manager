@@ -26,7 +26,7 @@ impl Persistence {
         log::debug!("DB URL = {}", db_url);
         
         let instance = Persistence {
-            pool: Self::get_connection(db_url).await.expect(format!("Cannot connect to database: {}", db_url).as_str())
+            pool: Self::get_connection(db_url).await.unwrap_or_else(|_| panic!("Cannot connect to database: {}", db_url))
         };
         instance.create_tables(    vec![
             ("servers", vec![("key", "TEXT"),("value", "TEXT")]),
