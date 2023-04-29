@@ -2,7 +2,11 @@ agent {
         label 'rust-slave'
 }
 
-tools {nodejs "Node JS"}
+node {
+    env.NODEJS_HOME = "${tool 'Node JS'}"
+    env.PATH="${env.NODEJS_HOME}/bin:${env.PATH}"
+    sh 'npm --version'
+}
 
 properties(
     [
@@ -34,11 +38,10 @@ node {
     stage('Build') {
         //milestone()
         //sh 'ng build --prod --aot --sm --progress=false'
-
-
-         withNPM() {
-            sh "npm install"
-            sh "ng build --prod"
+         steps {
+            nodejs(nodeJSInstallationName: 'Node 6.x', configId: '<config-file-provider-id>') {
+                sh 'npm config ls'
+            }
           }
     }
 
