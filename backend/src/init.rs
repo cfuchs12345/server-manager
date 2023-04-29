@@ -1,7 +1,6 @@
 use actix_web::{middleware::Logger, web, App, HttpServer, HttpRequest, Result};
 use actix_files as fs;
 use handlebars::no_escape;
-use handlebars_misc_helpers::assign_helpers;
 use core::panic;
 use config::Config;
 
@@ -59,7 +58,6 @@ fn create_and_configure_template_engine(template_base_path: &str) -> handlebars:
 
     handlebars.set_strict_mode(true);
     handlebars.register_escape_fn(no_escape); //html escaping is the default and cause issue
-    assign_helpers::register(&mut handlebars);
     handlebars_helpers::register(&mut handlebars);
 
     handlebars
