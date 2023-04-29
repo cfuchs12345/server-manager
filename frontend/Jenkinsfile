@@ -21,7 +21,9 @@ pipeline {
       steps {
         echo 'npm install'
           dir('frontend') {
+            nodejs(nodeJSInstallationName: 'Node JS') {
               sh 'npm install'
+            }
           }
       }
       }
