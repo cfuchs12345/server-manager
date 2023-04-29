@@ -32,7 +32,7 @@ pub fn get_all_plugin_filenames(plugin_base_path: &str) -> Result<Vec<String>, E
 
 pub async fn get_filename_for_plugin(feature_id: String, plugin_base_path: &str) -> Option<String> {
     if PLUGIN_NAME_TO_FILENAME.lock().await.len() == 0 {
-        get_all_plugins(plugin_base_path);       
+        get_all_plugins(plugin_base_path).await;       
     }
 
     PLUGIN_NAME_TO_FILENAME.lock().await.get(&feature_id).map( |val| val.clone())

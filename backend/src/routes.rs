@@ -279,10 +279,6 @@ fn find_feature<'a>( feature_id: String, server: &'a Server) -> Option<&'a Featu
     server.features.iter().find(|f| f.id == feature_id)
 }
 
-fn find_plugin<'a>( feature_id: String, plugins: &'a Vec<Plugin>) -> Option<&'a Plugin> {
-    plugins.iter().find(|p| p.id == feature_id)
-}
-
 #[put("/servers/{ipaddress}")]
 pub async fn put_servers_by_ipaddress(data: web::Data<AppData>, query: web::Json<Server>) -> HttpResponse {
     match servers::update_server(&data.app_data_persistence, &query.0).await {
