@@ -19,6 +19,7 @@ pipeline {
         stage('Init') {
             steps {
                 sh "rustup default stable"
+                sh "sudo apt install gcc"
             }
         }
         stage('Clean') {
