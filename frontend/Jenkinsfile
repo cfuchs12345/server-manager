@@ -1,7 +1,3 @@
-agent {
-        label 'rust-slave'
-}
-
 node {
     env.NODEJS_HOME = "${tool 'Node JS'}"
     env.PATH="${env.NODEJS_HOME}/bin:${env.PATH}"
