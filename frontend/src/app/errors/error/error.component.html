@@ -1,0 +1,18 @@
+<div>
+  <table class="app-table">
+    <thead>
+      <th class="app-left-align">Last Occurrance</th>
+      <th class="app-left-align">Source</th>
+      <th class="app-left-align">ErrorMessage</th>
+      <th class="app-left-align">Count</th>
+    </thead>
+    <tbody>
+      <tr *ngFor="let error of errors">
+        <td class="app-left-align">{{formatDate(error.lastOccurrance)}}</td>
+        <td class="app-left-align">{{error.sourceName}}</td>
+        <td class="app-left-align">{{error.errorMessage}}</td>
+        <td class="app-right-align">{{error.count}}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

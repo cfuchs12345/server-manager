@@ -1,0 +1,62 @@
+<div fxLayout="row">
+  <mat-form-field style="margin: 5px; min-width: 200px">
+    <mat-label>Server</mat-label>
+    <mat-select [(ngModel)]="selectedServer" (ngModelChange)="onChangeServer()">
+      <mat-option *ngFor="let server of servers" [value]="server"
+        >{{ server.ipaddress }}
+        {{ server.name == "" ? "" : "(" + server.name + ")" }}</mat-option
+      >
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field style="margin: 5px; min-width: 200px">
+    <mat-label>Feature</mat-label>
+    <mat-select
+      [(ngModel)]="selectedFeature"
+      (ngModelChange)="onChangeFeature()"
+    >
+      <mat-option *ngFor="let feature of features" [value]="feature">{{
+        feature.id
+      }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+</div>
+<div [formGroup]="form">
+  <div *ngIf="paramsFromPlugin.length > 0">
+    <hr />
+    <b>Parameters</b>
+    <br />
+    <div fxLayout="row" *ngFor="let param of paramsFromPlugin">
+      <mat-form-field style="margin: 5px" fxFlexFill>
+        <mat-label>{{ param.name }}</mat-label>
+        <input formControlName="param.{{ param.name }}" matInput />
+        <mat-hint>{{
+          "Default: " + getDefaultParamValue(param.name)
+        }}</mat-hint>
+      </mat-form-field>
+    </div>
+  </div>
+  <div *ngIf="paramsFromPlugin.length > 0">
+    <hr />
+    <b>Credentials</b>
+    <br />
+    <div fxLayout="row" *ngFor="let credential of credentialsFromPlugin">
+      <mat-form-field style="margin: 5px" fxFlexFill>
+        <mat-label>{{ credential.name }}</mat-label>
+        <input formControlName="credential.{{ credential.name }}" matInput />
+        <mat-hint>{{
+          "Default: " + getDefaultCredentialValue(credential.name)
+        }}</mat-hint>
+      </mat-form-field>
+    </div>
+  </div>
+  <div *ngIf="paramsFromPlugin.length > 0 || credentialFromFeature.length > 0">
+    <button
+      mat-raised-button
+      color="primary"
+      style="margin: 5px"
+      (click)="onClickSaveFeatureSettings()"
+    >
+      {{ buttonTextSaveFeatureSettings }}
+    </button>
+  </div>
+</div>

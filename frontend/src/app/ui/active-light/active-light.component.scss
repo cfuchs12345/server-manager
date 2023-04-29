@@ -1,0 +1,16 @@
+.statusLight {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-left: 1rem;
+  border: 2px solid #000;
+}
+
+.inactive {
+  background-color: red;
+}
+
+.active {
+   background-color: rgb(18, 189, 18);
+}

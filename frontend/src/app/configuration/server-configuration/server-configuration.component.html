@@ -1,0 +1,13 @@
+<app-configuration-group>
+  <div title>{{title}}</div>
+  <div description>{{description}}</div>
+  <div fxLayout="row" fxLayoutAlign="start center" style="height: 40px;">
+    <button mat-button  mat-raised-button color="primary" (click)="openDialogAutodiscovery()" style="margin: 5px;">{{buttonTextAutoDiscover}}</button>
+    <button mat-button  mat-raised-button color="primary" (click)="openDialogFeatureScan()" style="margin: 5px;">{{buttonTextFeatureScan}}</button>
+
+    <button mat-button  mat-raised-button color="primary" (click)="openDialogAddManually()" style="margin: 5px;">{{buttonTextAddManually}}</button>
+
+    <button mat-button  mat-raised-button color="primary" (click)="openDialogDelete()" style="margin: 5px;">{{buttonTextDelete}}</button>
+    <button mat-button  mat-raised-button color="primary" (click)="openDialogConfigureFeatures()" style="margin: 5px;">{{buttonTextConfigureFeatures}}</button>
+  </div>
+</app-configuration-group>

@@ -1,0 +1,32 @@
+{
+    "id": "synology",
+    "name": "Synology NAS",
+    "description": "",
+    "server_icon": "<svg width=\"25px\" height=\"25px\" viewBox=\"0 0 48 48\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"#000000\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"> <title>data-storage-network</title> <g id=\"Layer_2\" data-name=\"Layer 2\"> <g id=\"invisible_box\" data-name=\"invisible box\"> <rect width=\"48\" height=\"48\" fill=\"none\"></rect> </g> <g id=\"icons_Q2\" data-name=\"icons Q2\"> <g> <circle cx=\"38\" cy=\"24\" r=\"2\"></circle> <circle cx=\"32\" cy=\"24\" r=\"2\"></circle> <path d=\"M44,4H4A2,2,0,0,0,2,6V30a2,2,0,0,0,2,2H22v4.4A5.1,5.1,0,0,0,19.4,39H7.2a2,2,0,0,0,0,4H19.4a5,5,0,0,0,9.2,0H41a2,2,0,0,0,0-4H28.6A5.1,5.1,0,0,0,26,36.4V32H44a2,2,0,0,0,2-2V6A2,2,0,0,0,44,4ZM24,42a1,1,0,1,1,1-1A.9.9,0,0,1,24,42ZM6,8H42v8H6ZM42,28H6V20H42Z\"></path> <circle cx=\"38\" cy=\"12\" r=\"2\"></circle> <circle cx=\"32\" cy=\"12\" r=\"2\"></circle> </g> </g> </g> </g></svg>",
+    "detection": {
+        "list":  [
+            {
+                "defaultports": [
+                    5000
+                ],
+                "url": "http://${IP}:${PORT}"
+            },
+            {
+                "defaultports": [
+                    5001
+                ],
+                "url": "https://${IP}:${PORT}"
+            }
+
+        ],
+        "script": {
+            "script_type": "lua",
+            "script": "string.find(input, 'Synology', 1, true)"
+        },
+        "detection_possible": true
+    },
+    "credentials": [],
+    "params": [],
+    "actions": [       
+    ]
+}

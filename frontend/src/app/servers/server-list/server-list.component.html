@@ -1,0 +1,97 @@
+<div fxLayout="row" fxLayoutAlign="start center">
+  <div fxFlex="100" class="app-left-align">
+    <mat-form-field class="app-filter-table-input">
+      <input matInput (keyup)="applyFilter($event)" placeholder="Filter" />
+    </mat-form-field>
+  </div>
+</div>
+<table
+  mat-table
+  [dataSource]="dataSource"
+  class="mat-elevation-z8"
+  multiTemplateDataRows
+>
+  <ng-container matColumnDef="icons">
+    <th mat-header-cell *matHeaderCellDef>Status</th>
+    <td mat-cell *matCellDef="let rowData" (click)="expandRow(rowData)">
+      <div fxLayout="row" class="app-status">
+        <app-server-icon [server]="rowData.server" />
+        <app-server-status [server]="rowData.server" />
+      </div>
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="ipaddress">
+    <th mat-header-cell *matHeaderCellDef>IP</th>
+    <td mat-cell *matCellDef="let rowData" (click)="expandRow(rowData)">
+      {{ rowData.ipaddress }}
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="name">
+    <th mat-header-cell *matHeaderCellDef>Name</th>
+    <td mat-cell *matCellDef="let rowData" (click)="expandRow(rowData)">
+      {{ rowData.name }}
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="dnsname">
+    <th mat-header-cell *matHeaderCellDef>DNS Name</th>
+    <td mat-cell *matCellDef="let rowData" (click)="expandRow(rowData)">
+      {{ rowData.dnsname }}
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="features">
+    <th mat-header-cell *matHeaderCellDef>Features</th>
+    <td mat-cell *matCellDef="let rowData" (click)="expandRow(rowData)">
+        <app-server-features [server]="rowData.server"/>
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="actions">
+    <th mat-header-cell *matHeaderCellDef>Actions</th>
+    <td mat-cell *matCellDef="let rowData">
+      <app-server-action-list [server]="rowData.server" />
+    </td>
+  </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+  <tr
+    mat-row
+    *matRowDef="let rowData; columns: displayedColumns"
+    class="element-row"
+    [class.expanded-row]="expandedElement === rowData"
+    hover-class="accent"
+  ></tr>
+  <tr
+    mat-row
+    *matRowDef="let row; columns: ['expandedDetail1', 'expandedDetail2']"
+    class="detail-row"
+  ></tr>
+  <!-- Expanded Content Column - The detail row is made up of this one column that spans across all columns -->
+  <ng-container matColumnDef="expandedDetail1">
+    <td mat-cell *matCellDef="let rowData">
+      <div
+        class="element-detail"
+        [@detailExpand]="rowData == expandedElement ? 'expanded' : 'collapsed'"
+      >
+        <app-server-control-detail [server]="rowData.server"/>
+      </div>
+    </td>
+  </ng-container>
+  <ng-container matColumnDef="expandedDetail2">
+    <td
+      mat-cell
+      *matCellDef="let rowData"
+      [attr.colspan]="displayedColumns.length - 1"
+    >
+      <div
+        class="element-detail"
+        [@detailExpand]="rowData == expandedElement ? 'expanded' : 'collapsed'"
+      >
+        <app-server-detail [server]="rowData.server" [showDetail]="rowData.show_details"/>
+      </div>
+    </td>
+  </ng-container>
+</table>

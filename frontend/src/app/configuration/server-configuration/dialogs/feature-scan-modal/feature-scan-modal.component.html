@@ -1,0 +1,59 @@
+<div fxLayout="row wrap">
+  <div fxFlex="100" fxFlex.gt-xs="70" fxFlexFill>
+    <button
+      mat-raised-button
+      color="primary"
+      style="margin: 5px"
+      [disabled]="isWorking"
+      (click)="onClickScanFeature()"
+    >
+      {{ isWorking ? buttonTextWorking : buttonTextScanFeature }}
+    </button>
+
+    <button
+    mat-raised-button
+    color="primary"
+    style="margin: 5px"
+    [disabled]="isWorking || !featuresFound()"
+    (click)="onClickSaveServerFeatures()"
+  >
+    {{ buttonTextSaveServerFeatures}}
+  </button>
+  </div>
+</div>
+<div *ngIf="isWorking; else showTable">
+  <img src="assets/svg/animated-spinner.svg" style="margin: 1rem">
+</div>
+<ng-template #showTable>
+  <div fxLayout="row">
+    <table
+      mat-table
+      [dataSource]="discoveredServerFeatures"
+      class="mat-elevation-z8"
+    >
+      <ng-container matColumnDef="selected">
+        <th mat-header-cell *matHeaderCellDef>Save</th>
+        <td mat-cell *matCellDef="let serverFeature; let i = index">
+          <div (click)="onClickDeselectServer(i)" style="cursor: pointer">
+            {{ serverFeature.selected ? '&#9745;' : '&#9744;' }}
+          </div>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="ipaddress">
+        <th mat-header-cell *matHeaderCellDef>IP</th>
+        <td mat-cell *matCellDef="let serverFeature">
+          {{ serverFeature.ipaddress }}
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="features">
+        <th mat-header-cell *matHeaderCellDef>Features</th>
+        <td mat-cell *matCellDef="let serverFeature">
+          {{ getFeaturesAsString(serverFeature) }}
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+  </div>
+</ng-template>

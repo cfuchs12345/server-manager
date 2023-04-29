@@ -1,0 +1,28 @@
+tr.mat-mdc-row:not(.detail-row):hover {
+  background: #b0b0b0;
+}
+
+tr.mat-mdc-row:not(.detail-row):active {
+  background: #efefef;
+}
+
+.mat-form-field {
+  font-size: 14px;
+  width: 100%;
+}
+
+tr.detail-row {
+  height: 0;
+}
+
+.app-left-align {
+  text-align: left;
+}
+
+.app-filter-table-input {
+  width: 25rem;
+}
+
+.app-status {
+  vertical-align: middle;
+}

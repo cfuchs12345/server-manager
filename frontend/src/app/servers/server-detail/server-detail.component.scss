@@ -1,0 +1,37 @@
+
+.flip-card {
+  background-color: transparent;
+  width: 100%;
+  height: 600px;
+  perspective: 1000px;
+}
+
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 600px;
+  transition: transform 0.8s;
+  transform-style: preserve-3d;
+}
+
+.flip-card-turn .flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-card-front, .flip-card-back {
+  position: absolute;
+  width: 100%;
+  height: 600px;
+  overflow: auto;
+  -webkit-backface-visibility: hidden; /* Safari */
+  backface-visibility: hidden;
+}
+
+.flip-card-front {
+  background-color: white;
+}
+
+.flip-card-back {
+  background-color: white;
+  transform: rotateY(180deg);
+}

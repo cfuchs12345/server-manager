@@ -1,0 +1,8 @@
+<h1 mat-dialog-title>{{data.title}}</h1>
+<div mat-dialog-content>
+  {{data.message}}
+</div>
+<div style="float:right;margin:20px;">
+  <button mat-button  mat-raised-button color="primary" style="margin: 5px;" [mat-dialog-close]="true">{{buttonTextConfirm}}</button>
+  <button mat-button  mat-raised-button color="primary" style="margin: 5px;" [mat-dialog-close]="false">{{buttonTextCancel}}</button>
+</div>

@@ -1,0 +1,72 @@
+{
+    "id": "sleep",
+    "name": "Sleep on LAN",
+    "description": "Can detect if sleep-on-lan (https://github.com/SR-G/sleep-on-lan) is running on a server and send the server to sleep by calling the provided API",
+    "detection": {
+        "list":  [
+            {
+                "defaultports": [
+                    8009
+                ],
+                "url": "http://${IP}:${PORT}"
+            }
+        ],
+        "script": {
+            "script_type": "lua",
+            "script": "string.find(input, '<application>sleep-on-lan</application>', 1, true)"
+        },
+        "detection_possible": true
+    },
+    "credentials": [
+        {
+            "name": "username",
+            "credential_type": "username",
+            "encrypt": false,
+            "default_value": ""
+        },
+        {
+            "name": "password",
+            "credential_type": "password",
+            "encrypt": true,
+            "default_value": ""
+        }
+    ],
+    "params": [
+        {
+            "name": "port",
+            "param_type": "number",
+            "default_value": "8009"
+        },
+        {
+            "name": "protocol",
+            "param_type": "string",
+            "default_value": "http"
+        },
+        {
+            "name": "command",
+            "param_type": "string",
+            "default_value": "shutdown"
+        }
+    ],
+    "actions": [
+        {
+            "id": "sleep",
+            "name": "Sleep",
+            "needs_confirmation": true,
+            "available_for_state" : "Active",
+            "description": "Suspend the server",
+            "icon": "<svg height=\"25px\" width=\"25px\" version=\"1.1\" id=\"_x32_\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" viewBox=\"0 0 512 512\" xml:space=\"preserve\" fill=\"#000000\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"> <style type=\"text/css\"> .st0{fill:#000000;} </style> <g> <polygon class=\"st0\" points=\"0.525,412.7 60.889,412.7 0,489.258 0,502.514 116.931,502.514 116.931,467.749 59.208,467.749 118.25,393.521 118.25,377.934 0.525,377.934 \"></polygon> <polygon class=\"st0\" points=\"150.434,244.368 225.888,244.368 149.775,340.068 149.775,356.629 295.938,356.629 295.938,313.175 223.79,313.175 297.591,220.39 297.591,200.914 150.434,200.914 \"></polygon> <polygon class=\"st0\" points=\"512,9.486 335.41,9.486 335.41,61.629 425.954,61.629 334.617,176.471 334.617,196.337 510.013,196.337 510.013,144.194 423.438,144.194 512,32.851 \"></polygon> </g> </g></svg>",
+            "command": "http",
+            "args": [
+                {
+                    "arg_type": "method",
+                    "value": "get"
+                },
+                {
+                    "arg_type": "url",
+                    "value": "${params.protocol}://${credentials.username}:${credentials.password}@${IP}:${params.port}/${params.command}"
+                }                
+            ]
+        }
+    ]
+}

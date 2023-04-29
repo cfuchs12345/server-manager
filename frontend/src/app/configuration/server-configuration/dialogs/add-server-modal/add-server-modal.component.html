@@ -1,0 +1,66 @@
+<hr />
+<b>Add Feature</b>
+<br />
+<div fxLayout="row">
+  <div fxFlex="100" style="align-items: center; justify-content: center">
+    <mat-form-field  style="margin: 5px; min-width: 200px">
+      <mat-label>Server</mat-label>
+      <mat-select [(ngModel)]="selectedServer" (ngModelChange)="onChangeServer()">
+        <mat-option *ngFor="let server of servers" [value]="server"
+          >{{ server.ipaddress }}
+          {{ server.name == "" ? "" : "(" + server.name + ")" }}</mat-option
+        >
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field  style="margin: 5px; min-width: 200px">
+      <mat-label>Feature</mat-label>
+      <mat-select
+        [(ngModel)]="selectedPlugin"
+        (ngModelChange)="onChangeFeature()"
+      >
+        <mat-option *ngFor="let plugin of availablePlugins" [value]="plugin">{{
+          plugin.name
+        }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <button
+      mat-raised-button
+      color="primary"
+      style="margin: 5px"
+      (click)="addFeatureToServer()"
+      [disabled]="!this.selectedServer || !this.selectedPlugin"
+    >
+      {{ buttonTextAddFeature }}
+    </button>
+  </div>
+</div>
+<hr />
+<b>Add Server</b>
+<br />
+<div fxLayout="row">
+  <div fxFlex="100" style="align-items: center; justify-content: center">
+    <mat-form-field style="margin: 5px; min-width: 200px">
+      <mat-label>{{ ipAddressLabel }}</mat-label>
+      <input matInput [placeholder]="ipplaceholder" [formControl]="ipaddress" />
+      <mat-error *ngIf="ipaddress.invalid">{{
+        getIPAddressErrorMessage()
+      }}</mat-error>
+      <mat-hint>{{ ipaddressHint }}</mat-hint>
+    </mat-form-field>
+    <mat-form-field style="margin: 5px; min-width: 200px">
+      <mat-label>{{ nameLabel }}</mat-label>
+      <input matInput placeholder="Name of the Server" [formControl]="name" />
+      <mat-hint>{{ nameHint }}</mat-hint>
+    </mat-form-field>
+    <button
+      mat-raised-button
+      color="primary"
+      style="margin: 5px"
+      (click)="saveServer()"
+      [disabled]="!this.ipaddress.valid || !this.name.valid"
+    >
+      {{ buttonTextAddServer }}
+    </button>
+  </div>
+</div>
+
