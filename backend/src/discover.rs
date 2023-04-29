@@ -33,6 +33,10 @@ pub async fn status_check(ips_to_check: Vec<String>) -> Result<Vec<Status>, std:
             let mut tasks = Vec::new();
 
             for ip in ips_to_check {
+                if ip.trim().is_empty() {
+                    continue;
+                }
+                
                 match ip.parse() {
                     Ok(ipaddress) => {
                         tasks.push(tokio::spawn(get_host_status(

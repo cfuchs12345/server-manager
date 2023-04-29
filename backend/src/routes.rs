@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use actix_web::delete;
-use actix_web::{web, get, put, post, HttpRequest, HttpResponse, Result};
+use actix_web::{web, get, put, post, HttpRequest, HttpResponse};
 
 use crate::appdata::AppData;
 use crate::config_types::DNSServer;
@@ -42,13 +42,7 @@ impl ParamsAsMap {
 }
 
 
-#[get("/")]
-pub(crate) async fn index(_data: web::Data<AppData>, _req: HttpRequest) -> Result<HttpResponse, http::Error> {
-    println!("index");
-    Ok(HttpResponse::Ok().finish())
-}
-
-#[post("/networks/actions")]
+#[post("/backend/networks/actions")]
 pub async fn post_networks_action(data: web::Data<AppData>, query: web::Json<NetworksAction>)  ->  HttpResponse {
     let params_map = ParamsAsMap::from(query.params.clone());
 
@@ -95,7 +89,7 @@ pub async fn post_networks_action(data: web::Data<AppData>, query: web::Json<Net
     } 
 }
 
-#[get("/servers")]
+#[get("/backend/servers")]
 pub async fn get_servers(data: web::Data<AppData<>>) -> HttpResponse {
 //    let server_list = servers::get_all.await;
     match servers::load_all_servers(&data.app_data_persistence).await {
@@ -104,7 +98,7 @@ pub async fn get_servers(data: web::Data<AppData<>>) -> HttpResponse {
     }    
 }
 
-#[post("/servers")]
+#[post("/backend/servers")]
 pub async fn post_servers(data: web::Data<AppData>, query: web::Json<Server>) -> HttpResponse {
     match servers::save_server(&data.app_data_persistence, &query.0).await {
         Ok(result) => match result  {
@@ -115,7 +109,7 @@ pub async fn post_servers(data: web::Data<AppData>, query: web::Json<Server>) ->
     }
 }
 
-#[post("/servers/actions")]
+#[post("/backend/servers/actions")]
 pub async fn post_servers_actions(data: web::Data<AppData>, query: web::Json<ServersAction>) -> HttpResponse {
     let params_map = ParamsAsMap::from(query.params.clone());
     let plugin_base_path = data.app_data_config.get_string("plugin_base_path").unwrap();
@@ -144,7 +138,7 @@ pub async fn post_servers_actions(data: web::Data<AppData>, query: web::Json<Ser
     }   
 }
 
-#[post("/servers/{ipaddress}/actions")]
+#[post("/backend/servers/{ipaddress}/actions")]
 pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: web::Json<ServerAction>, path: web::Path<String>) -> HttpResponse {
     let plugin_base_path = data.app_data_config.get_string("plugin_base_path").unwrap();
     let accept_self_signed_certs = data.app_data_config.get_bool("accept_self_signed_certificates").unwrap();
@@ -278,7 +272,7 @@ fn find_feature( feature_id: String, server: &Server) -> Option<&Feature> {
     server.features.iter().find(|f| f.id == feature_id)
 }
 
-#[put("/servers/{ipaddress}")]
+#[put("/backend/servers/{ipaddress}")]
 pub async fn put_servers_by_ipaddress(data: web::Data<AppData>, query: web::Json<Server>) -> HttpResponse {
     match servers::update_server(&data.app_data_persistence, &query.0).await {
         Ok(result) => match result {
@@ -289,7 +283,7 @@ pub async fn put_servers_by_ipaddress(data: web::Data<AppData>, query: web::Json
     }
 }
 
-#[delete("/servers/{ipaddress}")]
+#[delete("/backend/servers/{ipaddress}")]
 pub async fn delete_servers_by_ipaddress(data: web::Data<AppData>,  path: web::Path<String>) -> HttpResponse {
     let ipaddress = path.into_inner();
     
@@ -304,7 +298,7 @@ pub async fn delete_servers_by_ipaddress(data: web::Data<AppData>,  path: web::P
 
 
 
-#[get("/plugins")]
+#[get("/backend/plugins")]
 pub async fn get_plugins(data: web::Data<AppData>, _req: HttpRequest) -> HttpResponse {
     let plugin_base_path = data.app_data_config.get_string("plugin_base_path");
     
@@ -327,7 +321,7 @@ pub async fn get_plugins(data: web::Data<AppData>, _req: HttpRequest) -> HttpRes
     }
 }
 
-#[get("/plugins/actions")]
+#[get("/backend/plugins/actions")]
 pub async fn get_plugins_actions(data: web::Data<AppData>, query: web::Query<std::collections::HashMap<String, String>>) -> HttpResponse {
     let params = query.into_inner();
 
@@ -356,7 +350,7 @@ pub async fn get_plugins_actions(data: web::Data<AppData>, query: web::Query<std
     }    
 }
 
-#[put("/plugins/actions")]
+#[put("/backend/plugins/actions")]
 pub async fn put_plugins_actions(data: web::Data<AppData>,  query: web::Json<PluginsAction>) -> HttpResponse {
     let action = query.into_inner();
     let params_map = ParamsAsMap::from(action.params);
@@ -377,7 +371,7 @@ pub async fn put_plugins_actions(data: web::Data<AppData>,  query: web::Json<Plu
     }
 }
 
-#[post("/configurations/dnsservers")]
+#[post("/backend/configurations/dnsservers")]
 pub async fn post_dnsservers(data: web::Data<AppData>,  query: web::Json<DNSServer>)  -> HttpResponse {
     let persistence = &data.app_data_persistence;
 
@@ -389,7 +383,7 @@ pub async fn post_dnsservers(data: web::Data<AppData>,  query: web::Json<DNSServ
     }
 }
 
-#[get("/configurations/dnsservers")]
+#[get("/backend/configurations/dnsservers")]
 pub async fn get_dnsservers(data: web::Data<AppData>)  -> HttpResponse {
     let persistence = &data.app_data_persistence;
 
@@ -399,7 +393,7 @@ pub async fn get_dnsservers(data: web::Data<AppData>)  -> HttpResponse {
     }
 }
 
-#[delete("/configurations/dnsservers/{ipaddress}")]
+#[delete("/backend/configurations/dnsservers/{ipaddress}")]
 pub async fn delete_dnsservers(data: web::Data<AppData>, path: web::Path<String>)  -> HttpResponse {
     let persistence = &data.app_data_persistence;
     let ipaddress = path.into_inner();
