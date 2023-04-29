@@ -8,7 +8,7 @@ pipeline {
         description: 'Do cleanup before build')
     }
     options {
-        copyArtifactPermission('docker/Docker-Webseite')
+        copyArtifactPermission('docker/Docker-Server-Manager')
     }
     stages {
       stage('Checkout') {
