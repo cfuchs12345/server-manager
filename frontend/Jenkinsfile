@@ -1,64 +1,65 @@
-agent {
-        label 'main'
-}
+pipeline {
+    agent { label 'main' }
 
-node {
-    env.NODEJS_HOME = "${tool 'Node JS'}"
-    env.PATH="${env.NODEJS_HOME}/bin:${env.PATH}"
-    sh 'npm --version'
-}
-options {
-    copyArtifactPermission('docker/Server-Manager');
-}
-
-node {
-    stage('Checkout') {
-        checkout scm
+    parameters {
+        string(
+        name: 'CLEAN_UP',
+        defaultValue: 'false',
+        description: 'Do cleanup before build')
     }
-
-    stage('NPM Install') {
-       dir('frontend') {
-          sh 'npm install'
-       }
+    options {
+        copyArtifactPermission('docker/Docker-Webseite')
     }
+    stages {
+      stage('Checkout') {
+          checkout scm
+      }
 
-    stage('Lint') {
-       dir('frontend') {
-        //sh 'ng lint'
-       }
-    }
-
-    stage('Build') {
-        //milestone()
-
+      stage('NPM Install') {
         dir('frontend') {
-          sh 'ng build'
+            sh 'npm install'
         }
-    }
+      }
 
-    stage('Archive') {
-        //sh 'tar -cvzf dist.tar.gz --strip-components=1 dist'
-        //archive 'dist.tar.gz'
-    }
-
-    stage('Crate Build Artifakt') {
-
-    }
-
-    stage("Create Artifact") {
-        steps {
-            sh "mkdir -p target/zipfile_content"
-            echo "copying resources for zip file into target/zipfile_content"
-            sh "cp -r frontent/dist/angular-project target/zipfile_content"
-            //sh "cp -r templates target/zipfile_content"
-            //sh "cp target/release/rustwebserver target/zipfile_content"
-            echo "creating zip file"
-            zip zipFile: "target/server-manager-frontent.zip", archive: true, dir: "target/zipfile_content", overwrite: true
+      stage('Lint') {
+        dir('frontend') {
+        //sh 'ng lint'
         }
+      }
+
+      stage('Build') {
+          //milestone()
+
+          dir('frontend') {
+            nodejs(nodeJSInstallationName: 'Node JS') {
+              sh 'ng build'
+            }
+          }
+      }
+
+      stage('Archive') {
+      //sh 'tar -cvzf dist.tar.gz --strip-components=1 dist'
+      //archive 'dist.tar.gz'
+      }
+
+      stage('Crate Build Artifakt') {
+      }
+
+      stage('Create Artifact') {
+          steps {
+        sh 'mkdir -p target/zipfile_content'
+        echo 'copying resources for zip file into target/zipfile_content'
+        sh 'cp -r frontent/dist/angular-project target/zipfile_content'
+        //sh "cp -r templates target/zipfile_content"
+        //sh "cp target/release/rustwebserver target/zipfile_content"
+        echo 'creating zip file'
+        zip zipFile: 'target/server-manager-frontent.zip', archive: true, dir: 'target/zipfile_content', overwrite: true
+          }
+      }
     }
 
-    post{
-        always{
+    post {
+        always {
             archiveArtifacts artifacts: 'target/server-manager-frontent.zip', fingerprint: true
 
             emailext body: 'Build executed',
