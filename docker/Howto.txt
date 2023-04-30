@@ -1,3 +1,6 @@
+HTTP Port ist 8088. Für HTTPS eventell einen Reverse-Proxy davor schalten.
+
+Erklärung:
 Features sind Eigenschaften/Funktionen, die über die Plugins definiert werden
 
 1. DNS Server konfigurieren (Configuration -> General)
