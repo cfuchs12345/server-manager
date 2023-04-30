@@ -17,6 +17,12 @@ impl PartialEq for Server {
     }
 }
 
+impl Server {
+    pub fn find_feature( &self, feature_id: String) -> Option<&Feature> {
+        self.features.iter().find(|f| f.id == feature_id)
+    }
+}
+
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize, Eq)]
 pub struct Feature {
@@ -73,3 +79,5 @@ impl PartialEq for FeaturesOfServer {
         self.ipaddress == other.ipaddress
     }
 }
+
+

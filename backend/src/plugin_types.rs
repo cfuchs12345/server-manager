@@ -25,6 +25,12 @@ impl PartialEq for Plugin {
     }
 }
 
+impl Plugin {
+    pub fn find_action(&self, action_id: &str) -> Option<&Action> {
+        self.actions.iter().find( |plugin| plugin.id == action_id)
+    }
+}
+
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct Script {

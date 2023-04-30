@@ -1,6 +1,6 @@
 use std::io::ErrorKind;
-use std::{time::Duration, borrow::Borrow};
-use actix_web::Error;
+use std::{time::Duration};
+use actix_web::{Error, error};
 use http::{StatusCode};
 use lazy_static::lazy_static;
 use http::{response::Builder};
@@ -10,46 +10,14 @@ use base64::{Engine as _, engine::general_purpose};
 use rlua::Lua;
 use mac_address::MacAddress;
 use crate::conversion;
-use crate::plugin_types::{Plugin, Action, ArgDef, ParamDef, Data, DependsDef};
-use crate::server_types::{Feature, Param, Credential, Server};
+use crate::types::ActionOrDataInput;
+use crate::plugin_types::{Plugin, Data, DependsDef};
+use crate::server_types::{Feature, Server};
 
 enum RegexType {
     Param,
     Credential,
     Base64
-}
-
-#[derive (Debug)]
-struct ActionOrDataInput {
-    command: String,
-    args: Vec<ArgDef>,
-    params: Vec<Param>,
-    default_params: Vec<ParamDef>,
-    credentials: Vec<Credential>,
-    accept_self_signed_ceritificates: bool
-}
-impl ActionOrDataInput {
-    fn get_input_from_action(action: &Action, plugin: &Plugin, feature: &Feature, accept_self_signed_ceritificates: bool) -> ActionOrDataInput {
-        ActionOrDataInput{
-            command: action.command.clone(),
-            args: action.args.clone(),
-            default_params: plugin.params.clone(),
-            params: feature.params.clone(),
-            credentials: feature.credentials.clone(),
-            accept_self_signed_ceritificates
-        }
-    }
-
-    fn get_input_from_data(data: &Data, plugin: &Plugin, feature: &Feature, accept_self_signed_ceritificates: bool) -> ActionOrDataInput {
-        ActionOrDataInput{
-            command: data.command.clone(),
-            args: data.args.clone(),
-            default_params: plugin.params.clone(),
-            params: feature.params.clone(),
-            credentials: feature.credentials.clone(),
-            accept_self_signed_ceritificates
-        }
-    }
 }
 
 
@@ -98,7 +66,7 @@ impl RegexType {
 
 
 pub async fn execute_action( server: &Server, feature: &Feature, plugin: &Plugin, action_id: &str, accept_self_signed_certificates: bool) -> Result<bool, Error> {
-    match plugin.actions.iter().find( |plugin| plugin.id == action_id) {
+    match plugin.find_action(action_id) {
         Some(plugin_action) => {
             let input: ActionOrDataInput = ActionOrDataInput::get_input_from_action(plugin_action, plugin, feature, accept_self_signed_certificates);
 
@@ -145,10 +113,33 @@ pub async fn execute_specific_data_query( server: &Server, plugin: &Plugin, feat
 }
 
 pub async fn check_condition_for_action_met(server: &Server, plugin: &Plugin, feature: &Feature, action_id: &str, accept_self_signed_certificates: bool) -> Result<bool, Error> {
-    match plugin.actions.iter().find(|a| a.id == action_id) {
+    match plugin.find_action(action_id) {
         Some(action) => {
-            let mut res = true;
 
+            let mut res  = match action.available_for_state {
+                crate::plugin_types::State::Active => {
+                    match crate::status::status_check(vec![server.ipaddress.clone()], true).await?.first() {
+                        Some(status) => status.is_running,
+                        None => false // unknown state - better do not allow an action
+                    }
+                },
+                crate::plugin_types::State::Inactive => {
+                    match crate::status::status_check(vec![server.ipaddress.clone()], true).await?.first() {
+                        Some(status) => !status.is_running,
+                        None => false // unknown state - better do not allow an action
+                    }
+                },
+                crate::plugin_types::State::Any => {
+                    // no status check - just allow it
+                    true
+                }
+            };
+
+            if !res { // check if status dependency already failed - early exit
+                return Ok(res);
+            }
+
+            // now check data dependencies one by one
             for depends in &action.depends {
                 match find_data_for_action_depency(depends, plugin) {
                     Some(data) => {
@@ -199,28 +190,45 @@ async fn execute_command(ipaddress: String, input: &ActionOrDataInput) ->  Resul
 
 
 async fn execute_http_command(ipaddress: String, input: &ActionOrDataInput) -> Result<String, Error> {
-    let body = find_arg(&input.args, "body");
-    let url = find_arg(&input.args, "url");
-    let method = find_arg(&input.args, "method");
-    let headers = find_all_args(&input.args, "header" );
     
-    let normal_and_masked_url: (String,String) = replace(url, &ipaddress, input);
-    let normal_and_masked_body: (String,String) = replace(body.clone(), &ipaddress, input);
+    let url = input.find_arg("url").ok_or(Error::from(std::io::Error::new(ErrorKind::Other, "url not found")))?;
+    let method = input.find_arg("method").ok_or(Error::from(std::io::Error::new(ErrorKind::Other, "method not found")))?;
+    let headers = input.find_all_args("header").iter().map(|argdef| argdef.value.clone()).collect();
+    
+    let body: &str = match method.value.as_str() {
+        "post" =>   match input.find_arg("body") {
+            Some(arg) => arg.value.as_str(),
+            None => {
+                log::error!("Actually expected a body for a post request. Continuing with an empty body.");
+                ""}
+        }
+        "put" => match input.find_arg("body") {
+            Some(arg) => arg.value.as_str(),
+            None => {
+                log::error!("Actually expected a body for a put request. Continuing with an empty body.");
+                ""
+            }
+        },
+        _ => ""
+    };
+
+    let normal_and_masked_url: (String,String) = replace(url.value.clone(), &ipaddress, input);
+    let normal_and_masked_body: (String,String) = replace(body.to_string(), &ipaddress, input);
     let normal_and_replaced_headers: Vec<(String, String)> = replace_list(headers, &ipaddress, input);
 
     if !body.is_empty() {
-        log::debug!("About to execute method {} on url {} with body {}", method, normal_and_masked_url.1, normal_and_masked_body.1);
+        log::debug!("About to execute method {} on url {} with body {}", method.value, normal_and_masked_url.1, normal_and_masked_body.1);
 
-        log::info!("About to execute method {} on url {} with body {}", method, normal_and_masked_url.0, normal_and_masked_body.0);
+        log::info!("About to execute method {} on url {} with body {}", method.value, normal_and_masked_url.0, normal_and_masked_body.0);
     }
     else {
-        log::debug!("About to execute method {} on url {}", method, normal_and_masked_url.1);
+        log::debug!("About to execute method {} on url {}", method.value, normal_and_masked_url.1);
 
-        log::debug!("About to execute method {} on url {}", method, normal_and_masked_url.0);
+        log::debug!("About to execute method {} on url {}", method.value, normal_and_masked_url.0);
     }
     
 
-    match execute_http_request(normal_and_masked_url.0, method, normal_and_replaced_headers, normal_and_masked_body.0, input.accept_self_signed_ceritificates ).await {
+    match execute_http_request(normal_and_masked_url.0, method.value.clone(), normal_and_replaced_headers, normal_and_masked_body.0, input.accept_self_signed_ceritificates ).await {
         Ok(response) => {
             let text = response.text().await.unwrap_or_default();
             log::debug!("Response for http request to url {} was: {}", normal_and_masked_url.1, text);
@@ -408,44 +416,25 @@ fn replace_base64_encoded(input: String) -> String {
 }
 
 fn get_credential_value(name: &str, input: &ActionOrDataInput ) -> Option<(String, bool)> {
-    let from_feature: Vec<(String, bool)> = input.credentials.iter().filter( |credential| credential.name == name).map(|credential| (credential.value.clone(), credential.encrypted )).collect();
-
-    from_feature.first().map(|value| (value.0.to_owned(), value.1))
+    input.find_credential(name).map(|credential| (credential.value.clone(), credential.encrypted ))
 }
 
 
 fn get_param_value(name: &str, input: &ActionOrDataInput ) -> Option<String> {
-    let from_feature: Vec<String> = input.params.iter().filter( |param| param.name == name).map(|param| param.value.clone()).collect();
-
-    let value: Option<String> = match from_feature.first() {
-        Some(value) => Some(value.to_owned()),
+    let value_from_feature = input.find_param(name).map(|param| param.value.clone());
+    
+    match value_from_feature {
+        Some(value) => Some(value),
         None => {
-            let from_plugin: Vec<String> = input.default_params.iter().filter( |default_param| default_param.name == name).map(|default_param| default_param.default_value.clone()).collect();
+            let default_value_from_plugin = input.find_default_param(name);            
 
-            from_plugin.first().map(|value| value.to_owned())
+            default_value_from_plugin.map(|def| def.default_value.to_owned())
         }
-    };
-
-    value
+    }
 }
 
 fn encode_base64(placeholder: &str) -> String {
     general_purpose::STANDARD_NO_PAD.encode( RegexType::Base64.strip_of_marker(placeholder) )
-}
-
-
-
-fn find_arg(args: &[ArgDef], arg_type: &str) -> String {
-    let matched_args = find_all_args(args, arg_type);
-
-    
-    matched_args.first().unwrap_or("".to_string().borrow()).to_string()
-}
-
-fn find_all_args(args: &[ArgDef], arg_type: &str) -> Vec<String> {
-    let matched_args = args.iter().filter( |arg_def| arg_def.arg_type == arg_type).map( |arg_def| arg_def.value.clone()).collect();
-    
-    matched_args
 }
 
 fn find_plugin_for_feature<'a> ( feature: &Feature, plugins: &'a [Plugin] ) -> Option<&'a Plugin> {

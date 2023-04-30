@@ -1,6 +1,7 @@
 use actix_web::{middleware::Logger, web, App, HttpServer, HttpRequest, Result};
 use actix_files as fs;
 use handlebars::no_escape;
+use std::path::Path;
 use std::path::PathBuf;
 use config::Config;
 
@@ -19,10 +20,10 @@ pub async fn start() -> std::io::Result<()> {
 
 
     log::debug!("dir: {}", template_base_path);
+    copy_files_into_external_filder()?;
 
 
-    let persistence = persistence::Persistence::new(&db_url).await;
-    
+    let persistence = persistence::Persistence::new(&db_url).await;    
     let template_engine = create_and_configure_template_engine(&template_base_path);
 
     let app_data = AppData { app_data_config: config, app_data_persistence: persistence, app_data_template_engine: template_engine };
@@ -37,6 +38,32 @@ pub async fn start() -> std::io::Result<()> {
     .bind(bind_address)?
     .run()
     .await
+}
+
+/*due to how docker works, the external_folder that can be mapped to a local file, cannot be filled on startup, otherwise, the host folder will overlay the container folder
+  => needs to be empty first and when started, we copy the content from another location in the external folder and make the content therefore also available on the docker host
+ */
+fn copy_files_into_external_filder()  -> std::io::Result<()>  {
+    let src = Path::new("./shipped_plugins");
+    let dst = Path::new("./external_files");
+   copy_dir_all(src, dst)?;
+   
+   Ok(())
+}
+
+
+fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> std::io::Result<()> {
+    std::fs::create_dir_all(&dst)?;
+    for entry in std::fs::read_dir(src)? {
+        let entry = entry?;
+        let ty = entry.file_type()?;
+        if ty.is_dir() {
+            copy_dir_all(entry.path(), dst.as_ref().join(entry.file_name()))?;
+        } else {
+            std::fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
+        }
+    }
+    Ok(())
 }
 
 fn create_and_configure_template_engine(template_base_path: &str) -> handlebars::Handlebars<'static> {

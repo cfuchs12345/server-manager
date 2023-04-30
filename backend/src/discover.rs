@@ -3,70 +3,26 @@ use futures::future::join_all;
 use ipnet::Ipv4Net;
 use lazy_static::lazy_static;
 use log::{error, warn};
-use rand::random;
 use std::{
     io::ErrorKind,
     net::{IpAddr, SocketAddrV4},
     time::Duration,
     vec,
 };
-use surge_ping::{Client, Config, IcmpPacket, PingIdentifier, PingSequence};
-use tokio::{sync::Semaphore, time};
+use surge_ping::{Client, Config};
+use tokio::{sync::Semaphore};
 
 use crate::{
     plugins,
-    types::{HostInformation, Status},
+    types::{HostInformation},
     plugin_types::{DetectionEntry, Plugin },
-    server_types::{Feature, Server, FeaturesOfServer}, config_types::DNSServer
+    server_types::{Feature, Server, FeaturesOfServer}, config_types::DNSServer, status
 };
 
 lazy_static! {
     static ref SEMAPHORE_AUTO_DISCOVERY: Semaphore = Semaphore::new(1);
 }
 
-pub async fn status_check(ips_to_check: Vec<String>) -> Result<Vec<Status>, std::io::Error> {
-    let permit = SEMAPHORE_AUTO_DISCOVERY.acquire().await.unwrap();
-
-    let list = match Client::new(&Config::default()) {
-        Ok(client) => {
-            // list of async tasks executed by tokio
-            let mut tasks = Vec::new();
-
-            for ip in ips_to_check {
-                if ip.trim().is_empty() {
-                    continue;
-                }
-                
-                match ip.parse() {
-                    Ok(ipaddress) => {
-                        tasks.push(tokio::spawn(get_host_status(
-                            IpAddr::V4(ipaddress),
-                            client.clone(),
-                        )));
-                    }
-                    Err(err) => {
-                        error!("Error while parsing address {:?} was {:?}", ip, err);
-                    }
-                }
-            }
-
-            // wait for all tasks to finish
-            let result = join_all(tasks).await;
-
-            result
-                .iter()
-                .map(move |r| r.as_ref().unwrap().to_owned())
-                .collect()
-        }
-        e => {
-            error!("Error while creating ping client: {:?}", e.err());
-            vec![]
-        }
-    };
-
-    drop(permit);
-    Ok(list)
-}
 
 pub async fn auto_discover_servers_in_network(
     network_as_string: &String,
@@ -267,7 +223,7 @@ async fn discover_host(
     lookup_names: bool,
     upsstream_server: Vec<UpstreamServer>,
 ) -> HostInformation {
-    let ping_response = ping(addr, client_v4);
+    let ping_response = status::ping(addr, client_v4);
 
     let is_running = ping_response.await;
 
@@ -290,41 +246,6 @@ async fn lookup_hostname(addr: IpAddr, upsstream_server: Vec<UpstreamServer>) ->
     result.unwrap()
 }
 
-async fn get_host_status(addr: IpAddr, client: Client) -> Status {
-    let result = ping(addr, client).await;
-
-    Status {
-        ipaddress: addr.to_string(),
-        is_running: result,
-    }
-}
-
-async fn ping(addr: IpAddr, client: Client) -> bool {
-    let payload = [0; 56];
-    let mut pinger = client.pinger(addr, PingIdentifier(random())).await;
-    pinger.timeout(Duration::from_secs(1));
-
-    let mut interval = time::interval(Duration::from_secs(1));
-    let mut reachable = false;
-
-    for idx in 0..3 {
-        interval.tick().await;
-        match pinger.ping(PingSequence(idx), &payload).await {
-            Ok((IcmpPacket::V4(_packet), _dur)) => {
-                reachable = true;
-                break;
-            }
-            Ok((IcmpPacket::V6(_packet), _dur)) => {
-                reachable = true;
-                break;
-            }
-            Err(_e) => {
-                reachable = false;
-            }
-        };
-    }
-    reachable
-}
 
 
 

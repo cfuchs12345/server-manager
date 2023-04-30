@@ -1,50 +1,18 @@
-use std::collections::HashMap;
-
 use actix_web::delete;
 use actix_web::{web, get, put, post, HttpRequest, HttpResponse};
 
 use crate::appdata::AppData;
 use crate::config_types::DNSServer;
-use crate::{plugins, features, config};
+use crate::{plugins, features, config, status, types};
 use crate::discover::{self};
 use crate::servers;
-use crate::types::{Status, Param, NetworkActionType, ServersActionType, ServersAction, ServerAction, ServerActionType, PluginsAction, NetworksAction};
-use crate::server_types::{Server, Feature};
-
-
-
-struct ParamsAsMap {
-    params: HashMap<String, String>
-}
-
-impl From<Vec<Param>> for ParamsAsMap {
-    fn from(input_params: Vec<Param>) -> Self {
-        ParamsAsMap {
-            params: input_params.iter().map( |param| (param.name.clone(), param.value.clone())).collect()
-        }
-    }    
-}
-
-impl ParamsAsMap {
-    fn get(&self, param: &str) -> Option<&String> {
-        self.params.get(param)
-    }
-
-    fn get_split_by(&self, param: &str, split: &str) -> Option<Vec<String>> {
-        match self.params.get(param) {
-            Some(value) => {
-                let res: Vec<String> = value.split(split).map(str::to_string).collect();
-                Some(res)
-            }
-            None => None
-        }
-    }
-}
+use crate::types::{Status, NetworkActionType, ServersActionType, ServersAction, ServerAction, ServerActionType, PluginsAction, NetworksAction};
+use crate::server_types::{Server};
 
 
 #[post("/backend/networks/actions")]
 pub async fn post_networks_action(data: web::Data<AppData>, query: web::Json<NetworksAction>)  ->  HttpResponse {
-    let params_map = ParamsAsMap::from(query.params.clone());
+    let params_map = types::QueryParamsAsMap::from(query.params.clone());
 
     let dns_server_result = config::load_all_dnsservers(&data.app_data_persistence).await;
 
@@ -111,14 +79,14 @@ pub async fn post_servers(data: web::Data<AppData>, query: web::Json<Server>) ->
 
 #[post("/backend/servers/actions")]
 pub async fn post_servers_actions(data: web::Data<AppData>, query: web::Json<ServersAction>) -> HttpResponse {
-    let params_map = ParamsAsMap::from(query.params.clone());
+    let params_map = types::QueryParamsAsMap::from(query.params.clone());
     let plugin_base_path = data.app_data_config.get_string("plugin_base_path").unwrap();
     let accept_self_signed_certs = data.app_data_config.get_bool("accept_self_signed_certificates").unwrap();
 
     match query.action_type {
         ServersActionType::Status => {
             let ips_to_check = params_map.get_split_by("ip_addresses", ",").unwrap();
-            let list = discover::status_check(ips_to_check).await.unwrap();
+            let list = status::status_check(ips_to_check, false).await.unwrap();
             HttpResponse::Ok().json(list)
         },
         ServersActionType::FeatureScan => {
@@ -161,7 +129,7 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
             }            
         },
         ServerActionType::Status => {
-            match discover::status_check(vec![ipaddress.clone()]).await {
+            match status::status_check(vec![ipaddress.clone()], false).await {
                 Ok(list) => HttpResponse::Ok().json(list.first().unwrap_or(&Status {
                     ipaddress,
                     is_running: false
@@ -170,12 +138,12 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
             }
         },
         ServerActionType::ExecuteFeatureAction => {
-            let params_map = ParamsAsMap::from(query.params.clone());
+            let params_map = types::QueryParamsAsMap::from(query.params.clone());
             
             let feature_id = params_map.get("feature_id").unwrap();
             let action_id: &String = params_map.get("action_id").unwrap();
 
-            let feature_res = find_feature(feature_id.clone(), &server);
+            let feature_res = server.find_feature(feature_id.clone());
             let filename_res = plugins::get_filename_for_plugin(feature_id.clone(), &plugin_base_path).await;
 
             if filename_res.is_none() {
@@ -196,12 +164,12 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
             }
         },
         ServerActionType::ActionConditionCheck => {
-            let params_map = ParamsAsMap::from(query.params.clone());
+            let params_map = types::QueryParamsAsMap::from(query.params.clone());
             
             let feature_id = params_map.get("feature_id").unwrap();
             let action_id: &String = params_map.get("action_id").unwrap();
 
-            let feature_res = find_feature(feature_id.clone(), &server);
+            let feature_res = server.find_feature(feature_id.clone());
 
             let filename_res = plugins::get_filename_for_plugin(feature_id.clone(), &plugin_base_path).await;
             if filename_res.is_none() {
@@ -219,7 +187,10 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
 
             match features::check_condition_for_action_met( &server, &plugins_res.unwrap(), feature_res.unwrap(), action_id, accept_self_signed_certs).await {
                 Ok(result) => HttpResponse::Ok().json(result),
-                Err(err) =>  HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
+                Err(err) =>  {
+                    log::error!("Error during action condition check: {:?}", err);
+                    HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
+                }
             }
         }
         ServerActionType::QueryData => {       
@@ -240,7 +211,7 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
             todo!("needed?")
         },
         ServerActionType::IsConditionForFeatureActionMet => {
-            let params_map = ParamsAsMap::from(query.params.clone());
+            let params_map = types::QueryParamsAsMap::from(query.params.clone());
             
             let feature_id = params_map.get("feature_id").unwrap();
             let action_id: &String = params_map.get("action_id").unwrap();
@@ -252,7 +223,7 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
 
             let plugins_res = plugins::load_plugin(&plugin_base_path, filename_res.unwrap().as_str()).await;
 
-            let feature_res = find_feature(feature_id.clone(), &server);
+            let feature_res = server.find_feature(feature_id.clone());
            
             if feature_res.is_none() {
                 return HttpResponse::InternalServerError().body(format!("Feature with id {} not known", feature_id));
@@ -268,9 +239,6 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
     }  
 }
 
-fn find_feature( feature_id: String, server: &Server) -> Option<&Feature> {
-    server.features.iter().find(|f| f.id == feature_id)
-}
 
 #[put("/backend/servers/{ipaddress}")]
 pub async fn put_servers_by_ipaddress(data: web::Data<AppData>, query: web::Json<Server>) -> HttpResponse {
@@ -353,7 +321,7 @@ pub async fn get_plugins_actions(data: web::Data<AppData>, query: web::Query<std
 #[put("/backend/plugins/actions")]
 pub async fn put_plugins_actions(data: web::Data<AppData>,  query: web::Json<PluginsAction>) -> HttpResponse {
     let action = query.into_inner();
-    let params_map = ParamsAsMap::from(action.params);
+    let params_map = types::QueryParamsAsMap::from(action.params);
 
     let persistence = &data.app_data_persistence;
 
@@ -403,3 +371,5 @@ pub async fn delete_dnsservers(data: web::Data<AppData>, path: web::Path<String>
         Err(_err) => HttpResponse::InternalServerError().body("Cannot save DNS server")
     }
 }
+
+

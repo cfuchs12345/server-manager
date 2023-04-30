@@ -14,6 +14,7 @@ mod server_types;
 mod config_types;
 mod conversion;
 mod handlebars_helpers;
+mod status;
 
 
 pub fn main() {

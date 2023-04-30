@@ -3,5 +3,6 @@
 Cargo.lock
 .vscode
 
+external_files/**
 .env
 *.db
