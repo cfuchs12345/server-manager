@@ -5,7 +5,7 @@ Features sind Eigenschaften/Funktionen, die über die Plugins definiert werden
 3. Option Feature Discovery oder Feature manuell hinzufügen 
 4. Features müssen danach teilweise konfiguriert werden (Proxmox, OpnSense, PiHole benötigen API Keys - Tasmota evtl. User/Passwort)
 
-hier das Docker-Compose:
+hier die docker-compose.yml:
 
 version: "3"
 services:
