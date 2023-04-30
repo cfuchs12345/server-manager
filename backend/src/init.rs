@@ -20,7 +20,7 @@ pub async fn start() -> std::io::Result<()> {
     let config = get_config();
     let bind_address = config.get_string("bind_address").unwrap();
     //let db_url = config.get_string("db_url").unwrap();
-    let db_url = "sqlite:./server-manager.db?mode=rw";
+    let db_url = "sqlite:./server-manager.db?mode=rwc";
     let template_base_path = config.get_string("template_base_path").unwrap();
 
 
