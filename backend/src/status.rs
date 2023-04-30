@@ -1,7 +1,6 @@
 use std::{net::IpAddr, time::Duration, collections::HashMap, io::ErrorKind};
 use futures::future::join_all;
 use lazy_static::lazy_static;
-use log::info;
 use rand::random;
 use surge_ping::{Client, PingIdentifier, PingSequence, IcmpPacket};
 use tokio::sync::Semaphore;
