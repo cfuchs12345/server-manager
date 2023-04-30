@@ -26,7 +26,7 @@ impl Persistence {
         log::debug!("DB URL = {}", db_url);
         
         let instance = Persistence {
-            pool: Self::get_connection(db_url).await.unwrap_or_else(|_| panic!("Cannot connect to database: {}", db_url))
+            pool: Self::get_connection(db_url).await.unwrap_or_else(|err| panic!("Cannot connect to database: {}, {}", db_url, err))
         };
         instance.create_tables(    vec![
             ("servers", vec![("key", "TEXT"),("value", "TEXT")]),
@@ -40,8 +40,8 @@ impl Persistence {
     }
 
     async fn get_connection(db_url: &str) -> Result<Pool<Sqlite>, Error>  {
-        let options = SqliteConnectOptions::from_str(db_url)?.extension("inet");  
-
+        let options = SqliteConnectOptions::from_str(db_url)?.extension("inet").create_if_missing(true);  
+        
         SqlitePool::connect_with(options).await
     }
 

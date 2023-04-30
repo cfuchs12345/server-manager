@@ -23,14 +23,11 @@ ADD server ./
 ADD server-manager-frontend ./server/static
 
 RUN mkdir -p ./external_files
-RUN touch ./server-manager.db
-
 
 COPY docker/entrypoint.sh ./
 
 RUN chmod +x /server-manager-rust \
-&& chmod +x /entrypoint.sh \
-&& chmod 777 ./server-manager.db
+&& chmod +x /entrypoint.sh
 
 RUN ls -altr
 
