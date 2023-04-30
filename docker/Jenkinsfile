@@ -80,18 +80,16 @@ pipeline {
                 // merge private static content with content from public project, all together is copied into the image by the Dockerfile
                 //sh "cp private/.env .env"
                 //sh "cp private/labels labels"
-                dir('docker') {
-                    script {
-                    echo "Bulding docker images"
-                    def buildArgs = """\
-                    --build-arg UBUNTU_VERSION=${params.UBUNTU_VERSION} \
-                    -f Dockerfile \
-                    --no-cache \
-                    ."""
-                    docker.build(
-                    "${params.IMAGE_NAME}:$BUILD_NUMBER",
-                    buildArgs)
-                    }
+                script {
+                echo "Bulding docker images"
+                def buildArgs = """\
+                --build-arg UBUNTU_VERSION=${params.UBUNTU_VERSION} \
+                -f docker/Dockerfile \
+                --no-cache \
+                ."""
+                docker.build(
+                "${params.IMAGE_NAME}:$BUILD_NUMBER",
+                buildArgs)
                 }
             }
         }

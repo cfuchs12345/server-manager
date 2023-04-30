@@ -9,14 +9,14 @@ ARG HTTP_PORT
 LABEL NAME ${NAME}
 LABEL version ${VERSION}
 
-ADD ../inet.dll ./
-ADD ../inet.so ./
-ADD ../server-manager-rust ./
-ADD ../.env.example ./.env
+ADD inet.dll ./
+ADD inet.so ./
+ADD server-manager-rust ./
+ADD .env.example ./.env
 
-ADD ../shipped_plugins ./
-ADD ../server ./
-ADD ../server-manager-frontend ./server/static
+ADD shipped_plugins ./
+ADD server ./
+ADD server-manager-frontend ./server/static
 COPY /entrypoint.sh ./
 
 RUN ls -altr
