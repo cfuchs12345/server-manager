@@ -31,7 +31,7 @@ export class GeneralService {
         this.listDNSServers();
       },
       error: (err: any) => {
-        this.errorService.newError(this, undefined, err.message);
+        this.errorService.newError("General-Service", undefined, err.message);
       },
       complete: () => {},
     });
@@ -50,7 +50,7 @@ export class GeneralService {
             }
           },
           error: (err: any) => {
-            this.errorService.newError(this,undefined, err.message);
+            this.errorService.newError("General-Service",undefined, err.message);
           },
           complete: () => {},
         });
@@ -64,7 +64,7 @@ export class GeneralService {
         this._dnsServers.next(this.dataStore.dnsServers);
       },
       error: (err: any) => {
-        this.errorService.newError(this, undefined, err.message);
+        this.errorService.newError("General-Service", undefined, err.message);
       },
       complete: () => {},
     });

@@ -16,12 +16,8 @@ export class ErrorService {
 
   constructor() { }
 
-  newError(source: any, ipaddress: string | undefined = undefined, errorMessage: string){
-    const sourceName = source.constructor.name;
-
-    var json = JSON.stringify(sourceName);
-
-    this.publishError( new Date(), json, ipaddress, errorMessage);
+  newError(sourceName: string, ipaddress: string | undefined = undefined, errorMessage: string){
+    this.publishError( new Date(), sourceName, ipaddress, errorMessage);
   }
 
 

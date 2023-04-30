@@ -51,7 +51,7 @@ export class ServerStatusService {
           this.publishServerStatus();
         },
         error: (err: any) => {
-          this.errorService.newError(this, undefined, err.message);
+          this.errorService.newError("Status-Service", undefined, err.message);
         },
         complete: () => {},
       });

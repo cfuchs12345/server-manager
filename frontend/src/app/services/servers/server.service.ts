@@ -47,7 +47,7 @@ export class ServerService {
             }
           },
           error: (err: any) => {
-            this.errorService.newError(this, server.ipaddress, err.message);
+            this.errorService.newError("Server-Service", server.ipaddress, err.message);
           },
           complete: () => {},
         });
@@ -62,7 +62,7 @@ export class ServerService {
         this.publishServers();
       },
       error: (err: any) => {
-        this.errorService.newError(this, undefined, err.message);
+        this.errorService.newError("Server-Service", undefined, err.message);
       },
       complete: () => {},
     });
@@ -86,7 +86,7 @@ export class ServerService {
             }
           },
           error: (err: any) => {
-            this.errorService.newError(this, server.ipaddress, err.message);
+            this.errorService.newError("Server-Service", server.ipaddress, err.message);
           },
           complete: () => {},
         });
@@ -136,7 +136,7 @@ export class ServerService {
         .subscribe({
           next: (res) => {},
           error: (err: any) => {
-            this.errorService.newError(this, server.ipaddress, err.message);
+            this.errorService.newError("Server-Service", server.ipaddress, err.message);
           },
           complete: () => {},
         });

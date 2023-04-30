@@ -42,7 +42,7 @@ export class ServerDiscoveryService {
           var f: Feature[] = foundFeature;
         },
         error: (err: any) => {
-          this.errorService.newError(this, ipaddress, err.message);
+          this.errorService.newError("Discovery-Service", ipaddress, err.message);
         },
         complete: () => {},
       });
@@ -75,7 +75,7 @@ export class ServerDiscoveryService {
           this.publishDiscoveredServers();
         },
         error: (err: any) => {
-          this.errorService.newError(this, undefined, err.message);
+          this.errorService.newError("Discovery-Service", undefined, err.message);
 
           this.resetDiscoveredServers();
         },
@@ -103,7 +103,7 @@ export class ServerDiscoveryService {
           this.publishDiscoveredServerFeatures();
         },
         error: (err: any) => {
-          this.errorService.newError(this, undefined, err.message);
+          this.errorService.newError("Discovery-Service", undefined, err.message);
         },
         complete: () => {},
       });

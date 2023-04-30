@@ -28,7 +28,7 @@ export class PluginService {
         this._plugins.next(Object.assign({}, this.dataStore).plugins);
       },
       error: (err: any) => {
-        this.errorService.newError(this, undefined, err.message);
+        this.errorService.newError("Plugin-Service", undefined, err.message);
       },
       complete: () => {},
     });
@@ -45,7 +45,7 @@ export class PluginService {
           );
         },
         error: (err: any) => {
-          this.errorService.newError(this, undefined,  err.message);
+          this.errorService.newError("Plugin-Service", undefined,  err.message);
         },
         complete: () => {},
       });
@@ -66,7 +66,7 @@ export class PluginService {
           this.loadDisabledPlugins();
         },
         error: (err: any) => {
-          this.errorService.newError(this,  undefined, err.message);
+          this.errorService.newError("Plugin-Service",  undefined, err.message);
         },
         complete: () => {},
       });

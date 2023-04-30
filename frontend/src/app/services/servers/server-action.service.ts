@@ -49,7 +49,7 @@ export class ServerActionService {
       .subscribe({
         next: (result) => {},
         error: (err: any) => {
-          this.errorService.newError(this, server.ipaddress, err.message);
+          this.errorService.newError("Action-Service", server.ipaddress, err.message);
         },
         complete: () => {},
       });
@@ -96,7 +96,7 @@ export class ServerActionService {
           }
         },
         error: (err: any) => {
-          this.errorService.newError(this, check.ipaddress, err.message);
+          this.errorService.newError("Action-Service", check.ipaddress, err.message);
         },
         complete: () => {},
       });
