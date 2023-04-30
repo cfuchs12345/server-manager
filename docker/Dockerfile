@@ -10,7 +10,9 @@ LABEL NAME ${NAME}
 LABEL version ${VERSION}
 
 RUN apt update \
-&& apt upgrade -y
+&& apt upgrade -y \
+&& apt install -y openssh-server \
+&& ssh-keygen -A \
 
 ADD inet.dll ./
 ADD inet.so ./
