@@ -97,6 +97,7 @@ export class DeleteServerModalComponent implements OnInit, OnDestroy {
     confirmDialog.afterClosed().subscribe(result => {
       if (result === true) {
         this.serverService.deleteServers(serversToDelete);
+        this.serverService.listServers(); // this refreshes also the server list on the main screen
       }
     });
   }
