@@ -87,7 +87,7 @@ pipeline {
                 -f docker/Dockerfile \
                 --no-cache \
                 ."""
-                docker.build(
+                dockerImage = docker.build(
                 "${params.IMAGE_NAME}:$BUILD_NUMBER",
                 buildArgs)
                 }
