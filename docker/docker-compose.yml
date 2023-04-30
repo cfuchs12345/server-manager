@@ -12,5 +12,6 @@ services:
     network_mode: host
     volumes:
       - ./config:/external_files
+      - ./log:/var/log
       - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      - /etc/localtime:/etc/localtime:r
