@@ -33,7 +33,7 @@ pipeline {
             description: 'version of ubuntu base image')
             string(
             name: "IMAGE_NAME", 
-            defaultValue: 'docker-server-manager', 
+            defaultValue: 'afoxdocker/docker-server-manager', 
             description: 'name of the image')
             string(
             name: "DOCKER_REGISTRY",
@@ -115,6 +115,21 @@ pipeline {
         stage('Create Artifact') {
             steps {
                 echo "creating artifact with docker scripts and config"
+            }
+        }
+         stage('Ask for push') {
+            steps {
+                input('Do you want to push the image to Docker Hub?')
+            }
+        }
+        stage('Push Image') {
+            steps{
+                script {
+                    docker.withRegistry( '', 'dockerhub' ) {
+                        dockerImage.push("$BUILD_NUMBER")
+                        dockerImage.push("latest")
+                    }
+                }
             }
         }
     }
