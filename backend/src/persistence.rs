@@ -24,10 +24,6 @@ pub struct Table {
 impl Persistence {
     pub async fn new(db_url: &str) -> Persistence {
         log::debug!("DB URL = {}", db_url);
-
-        if !sqlx::Sqlite::database_exists(&db_url).await.unwrap() {
-            sqlx::Sqlite::create_database(&db_url).await.unwrap();
-        }
         
         let instance = Persistence {
             pool: Self::get_connection(db_url).await.unwrap_or_else(|_| panic!("Cannot connect to database: {}", db_url))

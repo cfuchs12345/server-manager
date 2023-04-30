@@ -23,6 +23,7 @@ ADD server ./
 ADD server-manager-frontend ./server/static
 
 RUN mkdir -p ./external_files
+RUN touch ./server-manager.db
 
 COPY docker/entrypoint.sh ./
 
