@@ -20,11 +20,12 @@ import { DataResult, Server, Status } from 'src/app/services/servers/types';
 export class ServerDetailComponent implements OnChanges, OnDestroy {
   @Input() server: Server | undefined = undefined;
   @Input() showDetail: boolean = false;
+  @Input() turnDetail: boolean = false;
 
   dataResults: Map<String, DataResult> = new Map();
   dataResultSubscription: Subscription | undefined = undefined;
 
-  showBack: boolean = false;
+
 
 
   constructor(

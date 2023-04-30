@@ -34,21 +34,29 @@ fn sort_fct(
                     let a_opt = a[property].as_str();
                     let b_opt = b[property].as_str();
 
-                    if let (Some(a), Some(b)) = (a_opt, b_opt) {
+                    if let (Some(a), Some(b)) = (a_opt, b_opt) { // string type
                         let a_i64_res =  a.parse::<i64>();
                         let b_i64_res =  b.parse::<i64>();
 
-                        if let (Ok(a_i64), Ok(b_i64)) = (a_i64_res, b_i64_res) {
+                        if let (Ok(a_i64), Ok(b_i64)) = (a_i64_res, b_i64_res) { // if the string contains a number, we compare it as number and not as string
                             a_i64.partial_cmp(&b_i64).unwrap_or(Ordering::Less)
                         }
                         else { // normal string sort
                             a.partial_cmp(b).unwrap_or(Ordering::Less)
                         }       
                     }
-                    else {                            
-                        log::error!("Properties with name {} has an unknown type that cannot be sorted", property);
-                        Ordering::Less
-                    }
+                    else { // value could be directly a number
+                        let a_opt = a[property].as_i64();
+                        let b_opt = b[property].as_i64();
+
+                        if let (Some(a), Some(b)) = (a_opt, b_opt) { // compare the number
+                                a.partial_cmp(&b).unwrap_or(Ordering::Less)
+                        }
+                        else { // neither a string, string containing number or number -> we don't know what to do and just sort it somehow
+                            log::warn!("Properties with name {} has an unknown type that cannot be sorted", property);
+                            Ordering::Less
+                        }
+                    }                    
                 });
 
                 let str = serde_json::to_string(&sorted_array).unwrap();

@@ -49,6 +49,7 @@ export class ServerListComponent implements OnChanges {
   isColumnsMobile: boolean = false; // if true, less columns are displayed for smaller screens
 
   showDetail: boolean = false;
+  turnDetail: boolean = false;
 
   dataSource = new MatTableDataSource();
   expandedElement: RowData | null = null;
@@ -70,6 +71,11 @@ export class ServerListComponent implements OnChanges {
 
     rowData.show_details = !rowData.show_details;
   };
+
+  turnDetailChange(event: boolean) {
+    this.turnDetail = event;
+  }
+
 
   @HostListener('window:resize', ['$event'])
   onResize(event: UIEvent) {

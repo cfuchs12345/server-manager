@@ -1,9 +1,8 @@
 import {
-  HostListener,
+  EventEmitter,
   Component,
-  OnInit,
   Input,
-  OnDestroy,
+  Output,
 } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Subscription } from 'rxjs';
@@ -15,21 +14,20 @@ import { DataResult, Server, Status } from 'src/app/services/servers/types';
   templateUrl: './server-detail-control.component.html',
   styleUrls: ['./server-detail-control.component.scss'],
 })
-export class ServerDetailControlComponent implements OnInit, OnDestroy {
+export class ServerDetailControlComponent {
+  @Output() turnDetail = new EventEmitter<boolean>(false);
+
   @Input() server: Server | undefined = undefined;
 
   showBack: boolean = false;
 
   constructor() {}
 
-  ngOnInit(): void {
-  }
-
-  ngOnDestroy(): void {
-  }
 
   onClickTurnDetails = () => {
-    // TODO emit event
+    this.showBack = !this.showBack;
+
+    this.turnDetail.emit(this.showBack);
   };
 
 }
