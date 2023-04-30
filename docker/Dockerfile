@@ -17,7 +17,7 @@ ADD .env.example ./.env
 ADD shipped_plugins ./
 ADD server ./
 ADD server-manager-frontend ./server/static
-COPY /entrypoint.sh ./
+COPY docker/entrypoint.sh ./
 
 RUN ls -altr
 
