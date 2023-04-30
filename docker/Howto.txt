@@ -1,4 +1,4 @@
-HTTP Port ist 8088. Für HTTPS eventell einen Reverse-Proxy davor schalten.
+HTTP Port ist 8088. Für HTTPS eventuell einen Reverse-Proxy davor schalten.
 
 Erklärung:
 Features sind Eigenschaften/Funktionen, die über die Plugins definiert werden
