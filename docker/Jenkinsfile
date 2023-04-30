@@ -29,7 +29,7 @@ pipeline {
   
             string(
             name: "UBUNTU_VERSION", 
-            defaultValue: 'jammy', 
+            defaultValue: 'focal', 
             description: 'version of ubuntu base image')
             string(
             name: "IMAGE_NAME", 
