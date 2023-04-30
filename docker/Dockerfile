@@ -10,7 +10,7 @@ LABEL NAME ${NAME}
 LABEL version ${VERSION}
 
 RUN apt update \
-&& apt upgrade
+&& apt upgrade -y
 
 ADD inet.dll ./
 ADD inet.so ./
