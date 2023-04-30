@@ -2,7 +2,7 @@ ARG UBUNTU_VERSION=focal
 ARG VERSION=1
 ARG NAME=server-manager-rust
 
-FROM ubuntu:jammy
+FROM ubuntu:${UBUNTU_VERSION}
 # need to repeat the variables after from since from consumes all args and they are not available afterwards
 ARG HTTP_PORT
 
