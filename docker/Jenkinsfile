@@ -29,7 +29,7 @@ pipeline {
   
             string(
             name: "UBUNTU_VERSION", 
-            defaultValue: 'focal', 
+            defaultValue: 'jammy', 
             description: 'version of ubuntu base image')
             string(
             name: "IMAGE_NAME", 
@@ -67,7 +67,7 @@ pipeline {
                 unzip zipFile: "${params.artifact_file_backend}"
             }
         }
-         stage('checkout') {
+        stage('checkout private config') {
             steps {
                 dir ('private') {
                    echo 'step to checkout private config'
@@ -85,7 +85,6 @@ pipeline {
                 echo "Bulding docker images"
                 def buildArgs = """\
                 --build-arg UBUNTU_VERSION=${params.UBUNTU_VERSION} \
-                --build-arg HTTP_PORT=8080 \
                 -f Dockerfile \
                 --no-cache \
                 ."""
