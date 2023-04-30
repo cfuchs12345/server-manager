@@ -120,6 +120,7 @@ export class AutodiscoverServerModalComponent implements OnInit, OnDestroy {
       }
     }
     this.serverService.saveServers(serversToSave);
+    this.serverService.listServers(); // this refreshes the server list on the main screen
 
     this.ref.close();
   };
