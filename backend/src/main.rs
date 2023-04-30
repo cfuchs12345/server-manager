@@ -18,7 +18,7 @@ mod status;
 
 
 pub fn main() {
-    dotenvy::dotenv().ok(); 
+   
 
     env_logger::init();
 

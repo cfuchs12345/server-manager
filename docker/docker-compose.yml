@@ -1,0 +1,16 @@
+version: "3"
+services:
+  server:
+    image: afoxdocker/server-manager:latest
+    container_name: server-manager
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+    restart: always
+    # if you want to use wake on lan actions, the network_mode has to be host
+    # consequence -> if "network_mode: host" the port mapping doesn't work. You need to change the port of the internal server in the .env file in the config folder
+    network_mode: host
+    volumes:
+      - ./config:/external_files
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro

@@ -13,6 +13,10 @@ use crate::persistence;
 
 #[actix_web::main]
 pub async fn start() -> std::io::Result<()> {
+    copy_files_into_external_folder()?;
+    
+    dotenvy::from_path(Path::new("./external_files/.env")).ok(); 
+
     let config = get_config();
     let bind_address = config.get_string("bind_address").unwrap();
     let db_url = config.get_string("db_url").unwrap();
@@ -20,7 +24,6 @@ pub async fn start() -> std::io::Result<()> {
 
 
     log::debug!("dir: {}", template_base_path);
-    copy_files_into_external_filder()?;
 
 
     let persistence = persistence::Persistence::new(&db_url).await;    
@@ -43,13 +46,20 @@ pub async fn start() -> std::io::Result<()> {
 /*due to how docker works, the external_folder that can be mapped to a local file, cannot be filled on startup, otherwise, the host folder will overlay the container folder
   => needs to be empty first and when started, we copy the content from another location in the external folder and make the content therefore also available on the docker host
  */
-fn copy_files_into_external_filder()  -> std::io::Result<()>  {
-    let src = Path::new("./shipped_plugins");
-    let dst = Path::new("./external_files");
-   copy_dir_all(src, dst)?;
+fn copy_files_into_external_folder()  -> std::io::Result<()>  {
+    
+    if ! Path::new("./external_files/plugins").exists(){
+        let src = Path::new("./shipped_plugins");
+        let dst = Path::new("./external_files");
+        copy_dir_all(src, dst)?;
+    }
+    if ! Path::new("./external_files/.env").exists() {
+        std::fs::copy( Path::new("./.env.example"),  Path::new("./external_files/.env"))?; 
+    }
    
    Ok(())
 }
+
 
 
 fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> std::io::Result<()> {
