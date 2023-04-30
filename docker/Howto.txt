@@ -1,0 +1,26 @@
+Features sind Eigenschaften/Funktionen, die über die Plugins definiert werden
+
+1. DNS Server konfigurieren (Configuration -> General)
+2. Optional Auto Discovery oder Server manuell hinzufügen
+3. Option Feature Discovery oder Feature manuell hinzufügen 
+4. Features müssen danach teilweise konfiguriert werden (Proxmox, OpnSense, PiHole benötigen API Keys - Tasmota evtl. User/Passwort)
+
+hier das Docker-Compose:
+
+version: "3"
+services:
+  server:
+    image: afoxdocker/server-manager:latest
+    container_name: server-manager
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+    restart: always
+    # if you want to use wake on lan actions, the network_mode has to be host
+    # consequence -> if "network_mode: host" the port mapping doesn't work. You need to change the port of the internal server in the .env file in the config folder
+    network_mode: host
+    volumes:
+      - ./config:/external_files
+      - ./log:/var/log
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:r
