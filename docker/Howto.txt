@@ -10,7 +10,7 @@ hier die docker-compose.yml:
 version: "3"
 services:
   server:
-    image: afoxdocker/server-manager:latest
+    image: afoxdocker/docker-server-manager:latest
     container_name: server-manager
     environment:
       - USER_UID=1000
