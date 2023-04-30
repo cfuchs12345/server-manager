@@ -80,9 +80,9 @@ pipeline {
                 sh "mkdir -p target/zipfile_content"
                 echo "copying resources for zip file into target/zipfile_content"
                 sh 'cp backend/target/release/server-manager-rust target/zipfile_content'
-                sh 'cp backend/*.example target/zipfile_content'
-                sh 'cp backend/*.so target/zipfile_content'
-                sh 'cp backend/*.dll target/zipfile_content'
+                sh 'cp backend/.env.example target/zipfile_content'
+                sh 'cp backend/inet.so target/zipfile_content'
+                sh 'cp backend/inet.dll target/zipfile_content'
                 sh 'cp -r backend/shipped_plugins target/zipfile_content'
                 sh 'cp -r backend/server target/zipfile_content'
                 echo "creating zip file"
