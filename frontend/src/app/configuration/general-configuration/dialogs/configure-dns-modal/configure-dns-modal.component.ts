@@ -62,12 +62,16 @@ export class ConfigureDnsModalComponent implements OnInit, OnDestroy {
   onClickSaveDNSServer = () => {
     if( this.ipaddress.value && this.port.value) {
       this.configService.saveDNSServer(new DNSServer(this.ipaddress.value, parseInt(this.port.value)));
+
+      this.configService.listDNSServers();
     }
   }
 
   onClickDeleteDNSServers = () => {
     this.configService.deleteDNSServers(this.dnsservers.filter( (dnsServer) => this.isInList(dnsServer, this.selectedDNSServers)));
     this.selectedDNSServers = [];
+
+    this.configService.listDNSServers();
   }
 
   private isInList(server: DNSServer, list: string[]) {
