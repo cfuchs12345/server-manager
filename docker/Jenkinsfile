@@ -104,7 +104,7 @@ pipeline {
         stage('Deploy Image') {
             steps{
                 script {
-                    echo "Push docker image to local registry"
+                    echo "Push docker image to local registry as ${params.DOCKER_REGISTRY}/${params.IMAGE_NAME}:latest"
                     sh "docker push ${params.DOCKER_REGISTRY}/${params.IMAGE_NAME}:latest"
                     //echo "Deleting local image"
                     //sh "docker rmi ${params.IMAGE_NAME}:$BUILD_NUMBER || true"

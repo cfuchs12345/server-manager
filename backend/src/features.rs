@@ -1,5 +1,5 @@
 use crate::persistence::Persistence;
-use crate::{conversion, crypt, persistence};
+use crate::{conversion, crypt};
 use crate::plugin_types::{Data, DependsDef, Plugin};
 use crate::server_types::{Feature, Server, Credential};
 use crate::types::ActionOrDataInput;
@@ -142,7 +142,7 @@ pub async fn execute_specific_data_query(
         plugin,
         feature,
         accept_self_signed_certificates,
-        &persistence
+        persistence
     );
 
     execute_command(server.ipaddress.clone(), &input).await
@@ -184,8 +184,7 @@ pub async fn check_condition_for_action_met(
                 return Ok(res);
             }
 
-            match status.first() {
-                Some(status) => {
+            if let Some(status) = status.first() {
                     if status.is_running { // if not running, no need to start any request
                         // now check data dependencies one by one
                         for depends in &action.depends {
@@ -222,9 +221,7 @@ pub async fn check_condition_for_action_met(
                     }
                     else if !action.depends.is_empty() {
                         res = false;
-                    }
-                }
-                None => {}
+                    }               
             };
 
             Ok(res)

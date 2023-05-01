@@ -40,7 +40,7 @@ pub fn do_db_location_migration() -> std::result::Result<u64, std::io::Error> {
 }
 
 
-pub async fn save_migration(neccessary_migrations: &Vec<MigrationTypes>, persistence: &Persistence)  {
+pub async fn save_migration(neccessary_migrations: &[MigrationTypes], persistence: &Persistence)  {
     let migrations: Vec<Migration> = neccessary_migrations.iter().map( |mig| Migration::new(mig.to_string().as_str())).collect();
     persistence.save_migrations(migrations).await.unwrap();
 }
@@ -99,7 +99,7 @@ async fn get_plugins_map(data: &AppData) -> HashMap<String, Plugin> {
 
 fn update_server(server: &Server, persistence: &Persistence)  {
     futures::executor::block_on(
-        servers::update_server(persistence, &server)
+        servers::update_server(persistence, server)
     ).unwrap();    
 }
 
@@ -110,13 +110,13 @@ fn feature_needs_encryption(feature: &Feature, plugins_map: &HashMap<String, Plu
     feature.credentials.iter().any(|c| plugins_map.get(&feature.id).unwrap().credentials.iter().any(|cdef| cdef.name == c.name && cdef.encrypt))
 }
 
-pub(crate) fn execute_pre_db_startup_migrations(neccessary_migrations: &Vec<MigrationTypes>) {
+pub fn execute_pre_db_startup_migrations(neccessary_migrations: &[MigrationTypes]) {
     if neccessary_migrations.contains(&MigrationTypes::DbLocation) {
         do_db_location_migration().unwrap();
     }
 }
 
-pub async fn execute_post_db_startup_migrations(neccessary_migrations: &Vec<MigrationTypes>, data: &AppData) {
+pub async fn execute_post_db_startup_migrations(neccessary_migrations:&[MigrationTypes], data: &AppData) {
     if neccessary_migrations.contains(&MigrationTypes::Encryption) {
         do_encryption_migration(data).await.unwrap();
     }

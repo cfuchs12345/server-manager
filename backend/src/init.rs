@@ -1,6 +1,5 @@
 use actix_web::{middleware::Logger, web, App, HttpServer, HttpRequest, Result};
 use actix_files as fs;
-use config::Value;
 use handlebars::no_escape;
 use std::path::Path;
 use std::path::PathBuf;
