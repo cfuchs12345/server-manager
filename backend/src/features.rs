@@ -1,6 +1,7 @@
-use crate::conversion;
+use crate::persistence::Persistence;
+use crate::{conversion, crypt, persistence};
 use crate::plugin_types::{Data, DependsDef, Plugin};
-use crate::server_types::{Feature, Server};
+use crate::server_types::{Feature, Server, Credential};
 use crate::types::ActionOrDataInput;
 use actix_web::{Error};
 use base64::{engine::general_purpose, Engine as _};
@@ -60,6 +61,7 @@ pub async fn execute_action(
     plugin: &Plugin,
     action_id: &str,
     accept_self_signed_certificates: bool,
+    persistence: &Persistence
 ) -> Result<bool, Error> {
     match plugin.find_action(action_id) {
         Some(plugin_action) => {
@@ -68,6 +70,7 @@ pub async fn execute_action(
                 plugin,
                 feature,
                 accept_self_signed_certificates,
+                persistence
             );
 
             execute_command(server.ipaddress.clone(), &input)
@@ -87,6 +90,7 @@ pub async fn execute_data_query(
     plugins: &[Plugin],
     accept_self_signed_certificates: bool,
     template_engine: &handlebars::Handlebars<'static>,
+    persistence: &Persistence
 ) -> Result<Vec<String>, Error> {
     let mut results: Vec<String> = vec![];
 
@@ -104,6 +108,7 @@ pub async fn execute_data_query(
                 tuple.0,
                 data,
                 accept_self_signed_certificates,
+                 persistence
             )
             .await?;
 
@@ -130,12 +135,14 @@ pub async fn execute_specific_data_query(
     feature: &Feature,
     data: &Data,
     accept_self_signed_certificates: bool,
+    persistence: &Persistence
 ) -> Result<String, Error> {
     let input: ActionOrDataInput = ActionOrDataInput::get_input_from_data(
         data,
         plugin,
         feature,
         accept_self_signed_certificates,
+        &persistence
     );
 
     execute_command(server.ipaddress.clone(), &input).await
@@ -147,6 +154,7 @@ pub async fn check_condition_for_action_met(
     feature: &Feature,
     action_id: &str,
     accept_self_signed_certificates: bool,
+    persistence: &Persistence
 ) -> Result<bool, Error> {
     match plugin.find_action(action_id) {
         Some(action) => {
@@ -189,6 +197,7 @@ pub async fn check_condition_for_action_met(
                                         feature,
                                         data,
                                         accept_self_signed_certificates,
+                                        persistence
                                     )
                                     .await?;
 
@@ -228,7 +237,7 @@ pub async fn check_condition_for_action_met(
     }
 }
 
-async fn execute_command(ipaddress: String, input: &ActionOrDataInput) -> Result<String, Error> {
+async fn execute_command<'a>(ipaddress: String, input:  &'a ActionOrDataInput<'_>) -> Result<String, Error> {
     match input.command.as_str() {
         "http" => execute_http_command(ipaddress, input).await,
         "wol" => execute_wol_command(ipaddress, input).await,
@@ -240,9 +249,9 @@ async fn execute_command(ipaddress: String, input: &ActionOrDataInput) -> Result
     }
 }
 
-async fn execute_http_command(
+async fn execute_http_command<'a>(
     ipaddress: String,
-    input: &ActionOrDataInput,
+    input: &'a ActionOrDataInput<'_>,
 ) -> Result<String, Error> {
     let url = input
         .find_arg("url")
@@ -342,9 +351,9 @@ async fn execute_http_command(
     }
 }
 
-async fn execute_wol_command(
+async fn execute_wol_command<'a>(
     _ipaddress: String,
-    input: &ActionOrDataInput,
+    input: &'a ActionOrDataInput<'_>,
 ) -> Result<String, Error> {
     let feature_param = get_param_value("mac_address", input);
     match feature_param {
@@ -501,7 +510,7 @@ fn replace_credentials(input_string: String, input: &ActionOrDataInput) -> (Stri
     for placeholder in RegexType::Credential.extract_placeholders(input_string) {
         let name = RegexType::Credential.strip_of_marker(&placeholder);
 
-        let replacement = get_credential_value(name.as_str(), input);
+        let replacement = get_credential_value(name.as_str(), input, input.persistence);
 
         if let Some(replacement_tuple) = replacement {
             result = result.replace(placeholder.as_str(), replacement_tuple.0.as_str());
@@ -531,10 +540,19 @@ fn replace_base64_encoded(input: String) -> String {
     result
 }
 
-fn get_credential_value(name: &str, input: &ActionOrDataInput) -> Option<(String, bool)> {
+fn get_credential_value(name: &str, input: &ActionOrDataInput, persistence: &Persistence) -> Option<(String, bool)> {
     input
         .find_credential(name)
-        .map(|credential| (credential.value.clone(), credential.encrypted))
+        .map(|credential| (decrypt(credential, persistence), credential.encrypted))
+}
+
+fn decrypt( credential: &Credential, persistence: &Persistence ) -> String {
+    if credential.encrypted {
+        crypt::default_decrypt(&credential.value, persistence)
+    }
+    else {
+        credential.value.clone()
+    }
 }
 
 fn get_param_value(name: &str, input: &ActionOrDataInput) -> Option<String> {

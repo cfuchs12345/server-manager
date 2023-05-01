@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Serialize, Deserialize};
 
-use crate::{plugin_types::{ParamDef, ArgDef, Plugin, Data, Action}, server_types::{Credential, Feature, Param}};
+use crate::{plugin_types::{ParamDef, ArgDef, Plugin, Data, Action}, server_types::{Credential, Feature, Param}, persistence::Persistence};
 
 pub struct QueryParamsAsMap {
     params: HashMap<String, String>
@@ -34,34 +34,37 @@ impl QueryParamsAsMap {
 
 
 #[derive (Debug)]
-pub struct ActionOrDataInput {
+pub struct ActionOrDataInput<'a> {
     pub command: String,
     args: Vec<ArgDef>,
     params: Vec<Param>,
     default_params: Vec<ParamDef>,
     credentials: Vec<Credential>,
-    pub accept_self_signed_ceritificates: bool
+    pub accept_self_signed_ceritificates: bool,
+    pub persistence: &'a Persistence
 }
-impl ActionOrDataInput {
-    pub fn get_input_from_action(action: &Action, plugin: &Plugin, feature: &Feature, accept_self_signed_ceritificates: bool) -> ActionOrDataInput {
+impl ActionOrDataInput<'_> {
+    pub fn get_input_from_action<'a>(action: &Action, plugin: &Plugin, feature: &Feature, accept_self_signed_ceritificates: bool, persistence: &'a Persistence) -> ActionOrDataInput<'a> {
         ActionOrDataInput{
             command: action.command.clone(),
             args: action.args.clone(),
             default_params: plugin.params.clone(),
             params: feature.params.clone(),
             credentials: feature.credentials.clone(),
-            accept_self_signed_ceritificates
+            accept_self_signed_ceritificates,
+            persistence
         }
     }
 
-    pub fn get_input_from_data(data: &Data, plugin: &Plugin, feature: &Feature, accept_self_signed_ceritificates: bool) -> ActionOrDataInput {
+    pub fn get_input_from_data<'a>(data: &Data, plugin: &Plugin, feature: &Feature, accept_self_signed_ceritificates: bool, persistence: &'a Persistence) ->  ActionOrDataInput<'a> {
         ActionOrDataInput{
             command: data.command.clone(),
             args: data.args.clone(),
             default_params: plugin.params.clone(),
             params: feature.params.clone(),
             credentials: feature.credentials.clone(),
-            accept_self_signed_ceritificates
+            accept_self_signed_ceritificates,
+            persistence
         }
     }
 

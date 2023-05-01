@@ -15,6 +15,8 @@ mod config_types;
 mod conversion;
 mod handlebars_helpers;
 mod status;
+mod crypt;
+mod migrations;
 
 
 pub fn main() {

@@ -1,40 +1,52 @@
 use actix_web::{middleware::Logger, web, App, HttpServer, HttpRequest, Result};
 use actix_files as fs;
+use config::Value;
 use handlebars::no_escape;
 use std::path::Path;
 use std::path::PathBuf;
 use config::Config;
 
 use crate::appdata::AppData;
+use crate::crypt;
 use crate::handlebars_helpers;
+use crate::migrations;
+use crate::persistence::Entry;
+use crate::persistence::Persistence;
 use crate::routes;
 use crate::persistence;
+
+pub static EXTERNAL_FOLDER: &str = "./external_files";
+pub static SHIPPED_FOLDER:  &str = "./shipped_plugins";
+pub static EXTERNAL_PLUGIN_FOLDER: &str = "./external_files/plugins";
+
+pub static ENV_FILENAME: &str = "./external_files/.env";
+pub static ENV_EXAMPLE_FILENAME: &str = "./.env.example";
+
+pub static DB_FILENAME: &str = "./external_files/server-manager.db";
+
+
 
 
 #[actix_web::main]
 pub async fn start() -> std::io::Result<()> {
-    copy_files_into_external_folder()?;
+    one_time_init()?;
+    load_env_file();
     
-    dotenvy::from_path(Path::new("./external_files/.env")).ok(); 
+    let config = get_config();   
 
-    let config = get_config();
-    let bind_address = config.get_string("bind_address").unwrap();
-    //let db_url = config.get_string("db_url").unwrap();
-    let db_url = "sqlite:./server-manager.db?mode=rwc";
-    let template_base_path = config.get_string("template_base_path").unwrap();
+    let bind_address = config.get_string("bind_address").unwrap();    
 
+    let neccessary_migrations = migrations::check_necessary_migration(); // needs to be checked before db connection is done
+    migrations::execute_pre_db_startup_migrations(&neccessary_migrations);
 
-    log::debug!("dir: {}", template_base_path);
+    let app_data = create_common_app_data(config);
+    one_time_post_db_startup(&app_data).await;
 
-
-    let persistence = persistence::Persistence::new(&db_url).await;    
-    let template_engine = create_and_configure_template_engine(&template_base_path);
-
-    let app_data = AppData { app_data_config: config, app_data_persistence: persistence, app_data_template_engine: template_engine };
+    migrations::execute_post_db_startup_migrations(&neccessary_migrations, &app_data).await;
+    migrations::save_migration(&neccessary_migrations, &app_data.app_data_persistence).await;
 
     HttpServer::new(move || {
-        App::new()
-            
+        App::new()            
             .wrap(Logger::default())
             .app_data(web::Data::new(app_data.clone()))
             .configure(init)
@@ -44,18 +56,66 @@ pub async fn start() -> std::io::Result<()> {
     .await
 }
 
+
+
+fn create_common_app_data(config : Config) -> AppData {
+    let persistence =  futures::executor::block_on(create_persistence());     
+    
+    let template_engine = create_templateengine(config.clone());
+ 
+     AppData { app_data_config: config, app_data_persistence: persistence, app_data_template_engine: template_engine }    
+}
+
+async fn create_persistence() -> Persistence {
+    let db_url = format!("sqlite:{}?mode=rwc", DB_FILENAME) ;
+    persistence::Persistence::new(&db_url).await
+}
+
+fn create_templateengine(config: Config) -> handlebars::Handlebars<'static> {
+    let template_base_path = config.get_string("template_base_path").unwrap();
+  
+    log::debug!("dir: {}", template_base_path);
+   
+    create_and_configure_template_engine(&template_base_path)
+}
+
+
+fn one_time_init() -> std::io::Result<()> {
+    copy_files_into_external_folder()?;
+    
+
+    Ok(())
+}
+
+async fn one_time_post_db_startup(data: &AppData) {
+    generate_encryption_key(data).await;
+}
+
+fn load_env_file() {
+    dotenvy::from_path(Path::new(ENV_FILENAME)).ok();
+}
+
+async fn generate_encryption_key(data: &AppData) {
+    data.app_data_persistence.insert("encryption", Entry {
+        key: "default".to_string(),
+        value: crypt::get_random_key32().unwrap()
+    }).await;
+}
+
 /*due to how docker works, the external_folder that can be mapped to a local file, cannot be filled on startup, otherwise, the host folder will overlay the container folder
   => needs to be empty first and when started, we copy the content from another location in the external folder and make the content therefore also available on the docker host
  */
 fn copy_files_into_external_folder()  -> std::io::Result<()>  {
     
-    if ! Path::new("./external_files/plugins").exists(){
-        let src = Path::new("./shipped_plugins");
-        let dst = Path::new("./external_files");
+    if ! Path::new(EXTERNAL_PLUGIN_FOLDER).exists(){
+        let src = Path::new(SHIPPED_FOLDER);
+        let dst = Path::new(EXTERNAL_FOLDER);
         copy_dir_all(src, dst)?;
     }
-    if ! Path::new("./external_files/.env").exists() {
-        std::fs::copy( Path::new("./.env.example"),  Path::new("./external_files/.env"))?; 
+    let env_file_path = Path::new(ENV_FILENAME);
+
+    if ! env_file_path.exists() {
+        std::fs::copy( Path::new(ENV_EXAMPLE_FILENAME), env_file_path )?; 
     }
    
    Ok(())
@@ -165,6 +225,7 @@ fn init(cfg: &mut web::ServiceConfig) {
 
 
 pub fn get_config() -> Config {
+
     Config::builder()
             .add_source(config::Environment::default())
             .build()

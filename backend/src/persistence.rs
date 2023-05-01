@@ -1,7 +1,6 @@
 
 use std::str::FromStr;
-
-use sqlx::{Sqlite, Error, SqlitePool, Pool, FromRow, sqlite::SqliteConnectOptions, migrate::MigrateDatabase};
+use sqlx::{Sqlite, Error, SqlitePool, Pool, FromRow, sqlite::SqliteConnectOptions, types::chrono::{NaiveDateTime, Utc}};
 
 
 
@@ -17,6 +16,21 @@ pub struct Entry {
 }
 
 #[derive(FromRow)]
+pub struct Migration {
+    pub date: NaiveDateTime,
+    name: String
+}
+
+impl Migration {
+    pub fn new(name: &str) -> Self {
+        Self { 
+            date: Utc::now().naive_utc(),
+            name: name.to_string()
+         }
+    }
+}
+
+#[derive(FromRow)]
 pub struct Table {
     pub name: String
 }
@@ -29,6 +43,8 @@ impl Persistence {
             pool: Self::get_connection(db_url).await.unwrap_or_else(|err| panic!("Cannot connect to database: {}, {}", db_url, err))
         };
         instance.create_tables(    vec![
+            ("migration", vec![("date", "DATETIME"), ("name", "TEXT")]),
+            ("encryption", vec![("key", "TEXT"),("value", "TEXT")]),
             ("servers", vec![("key", "TEXT"),("value", "TEXT")]),
             ("plugin_config", vec![("key", "TEXT"), ("value", "TEXT")]),
             ("dns_servers", vec![("key", "TEXT"), ("value", "TEXT")]),
@@ -78,6 +94,43 @@ impl Persistence {
         transaction.commit().await?;
         Ok(())
     }
+
+    pub async fn get_migration(&self, name: &str) -> Result<Migration, Error> {
+        
+        let mut transaction = self.pool.begin().await?;
+
+        let select = "SELECT * from migration where name = ?";
+        let result: Migration =  sqlx::query_as(select).bind(name).fetch_one(&mut transaction).await.unwrap();
+
+        transaction.commit().await?;
+        Ok(result)
+    }
+
+    pub async fn save_migration(&self, migration: Migration) -> Result<u64, Error> {
+        let mut transaction = self.pool.begin().await?;
+        
+        let insert = "INSERT INTO migration values (?, ?)";
+
+        let result = sqlx::query(insert).bind(migration.name).bind(migration.date).execute(&mut transaction).await.unwrap();
+        transaction.commit().await?;
+        Ok(result.rows_affected())
+    }
+
+    pub async fn save_migrations(&self, migrations: Vec<Migration>) -> Result<u64, Error> {
+        let mut transaction = self.pool.begin().await?;
+        
+        let insert = "INSERT INTO migration values (?, ?)";
+        let mut result: u64 = 0;
+
+        for migration in migrations {
+             result += sqlx::query(insert).bind(migration.name).bind(migration.date).execute(&mut transaction).await.unwrap().rows_affected();
+        }
+        
+        transaction.commit().await?;
+        Ok(result)
+    }
+
+
 
     pub async fn get_all(& self, table: &str) -> Result<Vec<Entry>, Error> {
         let mut transaction = self.pool.begin().await?;

@@ -158,7 +158,7 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
                 return HttpResponse::InternalServerError().body(format!("Plugin with id {} not known", feature_id));
             }
 
-            match features::execute_action(&server, feature_res.unwrap(), &plugins_res.unwrap(), action_id, accept_self_signed_certs).await {
+            match features::execute_action(&server, feature_res.unwrap(), &plugins_res.unwrap(), action_id, accept_self_signed_certs, &data.app_data_persistence).await {
                 Ok(result) => HttpResponse::Ok().json(result),
                 Err(err) =>  HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
             }
@@ -185,7 +185,7 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
             }
 
 
-            match features::check_condition_for_action_met( &server, &plugins_res.unwrap(), feature_res.unwrap(), action_id, accept_self_signed_certs).await {
+            match features::check_condition_for_action_met( &server, &plugins_res.unwrap(), feature_res.unwrap(), action_id, accept_self_signed_certs, &data.app_data_persistence).await {
                 Ok(result) => HttpResponse::Ok().json(result),
                 Err(err) =>  {
                     log::error!("Error during action condition check: {:?}", err);
@@ -200,7 +200,7 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
             }
 
 
-            match features::execute_data_query(&server, &plugins_res.unwrap(), accept_self_signed_certs, &data.app_data_template_engine).await {
+            match features::execute_data_query(&server, &plugins_res.unwrap(), accept_self_signed_certs, &data.app_data_template_engine, &data.app_data_persistence).await {
                 Ok(results) => {
                     HttpResponse::Ok().json(results)
                 }
@@ -231,7 +231,7 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
             if plugins_res.is_err() {
                 return HttpResponse::InternalServerError().body(format!("Plugin with id {} not known", feature_id));
             }
-            match features::check_condition_for_action_met(&server, &plugins_res.unwrap(), feature_res.unwrap(), action_id, accept_self_signed_certs).await {
+            match features::check_condition_for_action_met(&server, &plugins_res.unwrap(), feature_res.unwrap(), action_id, accept_self_signed_certs, &data.app_data_persistence).await {
                 Ok(result) => HttpResponse::Ok().json(result),
                 Err(err) =>  HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
             }
