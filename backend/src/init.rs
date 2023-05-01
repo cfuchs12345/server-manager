@@ -99,7 +99,7 @@ async fn generate_encryption_key(data: &AppData) {
     data.app_data_persistence.insert("encryption", Entry {
         key: "default".to_string(),
         value: crypt::get_random_key32().unwrap()
-    }).await;
+    }).await.unwrap();
 }
 
 /*due to how docker works, the external_folder that can be mapped to a local file, cannot be filled on startup, otherwise, the host folder will overlay the container folder
