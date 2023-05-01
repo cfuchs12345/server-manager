@@ -57,9 +57,9 @@ pub struct Detection {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub enum State {
+    #[default]
     Active,
     Inactive,
-    #[default]
     Any
 }
 

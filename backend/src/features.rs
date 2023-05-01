@@ -201,7 +201,7 @@ pub async fn check_condition_for_action_met(
                                     )
                                     .await?;
 
-                                    res &= data_match(depends, response.as_str())?;
+                                    res &= response_data_match(depends, response.as_str())?;
 
                                     if !res {
                                         log::info!("Depencies for data {} of plugin {} for server {} not met .Reasponse was {}", data.id, plugin.id, server.ipaddress, response);
@@ -580,7 +580,7 @@ fn find_data_for_action_depency<'a>(depend: &DependsDef, plugin: &'a Plugin) -> 
     plugin.data.iter().find(|d| d.id == depend.data_id)
 }
 
-fn data_match(dependency: &DependsDef, input: &str) -> Result<bool, Error> {
+fn response_data_match(dependency: &DependsDef, input: &str) -> Result<bool, Error> {
     let script = dependency.script.clone();
     let script_type = dependency.script_type.clone();
 

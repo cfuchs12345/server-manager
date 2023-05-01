@@ -24,6 +24,9 @@ import {
 export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
   buttonTextSaveFeatureSettings = 'Save Feature Settings';
 
+  showPasswordCredentials: Map<String, boolean> = new Map();
+  passwordCredentials: Map<String, boolean> = new Map();
+
   form: FormGroup;
 
   selectedServer: Server | undefined = undefined;
@@ -113,12 +116,15 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
     this.paramsFromPlugin.forEach((param) =>
       this.form.addControl('param.' + param.name, new FormControl('', []))
     );
-    this.credentialsFromPlugin.forEach((credential) =>
+    this.credentialsFromPlugin.forEach((credential) => {
+      if( credential.encrypt ) {
+        this.passwordCredentials.set(credential.name, true);
+      }
       this.form.addControl(
         'credential.' + credential.name,
         new FormControl('', [])
       )
-    );
+      });
   }
 
   setInitialValuesOnInputControls = () => {
@@ -180,6 +186,27 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
     }
     return '';
   };
+
+  isPasswordCredential = (name: string):boolean => {
+    const res = this.passwordCredentials.get(name);
+
+    return res !== undefined && res;
+  }
+
+  isShowPasswordCredential = (name: string) : boolean => {
+    const res = this.showPasswordCredentials.get(name);
+
+    return res !== undefined && res;
+  }
+
+  onClickShowPasswordCredential = (name: string) => {
+    if( this.showPasswordCredentials.get(name) === undefined || this.showPasswordCredentials.get(name) === false) {
+      this.showPasswordCredentials.set(name, true);
+    }
+    else {
+      this.showPasswordCredentials.set(name, false);
+    }
+  }
 
   onClickSaveFeatureSettings = () => {
     const selectedFeature = this.selectedFeature;
