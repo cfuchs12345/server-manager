@@ -9,7 +9,7 @@ use std::{
     io::ErrorKind,
     net::{IpAddr, SocketAddrV4},
     time::Duration,
-    vec,
+    vec, collections::HashMap, sync::Mutex,
 };
 use surge_ping::{Client, Config};
 use tokio::sync::Semaphore;
@@ -26,6 +26,8 @@ use crate::{
 
 lazy_static! {
     static ref SEMAPHORE_AUTO_DISCOVERY: Semaphore = Semaphore::new(1);
+
+    static ref UPNP_DISCOVER_RESULTS: Mutex<HashMap<String, FeaturesOfServer>> = Mutex::new(HashMap::new());
 }
 
 pub async fn auto_discover_servers_in_network(
@@ -63,19 +65,9 @@ pub async fn discover_features_of_all_servers(
     plugin_base_path: String,
 ) -> Result<Vec<FeaturesOfServer>, std::io::Error> {
     
-    let duration = std::time::Duration::from_secs(20);
+    let duration = std::time::Duration::from_secs(10);
 
-    let mut features_from_upnp_discovery =
-        match tokio::time::timeout(duration, do_upnp_discovery()).await {
-            Ok(devices) => {
-                log::info!("Number of found devices during upnp device discovery: {}", devices.len());
-                devices
-            },
-            Err(err) => {
-                log::error!("Error during upnp device discovery: {}", err);
-                Vec::new()
-            }
-        };
+    let mut features_from_upnp_discovery = discover_upnp_device_features(duration).await;
 
     // list of async tasks executed by tokio
     let mut tasks = Vec::new();
@@ -110,12 +102,34 @@ pub async fn discover_features_of_all_servers(
     ))
 }
 
-async fn do_upnp_discovery() -> Vec<FeaturesOfServer> {
-    let mut features_of_server = Vec::new();
+async fn discover_upnp_device_features(duration: Duration) -> Vec<FeaturesOfServer> {
+    let mut features_from_upnp_discovery: Vec<FeaturesOfServer> = Vec::new();
 
+    UPNP_DISCOVER_RESULTS.lock().unwrap().clear();
+
+    match tokio::time::timeout(duration, do_upnp_discovery()).await {
+        Ok(_) => {
+            // will newer happen - discovery is running an endless loop
+        },
+        Err(_err) => {
+            // when timeout is reached, we end here in the block and can check if we have results in the static variable
+
+            let guard = UPNP_DISCOVER_RESULTS.lock().unwrap();
+
+            let values = guard.values();            
+            values.for_each(|v| features_from_upnp_discovery.push(v.to_owned()));
+        }
+    };
+    features_from_upnp_discovery
+}
+
+async fn do_upnp_discovery()  {
     match upnp_client::discovery::discover_pnp_locations().await {
         Ok(devices) => {
+            
             tokio::pin!(devices);
+
+            
 
             while let Some(device) = devices.next().await {
                 let mut features: Vec<Feature> = Vec::new();
@@ -206,10 +220,12 @@ async fn do_upnp_discovery() -> Vec<FeaturesOfServer> {
                 match Url::parse(device.location.as_str()) {
                     Ok(url) => match url.host_str() {
                         Some(host) => {
-                            features_of_server.push(FeaturesOfServer {
+
+                            UPNP_DISCOVER_RESULTS.lock().unwrap().insert(host.to_string(), FeaturesOfServer {
                                 ipaddress: host.to_string(),
                                 features,
                             });
+                            
                         }
                         None => {
                             log::error!("Could not find host information of url {}", url);
@@ -232,8 +248,6 @@ async fn do_upnp_discovery() -> Vec<FeaturesOfServer> {
             }
         }
     }
-
-    features_of_server
 }
 
 pub async fn discover_features(
