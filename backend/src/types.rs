@@ -1,6 +1,7 @@
+use serde::{Deserialize, Serialize};
+
 use std::collections::HashMap;
 
-use serde::{Serialize, Deserialize};
 
 use crate::{plugin_types::{ParamDef, ArgDef, Plugin, Data, Action}, server_types::{Credential, Feature, Param}, persistence::Persistence};
 
@@ -185,4 +186,3 @@ pub struct ServerAction {
     pub action_type: ServerActionType,
     pub params: Vec<QueryParam>
 }
-

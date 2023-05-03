@@ -1,0 +1,16 @@
+{
+    "id": "upnp",
+    "name": "upnp",
+    "description": "Dummy UPnP Plugin",
+    "server_icon": "",
+    "detection": {       
+        "detection_possible": true
+    },
+    "credentials": [],
+    "params": [       
+    ],
+    "data": [        
+    ],
+    "actions": [        
+    ]
+}
