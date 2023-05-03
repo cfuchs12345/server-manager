@@ -62,12 +62,19 @@ pub async fn discover_features_of_all_servers(
     accept_self_signed_certificates: bool,
     plugin_base_path: String,
 ) -> Result<Vec<FeaturesOfServer>, std::io::Error> {
-    let dur = Duration::from_millis(30000);
+    
+    let duration = std::time::Duration::from_secs(20);
 
     let mut features_from_upnp_discovery =
-        match tokio::time::timeout(std::time::Duration::from_secs(20), do_upnp_discovery()).await {
-            Ok(devices) => devices,
-            Err(err) => Vec::new(),
+        match tokio::time::timeout(duration, do_upnp_discovery()).await {
+            Ok(devices) => {
+                log::info!("Number of found devices during upnp device discovery: {}", devices.len());
+                devices
+            },
+            Err(err) => {
+                log::error!("Error during upnp device discovery: {}", err);
+                Vec::new()
+            }
         };
 
     // list of async tasks executed by tokio
@@ -114,7 +121,7 @@ async fn do_upnp_discovery() -> Vec<FeaturesOfServer> {
                 let mut features: Vec<Feature> = Vec::new();
 
                 let json = serde_json::to_string_pretty(&device).unwrap();
-                println!("{}", json);
+                println!("device data found: {}", json);
 
                 let mut params = Vec::new();
                 params.push(Param {
