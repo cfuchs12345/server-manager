@@ -39,6 +39,7 @@ pub async fn upnp_discover(wait_time_for_upnp: u64) -> Result<Vec<FeaturesOfServ
                                 std::slice::from_raw_parts(buf.as_ptr() as *const u8, size)
                             })
                             .map_err(|err| {
+                                log::error!("Error in UPnP discovery {}", err);
                                 std::io::Error::new(
                                     std::io::ErrorKind::InvalidData,
                                     "Could not read response.",
@@ -58,13 +59,17 @@ pub async fn upnp_discover(wait_time_for_upnp: u64) -> Result<Vec<FeaturesOfServ
                         }
 
                         match get_next(&socket).await {
-                            Ok(location) => feature_of_server_list.push(FeaturesOfServer {
+                            Ok(location) => {
+                                log::info!("Found UPnP location {}", location);
+
+                                feature_of_server_list.push(FeaturesOfServer {
                                 ipaddress: location,
                                 features: vec![Feature {
                                     name: "upnp".to_owned(),
                                     ..Default::default()
-                                }],
-                            }),
+                                }]                           
+                                });                                
+                            },
                             Err(err) => {
                                 log::error!("Error while reading from socket: {}", err);
                             }
@@ -80,7 +85,7 @@ pub async fn upnp_discover(wait_time_for_upnp: u64) -> Result<Vec<FeaturesOfServ
             log::error!("Error while trying to joind multicast group: {}", err);
         }
     }
-
+    log::info!("Returning list {:?}", feature_of_server_list);
     Ok(feature_of_server_list)
 }
 
