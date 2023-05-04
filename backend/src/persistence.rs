@@ -1,5 +1,6 @@
 
 use std::str::FromStr;
+use futures::TryFutureExt;
 use sqlx::{Sqlite, Error, SqlitePool, Pool, FromRow, sqlite::SqliteConnectOptions, types::chrono::{NaiveDateTime, Utc}};
 
 
@@ -142,12 +143,12 @@ impl Persistence {
         Ok(result)
     }  
 
-    pub async fn get(& self, table: &str, key: &str) -> Result<Entry, Error> {
+    pub async fn get(& self, table: &str, key: &str) -> Result<Option<Entry>, Error> {
         let mut transaction = self.pool.begin().await?;
 
         let select = get_select_statement(table); // inet_aton is a function from inet extension - converts the xxx.xxx.xxx.xxx in a numeric value so that it can be easily sorted
 
-        let result: Entry =  sqlx::query_as(select.as_str()).bind(key).fetch_one(&mut transaction).await.unwrap();
+        let result: Option<Entry> =  sqlx::query_as(select.as_str()).bind(key).fetch_one(&mut transaction).await.ok();
         transaction.commit().await?;
         Ok(result)
     }

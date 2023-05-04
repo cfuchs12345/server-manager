@@ -114,7 +114,16 @@ pub async fn load_plugin(plugin_base_path: &str, plugin_file_name: &str) -> Resu
 
 pub async fn get_disabled_plugins(persistence: &Persistence) -> Result<Vec<String>, Error>{
     match persistence.get(TABLE_PLUGIN_CONFIG, "disabled_ids").await {
-        Ok(res) => Ok(res.value.split(',').map( |e| e.to_string()).collect()),
+        Ok(res) => {
+            match  res {
+                Some(entry) => {
+                    Ok(entry.value.split(',').map( |e| e.to_string()).collect())
+                },
+                None => {
+                    Ok(Vec::new())
+                }
+            }            
+        }
         Err(_err) => {
             Err(Error::new(
                 std::io::ErrorKind::Other,
@@ -154,8 +163,13 @@ pub async fn disable_plugins(persistence: &Persistence, plugin_ids: Vec<String>)
 pub async fn is_plugin_disabled(plugin_id: &str, persistence: &Persistence) ->  Result<bool, Error> {
     match persistence.get(TABLE_PLUGIN_CONFIG, "disabled_ids").await {
         Ok(res) => {
-            let mut ids = res.value.split(',');
-            Ok(ids.any(|id| *id == *plugin_id))
+            match res {
+                Some(entry) => {
+                    let mut ids = entry.value.split(',');
+                    Ok(ids.any(|id| *id == *plugin_id))
+                },
+                None => Ok(false) // default is that it is activated
+            }            
         },
         Err(_err) => {
             Err(Error::new(
