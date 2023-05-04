@@ -19,6 +19,8 @@ pub async fn upnp_discover(wait_time_for_upnp: u64) -> Result<Vec<FeaturesOfServ
 
             let request_msg = get_request_message(socket_addr);
 
+            let start = Instant::now();
+
             // Send the discovery request
             match socket.send_to(request_msg.as_bytes(), &socket_addr).await {
                 Ok(_result) => {
