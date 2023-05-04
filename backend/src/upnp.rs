@@ -33,7 +33,9 @@ pub async fn upnp_discover(wait_time_for_upnp: u64) -> Result<Vec<FeaturesOfServ
                         async fn get_next(socket: &UdpSocket) -> Result<String, std::io::Error> {
                             // Receive the discovery response
                             let mut buf = [0; 2048];
+                            log::info!("before recv");
                             let (size, _) = socket.recv_from(&mut buf).await?;
+                            log::info!("after recv");
                             // Convert the response to a string
                             let response = std::str::from_utf8(unsafe {
                                 std::slice::from_raw_parts(buf.as_ptr() as *const u8, size)
