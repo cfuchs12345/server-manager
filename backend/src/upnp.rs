@@ -7,7 +7,7 @@ use tokio::net::UdpSocket;
 
 use crate::server_types::{Feature, FeaturesOfServer};
 
-pub async fn upnp_discover(duration: Duration) -> Result<Vec<FeaturesOfServer>, std::io::Error> {
+pub async fn upnp_discover(wait_time_for_upnp: u64) -> Result<Vec<FeaturesOfServer>, std::io::Error> {
     let mut feature_of_server_list: Vec<FeaturesOfServer> = Vec::new();
 
     let any: SocketAddr = ([0, 0, 0, 0], 0).into();
@@ -18,9 +18,6 @@ pub async fn upnp_discover(duration: Duration) -> Result<Vec<FeaturesOfServer>, 
             let socket_addr: SocketAddr = ([239, 255, 255, 250], 1900).into();
 
             let request_msg = get_request_message(socket_addr);
-
-            let start = Instant::now();
-            let wait_time_for_upnp: u64 = 15; // seconds
 
             // Send the discovery request
             match socket.send_to(request_msg.as_bytes(), &socket_addr).await {

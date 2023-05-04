@@ -62,11 +62,14 @@ pub async fn discover_features_of_all_servers(
     plugin_base_path: String,
 ) -> Result<Vec<FeaturesOfServer>, std::io::Error> {
     
-    let duration = std::time::Duration::from_secs(10);
+    let wait_time_for_upnp = 15; // in seconds
 
     let mut features_from_upnp_discovery = match upnp_activated {
-        true => upnp::upnp_discover(duration).await?,
-        false =>  Vec::new()
+        true => upnp::upnp_discover(wait_time_for_upnp).await?,
+        false =>  {
+            log::info!("Skipping UPnP device discovery since the plugin is disabled");
+            Vec::new()
+        }
     };
 
     // list of async tasks executed by tokio
