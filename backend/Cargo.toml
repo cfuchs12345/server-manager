@@ -34,3 +34,4 @@ handlebars = { version="4.3.6", features=["dir_source", "script_helper"]}
 thiserror = "1.0.40"
 magic-crypt = "3.1.12"
 hex = "0.4.3"
+ssdp-client = "1.0.0"
