@@ -15,32 +15,35 @@ use rlua::Lua;
 use std::io::ErrorKind;
 use std::time::Duration;
 
-enum RegexType {
+/// This enum hides the actual regular expressions and the matching and provides methods for 
+/// * easy extraction of matched strings
+/// * strip of the markers and returning the actual name of the placeholder
+enum Placeholder {
     Param,
     Credential,
     Base64,
 }
 
 lazy_static! {
-    static ref PARAM_REGEX: Regex = Regex::new(RegexType::Param.get_pattern()).unwrap();
-    static ref CREDENTIAL_REGEX: Regex = Regex::new(RegexType::Credential.get_pattern()).unwrap();
-    static ref BASE64_REGEX: Regex = Regex::new(RegexType::Base64.get_pattern()).unwrap();
+    static ref PARAM_REGEX: Regex = Regex::new(Placeholder::Param.get_pattern()).unwrap();
+    static ref CREDENTIAL_REGEX: Regex = Regex::new(Placeholder::Credential.get_pattern()).unwrap();
+    static ref BASE64_REGEX: Regex = Regex::new(Placeholder::Base64.get_pattern()).unwrap();
 }
 
-impl RegexType {
+impl Placeholder {
     fn get_pattern(&self) -> &str {
         match self {
-            RegexType::Param => r"(\$\{params\..*?\})",
-            RegexType::Credential => r"(\$\{credentials\..*?\})",
-            RegexType::Base64 => r"(\$\{encode_base64\(.*?\)\})",
+            Placeholder::Param => r"(\$\{params\..*?\})",
+            Placeholder::Credential => r"(\$\{credentials\..*?\})",
+            Placeholder::Base64 => r"(\$\{encode_base64\(.*?\)\})",
         }
     }
 
     pub fn extract_placeholders(&self, input: String) -> Vec<String> {
         let matches = match self {
-            RegexType::Param => PARAM_REGEX.find_iter(input.as_str()),
-            RegexType::Credential => CREDENTIAL_REGEX.find_iter(input.as_str()),
-            RegexType::Base64 => BASE64_REGEX.find_iter(input.as_str()),
+            Placeholder::Param => PARAM_REGEX.find_iter(input.as_str()),
+            Placeholder::Credential => CREDENTIAL_REGEX.find_iter(input.as_str()),
+            Placeholder::Base64 => BASE64_REGEX.find_iter(input.as_str()),
         };
 
         matches.map(|mat| mat.as_str().to_owned()).collect()
@@ -48,17 +51,26 @@ impl RegexType {
 
     pub fn strip_of_marker(&self, value: &str) -> String {
         match self {
-            RegexType::Param => value.replace("${params.", "").replace('}', ""),
-            RegexType::Credential => value.replace("${credentials.", "").replace('}', ""),
-            RegexType::Base64 => value.replace("${encode_base64(", "").replace(")}", ""),
+            Placeholder::Param => value.replace("${params.", "").replace('}', ""),
+            Placeholder::Credential => value.replace("${credentials.", "").replace('}', ""),
+            Placeholder::Base64 => value.replace("${encode_base64(", "").replace(")}", ""),
         }
     }
 }
 
+/// Executes a defined action of a plugin on the given server
+/// # Arguments
+/// 
+/// * `server` - the server struct representing the server on which the action should be executed 
+/// * `plugin` - the plugin to which the action query belongs to
+/// * `feature` - server feature config of the specific server containing maybe additional parameters or required credentials for the server
+/// * `action_id`- the identifier of the action
+/// * `accept_self_signed_certificates` - boolean flag if the server should accept self-signed SSL certiticates
+/// * `persistence` - the persistence struct that helps to interact with the underlying database
 pub async fn execute_action(
     server: &Server,
-    feature: &Feature,
     plugin: &Plugin,
+    feature: &Feature,
     action_id: &str,
     accept_self_signed_certificates: bool,
     persistence: &Persistence
@@ -85,6 +97,14 @@ pub async fn execute_action(
     }
 }
 
+/// Executes all data queries on the given server for all given plugins
+/// # Arguments
+/// 
+/// * `server` - the server struct representing the server on which the query should be executed
+/// * `plugins` - a vector of plugins for which the data queries should be executed
+/// * `accept_self_signed_certificates` - boolean flag if the server should accept self-signed SSL certiticates
+/// * `template_engine` - the template engine struct that is used to render the output in a readable format
+/// * `persistence` - the persistence struct that helps to interact with the underlying database
 pub async fn execute_data_query(
     server: &Server,
     plugins: &[Plugin],
@@ -129,6 +149,15 @@ pub async fn execute_data_query(
     Ok(results)
 }
 
+/// Executes a specific data query on the given server for a given data point config of a plugin
+/// # Arguments
+/// 
+/// * `server` - the server struct representing the server on which the query should be executed
+/// * `plugin` - the plugin to which the data query belongs to
+/// * `feature` - server feature config of the specific server containing maybe additional parameters or required credentials for the server
+/// * `data` - the actual data query (as defined in the plugin) that should be executed
+/// * `accept_self_signed_certificates` - boolean flag if the server should accept self-signed SSL certiticates
+/// * `persistence` - the persistence struct that helps to interact with the underlying database
 pub async fn execute_specific_data_query(
     server: &Server,
     plugin: &Plugin,
@@ -147,6 +176,16 @@ pub async fn execute_specific_data_query(
 
     execute_command(server.ipaddress.clone(), &input).await
 }
+
+/// Checks if all conditions that are defined for an action of a plugin are met and that it can be executed by the user
+/// # Arguments
+/// 
+/// * `server` - the server struct representing the server on which the query should be executed
+/// * `plugin` - the plugin to which the data query belongs to
+/// * `feature` - server feature config of the specific server containing maybe additional parameters or required credentials for the server
+/// * `action_id`- the identifier of the action
+/// * `accept_self_signed_certificates` - boolean flag if the server should accept self-signed SSL certiticates
+/// * `persistence` - the persistence struct that helps to interact with the underlying database
 
 pub async fn check_condition_for_action_met(
     server: &Server,
@@ -486,8 +525,8 @@ fn replace(input_string: String, ipaddress: &str, input: &ActionOrDataInput) -> 
 fn replace_param(input_string: String, input: &ActionOrDataInput) -> String {
     let mut result = input_string.clone();
 
-    for placeholder in RegexType::Param.extract_placeholders(input_string) {
-        let name = RegexType::Param.strip_of_marker(&placeholder);
+    for placeholder in Placeholder::Param.extract_placeholders(input_string) {
+        let name = Placeholder::Param.strip_of_marker(&placeholder);
 
         let replacement_option = get_param_value(name.as_str(), input);
 
@@ -504,8 +543,8 @@ fn replace_credentials(input_string: String, input: &ActionOrDataInput) -> (Stri
     let mut result = input_string.clone();
     let mut masked = input_string.clone();
 
-    for placeholder in RegexType::Credential.extract_placeholders(input_string) {
-        let name = RegexType::Credential.strip_of_marker(&placeholder);
+    for placeholder in Placeholder::Credential.extract_placeholders(input_string) {
+        let name = Placeholder::Credential.strip_of_marker(&placeholder);
 
         let replacement = get_credential_value(name.as_str(), input, input.persistence);
 
@@ -526,8 +565,8 @@ fn replace_credentials(input_string: String, input: &ActionOrDataInput) -> (Stri
 fn replace_base64_encoded(input: String) -> String {
     let mut result = input.clone();
 
-    for placeholder in RegexType::Base64.extract_placeholders(input) {
-        let to_encode = RegexType::Base64.strip_of_marker(&placeholder);
+    for placeholder in Placeholder::Base64.extract_placeholders(input) {
+        let to_encode = Placeholder::Base64.strip_of_marker(&placeholder);
 
         let replacement = encode_base64(&to_encode);
 
@@ -566,7 +605,7 @@ fn get_param_value(name: &str, input: &ActionOrDataInput) -> Option<String> {
 }
 
 fn encode_base64(placeholder: &str) -> String {
-    general_purpose::STANDARD_NO_PAD.encode(RegexType::Base64.strip_of_marker(placeholder))
+    general_purpose::STANDARD_NO_PAD.encode(Placeholder::Base64.strip_of_marker(placeholder))
 }
 
 fn find_plugin_for_feature<'a>(feature: &Feature, plugins: &'a [Plugin]) -> Option<&'a Plugin> {
@@ -612,21 +651,21 @@ mod tests {
     #[test]
     fn test_regex_param_extract() {
         assert_eq!(
-            RegexType::Param
+            Placeholder::Param
                 .extract_placeholders("test ${params.test}".to_string())
                 .len(),
             1
         );
         assert_ne!(
-            RegexType::Param
+            Placeholder::Param
                 .extract_placeholders("test params.test".to_string())
                 .len(),
             1
         );
-        assert_eq!( RegexType::Param.extract_placeholders("${params.protocol}://${credentials.username}:${credentials.password}192.168.178.20:${params.port}/${params.command}".to_string()).len(), 3);
+        assert_eq!( Placeholder::Param.extract_placeholders("${params.protocol}://${credentials.username}:${credentials.password}192.168.178.20:${params.port}/${params.command}".to_string()).len(), 3);
 
         assert_eq!(
-            RegexType::Base64
+            Placeholder::Base64
                 .extract_placeholders("${encode_base64(USERNAME)}".to_string())
                 .first()
                 .unwrap()
@@ -638,11 +677,11 @@ mod tests {
     #[test]
     fn test_regex_strip_of_marker() {
         assert_eq!(
-            RegexType::Param.strip_of_marker(&"${params.test}".to_string()),
+            Placeholder::Param.strip_of_marker(&"${params.test}".to_string()),
             "test"
         );
         assert_eq!(
-            RegexType::Base64.strip_of_marker(&"${encode_base64(USERNAME)}".to_string()),
+            Placeholder::Base64.strip_of_marker(&"${encode_base64(USERNAME)}".to_string()),
             "USERNAME"
         );
     }

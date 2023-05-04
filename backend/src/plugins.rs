@@ -151,6 +151,21 @@ pub async fn disable_plugins(persistence: &Persistence, plugin_ids: Vec<String>)
     }
 }
 
+pub async fn is_plugin_disabled(plugin_id: &str, persistence: &Persistence) ->  Result<bool, Error> {
+    match persistence.get(TABLE_PLUGIN_CONFIG, "disabled_ids").await {
+        Ok(res) => {
+            let mut ids = res.value.split(',');
+            Ok(ids.any(|id| *id == *plugin_id))
+        },
+        Err(_err) => {
+            Err(Error::new(
+                std::io::ErrorKind::Other,
+                "Could load plugin configuration",
+            ))
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::plugin_types::{ArgDef, Detection, Script, DetectionEntry, Action, State};

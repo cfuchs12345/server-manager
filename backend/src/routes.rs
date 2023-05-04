@@ -3,7 +3,8 @@ use actix_web::{web, get, put, post, HttpRequest, HttpResponse};
 
 use crate::appdata::AppData;
 use crate::config_types::DNSServer;
-use crate::{plugins, features, config, status, types};
+use crate::persistence::Persistence;
+use crate::{plugins, features, config, status, types, persistence};
 use crate::discover::{self};
 use crate::servers;
 use crate::types::{Status, NetworkActionType, ServersActionType, ServersAction, ServerAction, ServerActionType, PluginsAction, NetworksAction};
@@ -90,9 +91,11 @@ pub async fn post_servers_actions(data: web::Data<AppData>, query: web::Json<Ser
             HttpResponse::Ok().json(list)
         },
         ServersActionType::FeatureScan => {
-            match servers::load_all_servers(&data.app_data_persistence).await {
+            match servers::load_all_servers(&data.app_data_persistence).await {                
                 Ok(servers) => {
-                    let list = discover::discover_features_of_all_servers(servers, accept_self_signed_certs, plugin_base_path).await.unwrap();
+                    let upnp_activated = !plugins::is_plugin_disabled("upnp", &data.app_data_persistence).await.unwrap_or(true);
+
+                    let list = discover::discover_features_of_all_servers(servers, accept_self_signed_certs, upnp_activated, plugin_base_path).await.unwrap();
                     log::debug!("list of found features: {:?}", list);
                     HttpResponse::Ok().json(list)                
                 },
@@ -158,7 +161,7 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
                 return HttpResponse::InternalServerError().body(format!("Plugin with id {} not known", feature_id));
             }
 
-            match features::execute_action(&server, feature_res.unwrap(), &plugins_res.unwrap(), action_id, accept_self_signed_certs, &data.app_data_persistence).await {
+            match features::execute_action(&server, &plugins_res.unwrap(), feature_res.unwrap(), action_id, accept_self_signed_certs, &data.app_data_persistence).await {
                 Ok(result) => HttpResponse::Ok().json(result),
                 Err(err) =>  HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
             }
@@ -371,5 +374,4 @@ pub async fn delete_dnsservers(data: web::Data<AppData>, path: web::Path<String>
         Err(_err) => HttpResponse::InternalServerError().body("Cannot save DNS server")
     }
 }
-
 

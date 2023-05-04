@@ -1,33 +1,29 @@
-use dnsclient::{r#async::DNSClient, reexports::async_std::stream::StreamExt, UpstreamServer};
+use dnsclient::{r#async::DNSClient, UpstreamServer};
 use futures::future::join_all;
 use ipnet::Ipv4Net;
 use lazy_static::lazy_static;
 use log::{error, warn};
-use reqwest::Url;
 
 use std::{
     io::ErrorKind,
     net::{IpAddr, SocketAddrV4},
     time::Duration,
-    vec, collections::HashMap, sync::Mutex,
+    vec
 };
 use surge_ping::{Client, Config};
 use tokio::sync::Semaphore;
-use upnp_client::discovery;
 
 use crate::{    
     config_types::DNSServer,
     plugin_types::{DetectionEntry, Plugin},
     plugins,
-    server_types::{Feature, FeaturesOfServer, Server, Param},
+    server_types::{Feature, FeaturesOfServer, Server},
     status,
-    types::HostInformation,
+    types::HostInformation, upnp,
 };
 
 lazy_static! {
     static ref SEMAPHORE_AUTO_DISCOVERY: Semaphore = Semaphore::new(1);
-
-    static ref UPNP_DISCOVER_RESULTS: Mutex<HashMap<String, FeaturesOfServer>> = Mutex::new(HashMap::new());
 }
 
 pub async fn auto_discover_servers_in_network(
@@ -62,12 +58,16 @@ pub async fn auto_discover_servers_in_network(
 pub async fn discover_features_of_all_servers(
     servers: Vec<Server>,
     accept_self_signed_certificates: bool,
+    upnp_activated: bool,
     plugin_base_path: String,
 ) -> Result<Vec<FeaturesOfServer>, std::io::Error> {
     
     let duration = std::time::Duration::from_secs(10);
 
-    let mut features_from_upnp_discovery = discover_upnp_device_features(duration).await;
+    let mut features_from_upnp_discovery = match upnp_activated {
+        true => upnp::upnp_discover(duration).await?,
+        false =>  Vec::new()
+    };
 
     // list of async tasks executed by tokio
     let mut tasks = Vec::new();
@@ -102,153 +102,7 @@ pub async fn discover_features_of_all_servers(
     ))
 }
 
-async fn discover_upnp_device_features(duration: Duration) -> Vec<FeaturesOfServer> {
-    let mut features_from_upnp_discovery: Vec<FeaturesOfServer> = Vec::new();
 
-    UPNP_DISCOVER_RESULTS.lock().unwrap().clear();
-
-    match tokio::time::timeout(duration, do_upnp_discovery()).await {
-        Ok(_) => {
-            // will newer happen - discovery is running an endless loop
-        },
-        Err(_err) => {
-            // when timeout is reached, we end here in the block and can check if we have results in the static variable
-
-            let guard = UPNP_DISCOVER_RESULTS.lock().unwrap();
-
-            let values = guard.values();            
-            values.for_each(|v| features_from_upnp_discovery.push(v.to_owned()));
-        }
-    };
-    features_from_upnp_discovery
-}
-
-async fn do_upnp_discovery()  {
-    match upnp_client::discovery::discover_pnp_locations().await {
-        Ok(devices) => {
-            
-            tokio::pin!(devices);
-
-            
-
-            while let Some(device) = devices.next().await {
-                let mut features: Vec<Feature> = Vec::new();
-
-                let json = serde_json::to_string_pretty(&device).unwrap();
-                println!("device data found: {}", json);
-
-                let mut params = Vec::new();
-                params.push(Param {
-                    name: "device_type".to_string(),
-                    value: device.device_type,
-                });
-                params.push(Param {
-                    name: "manufacturer".to_string(),
-                    value: device.manufacturer,
-                });
-                params.push(Param {
-                    name: "friendly_name".to_string(),
-                    value: device.friendly_name,
-                });
-                params.push(Param {
-                    name: "model_name".to_string(),
-                    value: device.model_name,
-                });
-                params.push(Param {
-                    name: "udn".to_string(),
-                    value: device.udn,
-                });
-                if let Some(desc) = device.model_description {
-                    params.push(Param {
-                        name: "model_description".to_string(),
-                        value: desc,
-                    });
-                }
-
-                for service in device.services {
-                    params.push(Param {
-                        name: format!("service.{}.control_url", service.service_id),
-                        value: service.control_url,
-                    });
-                    params.push(Param {
-                        name: format!("service.{}.event_sub_url", service.service_id),
-                        value: service.event_sub_url,
-                    });
-                    params.push(Param {
-                        name: format!("service.{}.scpd_url", service.service_id),
-                        value: service.scpd_url,
-                    });
-                    params.push(Param {
-                        name: format!("service.{}.service_type", service.service_id),
-                        value: service.service_type,
-                    });
-
-                    for action in service.actions {
-                        params.push(Param {
-                            name: format!(
-                                "service.{}.{}.control_url",
-                                service.service_id, action.name
-                            ),
-                            value: action.name.clone(),
-                        });
-                        for arg in action.arguments {
-                            params.push(Param {
-                                name: format!(
-                                    "service.{}.{}.{}.related_state_variable",
-                                    service.service_id, &action.name, arg.name
-                                ),
-                                value: arg.related_state_variable,
-                            });
-                            params.push(Param {
-                                name: format!(
-                                    "service.{}.{}.{}.direction",
-                                    service.service_id, action.name, arg.name
-                                ),
-                                value: arg.direction,
-                            });
-                        }
-                    }
-                }
-
-                features.push(Feature {
-                    credentials: Vec::new(),
-                    id: "upnp".to_string(),
-                    name: "upnp".to_string(),
-                    params: params,
-                });
-
-                match Url::parse(device.location.as_str()) {
-                    Ok(url) => match url.host_str() {
-                        Some(host) => {
-
-                            UPNP_DISCOVER_RESULTS.lock().unwrap().insert(host.to_string(), FeaturesOfServer {
-                                ipaddress: host.to_string(),
-                                features,
-                            });
-                            
-                        }
-                        None => {
-                            log::error!("Could not find host information of url {}", url);
-                        }
-                    },
-                    Err(err) => {
-                        log::error!(
-                            "Could not parse UPNP device location {} as URL. Error was: {}",
-                            device.location,
-                            err
-                        );
-                    }
-                }
-            }
-        }
-        Err(err) => {
-            log::error!("Error during UPNP discovery: {}", err);
-            if err.to_string().contains("os error 10065") {
-                log::error!("Error with code 10065 is most likely a firewall issue. UPnP results are not available")
-            }
-        }
-    }
-}
 
 pub async fn discover_features(
     ipaddress: &str,

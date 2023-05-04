@@ -17,6 +17,7 @@ mod handlebars_helpers;
 mod status;
 mod crypt;
 mod migrations;
+mod upnp;
 
 pub fn main() {
    

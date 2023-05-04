@@ -113,25 +113,18 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
   };
 
   createInputControls = () => {
-    if(  this.selectedFeature && this.paramsFromFeature.length > 0 && this.paramsFromPlugin.length === 0) { // case for upnp for example
-      this.paramsFromFeature.forEach((param) =>
-        this.form.addControl('param.' + param.name, new FormControl('', []))
-      );
-    }
-    else {
-      this.paramsFromPlugin.forEach((param) =>
-        this.form.addControl('param.' + param.name, new FormControl('', []))
-      );
-      this.credentialsFromPlugin.forEach((credential) => {
-        if( credential.encrypt ) {
-          this.passwordCredentials.set(credential.name, true);
-        }
-        this.form.addControl(
-          'credential.' + credential.name,
-          new FormControl('', [])
-        )
-        });
-    }
+    this.paramsFromPlugin.forEach((param) =>
+      this.form.addControl('param.' + param.name, new FormControl('', []))
+    );
+    this.credentialsFromPlugin.forEach((credential) => {
+      if( credential.encrypt ) {
+        this.passwordCredentials.set(credential.name, true);
+      }
+      this.form.addControl(
+        'credential.' + credential.name,
+        new FormControl('', [])
+      )
+      });
   }
 
   setInitialValuesOnInputControls = () => {

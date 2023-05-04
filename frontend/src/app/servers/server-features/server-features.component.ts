@@ -40,16 +40,13 @@ export class ServerFeaturesComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   private getFeatures = (): string[] => {
-    if( !this.server ) {
+    if( !this.server || !this.plugins || !this.server.features || this.server.features.length === 0) {
       return [];
     }
 
-    if( this.server.features.length === 0 ) {
-      return [];
-    }
     var plugin_names: string[] = [];
     for( var feature of this.server.features) {
-      var plugin = this.plugins?.find( p => p.id === feature.id);
+      var plugin = this.plugins.find( p => p.id === feature.id);
       if( plugin ) {
         plugin_names.push(plugin.name);
       }
