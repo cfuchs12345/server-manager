@@ -49,7 +49,13 @@ pub async fn load_all_servers(persistence: &Persistence) -> Result<Vec<Server>, 
 }
 
 pub async fn get_server(persistence: &Persistence, ipaddress: String)  -> Result<Server,  std::io::Error> {
-    let entry = persistence.get(TABLE, &ipaddress).await.unwrap();
-
-    Ok(json_to_server(&entry.value))
+    let opt = persistence.get(TABLE, &ipaddress).await.unwrap();
+    match opt {
+        Some(entry) => {
+            Ok(json_to_server(&entry.value))
+        },
+        None => {
+            Err(std::io::Error::new(std::io::ErrorKind::NotFound, format!("Could not find server for ip address {}", ipaddress)))
+        }
+    }
 }

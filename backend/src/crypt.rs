@@ -14,26 +14,42 @@ pub fn get_random_key32() ->  Result<String, Error> {
 
 pub  fn default_encrypt(to_encrypt: &str, persistence: &Persistence) -> String {
     match futures::executor::block_on(persistence.get("encryption", "default")) {
-        Ok(key) => {
-            let mc = new_magic_crypt!(key.value, 256);
-
-            mc.encrypt_str_to_base64(to_encrypt)
+        Ok(opt) => {
+            match opt {
+                Some(entry) => {
+                    let mc = new_magic_crypt!(entry.value, 256);
+                    mc.encrypt_str_to_base64(to_encrypt)
+                },
+                None => {
+                    log::error!("didn't find encryption key in the database");        
+                    to_encrypt.to_string()
+                }
+            }
         },
         Err(_err) => {
-            "".to_string()
+            to_encrypt.to_string()
         }
     }    
 }
 
 pub  fn default_decrypt(to_decrypt: &str, persistence: &Persistence) -> String { 
     match futures::executor::block_on(persistence.get("encryption", "default")) {
-        Ok(key) => {
-            let mc = new_magic_crypt!(key.value, 256);
+        Ok(opt) => {
+            match opt {
+                Some(entry) => {
+                    let mc = new_magic_crypt!(entry.value, 256);
 
-            mc.decrypt_base64_to_string(to_decrypt).unwrap()
+                    mc.decrypt_base64_to_string(to_decrypt).unwrap()
+                },
+                None => {
+                    log::error!("didn't find encryption key in the database");        
+                    to_decrypt.to_string()
+                }
+            }
         },
-        Err(_err) => {
-            "".to_string()
+        Err(err) => {
+            log::error!("error: {}", err);
+            to_decrypt.to_string()
         }
     }    
 }
