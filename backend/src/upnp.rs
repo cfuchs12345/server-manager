@@ -25,6 +25,7 @@ pub async fn upnp_discover(
                 match &response {
                     Ok(res) => {
                         let location = res.location();
+                        log::info!("Found UPnP device that responded with location {}", location);
 
                         match Url::parse(location) {
                             Ok(url) => {
@@ -68,32 +69,36 @@ pub async fn upnp_discover(
 async fn parse_device_info_from_location(server_features_with_upnp: Vec<FeaturesOfServer>, accept_self_signed_certificates: bool) ->  Vec<FeaturesOfServer> {
     let clone = server_features_with_upnp.clone();
     for fos in server_features_with_upnp {
-        for f in  fos.features {
-            match f.params.iter().find( |f| f.name == LOCATION) {
-                Some(location_param) => {
-                    match http_functions::execute_http_request(location_param.value.clone(), http_functions::GET, None, None, accept_self_signed_certificates).await {
-                        Ok(res) => {
-                            match res.text().await {
-                                Ok(text) => {
-                                    parse_upnp_description(text);
-                                },
-                                Err(err) => {
-                                    log::error!("Error while reading response text from location {} of UPnP device {}. Error {}", location_param.value.clone(), fos.ipaddress, err);
+        match fos.features.iter().find( |f| f.id == UPNP) {
+            Some(upnp_feature) => {
+                match upnp_feature.params.iter().find( |p| p.name == LOCATION) {
+                    Some( location_param ) =>  {
+                        match http_functions::execute_http_request(location_param.value.clone(), http_functions::GET, None, None, accept_self_signed_certificates).await {
+                            Ok(res) => {
+                                match res.text().await {
+                                    Ok(text) => {
+                                        parse_upnp_description(text);
+                                    },
+                                    Err(err) => {
+                                        log::error!("Error while reading response text from location {} of UPnP device {}. Error {}", location_param.value.clone(), fos.ipaddress, err);
+                                    }
                                 }
+                            },
+                            Err(err) => {
+                                log::error!("Error while doing http request on location {} of UPnP device {}. Error {}", location_param.value.clone(), fos.ipaddress, err);
                             }
-                        },
-                        Err(err) => {
-                            log::error!("Error while doing http request on location {} of UPnP device {}. Error {}", location_param.value.clone(), fos.ipaddress, err);
                         }
+                    },
+                    None => {
+                        log::info!("No location found for UPnP feature of server {}", fos.ipaddress);
                     }
-                },
-                None => {
-                    log::info!("No location found for UPnP feature of server {}", fos.ipaddress);
                 }
-            }
+            },
+            None => {
+                log::info!("No UPnP feature found for server {}", fos.ipaddress);
+            }           
         }
-    }
-    
+    }    
     
     clone    
 }
