@@ -2,6 +2,9 @@ use std::{time::Duration, io::ErrorKind};
 
 use reqwest::Response;
 
+pub const GET: &str = "get";
+pub const POST: &str = "post";
+
 pub async fn execute_http_request(
     url: String,
     method: &str,
@@ -18,8 +21,8 @@ pub async fn execute_http_request(
     let header_map: http::HeaderMap = headers_to_map(headers);
 
     let result = match method {
-        "get" => client.get(url).headers(header_map).send().await.map_err(|e| e.into()),
-        "post" => client.post(url).headers(header_map).body(body.unwrap_or("".to_string())).send().await.map_err(|e| e.into()),
+        GET => client.get(url).headers(header_map).send().await.map_err(|e| e.into()),
+        POST => client.post(url).headers(header_map).body(body.unwrap_or("".to_string())).send().await.map_err(|e| e.into()),
         y => Err( std::io::Error::new(ErrorKind::InvalidInput, format!("Method {} is not supported here", y)).into())
     };
    

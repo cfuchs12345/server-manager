@@ -7,6 +7,10 @@ use std::{
 
 use crate::{server_types::{Feature, FeaturesOfServer, Param}, http_functions};
 
+const UPNP: &str = "upnp";
+const LOCATION: &str = "location";
+
+
 pub async fn upnp_discover(
     wait_time_for_upnp: usize,
     accept_self_signed_certificates: bool
@@ -27,11 +31,11 @@ pub async fn upnp_discover(
                                 server_features_with_upnp.push(FeaturesOfServer {
                                     ipaddress: url.host().unwrap().to_string(),
                                     features: vec![Feature {
-                                        id: "upnp".to_string(),
-                                        name: "upnp".to_string(),
+                                        id: UPNP.to_string(),
+                                        name: UPNP.to_string(),
                                         params: vec![
                                             Param {
-                                                name: "Location".to_string(),
+                                                name: LOCATION.to_string(),
                                                 value: location.to_string()
                                             }
                                         ],                                
@@ -65,9 +69,9 @@ async fn parse_device_info_from_location(server_features_with_upnp: Vec<Features
     let clone = server_features_with_upnp.clone();
     for fos in server_features_with_upnp {
         for f in  fos.features {
-            match f.params.iter().find( |f| f.name == "location") {
+            match f.params.iter().find( |f| f.name == LOCATION) {
                 Some(location_param) => {
-                    match http_functions::execute_http_request(location_param.value.clone(), "get", None, None, accept_self_signed_certificates).await {
+                    match http_functions::execute_http_request(location_param.value.clone(), http_functions::GET, None, None, accept_self_signed_certificates).await {
                         Ok(res) => {
                             match res.text().await {
                                 Ok(text) => {
