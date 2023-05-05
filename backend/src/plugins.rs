@@ -73,7 +73,7 @@ pub fn plugin_detect_match(plugin: &Plugin, input: &str) -> Result<bool, Error> 
     let is_lua = matches!(script_type.as_str(), "lua");
     let is_rhai = matches!(script_type.as_str(), "rhai");
 
-    if !is_lua || !is_rhai {
+    if !is_lua && !is_rhai {
         return Err(Error::new(
             std::io::ErrorKind::Other,
             "Only LUA and RHAI scripts are currently supported",

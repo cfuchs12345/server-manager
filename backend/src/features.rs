@@ -559,7 +559,7 @@ fn response_data_match(dependency: &DependsDef, input: &str) -> Result<bool, Err
     let is_lua = matches!(script_type.as_str(), "lua");
     let is_rhai = matches!(script_type.as_str(), "rhai");
 
-    if !is_lua || !is_rhai {
+    if !is_lua && !is_rhai {
         return Err(Error::from(std::io::Error::new(
             ErrorKind::Other,
             "Only RHAI and LUA scripts are currently supported",
