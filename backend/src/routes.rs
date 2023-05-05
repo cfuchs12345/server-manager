@@ -94,10 +94,17 @@ pub async fn post_servers_actions(data: web::Data<AppData>, query: web::Json<Ser
             match servers::load_all_servers(&data.app_data_persistence).await {                
                 Ok(servers) => {
                     let upnp_activated = !plugins::is_plugin_disabled("upnp", &data.app_data_persistence).await.unwrap_or(true);
-
-                    let list = discover::discover_features_of_all_servers(servers, accept_self_signed_certs, upnp_activated, plugin_base_path).await.unwrap();
-                    log::debug!("list of found features: {:?}", list);
-                    HttpResponse::Ok().json(list)                
+                    match plugins::get_all_plugins(&plugin_base_path).await {
+                        Ok(plugins) => {
+                            let list = discover::discover_features_of_all_servers(servers, accept_self_signed_certs, upnp_activated, plugins).await.unwrap();
+                            log::debug!("list of found features: {:?}", list);
+                            HttpResponse::Ok().json(list)         
+                        },
+                        Err(err) => {
+                            log::error!("Error while loading plugins: {:?}", err);
+                            HttpResponse::InternalServerError().body("Could not load plugins")
+                        }                        
+                    }                          
                 },
                 Err(err) => {
                     log::error!("Error while loading servers from database: {:?}", err);
@@ -116,17 +123,21 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
     let ipaddress = path.into_inner();
 
     let server_res = servers::get_server(&data.app_data_persistence, ipaddress.clone()).await;
+    
+    let plugins_res = plugins::get_all_plugins(&plugin_base_path).await;
 
     if server_res.is_err() {
         return HttpResponse::InternalServerError().body(format!("Server with ip {} not found", &ipaddress));
     }
-
+    if plugins_res.is_err() {
+        return HttpResponse::InternalServerError().body("Could not load plugins".to_string());
+    }
     let server = server_res.unwrap();
 
 
     match query.action_type {
         ServerActionType::FeatureScan => {
-            match discover::discover_features(&ipaddress, accept_self_signed_certs, &plugin_base_path).await {
+            match discover::discover_features(&ipaddress, accept_self_signed_certs, plugins_res.unwrap()).await {
                 Ok(list) => HttpResponse::Ok().json(list),
                 Err(err) =>  HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
             }            
@@ -147,15 +158,15 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
             let action_id: &String = params_map.get("action_id").unwrap();
 
             let feature_res = server.find_feature(feature_id.clone());
-            let filename_res = plugins::get_filename_for_plugin(feature_id.clone(), &plugin_base_path).await;
+            let plugins = plugins_res.unwrap();
+
+            let plugin_res = plugins.iter().find(|p| p.id == feature_id.to_owned());
 
             let crypto_res = get_crypto_key(&data.app_data_persistence).await;
 
-            if filename_res.is_none() {
+            if plugin_res.is_none() {
                 return HttpResponse::InternalServerError().body(format!("Plugin with id {} not known", feature_id));
             }
-
-            let plugins_res = plugins::load_plugin(&plugin_base_path, filename_res.unwrap().as_str()).await;
 
             if crypto_res.is_err() {
                 return HttpResponse::InternalServerError().body("Crypto key not found".to_string());
@@ -163,11 +174,8 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
             if feature_res.is_none() {
                 return HttpResponse::InternalServerError().body(format!("Feature with id {} not known", feature_id));
             }
-            if plugins_res.is_err() {
-                return HttpResponse::InternalServerError().body(format!("Plugin with id {} not known", feature_id));
-            }
 
-            match features::execute_action(&server, &plugins_res.unwrap(), feature_res.unwrap(), action_id, accept_self_signed_certs, crypto_res.unwrap()).await {
+            match features::execute_action(&server, &plugin_res.unwrap(), feature_res.unwrap(), action_id, accept_self_signed_certs, crypto_res.unwrap()).await {
                 Ok(result) => HttpResponse::Ok().json(result),
                 Err(err) =>  HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
             }
@@ -180,26 +188,23 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
 
             let feature_res = server.find_feature(feature_id.clone());
 
-            let filename_res = plugins::get_filename_for_plugin(feature_id.clone(), &plugin_base_path).await;
+            let plugins = plugins_res.unwrap();
+            let plugin_res = plugins.iter().find(|p| p.id == feature_id.to_owned());
 
             let crypto_res = get_crypto_key(&data.app_data_persistence).await;
 
-            if filename_res.is_none() {
+            if plugin_res.is_none() {
                 return HttpResponse::InternalServerError().body(format!("Plugin with id {} not known", feature_id));
             }
 
-            let plugins_res = plugins::load_plugin(&plugin_base_path, filename_res.unwrap().as_str()).await;
             if feature_res.is_none() {
                 return HttpResponse::InternalServerError().body(format!("Feature with id {} not known", feature_id));
-            }
-            if plugins_res.is_err() {
-                return HttpResponse::InternalServerError().body(format!("Plugin with id {} not known", feature_id));
             }
             if crypto_res.is_err() {
                 return HttpResponse::InternalServerError().body("Crypto key not found".to_string());
             }
 
-            match features::check_condition_for_action_met( &server, &plugins_res.unwrap(), feature_res.unwrap(), action_id, accept_self_signed_certs, crypto_res.unwrap()).await {
+            match features::check_condition_for_action_met( &server, plugin_res.unwrap(), feature_res.unwrap(), action_id, accept_self_signed_certs, crypto_res.unwrap()).await {
                 Ok(result) => HttpResponse::Ok().json(result),
                 Err(err) =>  {
                     log::error!("Error during action condition check: {:?}", err);
@@ -208,12 +213,8 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
             }
         }
         ServerActionType::QueryData => {       
-            let plugins_res = plugins::get_all_plugins(&plugin_base_path).await;
-            let crypto_res = get_crypto_key(&data.app_data_persistence).await;
 
-            if plugins_res.is_err() {
-                return HttpResponse::InternalServerError().body("Could not load plugins");
-            }
+            let crypto_res = get_crypto_key(&data.app_data_persistence).await;
 
             match features::execute_data_query(&server, &plugins_res.unwrap(), accept_self_signed_certs, &data.app_data_template_engine, crypto_res.unwrap()).await {
                 Ok(results) => {
@@ -230,13 +231,13 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
             
             let feature_id = params_map.get("feature_id").unwrap();
             let action_id: &String = params_map.get("action_id").unwrap();
+            
+            let plugins = plugins_res.unwrap();
+            let plugin_res = plugins.iter().find(|p| p.id == feature_id.to_owned());
 
-            let filename_res = plugins::get_filename_for_plugin(feature_id.clone(), &plugin_base_path).await;
-            if filename_res.is_none() {
+            if plugin_res.is_none() {
                 return HttpResponse::InternalServerError().body(format!("Plugin with id {} not known", feature_id));
             }
-
-            let plugins_res = plugins::load_plugin(&plugin_base_path, filename_res.unwrap().as_str()).await;
 
             let feature_res = server.find_feature(feature_id.clone());
            
@@ -248,10 +249,8 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
             if feature_res.is_none() {
                 return HttpResponse::InternalServerError().body(format!("Feature with id {} not known", feature_id));
             }
-            if plugins_res.is_err() {
-                return HttpResponse::InternalServerError().body(format!("Plugin with id {} not known", feature_id));
-            }
-            match features::check_condition_for_action_met(&server, &plugins_res.unwrap(), feature_res.unwrap(), action_id, accept_self_signed_certs, crypto_res.unwrap()).await {
+          
+            match features::check_condition_for_action_met(&server, &plugin_res.unwrap(), feature_res.unwrap(), action_id, accept_self_signed_certs, crypto_res.unwrap()).await {
                 Ok(result) => HttpResponse::Ok().json(result),
                 Err(err) =>  HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
             }

@@ -32,7 +32,7 @@ pub fn get_all_plugin_filenames(plugin_base_path: &str) -> Result<Vec<String>, E
     Ok(plugin_file_names)
 }
 
-
+#[allow(dead_code)]
 pub async fn get_filename_for_plugin(feature_id: String, plugin_base_path: &str) -> Option<String> {
     if PLUGIN_NAME_TO_FILENAME.lock().await.len() == 0 {
         match get_all_plugins(plugin_base_path).await {

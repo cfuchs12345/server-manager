@@ -59,13 +59,13 @@ pub async fn discover_features_of_all_servers(
     servers: Vec<Server>,
     accept_self_signed_certificates: bool,
     upnp_activated: bool,
-    plugin_base_path: String,
+    plugins: Vec<Plugin>,
 ) -> Result<Vec<FeaturesOfServer>, std::io::Error> {
     
     let wait_time_for_upnp = 15; // in seconds
 
     let mut features_from_upnp_discovery = match upnp_activated {
-        true => upnp::upnp_discover(wait_time_for_upnp, accept_self_signed_certificates).await?,
+        true => upnp::upnp_discover(wait_time_for_upnp, accept_self_signed_certificates, &plugins).await?,
         false =>  {
             log::info!("Skipping UPnP device discovery since the plugin is disabled");
             Vec::new()
@@ -77,13 +77,13 @@ pub async fn discover_features_of_all_servers(
     for server in servers {
         let ipaddress = server.ipaddress.clone();
         let accept_self_signed_certificates = accept_self_signed_certificates;
-        let plugin_base_path = plugin_base_path.clone();
+        let plugin_clone = plugins.clone();
 
         tasks.push(tokio::spawn(async move {
             discover_features(
                 ipaddress.as_str(),
                 accept_self_signed_certificates,
-                &plugin_base_path,
+                plugin_clone,
             )
             .await
         }));
@@ -110,10 +110,8 @@ pub async fn discover_features_of_all_servers(
 pub async fn discover_features(
     ipaddress: &str,
     accept_self_signed_certificates: bool,
-    plugin_base_path: &str,
+    plugins: Vec<Plugin>,
 ) -> Result<FeaturesOfServer, std::io::Error> {
-    let plugins = plugins::get_all_plugins(plugin_base_path).await.unwrap();
-
     let mut features_of_server = FeaturesOfServer {
         ipaddress: ipaddress.to_string(),
         features: vec![],

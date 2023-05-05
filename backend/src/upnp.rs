@@ -5,17 +5,23 @@ use std::{
     time::{Duration},
 };
 
-use crate::{server_types::{Feature, FeaturesOfServer, Param}, http_functions};
+use crate::{server_types::{Feature, FeaturesOfServer, Param}, http_functions, plugin_types::Plugin};
 
-const UPNP: &str = "upnp";
 const LOCATION: &str = "location";
-
+const UPNP: &str = "upnp";
 
 pub async fn upnp_discover(
     wait_time_for_upnp: usize,
-    accept_self_signed_certificates: bool
+    accept_self_signed_certificates: bool,
+    plugins: &Vec<Plugin>
 ) -> Result<Vec<FeaturesOfServer>, std::io::Error> {
     let mut server_features_with_upnp: Vec<FeaturesOfServer> = Vec::new();
+
+    let found = plugins.iter().find(|p| p.id == UPNP);
+    if found.is_none() {
+        return Ok(Vec::new());
+    }
+    let plugin = found.unwrap();
 
     let search_target = SearchTarget::RootDevice;
 
@@ -32,8 +38,8 @@ pub async fn upnp_discover(
                                 server_features_with_upnp.push(FeaturesOfServer {
                                     ipaddress: url.host().unwrap().to_string(),
                                     features: vec![Feature {
-                                        id: UPNP.to_string(),
-                                        name: UPNP.to_string(),
+                                        id: plugin.id.clone(),
+                                        name: plugin.name.clone(),
                                         params: vec![
                                             Param {
                                                 name: LOCATION.to_string(),
@@ -63,13 +69,13 @@ pub async fn upnp_discover(
 
     
 
-    Ok(parse_device_info_from_location(server_features_with_upnp, accept_self_signed_certificates).await)
+    Ok(parse_device_info_from_location(server_features_with_upnp, accept_self_signed_certificates, plugin).await)
 }
 
-async fn parse_device_info_from_location(server_features_with_upnp: Vec<FeaturesOfServer>, accept_self_signed_certificates: bool) ->  Vec<FeaturesOfServer> {
+async fn parse_device_info_from_location(server_features_with_upnp: Vec<FeaturesOfServer>, accept_self_signed_certificates: bool, plugin: &Plugin) ->  Vec<FeaturesOfServer> {
     let clone = server_features_with_upnp.clone();
     for fos in server_features_with_upnp {
-        match fos.features.iter().find( |f| f.id == UPNP) {
+        match fos.features.iter().find( |f| f.id == plugin.id) {
             Some(upnp_feature) => {
                 match upnp_feature.params.iter().find( |p| p.name == LOCATION) {
                     Some( location_param ) =>  {
