@@ -20,13 +20,11 @@ pub async fn execute_http_request(
 
     let header_map: http::HeaderMap = headers_to_map(headers);
 
-    let result = match method {
+    match method {
         GET => client.get(url).headers(header_map).send().await.map_err(|e| e.into()),
         POST => client.post(url).headers(header_map).body(body.unwrap_or("".to_string())).send().await.map_err(|e| e.into()),
         y => Err( std::io::Error::new(ErrorKind::InvalidInput, format!("Method {} is not supported here", y)).into())
-    };
-   
-    result
+    }
 }
 
 

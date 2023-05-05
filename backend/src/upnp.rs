@@ -13,7 +13,7 @@ const UPNP: &str = "upnp";
 pub async fn upnp_discover(
     wait_time_for_upnp: usize,
     accept_self_signed_certificates: bool,
-    plugins: &Vec<Plugin>
+    plugins: &[Plugin]
 ) -> Result<Vec<FeaturesOfServer>, std::io::Error> {
     let mut server_features_with_upnp: Vec<FeaturesOfServer> = Vec::new();
 

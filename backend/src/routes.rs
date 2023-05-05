@@ -160,7 +160,7 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
             let feature_res = server.find_feature(feature_id.clone());
             let plugins = plugins_res.unwrap();
 
-            let plugin_res = plugins.iter().find(|p| p.id == feature_id.to_owned());
+            let plugin_res = plugins.iter().find(|p| p.id == *feature_id);
 
             let crypto_res = get_crypto_key(&data.app_data_persistence).await;
 
@@ -175,7 +175,7 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
                 return HttpResponse::InternalServerError().body(format!("Feature with id {} not known", feature_id));
             }
 
-            match features::execute_action(&server, &plugin_res.unwrap(), feature_res.unwrap(), action_id, accept_self_signed_certs, crypto_res.unwrap()).await {
+            match features::execute_action(&server, plugin_res.unwrap(), feature_res.unwrap(), action_id, accept_self_signed_certs, crypto_res.unwrap()).await {
                 Ok(result) => HttpResponse::Ok().json(result),
                 Err(err) =>  HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
             }
@@ -189,7 +189,7 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
             let feature_res = server.find_feature(feature_id.clone());
 
             let plugins = plugins_res.unwrap();
-            let plugin_res = plugins.iter().find(|p| p.id == feature_id.to_owned());
+            let plugin_res = plugins.iter().find(|p| p.id == *feature_id);
 
             let crypto_res = get_crypto_key(&data.app_data_persistence).await;
 
@@ -233,7 +233,7 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
             let action_id: &String = params_map.get("action_id").unwrap();
             
             let plugins = plugins_res.unwrap();
-            let plugin_res = plugins.iter().find(|p| p.id == feature_id.to_owned());
+            let plugin_res = plugins.iter().find(|p| p.id == *feature_id);
 
             if plugin_res.is_none() {
                 return HttpResponse::InternalServerError().body(format!("Plugin with id {} not known", feature_id));
@@ -250,7 +250,7 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
                 return HttpResponse::InternalServerError().body(format!("Feature with id {} not known", feature_id));
             }
           
-            match features::check_condition_for_action_met(&server, &plugin_res.unwrap(), feature_res.unwrap(), action_id, accept_self_signed_certs, crypto_res.unwrap()).await {
+            match features::check_condition_for_action_met(&server, plugin_res.unwrap(), feature_res.unwrap(), action_id, accept_self_signed_certs, crypto_res.unwrap()).await {
                 Ok(result) => HttpResponse::Ok().json(result),
                 Err(err) =>  HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
             }
