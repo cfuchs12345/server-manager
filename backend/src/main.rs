@@ -13,11 +13,12 @@ mod plugin_types;
 mod server_types;
 mod config_types;
 mod conversion;
-mod handlebars_helpers;
+mod handlebars_helper_functions;
 mod status;
 mod crypt;
 mod migrations;
 mod upnp;
+mod http_functions;
 
 pub fn main() {
    

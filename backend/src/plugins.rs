@@ -2,7 +2,10 @@ use futures::future::join_all;
 use futures::lock::Mutex;
 use lazy_static::lazy_static;
 use log::debug;
+
 use rlua::Lua;
+use rhai::{Engine, Scope};
+
 use std::collections::HashMap;
 use std::io::Error;
 use std::{fs::File, io::BufReader};
@@ -68,25 +71,39 @@ pub fn plugin_detect_match(plugin: &Plugin, input: &str) -> Result<bool, Error> 
     let script_type = plugin.detection.script.script_type.clone();
 
     let is_lua = matches!(script_type.as_str(), "lua");
+    let is_rhai = matches!(script_type.as_str(), "rhai");
 
-    if !is_lua {
+    if !is_lua || !is_rhai {
         return Err(Error::new(
             std::io::ErrorKind::Other,
-            "Only LUA scripts are currently supported",
+            "Only LUA and RHAI scripts are currently supported",
         ));
     }
 
     let mut result = false;
-    let lua = Lua::new();
+    
+    if is_lua {
+        let lua = Lua::new();
 
-    lua.context(|lua_ctx| {
-        let globals = lua_ctx.globals();
-        globals
-            .set("input", "[[".to_string() + input + "]]")
-            .expect("Could not set global value");
+        lua.context(|lua_ctx| {
+            let globals = lua_ctx.globals();
+            globals
+                .set("input", "[[".to_string() + input + "]]")
+                .expect("Could not set global value");
 
-        result = lua_ctx.load(&script).eval().unwrap();
-    });
+            result = lua_ctx.load(&script).eval().unwrap();
+        });
+    }
+    else if is_rhai {
+        let mut scope = Scope::new();
+        
+        scope.push("input", input.to_owned());
+
+        let engine = Engine::new();        
+        if let Ok(value) = engine.eval_with_scope::<bool>(&mut scope, &script) {
+            result = value;
+        }
+    }
 
     Ok(result)
 }

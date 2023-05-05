@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 
-use crate::{plugin_types::{ParamDef, ArgDef, Plugin, Data, Action}, server_types::{Credential, Feature, Param}, persistence::Persistence};
+use crate::{plugin_types::{ParamDef, ArgDef, Plugin, Data, Action}, server_types::{Credential, Feature, Param}};
 
 pub struct QueryParamsAsMap {
     params: HashMap<String, String>
@@ -35,17 +35,17 @@ impl QueryParamsAsMap {
 
 
 #[derive (Debug)]
-pub struct ActionOrDataInput<'a> {
+pub struct ActionOrDataInput {
     pub command: String,
     args: Vec<ArgDef>,
     params: Vec<Param>,
     default_params: Vec<ParamDef>,
     credentials: Vec<Credential>,
     pub accept_self_signed_ceritificates: bool,
-    pub persistence: &'a Persistence
+    pub crypto_key: String
 }
-impl ActionOrDataInput<'_> {
-    pub fn get_input_from_action<'a>(action: &Action, plugin: &Plugin, feature: &Feature, accept_self_signed_ceritificates: bool, persistence: &'a Persistence) -> ActionOrDataInput<'a> {
+impl ActionOrDataInput {
+    pub fn get_input_from_action(action: &Action, plugin: &Plugin, feature: &Feature, accept_self_signed_ceritificates: bool, crypto_key: String ) -> ActionOrDataInput {
         ActionOrDataInput{
             command: action.command.clone(),
             args: action.args.clone(),
@@ -53,11 +53,11 @@ impl ActionOrDataInput<'_> {
             params: feature.params.clone(),
             credentials: feature.credentials.clone(),
             accept_self_signed_ceritificates,
-            persistence
+            crypto_key
         }
     }
 
-    pub fn get_input_from_data<'a>(data: &Data, plugin: &Plugin, feature: &Feature, accept_self_signed_ceritificates: bool, persistence: &'a Persistence) ->  ActionOrDataInput<'a> {
+    pub fn get_input_from_data(data: &Data, plugin: &Plugin, feature: &Feature, accept_self_signed_ceritificates: bool, crypto_key: String) ->  ActionOrDataInput {
         ActionOrDataInput{
             command: data.command.clone(),
             args: data.args.clone(),
@@ -65,7 +65,7 @@ impl ActionOrDataInput<'_> {
             params: feature.params.clone(),
             credentials: feature.credentials.clone(),
             accept_self_signed_ceritificates,
-            persistence
+            crypto_key
         }
     }
 

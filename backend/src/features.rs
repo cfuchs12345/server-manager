@@ -1,19 +1,18 @@
-use crate::persistence::Persistence;
-use crate::{conversion, crypt};
+use crate::{conversion, crypt, http_functions};
 use crate::plugin_types::{Data, DependsDef, Plugin};
 use crate::server_types::{Feature, Server, Credential};
 use crate::types::ActionOrDataInput;
+use std::io::ErrorKind;
 use actix_web::{Error};
 use base64::{engine::general_purpose, Engine as _};
-use http::response::Builder;
-use http::StatusCode;
 use lazy_static::lazy_static;
 use mac_address::MacAddress;
 use regex::Regex;
-use reqwest::Response;
+
 use rlua::Lua;
-use std::io::ErrorKind;
-use std::time::Duration;
+use rhai::{Engine, Scope};
+
+
 
 /// This enum hides the actual regular expressions and the matching and provides methods for 
 /// * easy extraction of matched strings
@@ -73,7 +72,7 @@ pub async fn execute_action(
     feature: &Feature,
     action_id: &str,
     accept_self_signed_certificates: bool,
-    persistence: &Persistence
+    crypto_key: String
 ) -> Result<bool, Error> {
     match plugin.find_action(action_id) {
         Some(plugin_action) => {
@@ -82,7 +81,7 @@ pub async fn execute_action(
                 plugin,
                 feature,
                 accept_self_signed_certificates,
-                persistence
+                crypto_key
             );
 
             execute_command(server.ipaddress.clone(), &input)
@@ -110,7 +109,7 @@ pub async fn execute_data_query(
     plugins: &[Plugin],
     accept_self_signed_certificates: bool,
     template_engine: &handlebars::Handlebars<'static>,
-    persistence: &Persistence
+    crypto_key: String
 ) -> Result<Vec<String>, Error> {
     let mut results: Vec<String> = vec![];
 
@@ -128,7 +127,7 @@ pub async fn execute_data_query(
                 tuple.0,
                 data,
                 accept_self_signed_certificates,
-                 persistence
+                crypto_key.clone()
             )
             .await?;
 
@@ -164,14 +163,14 @@ pub async fn execute_specific_data_query(
     feature: &Feature,
     data: &Data,
     accept_self_signed_certificates: bool,
-    persistence: &Persistence
+    crypto_key: String
 ) -> Result<String, Error> {
     let input: ActionOrDataInput = ActionOrDataInput::get_input_from_data(
         data,
         plugin,
         feature,
         accept_self_signed_certificates,
-        persistence
+        crypto_key
     );
 
     execute_command(server.ipaddress.clone(), &input).await
@@ -193,7 +192,7 @@ pub async fn check_condition_for_action_met(
     feature: &Feature,
     action_id: &str,
     accept_self_signed_certificates: bool,
-    persistence: &Persistence
+    crypto_key: String
 ) -> Result<bool, Error> {
     match plugin.find_action(action_id) {
         Some(action) => {
@@ -235,7 +234,7 @@ pub async fn check_condition_for_action_met(
                                         feature,
                                         data,
                                         accept_self_signed_certificates,
-                                        persistence
+                                        crypto_key.clone()
                                     )
                                     .await?;
 
@@ -273,7 +272,7 @@ pub async fn check_condition_for_action_met(
     }
 }
 
-async fn execute_command<'a>(ipaddress: String, input:  &'a ActionOrDataInput<'_>) -> Result<String, Error> {
+async fn execute_command<'a>(ipaddress: String, input: &ActionOrDataInput) -> Result<String, Error> {
     match input.command.as_str() {
         "http" => execute_http_command(ipaddress, input).await,
         "wol" => execute_wol_command(ipaddress, input).await,
@@ -287,7 +286,7 @@ async fn execute_command<'a>(ipaddress: String, input:  &'a ActionOrDataInput<'_
 
 async fn execute_http_command<'a>(
     ipaddress: String,
-    input: &'a ActionOrDataInput<'_>,
+    input: &ActionOrDataInput,
 ) -> Result<String, Error> {
     let url = input
         .find_arg("url")
@@ -362,11 +361,11 @@ async fn execute_http_command<'a>(
         );
     }
 
-    match execute_http_request(
+    match http_functions::execute_http_request(
         normal_and_masked_url.0,
-        method.value.clone(),
-        normal_and_replaced_headers,
-        normal_and_masked_body.0,
+        method.value.as_str(),
+        Some(normal_and_replaced_headers),
+        Some(normal_and_masked_body.0),
         input.accept_self_signed_ceritificates,
     )
     .await
@@ -382,14 +381,14 @@ async fn execute_http_command<'a>(
         }
         Err(err) => {
             log::error!("Error {}", err);
-            Err(Error::from(std::io::Error::new(ErrorKind::Other, err)))
+            Err(err.into())
         }
     }
 }
 
 async fn execute_wol_command<'a>(
     _ipaddress: String,
-    input: &'a ActionOrDataInput<'_>,
+    input: &ActionOrDataInput,
 ) -> Result<String, Error> {
     let feature_param = get_param_value("mac_address", input);
     match feature_param {
@@ -427,71 +426,8 @@ async fn execute_wol_command<'a>(
     }
 }
 
-async fn execute_http_request(
-    url: String,
-    method: String,
-    headers: Vec<(String, String)>,
-    body: String,
-    accept_self_signed_certificates: bool,
-) -> Result<Response, reqwest::Error> {
-    let client = reqwest::Client::builder()
-        .danger_accept_invalid_certs(accept_self_signed_certificates)
-        .timeout(Duration::from_secs(1))
-        .build()
-        .unwrap();
 
-    let header_map: http::HeaderMap = headers_to_map(headers);
 
-    let result = match method.as_str() {
-        "get" => client.get(url).headers(header_map).send().await,
-        "post" => client.post(url).headers(header_map).body(body).send().await,
-        y => {
-            let response = Builder::new()
-                .status(StatusCode::PRECONDITION_FAILED)
-                .body(format!("method {} not supported", y))
-                .unwrap();
-            Ok(Response::from(response))
-        }
-    };
-
-    result
-}
-
-fn headers_to_map(headers: Vec<(String, String)>) -> http::HeaderMap {
-    let mut header_map: http::HeaderMap = http::HeaderMap::new();
-
-    for header in headers {
-        let res = header.0.split_once('=');
-
-        if res.is_none() {
-            log::error!(
-                "Header {} is invalid. Container no equals sign (=)",
-                header.1
-            );
-            continue;
-        }
-        let split = res.unwrap();
-
-        let name_res = http::header::HeaderName::from_lowercase(split.0.to_lowercase().as_bytes());
-        let value_res = http::header::HeaderValue::from_str(split.1);
-
-        match name_res {
-            Ok(name) => match value_res {
-                Ok(value) => {
-                    header_map.insert(name, value);
-                }
-                Err(err) => {
-                    log::error!("Header {} is invalid {}", header.1, err);
-                }
-            },
-            Err(err) => {
-                log::error!("Header {} is invalid {}", header.1, err);
-            }
-        }
-    }
-
-    header_map
-}
 
 fn replace_list(
     input_strings: Vec<String>,
@@ -546,7 +482,7 @@ fn replace_credentials(input_string: String, input: &ActionOrDataInput) -> (Stri
     for placeholder in Placeholder::Credential.extract_placeholders(input_string) {
         let name = Placeholder::Credential.strip_of_marker(&placeholder);
 
-        let replacement = get_credential_value(name.as_str(), input, input.persistence);
+        let replacement = get_credential_value(name.as_str(), input);
 
         if let Some(replacement_tuple) = replacement {
             result = result.replace(placeholder.as_str(), replacement_tuple.0.as_str());
@@ -576,15 +512,15 @@ fn replace_base64_encoded(input: String) -> String {
     result
 }
 
-fn get_credential_value(name: &str, input: &ActionOrDataInput, persistence: &Persistence) -> Option<(String, bool)> {
+fn get_credential_value(name: &str, input: &ActionOrDataInput) -> Option<(String, bool)> {
     input
         .find_credential(name)
-        .map(|credential| (decrypt(credential, persistence), credential.encrypted))
+        .map(|credential| (decrypt(credential, &input.crypto_key), credential.encrypted))
 }
 
-fn decrypt( credential: &Credential, persistence: &Persistence ) -> String {
+fn decrypt( credential: &Credential, crypto_key: &str ) -> String {
     if credential.encrypted {
-        crypt::default_decrypt(&credential.value, persistence)
+        crypt::default_decrypt(&credential.value, crypto_key)
     }
     else {
         credential.value.clone()
@@ -621,25 +557,41 @@ fn response_data_match(dependency: &DependsDef, input: &str) -> Result<bool, Err
     let script_type = dependency.script_type.clone();
 
     let is_lua = matches!(script_type.as_str(), "lua");
+    let is_rhai = matches!(script_type.as_str(), "rhai");
 
-    if !is_lua {
+    if !is_lua || !is_rhai {
         return Err(Error::from(std::io::Error::new(
             ErrorKind::Other,
-            "Only LUA scripts are currently supported",
+            "Only RHAI and LUA scripts are currently supported",
         )));
     }
 
     let mut result = false;
-    let lua = Lua::new();
 
-    lua.context(|lua_ctx| {
-        let globals = lua_ctx.globals();
-        globals
-            .set("input", "[[".to_string() + input + "]]")
-            .expect("Could not set global value");
+    if is_lua {
+        let lua = Lua::new();
 
-        result = lua_ctx.load(&script).eval().unwrap();
-    });
+        lua.context(|lua_ctx| {
+            let globals = lua_ctx.globals();
+            globals
+                .set("input", "[[".to_string() + input + "]]")
+                .expect("Could not set global value");
+
+            if let Ok(value) = lua_ctx.load(&script).eval() {
+                result = value;
+            }
+        });
+    }
+    else if is_rhai {
+        let mut scope = Scope::new();
+        
+        scope.push("input", input.to_owned());
+
+        let engine = Engine::new();        
+        if let Ok(value) = engine.eval_with_scope::<bool>(&mut scope, &script) {
+            result = value;
+        }
+    }
 
     Ok(result)
 }

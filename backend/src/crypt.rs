@@ -1,74 +1,37 @@
-use rand::{thread_rng, RngCore, Error};
 use magic_crypt::{new_magic_crypt, MagicCryptTrait};
+use rand::{thread_rng, Error, RngCore};
 
-use crate::persistence::Persistence;
-
-
-
-pub fn get_random_key32() ->  Result<String, Error> {
+pub fn get_random_key32() -> Result<String, Error> {
     let mut arr = [0u8; 32];
     thread_rng().try_fill_bytes(&mut arr[..])?;
     Ok(hex::encode(arr))
 }
 
-
-pub  fn default_encrypt(to_encrypt: &str, persistence: &Persistence) -> String {
-    match futures::executor::block_on(persistence.get("encryption", "default")) {
-        Ok(opt) => {
-            match opt {
-                Some(entry) => {
-                    let mc = new_magic_crypt!(entry.value, 256);
-                    mc.encrypt_str_to_base64(to_encrypt)
-                },
-                None => {
-                    log::error!("didn't find encryption key in the database");        
-                    to_encrypt.to_string()
-                }
-            }
-        },
-        Err(_err) => {
-            to_encrypt.to_string()
-        }
-    }    
+pub fn default_encrypt(to_encrypt: &str, crypto_key: &str) -> String {
+    let mc = new_magic_crypt!(crypto_key, 256);
+    mc.encrypt_str_to_base64(to_encrypt)
 }
 
-pub  fn default_decrypt(to_decrypt: &str, persistence: &Persistence) -> String { 
-    match futures::executor::block_on(persistence.get("encryption", "default")) {
-        Ok(opt) => {
-            match opt {
-                Some(entry) => {
-                    let mc = new_magic_crypt!(entry.value, 256);
+pub fn default_decrypt(to_decrypt: &str, crypto_key: &str) -> String {
+    let mc = new_magic_crypt!(crypto_key, 256);
 
-                    mc.decrypt_base64_to_string(to_decrypt).unwrap()
-                },
-                None => {
-                    log::error!("didn't find encryption key in the database");        
-                    to_decrypt.to_string()
-                }
-            }
-        },
-        Err(err) => {
-            log::error!("error: {}", err);
-            to_decrypt.to_string()
-        }
-    }    
+    mc.decrypt_base64_to_string(to_decrypt).unwrap()
 }
 
-
-
-
+#[allow(dead_code)]
 pub fn encrypt(to_encrypt: String, key: &str) -> String {
     let mc = new_magic_crypt!(key, 256);
 
     mc.encrypt_str_to_base64(to_encrypt)
 }
 
+#[allow(dead_code)]
 pub fn decrypt(to_decrypt: String, key: &str) -> String {
     let mc = new_magic_crypt!(key, 256);
 
-    mc.decrypt_base64_to_string(to_decrypt).expect("Could not decrypt value. Did you change the crypt key?")
+    mc.decrypt_base64_to_string(to_decrypt)
+        .expect("Could not decrypt value. Did you change the crypt key?")
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -82,16 +45,25 @@ mod tests {
     #[test]
     fn test_roundtrip() {
         let key = "this is a key".to_string();
-        
-        let encrypted = encrypt("this is a text that should be encrypted and decrypted".to_string(), &key);
+
+        let encrypted = encrypt(
+            "this is a text that should be encrypted and decrypted".to_string(),
+            &key,
+        );
 
         println!("encrypted value: {}", encrypted);
 
-        assert_ne!(encrypted, "this is a text that should be encrypted and decrypted");
-        
+        assert_ne!(
+            encrypted,
+            "this is a text that should be encrypted and decrypted"
+        );
+
         let decrypted = decrypt(encrypted, &key);
 
-        assert_eq!(&decrypted, "this is a text that should be encrypted and decrypted");
+        assert_eq!(
+            &decrypted,
+            "this is a text that should be encrypted and decrypted"
+        );
 
         println!("decrypted value: {}", decrypted);
     }

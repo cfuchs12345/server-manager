@@ -7,7 +7,7 @@ use config::Config;
 
 use crate::appdata::AppData;
 use crate::crypt;
-use crate::handlebars_helpers;
+use crate::handlebars_helper_functions;
 use crate::migrations;
 use crate::persistence::Entry;
 use crate::persistence::Persistence;
@@ -151,7 +151,7 @@ fn create_and_configure_template_engine(template_base_path: &str) -> handlebars:
 
     handlebars.set_strict_mode(true);
     handlebars.register_escape_fn(no_escape); //html escaping is the default and cause issue
-    handlebars_helpers::register(&mut handlebars);
+    handlebars_helper_functions::register(&mut handlebars);
 
     handlebars
 }

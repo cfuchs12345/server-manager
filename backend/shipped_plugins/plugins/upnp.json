@@ -1,15 +1,20 @@
 {
     "id": "upnp",
-    "name": "upnp",
-    "description": "Dummy UPnP Plugin",
+    "name": "Universal PnP",
+    "description": "Triggers discovery of UPnP devices in your network",
     "server_icon": "",
     "detection": {       
         "detection_possible": true
     },
     "credentials": [],
-    "params": [       
+    "params": [
+        {
+            "name": "location",
+            "param_type": "string",
+            "default_value": ""
+        }   
     ],
-    "data": [        
+    "data": [
     ],
     "actions": [        
     ]

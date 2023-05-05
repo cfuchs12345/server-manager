@@ -1,6 +1,5 @@
 
 use std::str::FromStr;
-use futures::TryFutureExt;
 use sqlx::{Sqlite, Error, SqlitePool, Pool, FromRow, sqlite::SqliteConnectOptions, types::chrono::{NaiveDateTime, Utc}};
 
 
@@ -96,6 +95,7 @@ impl Persistence {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub async fn get_migration(&self, name: &str) -> Result<Migration, Error> {
         
         let mut transaction = self.pool.begin().await?;
@@ -107,6 +107,7 @@ impl Persistence {
         Ok(result)
     }
 
+    #[allow(dead_code)]
     pub async fn save_migration(&self, migration: Migration) -> Result<u64, Error> {
         let mut transaction = self.pool.begin().await?;
         

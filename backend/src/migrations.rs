@@ -54,7 +54,11 @@ pub async fn save_migration(neccessary_migrations: &[MigrationTypes], persistenc
                 let servers_data_to_encrypt: Vec<&Server> = servers.iter().filter(|server| server_needs_encryption(server, &plugins_map)).collect();
 
                 log::info!("server that need encryption: {} ", servers_data_to_encrypt.len() );
+                
 
+                let crypto_key_entry = data.app_data_persistence.get("encryption", "default").await.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?.ok_or(std::io::Error::new(std::io::ErrorKind::Other, "No crypto key in db found"))?;
+
+               
                 for server in servers_data_to_encrypt {
                     let mut s = server.to_owned();
 
@@ -67,9 +71,10 @@ pub async fn save_migration(neccessary_migrations: &[MigrationTypes], persistenc
 
                             if credential_def.encrypt {
                                 log::info!("will encrypt {} {}", feature.id, credential.name);
-                                new_credentials.push(Credential { name: credential.name.clone(), encrypted: true, value: crypt::default_encrypt(&credential.value, &data.app_data_persistence) });
-                             }
-                             else {
+                                
+                                new_credentials.push(Credential { name: credential.name.clone(), encrypted: true, value: crypt::default_encrypt(&credential.value, &crypto_key_entry.value) });
+                            }
+                            else {
                                 log::info!("will not encrypt {} {}", feature.id, credential.name);
                                 new_credentials.push(credential.to_owned());
                             }
@@ -80,11 +85,11 @@ pub async fn save_migration(neccessary_migrations: &[MigrationTypes], persistenc
                     }
                     
                     update_server( &s, &data.app_data_persistence);
-                }              
+                }   
             }            
         },
-        Err(_err) => {
-
+        Err(err) => {
+            log::error!("Error while loading servers: {}", err);
         }
     }
     Ok(())

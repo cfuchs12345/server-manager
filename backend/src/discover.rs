@@ -65,7 +65,7 @@ pub async fn discover_features_of_all_servers(
     let wait_time_for_upnp = 15; // in seconds
 
     let mut features_from_upnp_discovery = match upnp_activated {
-        true => upnp::upnp_discover(wait_time_for_upnp).await?,
+        true => upnp::upnp_discover(wait_time_for_upnp, accept_self_signed_certificates).await?,
         false =>  {
             log::info!("Skipping UPnP device discovery since the plugin is disabled");
             Vec::new()
