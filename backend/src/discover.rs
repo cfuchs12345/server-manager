@@ -64,13 +64,9 @@ pub async fn discover_features_of_all_servers(
     
     let wait_time_for_upnp = 15; // in seconds
     
-    let mut features_from_upnp_discovery = match upnp_activated {
-        true => upnp::upnp_discover(wait_time_for_upnp, accept_self_signed_certificates, &plugins).await?,
-        false =>  {
-            log::info!("Skipping UPnP device discovery since the plugin is disabled");
-            Vec::new()
-        }
-    };
+   
+
+    let upnp_future = upnp::upnp_discover(wait_time_for_upnp, &plugins, upnp_activated);
 
     // list of async tasks executed by tokio
     let mut tasks = Vec::new();
@@ -98,6 +94,8 @@ pub async fn discover_features_of_all_servers(
         .map(move |r| r.as_ref().unwrap().to_owned())
         .filter(|f| !f.features.is_empty())
         .collect();
+
+    let mut features_from_upnp_discovery = upnp_future.await?;
 
     Ok(merge_features(
         &mut features_from_plugin_discovery,

@@ -121,7 +121,7 @@ pub async fn execute_data_query(
 
     for tuple in tuples {
         for data in &tuple.1.data {
-            let res = execute_specific_data_query(
+            let data_response = execute_specific_data_query(
                 server,
                 tuple.1,
                 tuple.0,
@@ -131,17 +131,26 @@ pub async fn execute_data_query(
             )
             .await?;
 
-            if !data.template.is_empty() {
-                let result = conversion::convert_json_to_html(
-                    data.template.as_str(),
-                    res,
-                    template_engine,
-                    data,
-                )?;
-                results.push(result);
-            } else {
-                results.push(res);
-            }
+            match data_response {
+                Some(response) => {
+                    if !data.template.is_empty() { 
+                        // convert the output with the template              
+                        let result = conversion::convert_json_to_html(
+                            data.template.as_str(),
+                            response,
+                            template_engine,
+                            data,
+                        )?;
+                        results.push(result);                
+                    }                              
+                    else { // no template - just append
+                        results.push(response);
+                    }
+                },
+                None => {
+                    // no technical issue, but no result - do not append anything
+                }
+            }           
         }
     }
 
@@ -164,7 +173,7 @@ pub async fn execute_specific_data_query(
     data: &Data,
     accept_self_signed_certificates: bool,
     crypto_key: String
-) -> Result<String, Error> {
+) -> Result<Option<String>, Error> {
     let input: ActionOrDataInput = ActionOrDataInput::get_input_from_data(
         data,
         plugin,
@@ -238,10 +247,10 @@ pub async fn check_condition_for_action_met(
                                     )
                                     .await?;
 
-                                    res &= response_data_match(depends, response.as_str())?;
+                                    res &= response_data_match(depends, response.clone())?;
 
                                     if !res {
-                                        log::info!("Depencies for data {} of plugin {} for server {} not met .Reasponse was {}", data.id, plugin.id, server.ipaddress, response);
+                                        log::info!("Depencies for data {} of plugin {} for server {} not met .Reasponse was {:?}", data.id, plugin.id, server.ipaddress, response);
                                         break;
                                     }
                                 }
@@ -272,7 +281,7 @@ pub async fn check_condition_for_action_met(
     }
 }
 
-async fn execute_command<'a>(ipaddress: String, input: &ActionOrDataInput) -> Result<String, Error> {
+async fn execute_command<'a>(ipaddress: String, input: &ActionOrDataInput) -> Result<Option<String>, Error> {
     match input.command.as_str() {
         "http" => execute_http_command(ipaddress, input).await,
         "wol" => execute_wol_command(ipaddress, input).await,
@@ -287,7 +296,7 @@ async fn execute_command<'a>(ipaddress: String, input: &ActionOrDataInput) -> Re
 async fn execute_http_command<'a>(
     ipaddress: String,
     input: &ActionOrDataInput,
-) -> Result<String, Error> {
+) -> Result<Option<String>, Error> {
     let url = input
         .find_arg("url")
         .ok_or(Error::from(std::io::Error::new(
@@ -361,6 +370,16 @@ async fn execute_http_command<'a>(
         );
     }
 
+    if normal_and_masked_url.0.trim().is_empty() {
+        log::warn!(
+            "Given url is empty after replacing placeholders. Was before replace: {}. Request will not be executed",
+            url.value
+        );
+        return Ok(None);
+    }
+
+
+
     match http_functions::execute_http_request(
         normal_and_masked_url.0,
         method.value.as_str(),
@@ -377,10 +396,10 @@ async fn execute_http_command<'a>(
                 normal_and_masked_url.1,
                 text
             );
-            Ok(text)
+            Ok(Some(text))
         }
         Err(err) => {
-            log::error!("Error {}", err);
+            log::error!("Error while executing request {:?} {:?} was: {}", method.value, normal_and_masked_url.1, err);
             Err(err.into())
         }
     }
@@ -389,7 +408,7 @@ async fn execute_http_command<'a>(
 async fn execute_wol_command<'a>(
     _ipaddress: String,
     input: &ActionOrDataInput,
-) -> Result<String, Error> {
+) -> Result<Option<String>, Error> {
     let feature_param = get_param_value("mac_address", input);
     match feature_param {
         Some(found_feature_param) => match found_feature_param.parse::<MacAddress>() {
@@ -402,14 +421,14 @@ async fn execute_wol_command<'a>(
                             "Successfully send magic packet to host with mac address {}",
                             address
                         );
-                        Ok("SEND".to_string())
+                        Ok(Some("SEND".to_string()))
                     }
                     Err(err) => {
                         log::error!(
                             "Could not send magic packet due to technical problems: {:?}",
                             err
                         );
-                        Ok("ERROR".to_string())
+                        Err(Error::from(err))
                     }
                 }
             }
@@ -419,10 +438,10 @@ async fn execute_wol_command<'a>(
                     found_feature_param,
                     err
                 );
-                Ok("ERROR".to_string())
+                Err(Error::from(std::io::Error::new(ErrorKind::InvalidInput, err)))
             }
         },
-        None => Ok("ERROR".to_string()),
+        None => Ok(None),
     }
 }
 
@@ -552,7 +571,10 @@ fn find_data_for_action_depency<'a>(depend: &DependsDef, plugin: &'a Plugin) -> 
     plugin.data.iter().find(|d| d.id == depend.data_id)
 }
 
-fn response_data_match(dependency: &DependsDef, input: &str) -> Result<bool, Error> {
+fn response_data_match(dependency: &DependsDef, input: Option<String>) -> Result<bool, Error> {
+    if input.is_none() {
+        return Ok(false);
+    }
     let script = dependency.script.clone();
     let script_type = dependency.script_type.clone();
 
@@ -574,7 +596,7 @@ fn response_data_match(dependency: &DependsDef, input: &str) -> Result<bool, Err
         lua.context(|lua_ctx| {
             let globals = lua_ctx.globals();
             globals
-                .set("input", "[[".to_string() + input + "]]")
+                .set("input", "[[".to_string() + input.unwrap().as_str() + "]]")
                 .expect("Could not set global value");
 
             if let Ok(value) = lua_ctx.load(&script).eval() {
@@ -585,7 +607,7 @@ fn response_data_match(dependency: &DependsDef, input: &str) -> Result<bool, Err
     else if is_rhai {
         let mut scope = Scope::new();
         
-        scope.push("input", input.to_owned());
+        scope.push("input", input.unwrap().to_owned());
 
         let engine = Engine::new();        
         if let Ok(value) = engine.eval_with_scope::<bool>(&mut scope, &script) {

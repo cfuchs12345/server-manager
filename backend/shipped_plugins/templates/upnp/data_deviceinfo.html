@@ -1,0 +1,28 @@
+{{ data_to_upnp_device "data" "device"}}
+
+<h3>Device Information</h3>
+<table style="width: 100%; border-spacing: 0px;">
+    <tr>
+        <th style="width: 150px"><b>Manufacturer</b></th><td>{{this.device.device.manufacturer}}<td>
+    </tr>
+    <tr>
+        <th style="width: 150px"><b>Friendly Name</b></th><td>{{this.device.device.friendlyName}}</td>
+    </tr>
+    <tr>
+        <th style="width: 150px"><b>Model Name</b></th><td>{{this.device.device.modelName}}</td>
+    </tr>
+    {{# if this.device.device.modeDescription}}
+    <tr>
+        <th style="width: 150px"><b>Model Description</b></th><td>{{this.device.device.modeDescription}}</td>
+    </tr>
+    {{/if}}    
+    <tr>
+        <th style="width: 150px"><b>Model Number</b></th><td>{{this.device.device.modelNumber}}</td>
+    </tr>
+    {{# if this.device.device.presentationURL}}    
+    <tr>
+        <th style="width: 150px"><b>Device Website</b></th><td><a href="{{this.device.device.presentationURL}}" target="_blank">Click to visit device Website</a> (advertised by device)</td>
+    </tr>
+    {{/if}}    
+</table>
+<br/>

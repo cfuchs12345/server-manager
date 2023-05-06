@@ -126,6 +126,12 @@ pub struct ArgDef {
     pub value: String
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub enum ResultFormat {
+    #[default]
+    JSON,
+    XML
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Data {
@@ -134,6 +140,8 @@ pub struct Data {
     pub name: String,
     #[serde(default)]
     pub description: String,
+    #[serde(default)]
+    pub result_format: ResultFormat,
     #[serde(default)]
     pub template: String,
     #[serde(default)]

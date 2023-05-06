@@ -1,6 +1,6 @@
 
 use std::str::FromStr;
-use sqlx::{Sqlite, Error, SqlitePool, Pool, FromRow, sqlite::SqliteConnectOptions, types::chrono::{NaiveDateTime, Utc}};
+use sqlx::{Sqlite, Error, SqlitePool, Pool, FromRow, sqlite::SqliteConnectOptions, types::chrono::{NaiveDateTime, Utc}, ConnectOptions};
 
 
 
@@ -56,9 +56,11 @@ impl Persistence {
     }
 
     async fn get_connection(db_url: &str) -> Result<Pool<Sqlite>, Error>  {
-        let options = SqliteConnectOptions::from_str(db_url)?.extension("inet").create_if_missing(true);  
+        let mut options = SqliteConnectOptions::from_str(db_url)?.extension("inet").create_if_missing(true);
         
-        SqlitePool::connect_with(options).await
+        let new_opts = options.disable_statement_logging();
+        
+        SqlitePool::connect_with(new_opts.to_owned()).await
     }
 
 

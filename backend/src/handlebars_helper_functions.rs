@@ -2,6 +2,8 @@ use std::cmp::Ordering;
 use serde_json::Value as Json;
 use handlebars::{Helper, Handlebars, Context, RenderContext, Output, HelperResult, handlebars_helper};
 
+use crate::upnp;
+
 fn sort_fct(
     h: &Helper,
     _: &Handlebars,
@@ -85,6 +87,69 @@ fn sort_fct(
     Ok(())
 }
 
+fn parse_xml_input_as_upnp_device_fct(
+    h: &Helper,
+    _: &Handlebars,
+    ctx: &Context,
+    rc: &mut RenderContext,
+    _: &mut dyn Output,
+) -> HelperResult {
+    // get parameter from helper or throw an error
+    let name_option = h.param(0).and_then(|v| v.value().as_str());
+    if name_option.is_none() {
+        return Ok(());
+    }
+
+    let new_name_option = h.param(1).and_then(|v| v.value().as_str());
+    if new_name_option.is_none() {
+        return Ok(());
+    }
+
+
+    let name = name_option.unwrap();
+    let new_name = new_name_option.unwrap();
+    
+    match ctx.data().get(name) {
+        Some(value) => {
+            if value.is_string() {
+                let xml = value.as_str().unwrap();
+
+                let device = match upnp::parse_upnp_description(xml) {
+                    Some(root_device) => {
+                        root_device
+                    },
+                    None => {
+                        log::error!("Could not parse incoming string as UPnP root device. string was: {} ", xml);
+                        upnp::DeviceRoot::new()
+                    }
+                };
+
+                log::info!("Converted incoming data to {:?}", device);
+
+                let mut ctx = ctx.clone();
+                match ctx.data_mut() {
+                    serde_json::value::Value::Object(m) => m.insert(new_name.to_owned(), serde_json::to_value(device).unwrap()),
+                    _ => None,
+                };
+                rc.set_context(ctx);
+
+            }
+            else {
+                log::error!("Value with name {} is not a string", name);
+                return Ok(())
+            }
+        },
+        None => {
+            log::error!("{:?}", ctx.data());
+            log::error!("Value with name {} not found", name);
+            return Ok(())
+        }
+    };
+
+
+  
+    Ok(())
+}
 
 
 
@@ -98,7 +163,8 @@ handlebars_helper!(readable_mem: |mem: Json| to_readable_mem(mem));
 pub fn register(handlebars: &mut Handlebars) {
     handlebars.register_helper("readable-time", Box::new(readable_time));
     handlebars.register_helper("readable-mem", Box::new(readable_mem));
-    handlebars.register_helper("sort", Box::new(sort_fct))
+    handlebars.register_helper("sort", Box::new(sort_fct));
+    handlebars.register_helper("data_to_upnp_device", Box::new(parse_xml_input_as_upnp_device_fct));
 }
 
 fn to_readable_mem( value: &Json) -> String {

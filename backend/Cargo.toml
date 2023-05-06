@@ -36,3 +36,4 @@ magic-crypt = "3.1.12"
 hex = "0.4.3"
 ssdp-client = "1.0.0"
 rhai = "1.14.0" 
+quick-xml = {version="0.28.2", features=["serialize"]}

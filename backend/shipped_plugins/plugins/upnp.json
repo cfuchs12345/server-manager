@@ -15,6 +15,23 @@
         }   
     ],
     "data": [
+        {
+            "id": "derviceinfo",
+            "description": "Get the Basic UPnP Device Information",
+            "template" : "upnp/data_deviceinfo",
+            "result_format": "XML",         
+            "command": "http",
+            "args": [
+                {
+                    "arg_type": "method",
+                    "value": "get"
+                },
+                {
+                    "arg_type": "url",
+                    "value": "${params.location}"
+                }
+            ]
+        }
     ],
     "actions": [        
     ]
