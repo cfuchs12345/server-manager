@@ -63,8 +63,6 @@ pipeline {
                  sh "rm -rf backend || true"
                  sh "rm -rf frontend || true"
                  sh "rm -rf target/* || true"
-                 sh "rm ${params.artifact_file_frontend} || true"
-                 sh "rm ${params.artifact_file_backend} || true"
             }
         }
         stage('pull artifact') {

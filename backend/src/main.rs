@@ -21,10 +21,6 @@ mod upnp;
 mod http_functions;
 
 pub fn main() {
-   
-
-    env_logger::init();
-
     let result = init::start();
 
     if let Some(err) = result.err() {

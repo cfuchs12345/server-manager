@@ -23,7 +23,7 @@ pub async fn upnp_discover(
         return Ok(Vec::new());
     }
     else {
-        log::info!("Starting UPnP device discovery");
+        log::error!("Starting UPnP device discovery");
     }
     let plugin = found.unwrap();
 

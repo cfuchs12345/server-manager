@@ -29,7 +29,9 @@ pub static DB_FILENAME: &str = "./external_files/server-manager.db";
 #[actix_web::main]
 pub async fn start() -> std::io::Result<()> {
     one_time_init()?;
+    
     load_env_file();
+    env_logger::init();
     
     let config = get_config();   
 
