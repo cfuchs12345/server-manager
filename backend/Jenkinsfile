@@ -11,14 +11,18 @@ pipeline {
         copyArtifactPermission('docker/Docker-Server-Manager');
     }
     stages {
-        stage('checkout') {
-            steps {
-                echo 'checkout'
-            }
-        }
         stage('Init') {
             steps {
                 sh "rustup default stable"
+            }
+        }
+        stage('checkout') {
+            steps {
+                echo 'cleaning WS'
+                cleanWs()
+                
+                echo 'checkout'
+                checkout scm
             }
         }
         stage('Clean') {
