@@ -19,7 +19,11 @@ pub async fn upnp_discover(
 
     let found = plugins.iter().find(|p| p.id == UPNP);
     if found.is_none() {
+        log::error!("Found no plugin for UPnP - returning empty list");
         return Ok(Vec::new());
+    }
+    else {
+        log::info!("Starting UPnP device discovery");
     }
     let plugin = found.unwrap();
 
@@ -66,7 +70,7 @@ pub async fn upnp_discover(
             log::error!("Error while reading responses: {}", err);
         }
     }
-
+    log::info!("UPnP device discovery done. Found {} devices", server_features_with_upnp.len());
     
 
     Ok(parse_device_info_from_location(server_features_with_upnp, accept_self_signed_certificates, plugin).await)
@@ -89,7 +93,7 @@ async fn parse_device_info_from_location(server_features_with_upnp: Vec<Features
                                 match res.text().await {
                                     Ok(text) => {
                                         log::info!("executed request on location {} of UPnP device {}", location_param.value, fos.ipaddress);
-                                        
+
                                         parse_upnp_description(text);
                                     },
                                     Err(err) => {
