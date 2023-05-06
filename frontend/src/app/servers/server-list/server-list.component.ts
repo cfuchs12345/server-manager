@@ -61,6 +61,8 @@ export class ServerListComponent implements OnChanges {
   constructor() {}
 
   ngOnChanges(): void {
+      console.log("change detected " + this.servers.length);
+
       this.dataSource.data = this.toRowData(this.servers);
   }
 

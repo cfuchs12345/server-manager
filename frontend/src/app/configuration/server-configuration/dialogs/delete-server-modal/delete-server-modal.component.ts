@@ -1,11 +1,12 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { Subscription } from 'rxjs';
 import { ServerService } from 'src/app/services/servers/server.service';
 import { Feature, Server, ServerFeature } from 'src/app/services/servers/types';
 import { ConfirmDialogComponent } from 'src/app/ui/confirm-dialog/confirm-dialog.component';
 import { ServerAddressType } from 'src/types/ServerAddress';
+import { DeleteServerDialog } from '../dialog-delete-server';
 
 @Component({
   selector: 'app-delete-server-modal',
@@ -32,13 +33,14 @@ export class DeleteServerModalComponent implements OnInit, OnDestroy {
 
   displayedColumns: string[] = ['delete', 'ipaddress', 'name'];
 
-  constructor(private serverService: ServerService, private dialog: MatDialog) {
+  constructor(private serverService: ServerService, private dialog: MatDialog, private ref: MatDialogRef<DeleteServerDialog>) {
   }
 
   ngOnInit(): void {
     this.loading = true;
     this.subscriptionServers = this.serverService.servers.subscribe((servers) => {
       if (servers) {
+        console.log("update " + servers.length);
         this.servers = servers;
         this.serversWithFeatures = servers.filter( (server) => server.features.length > 0);
       } else {
@@ -97,7 +99,7 @@ export class DeleteServerModalComponent implements OnInit, OnDestroy {
     confirmDialog.afterClosed().subscribe(result => {
       if (result === true) {
         this.serverService.deleteServers(serversToDelete);
-        this.serverService.listServers(); // this refreshes also the server list on the main screen
+        this.ref.close();
       }
     });
   }

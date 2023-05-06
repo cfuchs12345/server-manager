@@ -32,6 +32,8 @@ export class ServerService {
   constructor(private http: HttpClient, private errorService: ErrorService) {}
 
   deleteServers = (servers: Server[]) => {
+    var isLast = false;
+
     for (const [i, server] of servers.entries()) {
       this.http
         .delete<any>('/backend/servers/' + server.ipaddress, {
@@ -39,17 +41,17 @@ export class ServerService {
         })
         .subscribe({
           next: (res) => {
-            this.dataStore.servers = this.dataStore.servers.filter(
-              (entry) => entry.ipaddress !== server.ipaddress
-            );
-            if (i === servers.length) {
-              this.publishServers();
-            }
+            const indexToDelete = this.dataStore.servers.findIndex(s => s.ipaddress === server.ipaddress);
+            this.dataStore.servers.splice(indexToDelete, 1);
           },
           error: (err: any) => {
             this.errorService.newError("Server-Service", server.ipaddress, err.message);
           },
-          complete: () => {},
+          complete: () => {
+            if (servers[servers.length -1].ipaddress === server.ipaddress) {
+              setTimeout(this.publishServers, 500);
+            }
+          },
         });
     }
   };
@@ -57,14 +59,14 @@ export class ServerService {
   listServers = () => {
     this.http.get<Server[]>('/backend/servers').subscribe({
       next: (servers) => {
-        this.dataStore.servers.splice(0, this.dataStore.servers.length);
-        this.dataStore.servers.push(...servers);
-        this.publishServers();
+        this.dataStore.servers = servers;
       },
       error: (err: any) => {
         this.errorService.newError("Server-Service", undefined, err.message);
       },
-      complete: () => {},
+      complete: () => {
+        setTimeout(this.publishServers, 500);
+      },
     });
   };
 
@@ -80,15 +82,15 @@ export class ServerService {
           next: (res) => {
             this.dataStore.servers.push(server);
             this.dataStore.servers.sort( (a, b) => a.ipaddress.localeCompare(b.ipaddress));
-
-            if (i === servers.length) {
-              this.publishServers();
-            }
           },
           error: (err: any) => {
             this.errorService.newError("Server-Service", server.ipaddress, err.message);
           },
-          complete: () => {},
+          complete: () => {
+            if ( i === servers.length -1) {
+              setTimeout(this.publishServers, 500);
+            }
+          },
         });
     }
   };
@@ -134,19 +136,37 @@ export class ServerService {
           headers: defaultHeadersForJSON(),
         })
         .subscribe({
-          next: (res) => {},
+          next: (res) => {
+          },
           error: (err: any) => {
             this.errorService.newError("Server-Service", server.ipaddress, err.message);
           },
-          complete: () => {},
+          complete: () => {
+            setTimeout(this.publishServers, 500);
+          },
         });
     }
   };
 
   private publishServers = () => {
-    this._servers.next(Object.assign({}, this.dataStore).servers);
+    this.dataStore.servers.sort( this.compareServers )
+    this._servers.next(this.dataStore.servers.slice(0, this.dataStore.servers.length));
   };
 
+
+  private compareServers = (a: Server, b: Server): number => {
+    const numA = Number(
+      a.ipaddress.split('.')
+        .map((num, idx) => parseInt(num) * Math.pow(2, (3 - idx) * 8))
+        .reduce((a, v) => ((a += v), a), 0)
+    );
+    const numB = Number(
+      b.ipaddress.split('.')
+        .map((num, idx) => parseInt(num) * Math.pow(2, (3 - idx) * 8))
+        .reduce((a, v) => ((a += v), a), 0)
+    );
+    return numA - numB;
+  }
 
 
   private updateOrAddFeature = (

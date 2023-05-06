@@ -25,12 +25,13 @@ export class PluginService {
     this.http.get<Plugin[]>('/backend/plugins').subscribe({
       next: (loadedPlugins) => {
         this.dataStore.plugins = loadedPlugins;
-        this._plugins.next(Object.assign({}, this.dataStore).plugins);
       },
       error: (err: any) => {
-        this.errorService.newError("Plugin-Service", undefined, err.message);
+        this.errorService.newError('Plugin-Service', undefined, err.message);
       },
-      complete: () => {},
+      complete: () => {
+        this.publishPlugins();
+      },
     });
   };
 
@@ -40,14 +41,13 @@ export class PluginService {
       .subscribe({
         next: (idList) => {
           this.dataStore.disabledPlugins = idList;
-          this._disabledPlugins.next(
-            Object.assign({}, this.dataStore).disabledPlugins
-          );
         },
         error: (err: any) => {
-          this.errorService.newError("Plugin-Service", undefined,  err.message);
+          this.errorService.newError('Plugin-Service', undefined, err.message);
         },
-        complete: () => {},
+        complete: () => {
+          this.publishDisabledPlugins();
+        },
       });
   };
 
@@ -63,12 +63,28 @@ export class PluginService {
       })
       .subscribe({
         next: (result) => {
-          this.loadDisabledPlugins();
         },
         error: (err: any) => {
-          this.errorService.newError("Plugin-Service",  undefined, err.message);
+          this.errorService.newError('Plugin-Service', undefined, err.message);
         },
-        complete: () => {},
+        complete: () => {
+          this.loadDisabledPlugins();
+        },
       });
   };
+
+  private publishDisabledPlugins() {
+    this._disabledPlugins.next(
+      this.dataStore.disabledPlugins.slice(
+        0,
+        this.dataStore.disabledPlugins.length
+      )
+    );
+  }
+
+  private publishPlugins() {
+    this._plugins.next(
+      this.dataStore.plugins.slice(0, this.dataStore.plugins.length)
+    );
+  }
 }

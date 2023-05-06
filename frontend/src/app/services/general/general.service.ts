@@ -28,12 +28,13 @@ export class GeneralService {
       headers: defaultHeadersForJSON(),
     }).subscribe({
       next: (res) => {
-        this.listDNSServers();
       },
       error: (err: any) => {
         this.errorService.newError("General-Service", undefined, err.message);
       },
-      complete: () => {},
+      complete: () => {
+        setTimeout(this.listDNSServers, 200);
+      },
     });
   };
 
@@ -45,14 +46,15 @@ export class GeneralService {
         .delete<boolean>('/backend/configurations/dnsservers/' + server.ipaddress)
         .subscribe({
           next: (res) => {
-            if( i === servers.length ) {
-              setTimeout(this.listDNSServers, 200);
-            }
           },
           error: (err: any) => {
             this.errorService.newError("General-Service",undefined, err.message);
           },
-          complete: () => {},
+          complete: () => {
+            if( i === servers.length ) {
+              setTimeout(this.listDNSServers, 200);
+            }
+          },
         });
     }
   };
@@ -61,7 +63,7 @@ export class GeneralService {
     this.http.get<DNSServer[]>('/backend/configurations/dnsservers').subscribe({
       next: (res) => {
         this.dataStore.dnsServers = res;
-        this._dnsServers.next(this.dataStore.dnsServers);
+        this._dnsServers.next(this.dataStore.dnsServers.slice(0, this.dataStore.dnsServers.length));
       },
       error: (err: any) => {
         this.errorService.newError("General-Service", undefined, err.message);
