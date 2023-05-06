@@ -81,7 +81,6 @@ export class ServerService {
         .subscribe({
           next: (res) => {
             this.dataStore.servers.push(server);
-            this.dataStore.servers.sort( (a, b) => a.ipaddress.localeCompare(b.ipaddress));
           },
           error: (err: any) => {
             this.errorService.newError("Server-Service", server.ipaddress, err.message);
