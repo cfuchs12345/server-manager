@@ -19,6 +19,8 @@ pub async fn execute_http_request(
         .unwrap();
 
     let header_map: http::HeaderMap = headers_to_map(headers);
+    
+    log::debug!("executing http request {} on {} accecpt self-signed certificates setting is {}", method, url, accept_self_signed_certificates);
 
     match method {
         GET => client.get(url).headers(header_map).send().await.map_err(|e| e.into()),

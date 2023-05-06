@@ -75,14 +75,21 @@ pub async fn upnp_discover(
 async fn parse_device_info_from_location(server_features_with_upnp: Vec<FeaturesOfServer>, accept_self_signed_certificates: bool, plugin: &Plugin) ->  Vec<FeaturesOfServer> {
     let clone = server_features_with_upnp.clone();
     for fos in server_features_with_upnp {
-        match fos.features.iter().find( |f| f.id == plugin.id) {
+
+        match fos.features.iter().find( |f| f.id == plugin.id) {            
             Some(upnp_feature) => {
+                log::info!("server {} uses the plugin {}", fos.ipaddress, plugin.id);
+
                 match upnp_feature.params.iter().find( |p| p.name == LOCATION) {
                     Some( location_param ) =>  {
+                        log::info!("found location {} for UPnP device {}", location_param.value, fos.ipaddress);
+
                         match http_functions::execute_http_request(location_param.value.clone(), http_functions::GET, None, None, accept_self_signed_certificates).await {
                             Ok(res) => {
                                 match res.text().await {
                                     Ok(text) => {
+                                        log::info!("executed request on location {} of UPnP device {}", location_param.value, fos.ipaddress);
+                                        
                                         parse_upnp_description(text);
                                     },
                                     Err(err) => {
@@ -96,12 +103,12 @@ async fn parse_device_info_from_location(server_features_with_upnp: Vec<Features
                         }
                     },
                     None => {
-                        log::info!("No location found for UPnP feature of server {}", fos.ipaddress);
+                        log::error!("No location found for UPnP feature of server {}. Even if it was found as a UPnP device.", fos.ipaddress);
                     }
                 }
             },
             None => {
-                log::info!("No UPnP feature found for server {}", fos.ipaddress);
+                log::warn!("No UPnP feature found for server {}", fos.ipaddress);
             }           
         }
     }    
