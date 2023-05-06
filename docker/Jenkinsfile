@@ -52,8 +52,17 @@ pipeline {
     stages {
         stage('Clean') {
             steps {
+                echo 'cleaning WS'
+                cleanWs()
+                
+                echo 'checkout'
+                checkout scm
+
                  sh "docker image rm ${params.IMAGE_NAME}:latest || true"
                  sh "docker image prune -a -f || true"
+                 sh "rm -rf backend || true"
+                 sh "rm -rf frontend || true"
+                 sh "rm -rf target/* || true"
                  sh "rm ${params.artifact_file_frontend} || true"
                  sh "rm ${params.artifact_file_backend} || true"
             }
