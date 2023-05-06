@@ -4,7 +4,25 @@ use reqwest::Response;
 
 pub const GET: &str = "get";
 pub const POST: &str = "post";
+pub const PUT: &str = "put";
 
+/// Executes an http request on the given url using the given method.
+/// 
+/// # Arguments
+/// 
+/// * `url` the url including protocol, port and so on
+/// * `method` the http method to use (currently 'get', 'post' or 'put' are allowed)
+/// * `header` optional of a vector of tuples with tuple (header_name, header_value)
+/// * `body` and optional body to send for 'post' and 'put' requests
+/// * `accept_self_signed_certificates` boolean value that either allows or accept self-signed SSL certficates for the called url
+/// 
+/// # Panics
+/// never
+/// * `
+/// # Errors
+/// * `request::error::Error` if the request fails during execution
+/// * ` std::io::Error`if the given metho is invalid
+///
 pub async fn execute_http_request(
     url: String,
     method: &str,
@@ -25,6 +43,7 @@ pub async fn execute_http_request(
     match method {
         GET => client.get(url).headers(header_map).send().await.map_err(|e| e.into()),
         POST => client.post(url).headers(header_map).body(body.unwrap_or("".to_string())).send().await.map_err(|e| e.into()),
+        PUT => client.put(url).headers(header_map).body(body.unwrap_or("".to_string())).send().await.map_err(|e| e.into()),
         y => Err( std::io::Error::new(ErrorKind::InvalidInput, format!("Method {} is not supported here", y)).into())
     }
 }
