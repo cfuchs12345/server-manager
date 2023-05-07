@@ -414,7 +414,7 @@ async fn execute_http_command<'a>(
         Some(normal_and_masked_body.0),
     )
     .await
-    .unwrap();
+    .unwrap_or_default();
 
     Ok(Some(text))
 }

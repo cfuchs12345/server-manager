@@ -212,6 +212,9 @@ pub async fn is_plugin_disabled(plugin_id: &str, persistence: &Persistence) ->  
 
 #[cfg(test)]
 mod tests {
+
+    use config::Config;
+
     use crate::plugin_types::{ArgDef, Detection, Script, DetectionEntry, Action, State};
 
     use super::*;
@@ -317,6 +320,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_all_plugins() {
+        let config = Config::builder().set_default("plugin_base_path", "./shipped_plugins/plugins").unwrap().build().unwrap();
+        inmemory::set_config(config);
         let result = init_cache();
 
         assert_eq!(true, result.is_ok());

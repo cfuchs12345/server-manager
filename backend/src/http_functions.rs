@@ -47,8 +47,8 @@ pub async fn execute_http_request(
     match response {
         Ok(res) => {
         match res.status() {
-            StatusCode::ACCEPTED => Ok(res.text().await.unwrap()),
-            StatusCode::OK => Ok(res.text().await.unwrap()),
+            StatusCode::ACCEPTED => Ok(res.text().await.unwrap_or("".to_string())),
+            StatusCode::OK => Ok(res.text().await.unwrap_or("".to_string())),
             _ => Ok("".to_string())
         }
     },
