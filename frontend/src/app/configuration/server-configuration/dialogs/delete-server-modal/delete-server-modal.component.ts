@@ -40,7 +40,6 @@ export class DeleteServerModalComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.subscriptionServers = this.serverService.servers.subscribe((servers) => {
       if (servers) {
-        console.log("update " + servers.length);
         this.servers = servers;
         this.serversWithFeatures = servers.filter( (server) => server.features.length > 0);
       } else {

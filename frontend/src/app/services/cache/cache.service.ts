@@ -5,7 +5,6 @@ export class CacheService {
   private cache: Map<string, any> = new Map();
 
   constructor() {
-    console.log("Cache constructor called");
   }
 
   public get<Type>(key: string): Type | undefined {
