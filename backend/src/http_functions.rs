@@ -2,6 +2,8 @@ use std::{time::Duration, io::ErrorKind};
 
 use reqwest::Response;
 
+use crate::inmemory;
+
 pub const GET: &str = "get";
 pub const POST: &str = "post";
 pub const PUT: &str = "put";
@@ -14,7 +16,6 @@ pub const PUT: &str = "put";
 /// * `method` the http method to use (currently 'get', 'post' or 'put' are allowed)
 /// * `header` optional of a vector of tuples with tuple (header_name, header_value)
 /// * `body` and optional body to send for 'post' and 'put' requests
-/// * `accept_self_signed_certificates` boolean value that either allows or accept self-signed SSL certficates for the called url
 /// 
 /// # Panics
 /// never
@@ -27,18 +28,14 @@ pub async fn execute_http_request(
     url: String,
     method: &str,
     headers: Option<Vec<(String, String)>>,
-    body: Option<String>,
-    accept_self_signed_certificates: bool,
+    body: Option<String>
 ) -> Result<Response, Box<dyn std::error::Error>> {
-    let client = reqwest::Client::builder()
-        .danger_accept_invalid_certs(accept_self_signed_certificates)
-        .timeout(Duration::from_secs(1))
-        .build()
-        .unwrap();
+    
+    let client = create_http_client();
 
     let header_map: http::HeaderMap = headers_to_map(headers);
     
-    log::debug!("executing http request {} on {} accecpt self-signed certificates setting is {}", method, url, accept_self_signed_certificates);
+    log::debug!("executing http request {} on {}", method, url);
 
     match method {
         GET => client.get(url).headers(header_map).send().await.map_err(|e| e.into()),
@@ -47,6 +44,21 @@ pub async fn execute_http_request(
         y => Err( std::io::Error::new(ErrorKind::InvalidInput, format!("Method {} is not supported here", y)).into())
     }
 }
+
+
+pub fn create_http_client() -> reqwest::Client {
+    let config = inmemory::get_config();
+    let accept_self_signed_certificates = config.get_bool("accept_self_signed_certificates").unwrap();
+
+    log::debug!("accept self-signed certificates setting is {}", accept_self_signed_certificates);
+
+    reqwest::Client::builder()
+        .danger_accept_invalid_certs(accept_self_signed_certificates)
+        .timeout(Duration::from_secs(1))
+        .build()
+        .unwrap()
+}
+
 
 
 fn headers_to_map(headers: Option<Vec<(String, String)>>) -> http::HeaderMap {

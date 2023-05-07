@@ -41,30 +41,27 @@ pub struct ActionOrDataInput {
     params: Vec<Param>,
     default_params: Vec<ParamDef>,
     credentials: Vec<Credential>,
-    pub accept_self_signed_ceritificates: bool,
     pub crypto_key: String
 }
 impl ActionOrDataInput {
-    pub fn get_input_from_action(action: &Action, plugin: &Plugin, feature: &Feature, accept_self_signed_ceritificates: bool, crypto_key: String ) -> ActionOrDataInput {
+    pub fn get_input_from_action(action: &Action, plugin: &Plugin, feature: &Feature, crypto_key: String ) -> ActionOrDataInput {
         ActionOrDataInput{
             command: action.command.clone(),
             args: action.args.clone(),
             default_params: plugin.params.clone(),
             params: feature.params.clone(),
             credentials: feature.credentials.clone(),
-            accept_self_signed_ceritificates,
             crypto_key
         }
     }
 
-    pub fn get_input_from_data(data: &Data, plugin: &Plugin, feature: &Feature, accept_self_signed_ceritificates: bool, crypto_key: String) ->  ActionOrDataInput {
+    pub fn get_input_from_data(data: &Data, plugin: &Plugin, feature: &Feature, crypto_key: String) ->  ActionOrDataInput {
         ActionOrDataInput{
             command: data.command.clone(),
             args: data.args.clone(),
             default_params: plugin.params.clone(),
             params: feature.params.clone(),
             credentials: feature.credentials.clone(),
-            accept_self_signed_ceritificates,
             crypto_key
         }
     }

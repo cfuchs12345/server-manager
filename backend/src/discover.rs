@@ -7,7 +7,6 @@ use log::{error, warn};
 use std::{
     io::ErrorKind,
     net::{IpAddr, SocketAddrV4},
-    time::Duration,
     vec
 };
 use surge_ping::{Client, Config};
@@ -19,7 +18,7 @@ use crate::{
     plugins,
     server_types::{Feature, FeaturesOfServer, Server},
     status,
-    types::HostInformation, upnp,
+    types::HostInformation, upnp, inmemory, http_functions,
 };
 
 lazy_static! {
@@ -57,29 +56,23 @@ pub async fn auto_discover_servers_in_network(
 
 pub async fn discover_features_of_all_servers(
     servers: Vec<Server>,
-    accept_self_signed_certificates: bool,
-    upnp_activated: bool,
-    plugins: Vec<Plugin>,
+    upnp_activated: bool
 ) -> Result<Vec<FeaturesOfServer>, std::io::Error> {
     
     let wait_time_for_upnp = 15; // in seconds
     
    
 
-    let upnp_future = upnp::upnp_discover(wait_time_for_upnp, &plugins, upnp_activated);
+    let upnp_future = upnp::upnp_discover(wait_time_for_upnp, upnp_activated);
 
     // list of async tasks executed by tokio
     let mut tasks = Vec::new();
     for server in servers {
         let ipaddress = server.ipaddress.clone();
-        let accept_self_signed_certificates = accept_self_signed_certificates;
-        let plugin_clone = plugins.clone();
 
         tasks.push(tokio::spawn(async move {
             discover_features(
-                ipaddress.as_str(),
-                accept_self_signed_certificates,
-                plugin_clone,
+                ipaddress.as_str()
             )
             .await
         }));
@@ -106,16 +99,16 @@ pub async fn discover_features_of_all_servers(
 
 
 pub async fn discover_features(
-    ipaddress: &str,
-    accept_self_signed_certificates: bool,
-    plugins: Vec<Plugin>,
+    ipaddress: &str
 ) -> Result<FeaturesOfServer, std::io::Error> {
     let mut features_of_server = FeaturesOfServer {
         ipaddress: ipaddress.to_string(),
         features: vec![],
     };
 
-    let client = create_http_client(accept_self_signed_certificates);
+    let client = http_functions::create_http_client();
+    
+    let plugins = inmemory::get_all_plugins();
 
     for plugin in plugins {
         if !plugin.detection.detection_possible {
@@ -133,7 +126,7 @@ pub async fn discover_features(
                     Ok(body) => {
                         match body.text().await {
                             Ok(text) => {
-                                if check_plugin_match(&text, plugin.clone()).await {
+                                if check_plugin_match(&text, &plugin).await {
                                     log::debug!(
                                         "Plugin {:?} matched for server {}",
                                         &plugin.id,
@@ -281,13 +274,6 @@ async fn lookup_hostname(addr: IpAddr, upsstream_server: Vec<UpstreamServer>) ->
     result.unwrap()
 }
 
-fn create_http_client(accept_self_signed_certificates: bool) -> reqwest::Client {
-    reqwest::Client::builder()
-        .danger_accept_invalid_certs(accept_self_signed_certificates)
-        .timeout(Duration::from_secs(1))
-        .build()
-        .unwrap()
-}
 
 fn get_urls_for_check(detection_entry: &DetectionEntry, ipaddress: &str) -> Vec<String> {
     detection_entry
@@ -312,7 +298,7 @@ fn create_feature_from_plugin(plugin: &Plugin) -> Feature {
     }
 }
 
-async fn check_plugin_match(input: &str, plugin: Plugin) -> bool {
+async fn check_plugin_match(input: &str, plugin: &Plugin) -> bool {
     match plugins::plugin_detect_match(&plugin, input) {
         Ok(res) => res,
         Err(err) => {

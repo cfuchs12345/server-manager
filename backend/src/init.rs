@@ -8,11 +8,14 @@ use config::Config;
 use crate::appdata::AppData;
 use crate::crypt;
 use crate::handlebars_helper_functions;
+use crate::inmemory;
 use crate::migrations;
 use crate::persistence::Entry;
 use crate::persistence::Persistence;
+use crate::plugins;
 use crate::routes;
 use crate::persistence;
+use crate::scheduler;
 
 pub static EXTERNAL_FOLDER: &str = "./external_files";
 pub static SHIPPED_FOLDER:  &str = "./shipped_plugins";
@@ -33,14 +36,22 @@ pub async fn start() -> std::io::Result<()> {
     load_env_file();
     env_logger::init();
     
-    let config = get_config();   
+    init_config();
 
-    let bind_address = config.get_string("bind_address").unwrap();    
+    let bind_address = inmemory::get_config().get_string("bind_address").unwrap();
+
+    let plugin_path = inmemory::get_config().get_string("plugin_base_path").unwrap();
+
+    if let Ok(number) = plugins::init_cache(plugin_path.as_str()).await {
+        log::info!("Loaded {} plugins into cache", number);
+
+        scheduler::schedule_job(clokwerk::Interval::Seconds(5), || plugins::init_cache_silent("") );
+    };
 
     let neccessary_migrations = migrations::check_necessary_migration(); // needs to be checked before db connection is done
     migrations::execute_pre_db_startup_migrations(&neccessary_migrations);
 
-    let app_data = create_common_app_data(config);
+    let app_data = create_common_app_data();
     one_time_post_db_startup(&app_data).await;
 
     migrations::execute_post_db_startup_migrations(&neccessary_migrations, &app_data).await;
@@ -59,12 +70,11 @@ pub async fn start() -> std::io::Result<()> {
 
 
 
-fn create_common_app_data(config : Config) -> AppData {
+fn create_common_app_data() -> AppData {
     let persistence =  futures::executor::block_on(create_persistence());     
-    
-    let template_engine = create_templateengine(config.clone());
+    let template_engine = create_templateengine();
  
-     AppData { app_data_config: config, app_data_persistence: persistence, app_data_template_engine: template_engine }    
+     AppData { app_data_persistence: persistence, app_data_template_engine: template_engine }
 }
 
 async fn create_persistence() -> Persistence {
@@ -72,7 +82,8 @@ async fn create_persistence() -> Persistence {
     persistence::Persistence::new(&db_url).await
 }
 
-fn create_templateengine(config: Config) -> handlebars::Handlebars<'static> {
+fn create_templateengine() -> handlebars::Handlebars<'static> {
+    let config = inmemory::get_config();
     let template_base_path = config.get_string("template_base_path").unwrap();
   
     log::debug!("dir: {}", template_base_path);
@@ -225,10 +236,11 @@ fn init(cfg: &mut web::ServiceConfig) {
 }
 
 
-pub fn get_config() -> Config {
-
-    Config::builder()
+pub fn init_config() {
+    let config = Config::builder()
             .add_source(config::Environment::default())
             .build()
-            .expect("Could not load config from env properties") // ok to panic, if the config cannot be loaded
+            .expect("Could not load config from env properties"); // ok to panic, if the config cannot be loaded
+
+    inmemory::set_config(config);
 }

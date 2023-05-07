@@ -1,7 +1,7 @@
 use core::fmt;
 use std::{path::Path, collections::HashMap};
 
-use crate::{persistence::{Persistence, Migration}, init, appdata::AppData, servers,server_types::{Server, Credential, Feature}, crypt, plugins, plugin_types::Plugin};
+use crate::{persistence::{Persistence, Migration}, init, appdata::AppData, servers,server_types::{Server, Credential, Feature}, crypt, plugin_types::Plugin, inmemory};
 
 #[derive (PartialEq, Eq, Debug)]
 pub enum MigrationTypes {
@@ -48,7 +48,7 @@ pub async fn save_migration(neccessary_migrations: &[MigrationTypes], persistenc
  pub async fn do_encryption_migration(data: &AppData) -> std::result::Result<(), std::io::Error>{
     match servers::load_all_servers(&data.app_data_persistence).await {
         Ok(servers) => {
-            let plugins_map = get_plugins_map(data).await;
+            let plugins_map = inmemory::get_all_plugins_map();
 
             if !servers.is_empty() {
                 let servers_data_to_encrypt: Vec<&Server> = servers.iter().filter(|server| server_needs_encryption(server, &plugins_map)).collect();
@@ -95,12 +95,7 @@ pub async fn save_migration(neccessary_migrations: &[MigrationTypes], persistenc
     Ok(())
 }
 
-async fn get_plugins_map(data: &AppData) -> HashMap<String, Plugin> {
-    let plugin_base_path = data.app_data_config.get_string("plugin_base_path").unwrap();
-    let plugins = plugins::get_all_plugins(&plugin_base_path).await.unwrap();
 
-    plugins.iter().map( |p| (p.id.clone(), p.clone())).collect::<HashMap<_, _>>()
-}
 
 fn update_server(server: &Server, persistence: &Persistence)  {
     futures::executor::block_on(

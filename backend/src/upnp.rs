@@ -7,7 +7,7 @@ use std::{
     time::{Duration}, collections::HashMap
 };
 
-use crate::{server_types::{Feature, FeaturesOfServer, Param}, http_functions, plugin_types::Plugin};
+use crate::{server_types::{Feature, FeaturesOfServer, Param}, http_functions, plugin_types::Plugin, inmemory};
 
 const LOCATION: &str = "location";
 const UPNP: &str = "upnp";
@@ -72,7 +72,6 @@ pub struct Service {
 
 pub async fn upnp_discover(
     wait_time_for_upnp: usize,
-    plugins: &[Plugin],
     upnp_activated: bool
 ) -> Result<Vec<FeaturesOfServer>, std::io::Error> {
 
@@ -83,7 +82,7 @@ pub async fn upnp_discover(
 
     let mut serverfeature_by_location: HashMap<String,FeaturesOfServer> = HashMap::new();
 
-    let found = plugins.iter().find(|p| p.id == UPNP);
+    let found = inmemory::get_plugin(UPNP);
     if found.is_none() {
         log::error!("Found no plugin for UPnP - returning empty list");
         return Ok(Vec::new());
@@ -146,7 +145,7 @@ pub async fn upnp_discover(
     Ok( serverfeature_by_location.iter().map(|e| e.1.to_owned()).collect())
 }
 
-pub async fn parse_device_info_from_location(server_features_with_upnp: Vec<FeaturesOfServer>, accept_self_signed_certificates: bool, plugin: &Plugin) ->  Vec<FeaturesOfServer> {
+pub async fn parse_device_info_from_location(server_features_with_upnp: Vec<FeaturesOfServer>, plugin: &Plugin) ->  Vec<FeaturesOfServer> {
     let clone = server_features_with_upnp.clone();
     for fos in server_features_with_upnp {
 
@@ -158,7 +157,7 @@ pub async fn parse_device_info_from_location(server_features_with_upnp: Vec<Feat
                     Some( location_param ) =>  {
                         log::info!("found location {} for UPnP device {}", location_param.value, fos.ipaddress);
 
-                        match http_functions::execute_http_request(location_param.value.clone(), http_functions::GET, None, None, accept_self_signed_certificates).await {
+                        match http_functions::execute_http_request(location_param.value.clone(), http_functions::GET, None, None).await {
                             Ok(res) => {
                                 match res.text().await {
                                     Ok(text) => {

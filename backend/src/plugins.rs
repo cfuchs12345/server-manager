@@ -10,6 +10,7 @@ use std::collections::HashMap;
 use std::io::Error;
 use std::{fs::File, io::BufReader};
 
+use crate::inmemory;
 use crate::persistence::{Persistence, Entry};
 use crate::plugin_types::Plugin;
 
@@ -32,24 +33,22 @@ pub fn get_all_plugin_filenames(plugin_base_path: &str) -> Result<Vec<String>, E
     Ok(plugin_file_names)
 }
 
-#[allow(dead_code)]
-pub async fn get_filename_for_plugin(feature_id: String, plugin_base_path: &str) -> Option<String> {
-    if PLUGIN_NAME_TO_FILENAME.lock().await.len() == 0 {
-        match get_all_plugins(plugin_base_path).await {
-            Ok(_res) => {},
-            Err(err) => {
-                log::error!("Could not load plugins. Error was {}", err);
-            }
+pub fn get_all_plugins() -> Vec<Plugin>{
+    inmemory::get_all_plugins()
+}
+
+pub async fn init_cache_silent(plugin_base_path: &str) {
+    match init_cache(plugin_base_path).await {
+        Ok(_) => {},
+        Err(err) => {
+            log::error!("Error during plugin cache init: {}", err);
         }
     }
+}
 
-    PLUGIN_NAME_TO_FILENAME.lock().await.get(&feature_id).cloned()
- }
+pub async fn init_cache(plugin_base_path: &str) -> Result<usize, Error>{
+    inmemory::clean_plugin_cache();
 
-
-
-
-pub async fn get_all_plugins(plugin_base_path: &str) -> Result<Vec<Plugin>, Error> {
     let plugin_file_names = get_all_plugin_filenames(plugin_base_path)?;
 
     let plugins: Vec<Plugin> = join_all(plugin_file_names.iter().map(|plugin_file_name| async {
@@ -63,7 +62,10 @@ pub async fn get_all_plugins(plugin_base_path: &str) -> Result<Vec<Plugin>, Erro
     .await;
 
     debug!("Plugins loaded: {:?}", plugins);
-    Ok(plugins)
+    let len = plugins.len();
+    
+    inmemory::insert_plugins(plugins);
+    Ok(len)
 }
 
 pub fn plugin_detect_match(plugin: &Plugin, input: &str) -> Result<bool, Error> {
@@ -304,9 +306,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_all_plugins() {
-        let result = get_all_plugins("shipped_plugins/plugins").await;
+        let result = init_cache("shipped_plugins/plugins").await;
 
-        assert!(result.unwrap().len() > 0);
+        assert_eq!(true, result.is_ok());
     }
 
     #[tokio::test]

@@ -1,4 +1,4 @@
-use crate::{conversion, crypt, http_functions};
+use crate::{conversion, crypt, http_functions, inmemory};
 use crate::plugin_types::{Data, DependsDef, Plugin};
 use crate::server_types::{Feature, Server, Credential};
 use crate::types::ActionOrDataInput;
@@ -61,26 +61,28 @@ impl Placeholder {
 /// # Arguments
 /// 
 /// * `server` - the server struct representing the server on which the action should be executed 
-/// * `plugin` - the plugin to which the action query belongs to
 /// * `feature` - server feature config of the specific server containing maybe additional parameters or required credentials for the server
 /// * `action_id`- the identifier of the action
-/// * `accept_self_signed_certificates` - boolean flag if the server should accept self-signed SSL certiticates
 /// * `persistence` - the persistence struct that helps to interact with the underlying database
 pub async fn execute_action(
     server: &Server,
-    plugin: &Plugin,
     feature: &Feature,
     action_id: &str,
-    accept_self_signed_certificates: bool,
     crypto_key: String
 ) -> Result<bool, Error> {
+    let plugin_res = inmemory::get_plugin(feature.id.as_str());
+    if plugin_res.is_none() {
+        return Ok(false);
+    }
+
+    let plugin = plugin_res.unwrap();
+
     match plugin.find_action(action_id) {
         Some(plugin_action) => {
             let input: ActionOrDataInput = ActionOrDataInput::get_input_from_action(
                 plugin_action,
-                plugin,
-                feature,
-                accept_self_signed_certificates,
+                &plugin,
+                feature,                
                 crypto_key
             );
 
@@ -89,7 +91,7 @@ pub async fn execute_action(
                 .map(|_| true)
         }
         None => {
-            let error = format!("{} is not a action of plugin {}", action_id, plugin.id);
+            let error = format!("{} is not a action of plugin {}", action_id, feature.id);
             log::error!("{}", error);
             Err(Error::from(std::io::Error::new(ErrorKind::Other, error)))
         }
@@ -100,33 +102,25 @@ pub async fn execute_action(
 /// # Arguments
 /// 
 /// * `server` - the server struct representing the server on which the query should be executed
-/// * `plugins` - a vector of plugins for which the data queries should be executed
-/// * `accept_self_signed_certificates` - boolean flag if the server should accept self-signed SSL certiticates
 /// * `template_engine` - the template engine struct that is used to render the output in a readable format
 /// * `persistence` - the persistence struct that helps to interact with the underlying database
 pub async fn execute_data_query(
     server: &Server,
-    plugins: &[Plugin],
-    accept_self_signed_certificates: bool,
     template_engine: &handlebars::Handlebars<'static>,
     crypto_key: String
 ) -> Result<Vec<String>, Error> {
     let mut results: Vec<String> = vec![];
 
-    let tuples: Vec<(&Feature, &Plugin)> = server
-        .features
-        .iter()
-        .filter_map(|f| Some((f, find_plugin_for_feature(f, plugins)?)))
-        .collect();
 
-    for tuple in tuples {
-        for data in &tuple.1.data {
+    for feature in &server.features {
+        let plugin = inmemory::get_plugin(feature.id.as_str()).unwrap();
+
+        for data in &plugin.data {
             let data_response = execute_specific_data_query(
                 server,
-                tuple.1,
-                tuple.0,
+                &plugin,
+                &feature,
                 data,
-                accept_self_signed_certificates,
                 crypto_key.clone()
             )
             .await?;
@@ -164,21 +158,18 @@ pub async fn execute_data_query(
 /// * `plugin` - the plugin to which the data query belongs to
 /// * `feature` - server feature config of the specific server containing maybe additional parameters or required credentials for the server
 /// * `data` - the actual data query (as defined in the plugin) that should be executed
-/// * `accept_self_signed_certificates` - boolean flag if the server should accept self-signed SSL certiticates
 /// * `persistence` - the persistence struct that helps to interact with the underlying database
-pub async fn execute_specific_data_query(
+async fn execute_specific_data_query(
     server: &Server,
     plugin: &Plugin,
     feature: &Feature,
     data: &Data,
-    accept_self_signed_certificates: bool,
     crypto_key: String
 ) -> Result<Option<String>, Error> {
     let input: ActionOrDataInput = ActionOrDataInput::get_input_from_data(
         data,
         plugin,
         feature,
-        accept_self_signed_certificates,
         crypto_key
     );
 
@@ -189,20 +180,24 @@ pub async fn execute_specific_data_query(
 /// # Arguments
 /// 
 /// * `server` - the server struct representing the server on which the query should be executed
-/// * `plugin` - the plugin to which the data query belongs to
 /// * `feature` - server feature config of the specific server containing maybe additional parameters or required credentials for the server
 /// * `action_id`- the identifier of the action
-/// * `accept_self_signed_certificates` - boolean flag if the server should accept self-signed SSL certiticates
 /// * `persistence` - the persistence struct that helps to interact with the underlying database
 
 pub async fn check_condition_for_action_met(
     server: &Server,
-    plugin: &Plugin,
     feature: &Feature,
     action_id: &str,
-    accept_self_signed_certificates: bool,
     crypto_key: String
 ) -> Result<bool, Error> {
+    let plugin_res = inmemory::get_plugin(feature.id.as_str());
+
+    if plugin_res.is_none() {
+        return Ok(false);
+    }
+
+    let plugin = plugin_res.unwrap();
+
     match plugin.find_action(action_id) {
         Some(action) => {
             let status = crate::status::status_check(vec![server.ipaddress.clone()], true).await?;
@@ -235,14 +230,13 @@ pub async fn check_condition_for_action_met(
                     if status.is_running { // if not running, no need to start any request
                         // now check data dependencies one by one
                         for depends in &action.depends {
-                            match find_data_for_action_depency(depends, plugin) {
+                            match find_data_for_action_depency(depends, &plugin) {
                                 Some(data) => {
                                     let response = execute_specific_data_query(
                                         server,
-                                        plugin,
+                                        &plugin,
                                         feature,
                                         data,
-                                        accept_self_signed_certificates,
                                         crypto_key.clone()
                                     )
                                     .await?;
@@ -250,7 +244,7 @@ pub async fn check_condition_for_action_met(
                                     res &= response_data_match(depends, response.clone())?;
 
                                     if !res {
-                                        log::info!("Depencies for data {} of plugin {} for server {} not met .Reasponse was {:?}", data.id, plugin.id, server.ipaddress, response);
+                                        log::info!("Depencies for data {} of plugin {} for server {} not met .Reasponse was {:?}", data.id, feature.id, server.ipaddress, response);
                                         break;
                                     }
                                 }
@@ -274,7 +268,7 @@ pub async fn check_condition_for_action_met(
             Ok(res)
         }
         None => {
-            let error = format!("{} is not a action of plugin {}", action_id, plugin.id);
+            let error = format!("{} is not a action of plugin {}", action_id, feature.id);
             log::error!("{}", error);
             Err(Error::from(std::io::Error::new(ErrorKind::Other, error)))
         }
@@ -385,7 +379,6 @@ async fn execute_http_command<'a>(
         method.value.as_str(),
         Some(normal_and_replaced_headers),
         Some(normal_and_masked_body.0),
-        input.accept_self_signed_ceritificates,
     )
     .await
     {
@@ -561,10 +554,6 @@ fn get_param_value(name: &str, input: &ActionOrDataInput) -> Option<String> {
 
 fn encode_base64(placeholder: &str) -> String {
     general_purpose::STANDARD_NO_PAD.encode(Placeholder::Base64.strip_of_marker(placeholder))
-}
-
-fn find_plugin_for_feature<'a>(feature: &Feature, plugins: &'a [Plugin]) -> Option<&'a Plugin> {
-    plugins.iter().find(|p| p.id == feature.id)
 }
 
 fn find_data_for_action_depency<'a>(depend: &DependsDef, plugin: &'a Plugin) -> Option<&'a Data> {

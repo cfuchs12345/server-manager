@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
 
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, Hash)]
 pub struct Plugin {
     pub id: String,
     pub name: String,
@@ -25,6 +25,8 @@ impl PartialEq for Plugin {
     }
 }
 
+
+
 impl Plugin {
     pub fn find_action(&self, action_id: &str) -> Option<&Action> {
         self.actions.iter().find( |plugin| plugin.id == action_id)
@@ -32,20 +34,20 @@ impl Plugin {
 }
 
 
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct Script {
     pub script_type: String,
     pub script: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DetectionEntry {
     #[serde(default)]
     pub defaultports: Vec<u16>,
     pub url: String
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Detection {
     #[serde(default)]
     pub list: Vec<DetectionEntry>,
@@ -55,7 +57,7 @@ pub struct Detection {
     pub detection_possible: bool
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default,  PartialEq, Eq, Hash)]
 pub enum State {
     #[default]
     Active,
@@ -63,7 +65,7 @@ pub enum State {
     Any
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, Hash)]
 pub struct Action {
     pub id: String,
     #[serde(default)]
@@ -95,7 +97,7 @@ impl PartialEq for Action {
 }
 
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DependsDef {
     pub data_id: String,
     #[serde(default)]
@@ -105,14 +107,20 @@ pub struct DependsDef {
 }
 
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, Hash)]
 pub struct ParamDef {
     pub name: String,
     pub param_type: String,
     pub default_value: String
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+impl PartialEq for ParamDef {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct CredentialDef {
     pub name: String,
     pub credential_type: String,
@@ -120,20 +128,26 @@ pub struct CredentialDef {
     pub default_value: String
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, Hash)]
 pub struct ArgDef {
     pub arg_type: String,
     pub value: String
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+impl PartialEq for ArgDef {
+    fn eq(&self, other: &Self) -> bool {
+        self.arg_type == other.arg_type
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub enum ResultFormat {
     #[default]
     JSON,
     XML
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Data {
     pub id: String,
     #[serde(default)]
