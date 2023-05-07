@@ -1,6 +1,6 @@
-use crate::plugin_types::{Data, DependsDef, Plugin};
+use crate::plugin_types::{Action, Data, DependsDef, Plugin};
 use crate::server_types::{Credential, Feature, Server};
-use crate::types::ActionOrDataInput;
+use crate::types::{ActionOrDataInput, ConditionCheckResult};
 use crate::{conversion, crypt, http_functions, inmemory};
 use actix_web::Error;
 use base64::{engine::general_purpose, Engine as _};
@@ -159,102 +159,151 @@ async fn execute_specific_data_query(
     execute_command(server.ipaddress.clone(), &input).await
 }
 
+pub async fn check_all_conditions() {
+    let servers = inmemory::get_all_servers();
+    let crypto_key = inmemory::get_crypto_key();
+
+    let mut vec: Vec<ConditionCheckResult> = Vec::new();
+    for server in servers {
+        for feature in server.clone().features {
+            let plugin_res = inmemory::get_plugin(feature.id.as_str());
+            if plugin_res.is_none() {
+                log::error!("plugin with id {} not found", feature.id);
+                continue;
+            }
+            if let Some(plugin) = plugin_res {
+                for action in plugin.clone().actions {
+                    let server_clone = server.clone();
+                    let feature_clone = feature.clone();
+                    let action_clone = action.clone();
+                    let crypto_key_clone = crypto_key.clone();
+
+                    let check_res = check_condition_for_action_met(
+                        &server_clone,
+                        &feature_clone,
+                        &action_clone,
+                        crypto_key_clone,
+                    )
+                    .await;
+
+                    vec.push(check_res);
+                }
+            }
+        }
+    }
+
+    inmemory::reset_condition_result();
+    for result in vec {
+        inmemory::add_condition_result(result);
+    }
+}
+
 /// Checks if all conditions that are defined for an action of a plugin are met and that it can be executed by the user
 /// # Arguments
 ///
 /// * `server` - the server struct representing the server on which the query should be executed
 /// * `feature` - server feature config of the specific server containing maybe additional parameters or required credentials for the server
-/// * `action_id`- the identifier of the action
+/// * `actiond`- the plugin action to check
 /// * `persistence` - the persistence struct that helps to interact with the underlying database
 
 pub async fn check_condition_for_action_met(
     server: &Server,
     feature: &Feature,
-    action_id: &str,
+    action: &Action,
     crypto_key: String,
-) -> Result<bool, Error> {
+) -> ConditionCheckResult {
     let plugin_res = inmemory::get_plugin(feature.id.as_str());
 
     if plugin_res.is_none() {
-        return Ok(false);
+        return ConditionCheckResult {
+            action_id: action.id.clone(),
+            feature_id: feature.id.clone(),
+            ipaddress: server.ipaddress.clone(),
+            result: false,
+        };
     }
 
     let plugin = plugin_res.unwrap();
 
-    match plugin.find_action(action_id) {
-        Some(action) => {
-            let status = crate::status::status_check(vec![server.ipaddress.clone()], true).await?;
+    let status: Vec<crate::types::Status> =
+        crate::status::status_check(vec![server.ipaddress.clone()], true)
+            .await
+            .unwrap_or(Vec::new());
 
-            let mut res = match action.available_for_state {
-                crate::plugin_types::State::Active => {
-                    match status.first() {
-                        Some(status) => status.is_running,
-                        None => false, // unknown state - better do not allow an action
-                    }
-                }
-                crate::plugin_types::State::Inactive => {
-                    match status.first() {
-                        Some(status) => !status.is_running,
-                        None => false, // unknown state - better do not allow an action
-                    }
-                }
-                crate::plugin_types::State::Any => {
-                    // no status check - just allow it
-                    true
-                }
-            };
-
-            if !res {
-                // check if status dependency already failed - early exit
-                return Ok(res);
+    let mut result = match action.available_for_state {
+        crate::plugin_types::State::Active => {
+            match status.first() {
+                Some(status) => status.is_running,
+                None => false, // unknown state - better do not allow an action
             }
+        }
+        crate::plugin_types::State::Inactive => {
+            match status.first() {
+                Some(status) => !status.is_running,
+                None => false, // unknown state - better do not allow an action
+            }
+        }
+        crate::plugin_types::State::Any => {
+            // no status check - just allow it
+            true
+        }
+    };
 
-            if let Some(status) = status.first() {
-                if status.is_running {
-                    // if not running, no need to start any request
-                    // now check data dependencies one by one
-                    for depends in &action.depends {
-                        match find_data_for_action_depency(depends, &plugin) {
-                            Some(data) => {
-                                let response = execute_specific_data_query(
-                                    server,
-                                    &plugin,
-                                    feature,
-                                    data,
-                                    crypto_key.clone(),
-                                )
-                                .await?;
+    if !result {
+        // check if status dependency already failed - early exit
+        return ConditionCheckResult {
+            action_id: action.id.clone(),
+            feature_id: feature.id.clone(),
+            ipaddress: server.ipaddress.clone(),
+            result: false,
+        };
+    }
 
-                                res &= response_data_match(depends, response.clone())?;
+    if let Some(status) = status.first() {
+        if status.is_running {
+            // if not running, no need to start any request
+            // now check data dependencies one by one
+            for depends in &action.depends {
+                match find_data_for_action_depency(depends, &plugin) {
+                    Some(data) => {
+                        let response = execute_specific_data_query(
+                            server,
+                            &plugin,
+                            feature,
+                            data,
+                            crypto_key.clone(),
+                        )
+                        .await
+                        .unwrap_or_default();
 
-                                if !res {
-                                    log::info!("Depencies for data {} of plugin {} for server {} not met .Reasponse was {:?}", data.id, feature.id, server.ipaddress, response);
-                                    break;
-                                }
-                            }
-                            None => {
-                                let error = format!(
-                                    "dependent data with id  {} not found for action {}",
-                                    depends.data_id, action_id
-                                );
-                                log::error!("{}", error);
-                                res = false;
-                                break;
-                            }
+                        result &=
+                            response_data_match(depends, response.clone()).unwrap_or_default();
+                        if !result {
+                            log::debug!("Depencies for data {} of plugin {} for server {} not met .Reasponse was {:?}", data.id, feature.id, server.ipaddress, response);
+                            break;
                         }
                     }
-                } else if !action.depends.is_empty() {
-                    res = false;
+                    None => {
+                        let error = format!(
+                            "dependent data with id  {} not found for action {}",
+                            depends.data_id, action.id
+                        );
+                        log::error!("{}", error);
+                        result = false;
+                        break;
+                    }
                 }
-            };
+            }
+        } else if !action.depends.is_empty() {
+            result = false;
+        }
+    };
 
-            Ok(res)
-        }
-        None => {
-            let error = format!("{} is not a action of plugin {}", action_id, feature.id);
-            log::error!("{}", error);
-            Err(Error::from(std::io::Error::new(ErrorKind::Other, error)))
-        }
+    ConditionCheckResult {
+        action_id: action.id.clone(),
+        feature_id: feature.id.clone(),
+        ipaddress: server.ipaddress.clone(),
+        result,
     }
 }
 
@@ -358,33 +407,16 @@ async fn execute_http_command<'a>(
         return Ok(None);
     }
 
-    match http_functions::execute_http_request(
+    let text = http_functions::execute_http_request(
         normal_and_masked_url.0,
         method.value.as_str(),
         Some(normal_and_replaced_headers),
         Some(normal_and_masked_body.0),
     )
     .await
-    {
-        Ok(response) => {
-            let text = response.text().await.unwrap_or_default();
-            log::debug!(
-                "Response for http request to url {} was: {}",
-                normal_and_masked_url.1,
-                text
-            );
-            Ok(Some(text))
-        }
-        Err(err) => {
-            log::error!(
-                "Error while executing request {:?} {:?} was: {}",
-                method.value,
-                normal_and_masked_url.1,
-                err
-            );
-            Err(err.into())
-        }
-    }
+    .unwrap();
+
+    Ok(Some(text))
 }
 
 async fn execute_wol_command<'a>(

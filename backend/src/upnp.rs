@@ -145,6 +145,7 @@ pub async fn upnp_discover(
     Ok( serverfeature_by_location.iter().map(|e| e.1.to_owned()).collect())
 }
 
+#[allow(dead_code)]
 pub async fn parse_device_info_from_location(server_features_with_upnp: Vec<FeaturesOfServer>, plugin: &Plugin) ->  Vec<FeaturesOfServer> {
     let clone = server_features_with_upnp.clone();
     for fos in server_features_with_upnp {
@@ -158,17 +159,12 @@ pub async fn parse_device_info_from_location(server_features_with_upnp: Vec<Feat
                         log::info!("found location {} for UPnP device {}", location_param.value, fos.ipaddress);
 
                         match http_functions::execute_http_request(location_param.value.clone(), http_functions::GET, None, None).await {
-                            Ok(res) => {
-                                match res.text().await {
-                                    Ok(text) => {
+                            Ok(text) => {
+                                
                                         log::info!("executed request on location {} of UPnP device {}", location_param.value, fos.ipaddress);
 
                                         parse_upnp_description(text.as_str());
-                                    },
-                                    Err(err) => {
-                                        log::error!("Error while reading response text from location {} of UPnP device {}. Error {}", location_param.value.clone(), fos.ipaddress, err);
-                                    }
-                                }
+                                
                             },
                             Err(err) => {
                                 log::error!("Error while doing http request on location {} of UPnP device {}. Error {}", location_param.value.clone(), fos.ipaddress, err);

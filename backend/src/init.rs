@@ -8,6 +8,7 @@ use tokio_cron_scheduler::{Job, JobScheduler};
 
 use crate::appdata::AppData;
 use crate::crypt;
+use crate::features;
 use crate::handlebars_helper_functions;
 use crate::inmemory;
 use crate::migrations;
@@ -50,6 +51,7 @@ pub async fn start() -> std::io::Result<()> {
     migrations::save_migration(&neccessary_migrations, &app_data.app_data_persistence).await;
     
     init_server_list(&app_data.app_data_persistence).await;
+    init_config_post_db(&app_data.app_data_persistence).await;
     
     HttpServer::new(move || {
         App::new()
@@ -63,7 +65,7 @@ pub async fn start() -> std::io::Result<()> {
 }
 
 async fn init_server_list(persistence: &Persistence) {
-   let servers =  servers::load_all_servers(persistence).await.unwrap();
+   let servers =  servers::load_all_servers(persistence, false).await.unwrap();
 
     inmemory::insert_servers(servers);
 }
@@ -91,6 +93,16 @@ async fn start_scheduled_jobs() {
         )
         .await
         .unwrap();
+    scheduler.add(
+        Job::new_async("1/10 * * * * *", |_uuid, _l| {
+            Box::pin(async {
+                    features::check_all_conditions().await;
+            })
+        })
+        .unwrap(),
+
+    ) .await
+    .unwrap();
 
     match scheduler.start().await {
         Ok(_res) => log::info!("Schedulder started"),
@@ -276,16 +288,23 @@ fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(routes::delete_dnsservers);
 }
 
-pub fn init_config() {
+fn init_config() {
     let config = Config::builder()
         .add_source(config::Environment::default())
         .build()
         .expect("Could not load config from env properties"); // ok to panic, if the config cannot be loaded
 
-    inmemory::set_config(config);
+
+    inmemory::set_config(config);    
     env_logger::init();
 
     if let Ok(number) = plugins::init_cache() {
         log::info!("Loaded {} plugins into cache", number);
     };
+}
+
+async fn init_config_post_db(persistence: &Persistence) {
+    let crypto_key = persistence.get("encryption", "default").await.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e)).unwrap().ok_or(std::io::Error::new(std::io::ErrorKind::Other, "No crypto key in db found")).unwrap().value;
+    
+    inmemory::set_crypto_key(crypto_key);
 }

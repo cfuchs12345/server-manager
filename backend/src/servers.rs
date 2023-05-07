@@ -45,11 +45,15 @@ pub async fn delete_server(persistence: &Persistence, ipaddress: &str) -> Result
 
 
 
-pub async fn load_all_servers(persistence: &Persistence) -> Result<Vec<Server>,  std::io::Error> {
-    let server_entries = persistence.get_all(TABLE).await.unwrap();
+pub async fn load_all_servers(persistence: &Persistence, use_cache: bool) -> Result<Vec<Server>,  std::io::Error> {
+    if use_cache {
+        Ok(inmemory::get_all_servers())
+    }
+    else {
+        let server_entries = persistence.get_all(TABLE).await.unwrap();
 
-
-    Ok(entries_to_servers(server_entries))
+        Ok(entries_to_servers(server_entries))
+    }
 }
 
 pub async fn get_server(persistence: &Persistence, ipaddress: String)  -> Result<Server,  std::io::Error> {

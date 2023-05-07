@@ -22,7 +22,7 @@ export class HostInformation {
 // Status Query
 
 export class ServersAction {
-  constructor(public action_type: 'Status' | 'FeatureScan', public params: Param[] = []) {}
+  constructor(public action_type: 'Status' | 'FeatureScan' | 'ActionConditionCheck', public params: Param[] = []) {}
 }
 
 export class Status {

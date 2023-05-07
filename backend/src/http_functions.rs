@@ -1,8 +1,8 @@
-use std::{time::Duration, io::ErrorKind};
+use std::{time::Duration};
 
-use reqwest::Response;
+use http::StatusCode;
 
-use crate::inmemory;
+use crate::{inmemory};
 
 pub const GET: &str = "get";
 pub const POST: &str = "post";
@@ -29,7 +29,7 @@ pub async fn execute_http_request(
     method: &str,
     headers: Option<Vec<(String, String)>>,
     body: Option<String>
-) -> Result<Response, Box<dyn std::error::Error>> {
+) -> Result<String, reqwest::Error> {
     
     let client = create_http_client();
 
@@ -37,11 +37,22 @@ pub async fn execute_http_request(
     
     log::debug!("executing http request {} on {}", method, url);
 
-    match method {
-        GET => client.get(url).headers(header_map).send().await.map_err(|e| e.into()),
-        POST => client.post(url).headers(header_map).body(body.unwrap_or("".to_string())).send().await.map_err(|e| e.into()),
-        PUT => client.put(url).headers(header_map).body(body.unwrap_or("".to_string())).send().await.map_err(|e| e.into()),
-        y => Err( std::io::Error::new(ErrorKind::InvalidInput, format!("Method {} is not supported here", y)).into())
+    let response = match method {
+        POST => client.post(url).headers(header_map).body(body.unwrap_or("".to_string())).send().await,
+        PUT => client.put(url).headers(header_map).body(body.unwrap_or("".to_string())).send().await,
+        GET => client.get(url).headers(header_map).send().await,
+        _ => client.get(url).headers(header_map).send().await, // default is also a get
+    };
+
+    match response {
+        Ok(res) => {
+        match res.status() {
+            StatusCode::ACCEPTED => Ok(res.text().await.unwrap()),
+            StatusCode::OK => Ok(res.text().await.unwrap()),
+            _ => Ok("".to_string())
+        }
+    },
+    Err(err)=> Err(err)
     }
 }
 

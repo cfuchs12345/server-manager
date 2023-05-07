@@ -135,7 +135,8 @@ pub struct QueryParam {
 #[derive(Deserialize, Serialize, Clone, PartialEq, Eq)]
 pub enum ServersActionType {
     Status,
-    FeatureScan
+    FeatureScan,
+    ActionConditionCheck
 }
 
 #[derive(Deserialize, Serialize, Clone, PartialEq, Eq)]
@@ -191,4 +192,12 @@ pub struct ServersAction {
 pub struct ServerAction {
     pub action_type: ServerActionType,
     pub params: Vec<QueryParam>
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct ConditionCheckResult {
+    pub ipaddress: String,
+    pub feature_id: String,
+    pub action_id: String,
+    pub result: bool
 }

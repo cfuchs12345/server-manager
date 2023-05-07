@@ -5,6 +5,7 @@ import { ServerService } from 'src/app/services/servers/server.service';
 import { Subscription } from 'rxjs';
 import { Server } from 'src/app/services/servers/types';
 import { ImageCache } from 'src/app/services/cache/image-cache.service';
+import { ServerActionService } from 'src/app/services/servers/server-action.service';
 
 @Component({
   selector: 'app-server-list-wrapper',
@@ -22,6 +23,7 @@ export class ServerListWrapperComponent implements OnInit, OnDestroy {
     private serverService: ServerService,
     private pluginService: PluginService,
     private statusService: ServerStatusService,
+    private serverActionService: ServerActionService,
     private imageCache: ImageCache
   ) {}
 
@@ -40,12 +42,21 @@ export class ServerListWrapperComponent implements OnInit, OnDestroy {
     this.pluginService.loadPlugins();
     this.serverService.listServers();
     this.statusService.listServerStatus(this.servers);
+    this.serverActionService.listConditionCheckResults();
 
     setInterval(() => {
       if (this.servers) {
         this.statusService.listServerStatus(this.servers);
       }
     }, 10000);
+
+    setInterval(() => {
+      if (this.servers) {
+        this.serverActionService.listConditionCheckResults();
+      }
+    }, 10000);
+
+
   }
 
 

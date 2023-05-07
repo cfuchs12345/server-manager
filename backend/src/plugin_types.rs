@@ -141,6 +141,7 @@ impl PartialEq for ArgDef {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq,)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum ResultFormat {
     #[default]
     JSON,

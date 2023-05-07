@@ -3,8 +3,7 @@ use actix_web::{web, get, put, post, HttpRequest, HttpResponse};
 
 use crate::appdata::AppData;
 use crate::config_types::DNSServer;
-use crate::persistence::Persistence;
-use crate::{plugins, features, config, status, types};
+use crate::{plugins, features, config, status, types, inmemory};
 use crate::discover::{self};
 use crate::servers;
 use crate::types::{Status, NetworkActionType, ServersActionType, ServersAction, ServerAction, ServerActionType, PluginsAction, NetworksAction};
@@ -61,7 +60,7 @@ pub async fn post_networks_action(data: web::Data<AppData>, query: web::Json<Net
 #[get("/backend/servers")]
 pub async fn get_servers(data: web::Data<AppData<>>) -> HttpResponse {
 //    let server_list = servers::get_all.await;
-    match servers::load_all_servers(&data.app_data_persistence).await {
+    match servers::load_all_servers(&data.app_data_persistence, true).await {
         Ok(result) => HttpResponse::Ok().json(result),
         Err(err) => HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
     }    
@@ -93,7 +92,7 @@ pub async fn post_servers_actions(data: web::Data<AppData>, query: web::Json<Ser
             HttpResponse::Ok().json(list)
         },
         ServersActionType::FeatureScan => {
-            match servers::load_all_servers(&data.app_data_persistence).await {                
+            match servers::load_all_servers(&data.app_data_persistence, true).await {                
                 Ok(servers) => {
                     let upnp_activated = !plugins::is_plugin_disabled("upnp", &data.app_data_persistence).await.unwrap_or(true);
                     let list = discover::discover_features_of_all_servers(servers, upnp_activated).await.unwrap();
@@ -107,6 +106,9 @@ pub async fn post_servers_actions(data: web::Data<AppData>, query: web::Json<Ser
                 }
                         
             }
+        },
+        ServersActionType::ActionConditionCheck => {
+            HttpResponse::Ok().json(inmemory::get_all_condition_results().to_vec())
         }
     }   
 }
@@ -147,16 +149,13 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
 
             let feature_res = server.find_feature(feature_id.clone());
 
-            let crypto_res = get_crypto_key(&data.app_data_persistence).await;
-
-            if crypto_res.is_err() {
-                return HttpResponse::InternalServerError().body("Crypto key not found".to_string());
-            }
             if feature_res.is_none() {
                 return HttpResponse::InternalServerError().body(format!("Feature with id {} not known", feature_id));
             }
 
-            match features::execute_action(&server, feature_res.unwrap(), action_id, crypto_res.unwrap()).await {
+            let crypto_key = inmemory::get_crypto_key();
+
+            match features::execute_action(&server, feature_res.unwrap(), action_id, crypto_key).await {
                 Ok(result) => HttpResponse::Ok().json(result),
                 Err(err) =>  HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
             }
@@ -169,28 +168,33 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
 
             let feature_res = server.find_feature(feature_id.clone());
 
-            let crypto_res = get_crypto_key(&data.app_data_persistence).await;
-
             if feature_res.is_none() {
                 return HttpResponse::InternalServerError().body(format!("Feature with id {} not known", feature_id));
             }
-            if crypto_res.is_err() {
-                return HttpResponse::InternalServerError().body("Crypto key not found".to_string());
+
+            let plugin_opt = inmemory::get_plugin(feature_res.unwrap().id.as_str());
+
+            if plugin_opt.is_none() {
+                return HttpResponse::InternalServerError().body(format!("Plugin with id {} not known", feature_id));
+            }
+            let plugin = plugin_opt.unwrap();
+
+            let action_opt = plugin.actions.iter().find(|a| a.id == *action_id);
+
+            if action_opt.is_none() {
+                return HttpResponse::InternalServerError().body(format!("Action with id {} not known for plugin with id {}", feature_id, plugin.id));
             }
 
-            match features::check_condition_for_action_met( &server, feature_res.unwrap(), action_id, crypto_res.unwrap()).await {
-                Ok(result) => HttpResponse::Ok().json(result),
-                Err(err) =>  {
-                    log::error!("Error during action condition check: {:?}", err);
-                    HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
-                }
-            }
+            let crypto_key = inmemory::get_crypto_key();
+
+
+            let result = features::check_condition_for_action_met( &server, feature_res.unwrap(), action_opt.unwrap(), crypto_key).await;
+            HttpResponse::Ok().json(result.result)
         }
         ServerActionType::QueryData => {       
+            let crypto_key = inmemory::get_crypto_key();
 
-            let crypto_res = get_crypto_key(&data.app_data_persistence).await;
-
-            match features::execute_data_query(&server, &data.app_data_template_engine, crypto_res.unwrap()).await {
+            match features::execute_data_query(&server, &data.app_data_template_engine, crypto_key).await {
                 Ok(results) => {
                     HttpResponse::Ok().json(results)
                 }
@@ -209,26 +213,32 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
 
             let feature_res = server.find_feature(feature_id.clone());
            
-            let crypto_res = get_crypto_key(&data.app_data_persistence).await;
-
-            if crypto_res.is_err() {
-                return HttpResponse::InternalServerError().body("Crypto key not found".to_string());
-            }
             if feature_res.is_none() {
                 return HttpResponse::InternalServerError().body(format!("Feature with id {} not known", feature_id));
             }
-          
-            match features::check_condition_for_action_met(&server, feature_res.unwrap(), action_id, crypto_res.unwrap()).await {
-                Ok(result) => HttpResponse::Ok().json(result),
-                Err(err) =>  HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
+            
+            let plugin_opt = inmemory::get_plugin(feature_res.unwrap().id.as_str());
+
+            if plugin_opt.is_none() {
+                return HttpResponse::InternalServerError().body(format!("Plugin with id {} not known", feature_id));
             }
+
+            let plugin = plugin_opt.unwrap();
+
+            let action_opt = plugin.actions.iter().find(|a| a.id == *action_id);
+
+            if action_opt.is_none() {
+                return HttpResponse::InternalServerError().body(format!("Action with id {} not known for plugin with id {}", feature_id, plugin.id));
+            }
+            let crypto_key = inmemory::get_crypto_key();
+
+            let result = features::check_condition_for_action_met(&server, feature_res.unwrap(), action_opt.unwrap(), crypto_key).await;
+            HttpResponse::Ok().json(result.result)
+
         }
     }  
 }
 
-async fn get_crypto_key(persistence: &Persistence) -> Result<String, std::io::Error> {
-    Ok(persistence.get("encryption", "default").await.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?.ok_or(std::io::Error::new(std::io::ErrorKind::Other, "No crypto key in db found"))?.value)
-}
 
 
 #[put("/backend/servers/{ipaddress}")]

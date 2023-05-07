@@ -44,8 +44,6 @@ export class ServerActionComponent implements OnInit, OnDestroy, OnChanges {
           this.conditionCheckResult !== undefined &&
           this.conditionCheckResult.result;
       });
-
-    this.registerForMonitoring();
   }
 
   ngOnChanges(): void {
@@ -104,18 +102,4 @@ export class ServerActionComponent implements OnInit, OnDestroy, OnChanges {
       this.guiAction.action.id === result.action_id
     );
   }
-
-  private registerForMonitoring = () => {
-    if (!this.server) {
-      return;
-    }
-
-    if (this.guiAction && this.guiAction.action && this.guiAction.feature) {
-      this.serverActionService.registerFeatureActionOfServerForCheck(
-        this.server,
-        this.guiAction.feature,
-        this.guiAction.action
-      );
-    }
-  };
 }

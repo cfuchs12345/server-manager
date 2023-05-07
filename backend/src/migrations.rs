@@ -46,7 +46,7 @@ pub async fn save_migration(neccessary_migrations: &[MigrationTypes], persistenc
 }
 
  pub async fn do_encryption_migration(data: &AppData) -> std::result::Result<(), std::io::Error>{
-    match servers::load_all_servers(&data.app_data_persistence).await {
+    match servers::load_all_servers(&data.app_data_persistence, false).await {
         Ok(servers) => {
             let plugins_map = inmemory::get_all_plugins_map();
 
