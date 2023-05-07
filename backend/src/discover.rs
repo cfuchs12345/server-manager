@@ -299,7 +299,7 @@ fn create_feature_from_plugin(plugin: &Plugin) -> Feature {
 }
 
 async fn check_plugin_match(input: &str, plugin: &Plugin) -> bool {
-    match plugins::plugin_detect_match(&plugin, input) {
+    match plugins::plugin_detect_match(plugin, input) {
         Ok(res) => res,
         Err(err) => {
             error!("{:?}", err);

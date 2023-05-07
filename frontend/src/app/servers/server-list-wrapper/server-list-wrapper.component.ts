@@ -38,9 +38,8 @@ export class ServerListWrapperComponent implements OnInit, OnDestroy {
       }
     );
     this.pluginService.loadPlugins();
-
     this.serverService.listServers();
-
+    this.statusService.listServerStatus(this.servers);
 
     setInterval(() => {
       if (this.servers) {

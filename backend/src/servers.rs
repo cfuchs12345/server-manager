@@ -1,3 +1,4 @@
+use crate::inmemory;
 use crate::persistence::{Entry, Persistence};
 use crate::server_types::Server;
 
@@ -22,18 +23,21 @@ fn server_to_entry(server: &Server) -> Entry {
 }
 
 pub async fn save_server(persistence: &Persistence, server: &Server) -> Result<bool, std::io::Error> {
+    inmemory::add_server(server);
     let result = persistence.insert(TABLE, server_to_entry(server)).await.unwrap();
 
     Ok(result > 0)
 }
 
 pub async fn update_server(persistence: &Persistence, server: &Server) -> Result<bool, std::io::Error> {
+    inmemory::add_server(server);
     let result = persistence.update(TABLE, server_to_entry(server)).await.unwrap();
 
     Ok(result > 0)
 }
 
 pub async fn delete_server(persistence: &Persistence, ipaddress: &str) -> Result<bool, std::io::Error> {
+    inmemory::remove_server(ipaddress);
     let result = persistence.delete(TABLE, ipaddress).await.unwrap();
 
     Ok(result > 0)

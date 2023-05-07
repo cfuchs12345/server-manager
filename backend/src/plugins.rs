@@ -37,8 +37,9 @@ pub fn get_all_plugins() -> Vec<Plugin>{
     inmemory::get_all_plugins()
 }
 
-pub async fn init_cache_silent(plugin_base_path: &str) {
-    match init_cache(plugin_base_path).await {
+pub fn init_cache_silent() {
+    log::debug!("updading cache");
+    match init_cache() {
         Ok(_) => {},
         Err(err) => {
             log::error!("Error during plugin cache init: {}", err);
@@ -46,13 +47,27 @@ pub async fn init_cache_silent(plugin_base_path: &str) {
     }
 }
 
-pub async fn init_cache(plugin_base_path: &str) -> Result<usize, Error>{
-    inmemory::clean_plugin_cache();
+pub fn init_cache() -> Result<usize, Error>{
 
-    let plugin_file_names = get_all_plugin_filenames(plugin_base_path)?;
+    let plugins = futures::executor::block_on(
+        load_all()
+    )?;
+
+    debug!("Plugins loaded: {:?}", plugins);
+    let len = plugins.len();
+    
+    inmemory::insert_plugins(plugins);
+    Ok(len)
+}
+
+async fn load_all() -> Result<Vec<Plugin>, Error> {
+    inmemory::clean_plugin_cache();
+    let plugin_base_path = inmemory::get_config().get_string("plugin_base_path").unwrap();
+
+    let plugin_file_names = get_all_plugin_filenames(plugin_base_path.as_str())?;
 
     let plugins: Vec<Plugin> = join_all(plugin_file_names.iter().map(|plugin_file_name| async {
-        let plugin = load_plugin(plugin_base_path, plugin_file_name)
+        let plugin = load_plugin(plugin_base_path.as_str(), plugin_file_name)
             .await
             .unwrap();
 
@@ -61,11 +76,7 @@ pub async fn init_cache(plugin_base_path: &str) -> Result<usize, Error>{
     }))
     .await;
 
-    debug!("Plugins loaded: {:?}", plugins);
-    let len = plugins.len();
-    
-    inmemory::insert_plugins(plugins);
-    Ok(len)
+    Ok(plugins)
 }
 
 pub fn plugin_detect_match(plugin: &Plugin, input: &str) -> Result<bool, Error> {
@@ -306,7 +317,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_all_plugins() {
-        let result = init_cache("shipped_plugins/plugins").await;
+        let result = init_cache();
 
         assert_eq!(true, result.is_ok());
     }

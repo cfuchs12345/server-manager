@@ -1,20 +1,18 @@
-use crate::{conversion, crypt, http_functions, inmemory};
 use crate::plugin_types::{Data, DependsDef, Plugin};
-use crate::server_types::{Feature, Server, Credential};
+use crate::server_types::{Credential, Feature, Server};
 use crate::types::ActionOrDataInput;
-use std::io::ErrorKind;
-use actix_web::{Error};
+use crate::{conversion, crypt, http_functions, inmemory};
+use actix_web::Error;
 use base64::{engine::general_purpose, Engine as _};
 use lazy_static::lazy_static;
 use mac_address::MacAddress;
 use regex::Regex;
+use std::io::ErrorKind;
 
-use rlua::Lua;
 use rhai::{Engine, Scope};
+use rlua::Lua;
 
-
-
-/// This enum hides the actual regular expressions and the matching and provides methods for 
+/// This enum hides the actual regular expressions and the matching and provides methods for
 /// * easy extraction of matched strings
 /// * strip of the markers and returning the actual name of the placeholder
 enum Placeholder {
@@ -59,8 +57,8 @@ impl Placeholder {
 
 /// Executes a defined action of a plugin on the given server
 /// # Arguments
-/// 
-/// * `server` - the server struct representing the server on which the action should be executed 
+///
+/// * `server` - the server struct representing the server on which the action should be executed
 /// * `feature` - server feature config of the specific server containing maybe additional parameters or required credentials for the server
 /// * `action_id`- the identifier of the action
 /// * `persistence` - the persistence struct that helps to interact with the underlying database
@@ -68,7 +66,7 @@ pub async fn execute_action(
     server: &Server,
     feature: &Feature,
     action_id: &str,
-    crypto_key: String
+    crypto_key: String,
 ) -> Result<bool, Error> {
     let plugin_res = inmemory::get_plugin(feature.id.as_str());
     if plugin_res.is_none() {
@@ -82,8 +80,8 @@ pub async fn execute_action(
             let input: ActionOrDataInput = ActionOrDataInput::get_input_from_action(
                 plugin_action,
                 &plugin,
-                feature,                
-                crypto_key
+                feature,
+                crypto_key,
             );
 
             execute_command(server.ipaddress.clone(), &input)
@@ -100,51 +98,40 @@ pub async fn execute_action(
 
 /// Executes all data queries on the given server for all given plugins
 /// # Arguments
-/// 
+///
 /// * `server` - the server struct representing the server on which the query should be executed
 /// * `template_engine` - the template engine struct that is used to render the output in a readable format
 /// * `persistence` - the persistence struct that helps to interact with the underlying database
 pub async fn execute_data_query(
     server: &Server,
     template_engine: &handlebars::Handlebars<'static>,
-    crypto_key: String
+    crypto_key: String,
 ) -> Result<Vec<String>, Error> {
     let mut results: Vec<String> = vec![];
-
 
     for feature in &server.features {
         let plugin = inmemory::get_plugin(feature.id.as_str()).unwrap();
 
         for data in &plugin.data {
-            let data_response = execute_specific_data_query(
-                server,
-                &plugin,
-                &feature,
-                data,
-                crypto_key.clone()
-            )
-            .await?;
+            let data_response =
+                execute_specific_data_query(server, &plugin, feature, data, crypto_key.clone())
+                    .await?;
 
-            match data_response {
-                Some(response) => {
-                    if !data.template.is_empty() { 
-                        // convert the output with the template              
-                        let result = conversion::convert_json_to_html(
-                            data.template.as_str(),
-                            response,
-                            template_engine,
-                            data,
-                        )?;
-                        results.push(result);                
-                    }                              
-                    else { // no template - just append
-                        results.push(response);
-                    }
-                },
-                None => {
-                    // no technical issue, but no result - do not append anything
+            if let Some(response) = data_response {
+                if !data.template.is_empty() {
+                    // convert the output with the template
+                    let result = conversion::convert_json_to_html(
+                        data.template.as_str(),
+                        response,
+                        template_engine,
+                        data,
+                    )?;
+                    results.push(result);
+                } else {
+                    // no template - just append
+                    results.push(response);
                 }
-            }           
+            }
         }
     }
 
@@ -153,7 +140,7 @@ pub async fn execute_data_query(
 
 /// Executes a specific data query on the given server for a given data point config of a plugin
 /// # Arguments
-/// 
+///
 /// * `server` - the server struct representing the server on which the query should be executed
 /// * `plugin` - the plugin to which the data query belongs to
 /// * `feature` - server feature config of the specific server containing maybe additional parameters or required credentials for the server
@@ -164,21 +151,17 @@ async fn execute_specific_data_query(
     plugin: &Plugin,
     feature: &Feature,
     data: &Data,
-    crypto_key: String
+    crypto_key: String,
 ) -> Result<Option<String>, Error> {
-    let input: ActionOrDataInput = ActionOrDataInput::get_input_from_data(
-        data,
-        plugin,
-        feature,
-        crypto_key
-    );
+    let input: ActionOrDataInput =
+        ActionOrDataInput::get_input_from_data(data, plugin, feature, crypto_key);
 
     execute_command(server.ipaddress.clone(), &input).await
 }
 
 /// Checks if all conditions that are defined for an action of a plugin are met and that it can be executed by the user
 /// # Arguments
-/// 
+///
 /// * `server` - the server struct representing the server on which the query should be executed
 /// * `feature` - server feature config of the specific server containing maybe additional parameters or required credentials for the server
 /// * `action_id`- the identifier of the action
@@ -188,7 +171,7 @@ pub async fn check_condition_for_action_met(
     server: &Server,
     feature: &Feature,
     action_id: &str,
-    crypto_key: String
+    crypto_key: String,
 ) -> Result<bool, Error> {
     let plugin_res = inmemory::get_plugin(feature.id.as_str());
 
@@ -227,42 +210,42 @@ pub async fn check_condition_for_action_met(
             }
 
             if let Some(status) = status.first() {
-                    if status.is_running { // if not running, no need to start any request
-                        // now check data dependencies one by one
-                        for depends in &action.depends {
-                            match find_data_for_action_depency(depends, &plugin) {
-                                Some(data) => {
-                                    let response = execute_specific_data_query(
-                                        server,
-                                        &plugin,
-                                        feature,
-                                        data,
-                                        crypto_key.clone()
-                                    )
-                                    .await?;
+                if status.is_running {
+                    // if not running, no need to start any request
+                    // now check data dependencies one by one
+                    for depends in &action.depends {
+                        match find_data_for_action_depency(depends, &plugin) {
+                            Some(data) => {
+                                let response = execute_specific_data_query(
+                                    server,
+                                    &plugin,
+                                    feature,
+                                    data,
+                                    crypto_key.clone(),
+                                )
+                                .await?;
 
-                                    res &= response_data_match(depends, response.clone())?;
+                                res &= response_data_match(depends, response.clone())?;
 
-                                    if !res {
-                                        log::info!("Depencies for data {} of plugin {} for server {} not met .Reasponse was {:?}", data.id, feature.id, server.ipaddress, response);
-                                        break;
-                                    }
-                                }
-                                None => {
-                                    let error = format!(
-                                        "dependent data with id  {} not found for action {}",
-                                        depends.data_id, action_id
-                                    );
-                                    log::error!("{}", error);
-                                    res = false;
+                                if !res {
+                                    log::info!("Depencies for data {} of plugin {} for server {} not met .Reasponse was {:?}", data.id, feature.id, server.ipaddress, response);
                                     break;
                                 }
                             }
+                            None => {
+                                let error = format!(
+                                    "dependent data with id  {} not found for action {}",
+                                    depends.data_id, action_id
+                                );
+                                log::error!("{}", error);
+                                res = false;
+                                break;
+                            }
                         }
                     }
-                    else if !action.depends.is_empty() {
-                        res = false;
-                    }               
+                } else if !action.depends.is_empty() {
+                    res = false;
+                }
             };
 
             Ok(res)
@@ -275,7 +258,10 @@ pub async fn check_condition_for_action_met(
     }
 }
 
-async fn execute_command<'a>(ipaddress: String, input: &ActionOrDataInput) -> Result<Option<String>, Error> {
+async fn execute_command<'a>(
+    ipaddress: String,
+    input: &ActionOrDataInput,
+) -> Result<Option<String>, Error> {
     match input.command.as_str() {
         "http" => execute_http_command(ipaddress, input).await,
         "wol" => execute_wol_command(ipaddress, input).await,
@@ -372,8 +358,6 @@ async fn execute_http_command<'a>(
         return Ok(None);
     }
 
-
-
     match http_functions::execute_http_request(
         normal_and_masked_url.0,
         method.value.as_str(),
@@ -392,7 +376,12 @@ async fn execute_http_command<'a>(
             Ok(Some(text))
         }
         Err(err) => {
-            log::error!("Error while executing request {:?} {:?} was: {}", method.value, normal_and_masked_url.1, err);
+            log::error!(
+                "Error while executing request {:?} {:?} was: {}",
+                method.value,
+                normal_and_masked_url.1,
+                err
+            );
             Err(err.into())
         }
     }
@@ -431,15 +420,15 @@ async fn execute_wol_command<'a>(
                     found_feature_param,
                     err
                 );
-                Err(Error::from(std::io::Error::new(ErrorKind::InvalidInput, err)))
+                Err(Error::from(std::io::Error::new(
+                    ErrorKind::InvalidInput,
+                    err,
+                )))
             }
         },
         None => Ok(None),
     }
 }
-
-
-
 
 fn replace_list(
     input_strings: Vec<String>,
@@ -530,11 +519,10 @@ fn get_credential_value(name: &str, input: &ActionOrDataInput) -> Option<(String
         .map(|credential| (decrypt(credential, &input.crypto_key), credential.encrypted))
 }
 
-fn decrypt( credential: &Credential, crypto_key: &str ) -> String {
+fn decrypt(credential: &Credential, crypto_key: &str) -> String {
     if credential.encrypted {
         crypt::default_decrypt(&credential.value, crypto_key)
-    }
-    else {
+    } else {
         credential.value.clone()
     }
 }
@@ -592,13 +580,12 @@ fn response_data_match(dependency: &DependsDef, input: Option<String>) -> Result
                 result = value;
             }
         });
-    }
-    else if is_rhai {
+    } else if is_rhai {
         let mut scope = Scope::new();
-        
-        scope.push("input", input.unwrap().to_owned());
 
-        let engine = Engine::new();        
+        scope.push("input", input.unwrap());
+
+        let engine = Engine::new();
         if let Ok(value) = engine.eval_with_scope::<bool>(&mut scope, &script) {
             result = value;
         }

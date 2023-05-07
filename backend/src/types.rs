@@ -109,6 +109,15 @@ pub struct Status {
     pub ipaddress: String,
 }
 
+impl Status {
+    pub fn new(ipaddress: String) -> Self {
+        Status {
+            is_running: false,
+            ipaddress
+        }
+    }
+}
+
 impl PartialEq for Status {
     fn eq(&self, other: &Self) -> bool {
         self.ipaddress == other.ipaddress

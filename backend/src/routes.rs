@@ -84,8 +84,12 @@ pub async fn post_servers_actions(data: web::Data<AppData>, query: web::Json<Ser
 
     match query.action_type {
         ServersActionType::Status => {
-            let ips_to_check = params_map.get_split_by("ip_addresses", ",").unwrap();
-            let list = status::status_check(ips_to_check, false).await.unwrap();
+            let ips_to_check = match params_map.get("ip_addresses") {
+                Some(_list) => params_map.get_split_by("ip_addresses", ",").unwrap(),
+                None => Vec::new()
+            };
+            
+            let list = status::status_check(ips_to_check, true).await.unwrap();
             HttpResponse::Ok().json(list)
         },
         ServersActionType::FeatureScan => {

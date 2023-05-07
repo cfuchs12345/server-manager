@@ -7,7 +7,7 @@ use serde_json::{Value, json};
 use crate::plugin_types::{Data, ResultFormat};
 
 #[derive(Serialize, Deserialize)]
-struct XML {
+struct Xml {
     data: String
 }
 
@@ -21,7 +21,7 @@ pub fn convert_json_to_html(
 
     let data_value: Value = match &data.result_format {
         ResultFormat::XML => {
-            json!(XML {
+            json!(Xml {
                 data: input
             })
         },

@@ -1,11 +1,11 @@
-use std::{net::IpAddr, time::Duration, collections::HashMap, io::ErrorKind};
+use std::{net::IpAddr, time::Duration, collections::HashMap};
 use futures::future::join_all;
 use lazy_static::lazy_static;
 use rand::random;
 use surge_ping::{Client, PingIdentifier, PingSequence, IcmpPacket};
 use tokio::sync::Semaphore;
 
-use crate::types::Status;
+use crate::{types::Status, inmemory};
 
 
 lazy_static! {
@@ -15,30 +15,23 @@ lazy_static! {
 }
 
 
+pub async fn status_check_all()  {
+    let servers = inmemory::get_all_servers();
 
-
-pub async fn status_check(ips_to_check: Vec<String>, use_cache: bool) -> Result<Vec<Status>, std::io::Error> {
     let permit = SEMAPHORE_AUTO_DISCOVERY.acquire().await.unwrap();
 
-    let list = match Client::new(&surge_ping::Config::default()) {
+    match Client::new(&surge_ping::Config::default()) {
         Ok(client) => {
             // list of async tasks executed by tokio
             let mut tasks = Vec::new();
-            let mut results_from_cache: Vec<Status> = Vec::new();
 
-            for ip in ips_to_check {
-                if ip.trim().is_empty() {
+            for server in servers {
+                if server.ipaddress.trim().is_empty() {
                     continue;
                 }
 
-                if use_cache {
-                    let from_cache_res = CACHE.get(&ip);
-                    if let Some(status) = from_cache_res {
-                        results_from_cache.push(status.clone());
-                        continue;
-                    };
-                }
-                match ip.parse() {
+               
+                match server.ipaddress.parse() {
                     Ok(ipaddress) => {
                         tasks.push(tokio::spawn(get_host_status(
                             IpAddr::V4(ipaddress),
@@ -46,7 +39,7 @@ pub async fn status_check(ips_to_check: Vec<String>, use_cache: bool) -> Result<
                         )));
                     }
                     Err(err) => {
-                        log::error!("Error while parsing address {:?} was {:?}", ip, err);
+                        log::error!("Error while parsing address {:?} was {:?}", server.ipaddress, err);
                     }
                 }
             }
@@ -54,21 +47,39 @@ pub async fn status_check(ips_to_check: Vec<String>, use_cache: bool) -> Result<
             // wait for all tasks to finish
             let task_results = join_all(tasks).await;
 
-            let mut results_from_query: Vec<Status> = task_results
+            let results_from_query: Vec<Status> = task_results
                 .iter()
                 .map(move |r| r.as_ref().unwrap().to_owned())
                 .collect();
-            results_from_cache.append(&mut results_from_query); // merge results
-            results_from_cache
+            
+            log::debug!("inserting {} status into cache", results_from_query.len());
+
+            inmemory::insert_status(results_from_query);
         }
         e => {
             log::error!("Error while creating ping client: {:?}", e.err());
-            Err( std::io::Error::from(ErrorKind::Other))?
         }
     };
 
-    drop(permit);
-    Ok(list)
+    drop(permit);    
+}
+
+pub async fn status_check(ips_to_check: Vec<String>, use_cache: bool) -> Result<Vec<Status>, std::io::Error> {
+    
+    let list_to_check = if ips_to_check.is_empty() {
+        inmemory::get_all_servers().iter().map(|s| s.ipaddress.clone()).collect()
+    }
+    else {
+        ips_to_check
+    };
+
+    let result = if use_cache {
+        list_to_check.iter().map(|ipaddress| inmemory::get_status(ipaddress.clone()).unwrap_or_else(|| Status::new(ipaddress.clone()))).collect()
+    }
+    else {
+        Vec::new()
+    };
+    Ok(result)
 }
 
 
@@ -107,3 +118,5 @@ async fn get_host_status(addr: IpAddr, client: Client) -> Status {
         is_running: result,
     }
 }
+
+

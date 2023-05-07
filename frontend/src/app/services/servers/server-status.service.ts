@@ -32,9 +32,7 @@ export class ServerStatusService {
   }
 
   listServerStatus = (servers: Server[]) => {
-    const action = new ServersAction('Status', [
-      new Param('ip_addresses', getIpAddressesFromServers(servers).join(',')),
-    ]);
+    const action = new ServersAction('Status', []);
     const body = JSON.stringify(action);
 
     this.http
