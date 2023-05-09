@@ -21,6 +21,7 @@ enum Placeholder {
     Base64,
 }
 
+#[derive(PartialEq, Eq)]
 enum CheckType {
     OnlyMainFeatures,
     OnlySubFeatures,
@@ -194,7 +195,8 @@ pub async fn check_non_main_conditions_of_server(ipaddress: &str) {
 
     let mut vec: Vec<ConditionCheckResult> = Vec::new();
     if let Some(server) = server_opt {
-        check_server_feature_conditions(server, &crypto_key, &mut vec, CheckType::OnlySubFeatures).await;
+        let mut res = check_server_feature_conditions(server, &crypto_key, CheckType::OnlySubFeatures).await;
+        vec.append(&mut res);
     }
 
     for result in vec {
@@ -208,7 +210,8 @@ pub async fn check_all_main_conditions() {
 
     let mut vec: Vec<ConditionCheckResult> = Vec::new();
     for server in servers {
-        check_server_feature_conditions(server, &crypto_key, &mut vec, CheckType::OnlyMainFeatures).await;
+        let mut res = check_server_feature_conditions(server, &crypto_key, CheckType::OnlyMainFeatures).await;
+        vec.append(&mut res);
     }
     
     for result in vec {
@@ -216,7 +219,9 @@ pub async fn check_all_main_conditions() {
     }
 }
 
-async fn check_server_feature_conditions(server: Server, crypto_key: &String, vec: &mut Vec<ConditionCheckResult>, check_type: CheckType) {
+async fn check_server_feature_conditions(server: Server, crypto_key: &String, check_type: CheckType) -> Vec<ConditionCheckResult> {
+    let mut vec = Vec::new();
+
     for feature in server.clone().features {
         let plugin_res = inmemory::get_plugin(feature.id.as_str());
         if plugin_res.is_none() {
@@ -225,8 +230,12 @@ async fn check_server_feature_conditions(server: Server, crypto_key: &String, ve
         }
         if let Some(plugin) = plugin_res {
             for action in plugin.clone().actions {
-                if !action.show_on_main {
+                if check_type == CheckType::OnlyMainFeatures && !action.show_on_main {
                     log::debug!("Skipping action condition check for non-main action {} of feature {}", action.id, feature.id);
+                    continue;
+                }
+                else if check_type == CheckType::OnlySubFeatures && action.show_on_main {
+                    log::debug!("Skipping action condition check for sub-main action {} of feature {}", action.id, feature.id);
                     continue;
                 }
                 let server_clone = server.clone();
@@ -246,6 +255,8 @@ async fn check_server_feature_conditions(server: Server, crypto_key: &String, ve
             }
         }
     }
+
+    vec
 }
 
 /// Checks if all conditions that are defined for an action of a plugin are met and that it can be executed by the user

@@ -70,7 +70,7 @@ pub struct Action {
     pub id: String,
     #[serde(default)]
     pub name: String,
-    #[serde(default)]    
+    #[serde(default = "default_true")]
     pub show_on_main: bool,
     #[serde(default)]
     pub depends: Vec<DependsDef>,
