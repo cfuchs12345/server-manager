@@ -81,6 +81,11 @@ export class ServerActionListComponent implements OnInit, OnDestroy {
 
       if (plugin) {
         for (const actionDef of plugin.actions) {
+
+          if( actionDef.show_on_main === false) {
+            continue;
+          }
+
           const image = this.imageCache.getImageFeatureAction(
             feature.id,
             actionDef.id

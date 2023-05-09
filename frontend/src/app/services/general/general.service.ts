@@ -10,14 +10,19 @@ import { ErrorService } from '../errors/error.service';
 })
 export class GeneralService {
   private _dnsServers = new BehaviorSubject<DNSServer[]>([]);
+  private _systemDNSServers = new BehaviorSubject<DNSServer[]>([]);
 
   private dataStore: {
     dnsServers: DNSServer[];
+    systemDNSServers: DNSServer[];
   } = {
     dnsServers: [],
+    systemDNSServers: []
   };
 
   readonly dnsServers = this._dnsServers.asObservable();
+  readonly systemDNSServers = this._systemDNSServers.asObservable();
+
 
   constructor(private http: HttpClient, private errorService: ErrorService) {}
 
@@ -64,6 +69,20 @@ export class GeneralService {
       next: (res) => {
         this.dataStore.dnsServers = res;
         this._dnsServers.next(this.dataStore.dnsServers.slice(0, this.dataStore.dnsServers.length));
+      },
+      error: (err: any) => {
+        this.errorService.newError("General-Service", undefined, err.message);
+      },
+      complete: () => {},
+    });
+  };
+
+
+  listSystemDNSServers = () => {
+    this.http.get<DNSServer[]>('/backend/systeminformation/dnsservers').subscribe({
+      next: (res) => {
+        this.dataStore.systemDNSServers = res;
+        this._systemDNSServers.next(this.dataStore.systemDNSServers.slice(0, this.dataStore.systemDNSServers.length));
       },
       error: (err: any) => {
         this.errorService.newError("General-Service", undefined, err.message);

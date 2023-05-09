@@ -1,6 +1,6 @@
 use config::Config;
 use lazy_static::lazy_static;
-use std::{collections::HashMap, sync::RwLock};
+use std::{collections::HashMap, sync::RwLock, fmt::format, borrow::{BorrowMut, Borrow}};
 
 use crate::{plugin_types::Plugin, server_types::Server, types::{Status, ConditionCheckResult}};
 
@@ -20,7 +20,7 @@ lazy_static! {
     static ref PLUGIN_CACHE: RwLock<HashMap<String, Plugin>> = RwLock::new(HashMap::new());
     static ref SERVER_CACHE: RwLock<HashMap<String, Server>> = RwLock::new(HashMap::new());
     static ref SERVER_STATUS_CACHE: RwLock<HashMap<String, Status>> = RwLock::new(HashMap::new());
-    static ref SERVER_ACTION_CONDITION_RESULTS: RwLock<Vec<ConditionCheckResult>> = RwLock::new(Vec::new());
+    static ref SERVER_ACTION_CONDITION_RESULTS: RwLock<HashMap<String, ConditionCheckResult>> = RwLock::new(HashMap::new());
 }
 
 pub fn set_config(config: Config) {
@@ -47,12 +47,24 @@ pub fn get_config() -> Config {
 }
 
 pub fn insert_plugins(plugins: Vec<Plugin>) {
-    let mut cache = PLUGIN_CACHE.try_write().unwrap();
-
-    for plugin in plugins {
-        cache.insert(plugin.id.clone(), plugin);
+    let mut cache_rw = PLUGIN_CACHE.try_write().unwrap();
+    let mut to_remove: Vec<String> = Vec::new();
+    
+    for plugin_in_cache in cache_rw.values() {
+        if !plugins.iter().any(|p| p.id == plugin_in_cache.id) {
+        to_remove.push(plugin_in_cache.id.clone());
+        }
+    }
+        
+    for plugin in &plugins {
+        cache_rw.insert(plugin.id.clone(), plugin.clone());
+    }
+    for id_to_remove in to_remove {
+        cache_rw.remove(id_to_remove.as_str());
     }
 }
+
+
 
 pub fn get_all_plugins() -> Vec<Plugin> {
     let cache = PLUGIN_CACHE.try_read().unwrap();
@@ -77,6 +89,12 @@ pub fn get_all_servers() -> Vec<Server> {
     let cache = SERVER_CACHE.try_read().unwrap().clone();
 
     cache.values().cloned().collect()
+}
+
+pub fn get_server(ipaddress:  &str) -> Option<Server> {
+    let cache = SERVER_CACHE.try_read().unwrap().clone();
+
+    cache.get(ipaddress).map(|s| s.to_owned())
 }
 
 pub fn insert_servers(servers: Vec<Server>) {
@@ -113,20 +131,14 @@ pub fn get_status(ipaddress: String) -> Option<Status> {
     cache.get(ipaddress.as_str()).cloned()
 }
 
-pub fn reset_condition_result() {
-    let mut cache = SERVER_ACTION_CONDITION_RESULTS.try_write().unwrap();
-
-    cache.clear();
-}
-
 pub fn get_all_condition_results() -> Vec<ConditionCheckResult> {
     let cache = SERVER_ACTION_CONDITION_RESULTS.try_read().unwrap();
 
-    cache.to_vec()
+    cache.values().cloned().collect()
 }
 
-pub fn add_condition_result(result: ConditionCheckResult) {
+pub fn add_condition_result(to_add: ConditionCheckResult) {
     let mut cache = SERVER_ACTION_CONDITION_RESULTS.try_write().unwrap();
-
-    cache.push(result);    
+    
+    cache.insert(to_add.clone().get_key(), to_add);
 }

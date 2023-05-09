@@ -3,7 +3,7 @@ use actix_web::{web, get, put, post, HttpRequest, HttpResponse};
 
 use crate::appdata::AppData;
 use crate::config_types::DNSServer;
-use crate::{plugins, features, config, status, types, inmemory};
+use crate::{plugins, features, config, status, types, inmemory, systeminfo};
 use crate::discover::{self};
 use crate::servers;
 use crate::types::{Status, NetworkActionType, ServersActionType, ServersAction, ServerAction, ServerActionType, PluginsAction, NetworksAction};
@@ -146,16 +146,17 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
             
             let feature_id = params_map.get("feature_id").unwrap();
             let action_id: &String = params_map.get("action_id").unwrap();
-
+            let action_params = params_map.get_as_str("action_params");
+            
             let feature_res = server.find_feature(feature_id.clone());
 
             if feature_res.is_none() {
+                log::error!("Feature id {} not found for server {:?}", feature_id, server);
                 return HttpResponse::InternalServerError().body(format!("Feature with id {} not known", feature_id));
             }
-
             let crypto_key = inmemory::get_crypto_key();
 
-            match features::execute_action(&server, feature_res.unwrap(), action_id, crypto_key).await {
+            match features::execute_action(&server, feature_res.unwrap(), action_id, action_params, crypto_key).await {
                 Ok(result) => HttpResponse::Ok().json(result),
                 Err(err) =>  HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
             }
@@ -333,6 +334,12 @@ pub async fn post_dnsservers(data: web::Data<AppData>,  query: web::Json<DNSServ
         Err(_err) => HttpResponse::InternalServerError().body("Cannot save DNS server")
     }
 }
+
+#[get("/backend/systeminformation/dnsservers")]
+pub async fn get_system_dnsservers(_data: web::Data<AppData>)  -> HttpResponse {
+    HttpResponse::Ok().json( systeminfo::get_systenms_dns_servers() )
+}
+
 
 #[get("/backend/configurations/dnsservers")]
 pub async fn get_dnsservers(data: web::Data<AppData>)  -> HttpResponse {

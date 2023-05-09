@@ -96,7 +96,7 @@ async fn start_scheduled_jobs() {
     scheduler.add(
         Job::new_async("1/10 * * * * *", |_uuid, _l| {
             Box::pin(async {
-                    features::check_all_conditions().await;
+                    features::check_all_main_conditions().await;
             })
         })
         .unwrap(),
@@ -286,6 +286,8 @@ fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(routes::post_dnsservers);
     cfg.service(routes::get_dnsservers);
     cfg.service(routes::delete_dnsservers);
+
+    cfg.service(routes::get_system_dnsservers);
 }
 
 fn init_config() {
@@ -299,7 +301,7 @@ fn init_config() {
     env_logger::init();
 
     if let Ok(number) = plugins::init_cache() {
-        log::info!("Loaded {} plugins into cache", number);
+        log::debug!("Loaded {} plugins into cache", number);
     };
 }
 

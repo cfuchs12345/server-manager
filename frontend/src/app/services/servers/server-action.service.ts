@@ -35,7 +35,6 @@ export class ServerActionService {
       })
       .subscribe({
         next: (results) => {
-          console.log(results.length);
           this.dataStore.conditionChecks.splice(
             0,
             this.dataStore.conditionChecks.length
@@ -53,16 +52,23 @@ export class ServerActionService {
 
 
 
-  executeAction = (feature_id: string, action_id: string, server: Server) => {
+  executeAction = (feature_id: string, action_id: string, ipaddress: string, action_params: string | undefined = undefined) => {
     const query = new ServerAction('ExecuteFeatureAction');
     query.params.push(new Param('feature_id', feature_id));
     query.params.push(new Param('action_id', action_id));
+    if( action_params ) {
+      action_params = action_params.replace("=", "|");
+
+      console.log(action_params);
+      query.params.push(new Param('action_params', action_params));
+    }
 
     const body = JSON.stringify(query);
+    console.log(body);
 
     this.http
       .post<Feature[]>(
-        '/backend/servers/' + server.ipaddress + '/actions',
+        '/backend/servers/' + ipaddress + '/actions',
         body,
         {
           headers: defaultHeadersForJSON(),
@@ -71,7 +77,7 @@ export class ServerActionService {
       .subscribe({
         next: (result) => {},
         error: (err: any) => {
-          this.errorService.newError("Action-Service", server.ipaddress, err.message);
+          this.errorService.newError("Action-Service", ipaddress, err.message);
         },
         complete: () => {},
       });

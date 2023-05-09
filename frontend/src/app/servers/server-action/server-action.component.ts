@@ -81,7 +81,7 @@ export class ServerActionComponent implements OnInit, OnDestroy, OnChanges {
           this.serverActionService.executeAction(
             this.guiAction.feature.id,
             this.guiAction.action.id,
-            this.server
+            this.server.ipaddress
           );
         }
       });
@@ -89,7 +89,7 @@ export class ServerActionComponent implements OnInit, OnDestroy, OnChanges {
       this.serverActionService.executeAction(
         this.guiAction.feature.id,
         this.guiAction.action.id,
-        this.server
+        this.server.ipaddress
       );
     }
   }

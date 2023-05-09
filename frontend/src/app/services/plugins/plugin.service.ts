@@ -73,7 +73,7 @@ export class PluginService {
       });
   };
 
-  private publishDisabledPlugins() {
+  private publishDisabledPlugins = ()=> {
     this._disabledPlugins.next(
       this.dataStore.disabledPlugins.slice(
         0,
@@ -82,9 +82,13 @@ export class PluginService {
     );
   }
 
-  private publishPlugins() {
+  private publishPlugins = () => {
     this._plugins.next(
       this.dataStore.plugins.slice(0, this.dataStore.plugins.length)
     );
+  }
+
+  getPlugin = (id: string): Plugin | undefined => {
+    return this.dataStore.plugins.find((p) => p.id === id);
   }
 }

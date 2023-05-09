@@ -145,9 +145,228 @@
                     "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
                 }
             ]
+        },
+        {
+            "id": "vmstatus",
+            "description": "Status of a VM",
+            "command": "http",
+            "output": false,
+            "args": [
+                {
+                    "arg_type": "method",
+                    "value": "get"
+                },
+                {
+                    "arg_type": "url",
+                    "value": "${params.protocol}://${IP}:${params.port}/api2/json/nodes/${params.nodename}/qemu/${params.vmid}/status/current"
+                },
+                {
+                    "arg_type": "header",
+                    "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
+                }
+            ]
+        },
+        {
+            "id": "lxcstatus",
+            "description": "Status of a LXC Container",
+            "command": "http",
+            "output": false,
+            "args": [
+                {
+                    "arg_type": "method",
+                    "value": "get"
+                },
+                {
+                    "arg_type": "url",
+                    "value": "${params.protocol}://${IP}:${params.port}/api2/json/nodes/${params.nodename}/lxc/${params.vmid}/status/current"
+                },
+                {
+                    "arg_type": "header",
+                    "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
+                }
+            ]
         }
     ],
     "actions": [
-      
+        {
+            "id": "stopvm",
+            "name": "Stop VM",
+            "show_on_main": false,
+            "needs_confirmation": true,
+            "available_for_state" : "Active",
+            "depends": [
+                {
+                    "data_id": "vmstatus",
+                    "script_type": "lua",
+                    "script": "string.find(input, '\"qmpstatus\":\"running\"', 1, true)"
+                }
+            ],
+            "description": "Stops a running VM on Proxmox",
+            "command": "http",
+            "args": [
+                {
+                    "arg_type": "method",
+                    "value": "post"
+                },
+                {
+                    "arg_type": "url",
+                    "value": "${params.protocol}://${IP}:${params.port}/api2/json/nodes/${params.nodename}/qemu/${params.vmid}/status/stop"
+                },
+                {
+                    "arg_type": "header",
+                    "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
+                }
+            ]
+        },
+        {
+            "id": "startvm",
+            "name": "Start VM",
+            "show_on_main": false,
+            "needs_confirmation": true,
+            "available_for_state" : "Active",
+            "depends": [
+                {
+                    "data_id": "vmstatus",
+                    "script_type": "lua",
+                    "script": "string.find(input, '\"qmpstatus\":\"stopped\"', 1, true)"
+                }
+            ],
+            "description": "Starts a stopped VM on Proxmox",
+            "command": "http",
+            "args": [
+                {
+                    "arg_type": "method",
+                    "value": "post"
+                },
+                {
+                    "arg_type": "url",
+                    "value": "${params.protocol}://${IP}:${params.port}/api2/json/nodes/${params.nodename}/qemu/${params.vmid}/status/start"
+                },
+                {
+                    "arg_type": "header",
+                    "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
+                }
+            ]
+        },
+        {
+            "id": "rebootvm",
+            "name": "Reboot VM",
+            "show_on_main": false,
+            "needs_confirmation": true,
+            "available_for_state" : "Active",
+            "depends": [
+                {
+                    "data_id": "vmstatus",
+                    "script_type": "lua",
+                    "script": "string.find(input, '\"qmpstatus\":\"running\"', 1, true)"
+                }
+            ],
+            "description": "Reboots a running VM on Proxmox",
+            "command": "http",
+            "args": [
+                {
+                    "arg_type": "method",
+                    "value": "post"
+                },
+                {
+                    "arg_type": "url",
+                    "value": "${params.protocol}://${IP}:${params.port}/api2/json/nodes/${params.nodename}/qemu/${params.vmid}/status/reboot"
+                },
+                {
+                    "arg_type": "header",
+                    "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
+                }
+            ]
+        },
+        {
+            "id": "stoplxc",
+            "name": "Stop LXC",
+            "show_on_main": false,
+            "needs_confirmation": true,
+            "available_for_state" : "Active",
+            "depends": [
+                {
+                    "data_id": "lxcstatus",
+                    "script_type": "lua",
+                    "script": "string.find(input, '\"qmpstatus\":\"running\"', 1, true)"
+                }
+            ],
+            "description": "Stops a running LXC Container on Proxmox",
+            "command": "http",
+            "args": [
+                {
+                    "arg_type": "method",
+                    "value": "post"
+                },
+                {
+                    "arg_type": "url",
+                    "value": "${params.protocol}://${IP}:${params.port}/api2/json/nodes/${params.nodename}/lxc/${params.vmid}/status/stop"
+                },
+                {
+                    "arg_type": "header",
+                    "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
+                }
+            ]
+        },
+        {
+            "id": "startlxc",
+            "name": "Start LXC",
+            "show_on_main": false,
+            "needs_confirmation": true,
+            "available_for_state" : "Active",
+            "depends": [
+                {
+                    "data_id": "lxcstatus",
+                    "script_type": "lua",
+                    "script": "string.find(input, '\"qmpstatus\":\"stopped\"', 1, true)"
+                }
+            ],
+            "description": "Starts a stopped LXC Container on Proxmox",
+            "command": "http",
+            "args": [
+                {
+                    "arg_type": "method",
+                    "value": "post"
+                },
+                {
+                    "arg_type": "url",
+                    "value": "${params.protocol}://${IP}:${params.port}/api2/json/nodes/${params.nodename}/lxc/${params.vmid}/status/start"
+                },
+                {
+                    "arg_type": "header",
+                    "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
+                }
+            ]
+        },
+        {
+            "id": "rebootlxc",
+            "name": "Reboot LXC",
+            "show_on_main": false,
+            "needs_confirmation": true,
+            "available_for_state" : "Active",
+            "depends": [
+                {
+                    "data_id": "lxcstatus",
+                    "script_type": "lua",
+                    "script": "string.find(input, '\"qmpstatus\":\"running\"', 1, true)"
+                }
+            ],
+            "description": "Reboots a running LXC Container on Proxmox",
+            "command": "http",
+            "args": [
+                {
+                    "arg_type": "method",
+                    "value": "post"
+                },
+                {
+                    "arg_type": "url",
+                    "value": "${params.protocol}://${IP}:${params.port}/api2/json/nodes/${params.nodename}/lxc/${params.vmid}/status/reboot"
+                },
+                {
+                    "arg_type": "header",
+                    "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
+                }
+            ]
+        }
     ]
 }

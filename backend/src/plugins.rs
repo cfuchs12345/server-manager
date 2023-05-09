@@ -37,8 +37,7 @@ pub fn get_all_plugins() -> Vec<Plugin>{
     inmemory::get_all_plugins()
 }
 
-pub fn init_cache_silent() {
-    log::debug!("updading cache");
+pub fn init_cache_silent() {    
     match init_cache() {
         Ok(_) => {},
         Err(err) => {
@@ -243,6 +242,7 @@ mod tests {
             actions: vec![Action {
                 id: "".to_string(),
                 name: "".to_string(),
+                show_on_main: false,
                 depends: vec![],
                 available_for_state: State::Any,
                 needs_confirmation: false,
@@ -262,7 +262,7 @@ mod tests {
             }],
         };
 
-        let expected = "{\"id\":\"test\",\"name\":\"Test\",\"description\":\"\",\"server_icon\":\"\",\"detection\":{\"list\":[{\"defaultports\":[80,81],\"url\":\"http://${IP}:${PORT}\"}],\"script\":{\"script_type\":\"lua\",\"script\":\"Dummy script\"},\"detection_possible\":false},\"credentials\":[],\"params\":[],\"data\":[],\"actions\":[{\"id\":\"\",\"name\":\"\",\"depends\":[],\"available_for_state\":\"Any\",\"needs_confirmation\":false,\"description\":\"\",\"icon\":\"\",\"command\":\"http\",\"args\":[{\"arg_type\":\"method\",\"value\":\"get\"},{\"arg_type\":\"url\",\"value\":\"url\"}]}]}";
+        let expected = "{\"id\":\"test\",\"name\":\"Test\",\"description\":\"\",\"server_icon\":\"\",\"detection\":{\"list\":[{\"defaultports\":[80,81],\"url\":\"http://${IP}:${PORT}\"}],\"script\":{\"script_type\":\"lua\",\"script\":\"Dummy script\"},\"detection_possible\":false},\"credentials\":[],\"params\":[],\"data\":[],\"actions\":[{\"id\":\"\",\"name\":\"\",\"show_on_main\":false,\"depends\":[],\"available_for_state\":\"Any\",\"needs_confirmation\":false,\"description\":\"\",\"icon\":\"\",\"command\":\"http\",\"args\":[{\"arg_type\":\"method\",\"value\":\"get\"},{\"arg_type\":\"url\",\"value\":\"url\"}]}]}";
 
         let result = serde_json::to_string(&testee).unwrap();
         assert_eq!(expected, result);
@@ -292,6 +292,7 @@ mod tests {
             actions: vec![Action {
                 id: "".to_string(),
                 name: "".to_string(),
+                show_on_main: false, 
                 depends: vec![],
                 available_for_state: State::Any,
                 needs_confirmation: false,

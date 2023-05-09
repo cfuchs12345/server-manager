@@ -49,7 +49,7 @@ pub async fn execute_http_request(
         match res.status() {
             StatusCode::ACCEPTED => Ok(res.text().await.unwrap_or("".to_string())),
             StatusCode::OK => Ok(res.text().await.unwrap_or("".to_string())),
-            _ => Ok("".to_string())
+            y => Ok(format!("Returned StatusCode was not ACCEPTED or OK but {:?}", y))
         }
     },
     Err(err)=> Err(err)

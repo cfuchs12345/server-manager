@@ -1,6 +1,5 @@
 <h1 mat-dialog-title>{{data.title}}</h1>
-<div mat-dialog-content>
-  {{data.message}}
+<div mat-dialog-content [innerHTML]="get_content()">
 </div>
 <div style="float:right;margin:20px;">
   <button mat-button  mat-raised-button color="primary" style="margin: 5px;" [mat-dialog-close]="true">{{buttonTextConfirm}}</button>

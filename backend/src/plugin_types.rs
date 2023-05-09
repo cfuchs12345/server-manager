@@ -70,6 +70,8 @@ pub struct Action {
     pub id: String,
     #[serde(default)]
     pub name: String,
+    #[serde(default)]    
+    pub show_on_main: bool,
     #[serde(default)]
     pub depends: Vec<DependsDef>,
     #[serde(default)]
@@ -84,10 +86,6 @@ pub struct Action {
     pub command: String,
     #[serde(default)]
     pub args: Vec<ArgDef>,
-}
-
-fn default_true() -> bool {
-    true
 }
 
 impl PartialEq for Action {
@@ -153,6 +151,8 @@ pub struct Data {
     pub id: String,
     #[serde(default)]
     pub name: String,
+    #[serde(default = "default_true")]
+    pub output: bool,
     #[serde(default)]
     pub description: String,
     #[serde(default)]
@@ -167,4 +167,8 @@ pub struct Data {
     pub command: String,
     #[serde(default)]
     pub args: Vec<ArgDef>,
+}
+
+fn default_true() -> bool {
+    true
 }

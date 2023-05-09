@@ -22,6 +22,10 @@ impl QueryParamsAsMap {
         self.params.get(param)
     }
 
+    pub fn get_as_str(&self, param: &str) -> Option<&str> {
+        self.params.get(param).map(|value| value.as_str())
+    }
+
     pub fn get_split_by(&self, param: &str, split: &str) -> Option<Vec<String>> {
         match self.params.get(param) {
             Some(value) => {
@@ -40,16 +44,19 @@ pub struct ActionOrDataInput {
     args: Vec<ArgDef>,
     params: Vec<Param>,
     default_params: Vec<ParamDef>,
+    action_params: Vec<Param>,
     credentials: Vec<Credential>,
     pub crypto_key: String
 }
 impl ActionOrDataInput {
-    pub fn get_input_from_action(action: &Action, plugin: &Plugin, feature: &Feature, crypto_key: String ) -> ActionOrDataInput {
+    pub fn get_input_from_action(action: &Action,  action_params: Option<&str>, plugin: &Plugin, feature: &Feature, crypto_key: String ) -> ActionOrDataInput {
+        let action_params = to_params(action_params);
         ActionOrDataInput{
             command: action.command.clone(),
             args: action.args.clone(),
             default_params: plugin.params.clone(),
             params: feature.params.clone(),
+            action_params,
             credentials: feature.credentials.clone(),
             crypto_key
         }
@@ -61,13 +68,21 @@ impl ActionOrDataInput {
             args: data.args.clone(),
             default_params: plugin.params.clone(),
             params: feature.params.clone(),
+            action_params: Vec::new(),
             credentials: feature.credentials.clone(),
             crypto_key
         }
     }
 
     pub fn find_param(&self, param_name: &str) -> Option<&Param> {
-        self.params.iter().find( |param| param.name == param_name)
+        let from_feature = self.params.iter().find( |param| param.name == param_name);
+
+        if from_feature.is_some() {
+            from_feature
+        }
+        else { // there are also parameter coming with the request i.e. for sub actions. also check these...
+            self.action_params.iter().find(|param| param.name == param_name)
+        }
     }
 
     pub fn find_default_param(&self, param_name: &str) -> Option<&ParamDef> {
@@ -88,6 +103,25 @@ impl ActionOrDataInput {
 }
 
 
+fn to_params(action_params: Option<&str>) -> Vec<Param> {
+    if action_params.is_none() {
+        return Vec::new();
+    }
+    let mut list = Vec::new();
+
+    let split = action_params.unwrap().split(",");
+
+    for str in split {
+        let single_param = str.split_at(str.find("|").unwrap());
+        
+        list.push(Param {
+            name: single_param.0.to_owned(),
+            value: single_param.1[1..].to_owned() // skip the first char which is still the separator
+        });
+    }
+
+    list
+}
 
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq)]
@@ -200,4 +234,10 @@ pub struct ConditionCheckResult {
     pub feature_id: String,
     pub action_id: String,
     pub result: bool
+}
+
+impl ConditionCheckResult {
+    pub fn get_key(self) -> String {
+        format!("{}_{}_{}", self.ipaddress, self.feature_id, self.action_id)
+    }
 }

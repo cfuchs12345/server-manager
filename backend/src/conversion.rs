@@ -19,25 +19,43 @@ pub fn convert_json_to_html(
 ) -> Result<String, Error> {
     let engine = template_engine.clone();
 
-    let data_value: Value = match &data.result_format {
+    let data_value: Option<Value> = match &data.result_format {
         ResultFormat::XML => {
-            json!(Xml {
+            Some(json!(Xml { // wrap the xml in a JSON as content of "data" property
                 data: input
-            })
+            }))
         },
         _ => {
-            serde_json::from_str(input.as_str()).unwrap() 
+            match serde_json::from_str(input.as_str()) {
+                Ok(val) => Some(val),
+                Err(err) => {
+                    if !input.trim().is_empty() {
+                        log::error!("input '{}' was no valid json. Resulted in the following error: {}", input, err);
+                    }                        
+                    None
+                }
+            }
         }
     }; 
-    
-    log::info!("Putting data into context: {:?}", data_value);
 
-    let res = engine
-        .render(template, &data_value)
-        .map_err(|err| Error::from(std::io::Error::new(ErrorKind::Other, err)));  
+    let res_string = if let Some(data) = data_value {
+        log::debug!("Putting data into context: {:?}", data);
 
-    if res.is_err() {
-        log::error!("Error during template rendering: {:?}", &res);
+        let result = engine
+            .render(template, &data)
+            .map_err(|err| Error::from(std::io::Error::new(ErrorKind::Other, err)));  
+
+
+        if let Ok(rendered) = result {
+            rendered
+        }
+        else {
+            log::error!("Error during template rendering: {:?}", &result);
+            "".to_string()
+        }
     }
-    res
+    else {
+        "".to_string()
+    };
+    Ok(res_string)
 }

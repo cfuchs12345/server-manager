@@ -55,7 +55,7 @@ import { ErrorService } from './services/errors/error.service';
 import { CacheService } from './services/cache/cache.service';
 import { ImageCache } from './services/cache/image-cache.service';
 import { ServerFeaturesComponent } from './servers/server-features/server-features.component';
-
+import { ServerSubActionComponent} from './servers/server-sub-action/sub-action.component';
 
 
 
@@ -97,6 +97,7 @@ import { ServerFeaturesComponent } from './servers/server-features/server-featur
     ServerStatusComponent,
     ServerActionComponent,
     ServerActionListComponent,
+    ServerSubActionComponent,
     ServerDetailComponent,
     ServerDetailControlComponent,
     ServerFeaturesComponent
@@ -121,7 +122,7 @@ import { ServerFeaturesComponent } from './servers/server-features/server-featur
     LayoutModule,
     MatSelectModule
   ],
-  providers: [ErrorService, CacheService, ImageCache],
+  providers: [ErrorService, CacheService, ImageCache, { provide: Window, useValue: window } ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

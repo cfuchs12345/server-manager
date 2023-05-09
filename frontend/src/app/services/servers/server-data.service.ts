@@ -56,7 +56,7 @@ export class ServerDataService {
           this.publishDataResult();
         },
         error: (err: HttpErrorResponse) => {
-          this.errorService.newError("Data-Service", server.ipaddress, err.message);
+          this.errorService.newError("Data-Service", server.ipaddress, err.error);
         },
         complete: () => {},
       });

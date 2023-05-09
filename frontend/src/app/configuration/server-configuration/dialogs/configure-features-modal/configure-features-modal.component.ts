@@ -40,6 +40,7 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
 
   servers: Server[] = [];
   features: Feature[] = [];
+  plugins: Plugin[] = [];
 
   subscriptionServers: Subscription | undefined = undefined;
   subscriptionPlugins: Subscription | undefined = undefined;
@@ -68,25 +69,10 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
 
     this.subscriptionPlugins = this.pluginService.plugins.subscribe(
       (plugins) => {
-        // always reset form
-        this.form = this.formBuilder.group({});
-
-        if (plugins) {
-          const shownPlugin = this.getSelectedPlugin(plugins);
-
-          if (shownPlugin) {
-            this.paramsFromPlugin = shownPlugin.params;
-            this.credentialsFromPlugin = shownPlugin.credentials;
-
-            this.createInputControls();
-            this.setInitialValuesOnInputControls();
-          }
-        } else {
-          this.paramsFromPlugin = [];
-          this.credentialsFromPlugin = [];
-        }
+        this.plugins = plugins;
       }
     );
+    this.pluginService.loadPlugins();
   }
 
   ngOnDestroy(): void {
@@ -103,9 +89,7 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
       return '';
     }
 
-    const param = this.paramsFromFeature.find(
-      (param) => param.name === name
-    );
+    const param = this.paramsFromFeature.find((param) => param.name === name);
     if (param) {
       return param.value;
     }
@@ -117,15 +101,15 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
       this.form.addControl('param.' + param.name, new FormControl('', []))
     );
     this.credentialsFromPlugin.forEach((credential) => {
-      if( credential.encrypt ) {
+      if (credential.encrypt) {
         this.passwordCredentials.set(credential.name, true);
       }
       this.form.addControl(
         'credential.' + credential.name,
         new FormControl('', [])
-      )
-      });
-  }
+      );
+    });
+  };
 
   setInitialValuesOnInputControls = () => {
     this.paramsFromFeature.forEach((param) =>
@@ -136,23 +120,21 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
         credential.value
       )
     );
-  }
+  };
 
   getSelectedPlugin = (plugins: Plugin[]): Plugin | undefined => {
     const plugin = plugins.find(
       (plugin) => plugin.id === this.selectedFeature?.id
     );
     return plugin;
-  }
+  };
 
   getDefaultParamValue = (name: string): string => {
     if (!this.paramsFromPlugin) {
       return '';
     }
 
-    const paramDef = this.paramsFromPlugin.find(
-      (param) => param.name === name
-    );
+    const paramDef = this.paramsFromPlugin.find((param) => param.name === name);
     if (paramDef) {
       return paramDef.default_value;
     }
@@ -187,26 +169,28 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
     return '';
   };
 
-  isPasswordCredential = (name: string):boolean => {
+  isPasswordCredential = (name: string): boolean => {
     const res = this.passwordCredentials.get(name);
 
     return res !== undefined && res;
-  }
+  };
 
-  isShowPasswordCredential = (name: string) : boolean => {
+  isShowPasswordCredential = (name: string): boolean => {
     const res = this.showPasswordCredentials.get(name);
 
     return res !== undefined && res;
-  }
+  };
 
   onClickShowPasswordCredential = (name: string) => {
-    if( this.showPasswordCredentials.get(name) === undefined || this.showPasswordCredentials.get(name) === false) {
+    if (
+      this.showPasswordCredentials.get(name) === undefined ||
+      this.showPasswordCredentials.get(name) === false
+    ) {
       this.showPasswordCredentials.set(name, true);
-    }
-    else {
+    } else {
       this.showPasswordCredentials.set(name, false);
     }
-  }
+  };
 
   onClickSaveFeatureSettings = () => {
     const selectedFeature = this.selectedFeature;
@@ -276,17 +260,43 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
   };
 
   onChangeServer = () => {
+    this.form = this.formBuilder.group({});
+
     this.features = this.selectedServer ? this.selectedServer.features : [];
-    this.paramsFromFeature = [];
     this.paramsFromPlugin = [];
+    this.credentialsFromPlugin = [];
+    this.paramsFromFeature = [];
+    this.credentialFromFeature = [];
+
+    this.selectedFeature = undefined;
+
+    this.createInputControls();
   };
 
   onChangeFeature = () => {
-    if (this.selectedFeature?.params) {
-      this.paramsFromFeature = this.selectedFeature.params;
-      this.credentialFromFeature = this.selectedFeature.credentials;
+    this.form = this.formBuilder.group({});
 
-      this.pluginService.loadPlugins();
+    if (this.selectedFeature) {
+      if (this.plugins) {
+        const shownPlugin = this.getSelectedPlugin(this.plugins);
+
+        if (shownPlugin) {
+          this.paramsFromPlugin = shownPlugin.params;
+          this.credentialsFromPlugin = shownPlugin.credentials;
+
+          this.paramsFromFeature = this.selectedFeature.params;
+          this.credentialFromFeature = this.selectedFeature.credentials;
+
+          this.createInputControls();
+          this.setInitialValuesOnInputControls();
+        }
+      } else {
+        this.paramsFromPlugin = [];
+        this.credentialsFromPlugin = [];
+      }
+    } else {
+      this.paramsFromFeature = [];
+      this.credentialFromFeature = [];
     }
   };
 }

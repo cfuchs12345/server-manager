@@ -21,6 +21,12 @@ enum Placeholder {
     Base64,
 }
 
+enum CheckType {
+    OnlyMainFeatures,
+    OnlySubFeatures,
+    Both
+}
+
 lazy_static! {
     static ref PARAM_REGEX: Regex = Regex::new(Placeholder::Param.get_pattern()).unwrap();
     static ref CREDENTIAL_REGEX: Regex = Regex::new(Placeholder::Credential.get_pattern()).unwrap();
@@ -61,15 +67,18 @@ impl Placeholder {
 /// * `server` - the server struct representing the server on which the action should be executed
 /// * `feature` - server feature config of the specific server containing maybe additional parameters or required credentials for the server
 /// * `action_id`- the identifier of the action
+/// * `action_params`- optional params for an action
 /// * `persistence` - the persistence struct that helps to interact with the underlying database
 pub async fn execute_action(
     server: &Server,
     feature: &Feature,
     action_id: &str,
+    action_params: Option<&str>,
     crypto_key: String,
 ) -> Result<bool, Error> {
     let plugin_res = inmemory::get_plugin(feature.id.as_str());
     if plugin_res.is_none() {
+        log::error!("Plugin not found {}", feature.id);
         return Ok(false);
     }
 
@@ -79,6 +88,7 @@ pub async fn execute_action(
         Some(plugin_action) => {
             let input: ActionOrDataInput = ActionOrDataInput::get_input_from_action(
                 plugin_action,
+                action_params,
                 &plugin,
                 feature,
                 crypto_key,
@@ -86,7 +96,10 @@ pub async fn execute_action(
 
             execute_command(server.ipaddress.clone(), &input)
                 .await
-                .map(|_| true)
+                .map(|res| {
+                    log::info!("Response for server action was: {:?}", res);
+                    true
+                })
         }
         None => {
             let error = format!("{} is not a action of plugin {}", action_id, feature.id);
@@ -110,9 +123,21 @@ pub async fn execute_data_query(
     let mut results: Vec<String> = vec![];
 
     for feature in &server.features {
-        let plugin = inmemory::get_plugin(feature.id.as_str()).unwrap();
+        let plugin_opt = inmemory::get_plugin(feature.id.as_str());
+
+        if plugin_opt.is_none() {
+            log::error!("plugin {} not found", feature.id);
+            continue;
+        }
+        let plugin = plugin_opt.unwrap();
 
         for data in &plugin.data {
+            log::debug!("Plugin data execute {} {}", plugin.id, data.id);
+
+            if !data.output {
+                log::debug!("Skipping data entry {} of plugin {} since it is marked as output = false", data.id, plugin.id);
+                continue;
+            }
             let data_response =
                 execute_specific_data_query(server, &plugin, feature, data, crypto_key.clone())
                     .await?;
@@ -126,16 +151,20 @@ pub async fn execute_data_query(
                         template_engine,
                         data,
                     )?;
-                    results.push(result);
+                    results.push(inject_meta_data_for_actions(result, feature, data));
                 } else {
                     // no template - just append
-                    results.push(response);
+                    results.push(inject_meta_data_for_actions(response, feature, data));
                 }
             }
         }
     }
 
     Ok(results)
+}
+
+fn inject_meta_data_for_actions(input : String, feature: &Feature, data: &Data) -> String {
+    input.replace("[[Action", format!("[[Action feature.id=\"{}\" data.id=\"{}\"", feature.id, data.id).as_str())
 }
 
 /// Executes a specific data query on the given server for a given data point config of a plugin
@@ -159,42 +188,63 @@ async fn execute_specific_data_query(
     execute_command(server.ipaddress.clone(), &input).await
 }
 
-pub async fn check_all_conditions() {
+pub async fn check_non_main_conditions_of_server(ipaddress: &str) {
+    let server_opt = inmemory::get_server(ipaddress);
+    let crypto_key = inmemory::get_crypto_key();
+
+    let mut vec: Vec<ConditionCheckResult> = Vec::new();
+    if let Some(server) = server_opt {
+        check_server_feature_conditions(server, &crypto_key, &mut vec, CheckType::OnlySubFeatures).await;
+    }
+
+    for result in vec {
+        inmemory::add_condition_result(result);
+    }
+}
+
+pub async fn check_all_main_conditions() {
     let servers = inmemory::get_all_servers();
     let crypto_key = inmemory::get_crypto_key();
 
     let mut vec: Vec<ConditionCheckResult> = Vec::new();
     for server in servers {
-        for feature in server.clone().features {
-            let plugin_res = inmemory::get_plugin(feature.id.as_str());
-            if plugin_res.is_none() {
-                log::error!("plugin with id {} not found", feature.id);
-                continue;
-            }
-            if let Some(plugin) = plugin_res {
-                for action in plugin.clone().actions {
-                    let server_clone = server.clone();
-                    let feature_clone = feature.clone();
-                    let action_clone = action.clone();
-                    let crypto_key_clone = crypto_key.clone();
-
-                    let check_res = check_condition_for_action_met(
-                        &server_clone,
-                        &feature_clone,
-                        &action_clone,
-                        crypto_key_clone,
-                    )
-                    .await;
-
-                    vec.push(check_res);
-                }
-            }
-        }
+        check_server_feature_conditions(server, &crypto_key, &mut vec, CheckType::OnlyMainFeatures).await;
     }
-
-    inmemory::reset_condition_result();
+    
     for result in vec {
         inmemory::add_condition_result(result);
+    }
+}
+
+async fn check_server_feature_conditions(server: Server, crypto_key: &String, vec: &mut Vec<ConditionCheckResult>, check_type: CheckType) {
+    for feature in server.clone().features {
+        let plugin_res = inmemory::get_plugin(feature.id.as_str());
+        if plugin_res.is_none() {
+            log::error!("plugin with id {} not found", feature.id);
+            continue;
+        }
+        if let Some(plugin) = plugin_res {
+            for action in plugin.clone().actions {
+                if !action.show_on_main {
+                    log::debug!("Skipping action condition check for non-main action {} of feature {}", action.id, feature.id);
+                    continue;
+                }
+                let server_clone = server.clone();
+                let feature_clone = feature.clone();
+                let action_clone = action.clone();
+                let crypto_key_clone = crypto_key.clone();
+
+                let check_res = check_condition_for_action_met(
+                    &server_clone,
+                    &feature_clone,
+                    &action_clone,
+                    crypto_key_clone,
+                )
+                .await;
+
+                vec.push(check_res);
+            }
+        }
     }
 }
 
@@ -317,7 +367,7 @@ async fn execute_command<'a>(
         y => {
             let error = format!("Action command {} is not implemented ", y);
             log::error!("{}", error);
-            Err(Error::from(std::io::Error::new(ErrorKind::Other, error)))
+            Err(Error::from(std::io::Error::new(ErrorKind::Other, error))) 
         }
     }
 }

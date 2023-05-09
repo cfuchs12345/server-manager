@@ -20,6 +20,7 @@ mod migrations;
 mod upnp;
 mod http_functions;
 mod inmemory;
+mod systeminfo;
 
 pub fn main() {
     let result = init::start();

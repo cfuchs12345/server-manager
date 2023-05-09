@@ -27,7 +27,7 @@ export class DependsDef {
 }
 
 export class Action {
-  constructor(public id: string, public name: string, public description: string, public icon: string, public needs_confirmation: boolean = true, public available_for_state: 'Any' | 'Inactive' | 'Active' = 'Any', public depends: DependsDef[]){};
+  constructor(public id: string, public name: string, public show_on_main: boolean = true, public description: string, public icon: string, public needs_confirmation: boolean = true, public available_for_state: 'Any' | 'Inactive' | 'Active' = 'Any', public depends: DependsDef[]){};
 }
 
 export class Detection {

@@ -28,7 +28,6 @@ export class ServerStatusService {
   };
 
   constructor(private http: HttpClient, private errorService: ErrorService) {
-    console.log("ServerStatusService instanciated");
   }
 
   listServerStatus = (servers: Server[]) => {

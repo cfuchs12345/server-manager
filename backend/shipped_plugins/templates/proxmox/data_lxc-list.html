@@ -6,7 +6,8 @@
     <th style="border-right: 1px solid black; padding: 5px; width: 60px; text-align: center">VM ID</th>
     <th style="border-right: 1px solid black; padding: 5px">Name</th>
     <th style="border-right: 1px solid black; padding: 5px; width: 140px; text-align: center">Uptime</th>
-    <th style="padding: 5px; width: 100px; text-align: center">Memory Max</th>
+    <th style="border-right: 1px solid black; padding: 5px; width: 100px; text-align: center">Memory Max</th>
+    <th style="padding: 5px; width: 200px; text-align: center">Action</th>
   </thead>
   <tbody>
     {{ sort "data" "vmid"}}
@@ -16,7 +17,12 @@
       <td style="border-right: 1px solid black; padding: 5px; text-align: right;">{{this.vmid}}</td>
       <td style="border-right: 1px solid black; padding: 5px">{{this.name}}</td>
       <td style="border-right: 1px solid black; padding: 5px; text-align: right;">{{ readable-time this.uptime}}</td>
-      <td style="padding: 5px; text-align: right;">{{ readable-mem this.maxmem}}</td>
+      <td style="border-right: 1px solid black; padding: 5px; text-align: right;">{{ readable-mem this.maxmem}}</td>
+      <th style="padding: 5px; text-align: right;">
+        [[Action action.id="startlxc" action.params="vmid={{this.vmid}} action.name="Start"]]
+        [[Action action.id="stoplxc" action.params="vmid={{this.vmid}}" action.name="Stop"]]
+        [[Action action.id="rebootlxc" action.params="vmid={{this.vmid}}" action.name="Reboot"]]
+      </th>
     </tr>
     {{/each}}
   </tbody>
