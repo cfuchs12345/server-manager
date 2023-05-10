@@ -288,7 +288,7 @@
                 {
                     "data_id": "lxcstatus",
                     "script_type": "lua",
-                    "script": "string.find(input, '\"qmpstatus\":\"running\"', 1, true)"
+                    "script": "string.find(input, '\"status\":\"running\"', 1, true)"
                 }
             ],
             "description": "Stops a running LXC Container on Proxmox",
@@ -318,7 +318,7 @@
                 {
                     "data_id": "lxcstatus",
                     "script_type": "lua",
-                    "script": "string.find(input, '\"qmpstatus\":\"stopped\"', 1, true)"
+                    "script": "string.find(input, '\"status\":\"stopped\"', 1, true)"
                 }
             ],
             "description": "Starts a stopped LXC Container on Proxmox",
@@ -348,7 +348,7 @@
                 {
                     "data_id": "lxcstatus",
                     "script_type": "lua",
-                    "script": "string.find(input, '\"qmpstatus\":\"running\"', 1, true)"
+                    "script": "string.find(input, '\"status\":\"running\"', 1, true)"
                 }
             ],
             "description": "Reboots a running LXC Container on Proxmox",
