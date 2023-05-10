@@ -49,6 +49,7 @@ export class ServerDataService {
       )
       .subscribe({
         next: (results) => {
+          this.dataStore.dataResults.splice(0, this.dataStore.dataResults.length);
           this.dataStore.dataResults.push(...results);
 
           this.publishDataResult();
