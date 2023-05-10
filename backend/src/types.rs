@@ -1,9 +1,6 @@
 use serde::{Deserialize, Serialize};
-
 use std::collections::HashMap;
-
-
-use crate::{plugin_types::{ParamDef, ArgDef, Plugin, Data, Action}, server_types::{Credential, Feature, Param, Server}, inmemory};
+use crate::{plugin_types::{ParamDef, ArgDef, Plugin, Data, Action}, server_types::{Credential, Feature, Param}};
 
 pub struct QueryParamsAsMap {
     params: HashMap<String, String>
@@ -110,10 +107,10 @@ fn to_params(action_params: Option<&str>) -> Vec<Param> {
     }
     let mut list = Vec::new();
 
-    let split = action_params.unwrap().split(",");
+    let split = action_params.unwrap().split(',');
 
     for str in split {
-        let single_param = str.split_at(str.find("=").unwrap());
+        let single_param = str.split_at(str.find('=').unwrap());
         
         list.push(Param {
             name: single_param.0.to_owned(),

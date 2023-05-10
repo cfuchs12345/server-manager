@@ -34,7 +34,7 @@ pub fn get_systenms_dns_servers() -> Vec<DNSServer> {
 }
 
 fn get_private_dns_servers_from_config(config_file_content: String)  -> Vec<DNSServer> {
-    config_file_content.split("\n").map(|line| get_dns_from_line(line)).flatten().collect()
+    config_file_content.split('\n').filter_map(get_dns_from_line).collect()
 }
 
 fn get_dns_from_line(line: &str) -> Option<DNSServer> {
@@ -44,7 +44,7 @@ fn get_dns_from_line(line: &str) -> Option<DNSServer> {
         let address:Result<IpAddr,_> = ip.parse();
 
         match address {
-            Ok(an_address) => {
+            Ok(_an_address) => {
                 return Some(DNSServer{
                     ipaddress: ip,
                     port: 53 // resolv.conf is not allowing ports as far as I know, so it should be always 53

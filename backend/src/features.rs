@@ -146,37 +146,33 @@ pub async fn execute_data_query(
 
 
 
-            match data_response {
-                Some(response) => {
-                    let result = if !data.template.is_empty() {
-                        // convert the output with the template
-                        conversion::convert_json_to_html(
-                            data.template.as_str(),
-                            response,
-                            template_engine,
-                            data,
-                        )?
+            
+            if let Some(response) = data_response {
+                let result = if !data.template.is_empty() {
+                    // convert the output with the template
+                    conversion::convert_json_to_html(
+                        data.template.as_str(),
+                        response,
+                        template_engine,
+                        data,
+                    )?
 
-                    } else {
-                        // no template - just append
-                        response
-                    };
+                } else {
+                    // no template - just append
+                    response
+                };
 
-                    let enriched_result = inject_meta_data_for_actions(result, feature, data);
+                let enriched_result = inject_meta_data_for_actions(result, feature, data);
 
-                    let actions = extract_actions(&enriched_result);
-                    
-                    let check_results = check_action_conditions(server, actions, crypto_key).await;
-                    log::info!("-- {:?}", check_results);
-                    results.push(DataResult{
-                        ipaddress: server.ipaddress.clone(),
-                        result: enriched_result,
-                        check_results
-                    });
-                },
-                None => {
-
-                }
+                let actions = extract_actions(&enriched_result);
+                
+                let check_results = check_action_conditions(server, actions, crypto_key).await;
+                log::info!("-- {:?}", check_results);
+                results.push(DataResult{
+                    ipaddress: server.ipaddress.clone(),
+                    result: enriched_result,
+                    check_results
+                });
             }
         }
     }
@@ -290,7 +286,7 @@ pub async fn check_condition_for_action_met(
                         let response = execute_specific_data_query(
                             server,
                             &plugin,
-                            &feature.unwrap(),
+                            feature.unwrap(),
                             data,
                             action_params.as_deref(),
                             crypto_key,
@@ -359,7 +355,7 @@ async fn check_action_conditions(server: &Server, sub_actions: Vec<SubAction>, c
             continue;
         }
 
-        let res = check_condition_for_action_met(server, feature,  plugin.unwrap().find_action(sub_action.action_id.as_ref().unwrap().as_str()), sub_action.action_params.clone(), crypto_key.clone()).await;
+        let res = check_condition_for_action_met(server, feature,  plugin.unwrap().find_action(sub_action.action_id.as_ref().unwrap().as_str()), sub_action.action_params.clone(), crypto_key).await;
         results.push(res);
     }
     results

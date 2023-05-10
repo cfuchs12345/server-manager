@@ -1,5 +1,4 @@
-use std::{str::Split, collections::HashMap};
-
+use std::{collections::HashMap};
 use serde::{Serialize, Deserialize};
 
 
@@ -186,7 +185,7 @@ pub struct SubAction {
 
 impl From<String> for SubAction {
     fn from(value: String) -> Self {
-        let stripped_value = value.replace("[[Action ", "").replace("]]", "").replace("\"", "");
+        let stripped_value = value.replace("[[Action ", "").replace("]]", "").replace('\"', "");
 
         let map:HashMap<String,String> = map_data(stripped_value);
       
@@ -199,6 +198,6 @@ impl From<String> for SubAction {
 }
 
 fn map_data(input: String) -> HashMap<String,String> {
-    input.split_whitespace().map(|s| s.split_at(s.find("=").unwrap())).map(|(key, val)| (key, &val[1..])).map(|(key, val)| (key.to_owned(), val.to_owned())).collect()    
+    input.split_whitespace().map(|s| s.split_at(s.find('=').unwrap())).map(|(key, val)| (key, &val[1..])).map(|(key, val)| (key.to_owned(), val.to_owned())).collect()    
 }
 

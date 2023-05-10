@@ -1,6 +1,6 @@
 use config::Config;
 use lazy_static::lazy_static;
-use std::{collections::HashMap, sync::RwLock, fmt::format, borrow::{BorrowMut, Borrow}};
+use std::{collections::HashMap, sync::RwLock};
 
 use crate::{plugin_types::Plugin, server_types::Server, types::{Status, ConditionCheckResult}};
 
@@ -89,12 +89,6 @@ pub fn get_all_servers() -> Vec<Server> {
     let cache = SERVER_CACHE.try_read().unwrap().clone();
 
     cache.values().cloned().collect()
-}
-
-pub fn get_server(ipaddress:  &str) -> Option<Server> {
-    let cache = SERVER_CACHE.try_read().unwrap().clone();
-
-    cache.get(ipaddress).map(|s| s.to_owned())
 }
 
 pub fn insert_servers(servers: Vec<Server>) {
