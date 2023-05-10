@@ -292,7 +292,7 @@ mod tests {
             actions: vec![Action {
                 id: "".to_string(),
                 name: "".to_string(),
-                show_on_main: false, 
+                show_on_main: true, 
                 depends: vec![],
                 available_for_state: State::Any,
                 needs_confirmation: false,
