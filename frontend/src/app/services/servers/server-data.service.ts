@@ -20,13 +20,13 @@ import { ErrorService } from '../errors/error.service';
   providedIn: 'root',
 })
 export class ServerDataService {
-  private _dataResults = new BehaviorSubject<Map<String, DataResult>>(
-    new Map()
+  private _dataResults = new BehaviorSubject<DataResult[]>(
+    []
   );
   private dataStore: {
-    dataResults: Map<string, DataResult>;
+    dataResults: DataResult[];
   } = {
-    dataResults: new Map(),
+    dataResults: [],
   };
 
   readonly dataResults = this._dataResults.asObservable();
@@ -40,7 +40,7 @@ export class ServerDataService {
     const body = JSON.stringify(query);
 
     this.http
-      .post<string[]>(
+      .post<DataResult[]>(
         '/backend/servers/' + server.ipaddress + '/actions',
         body,
         {
@@ -49,10 +49,8 @@ export class ServerDataService {
       )
       .subscribe({
         next: (results) => {
-          this.dataStore.dataResults.set(
-            server.ipaddress,
-            new DataResult(new Date(), results)
-          );
+          this.dataStore.dataResults.push(...results);
+
           this.publishDataResult();
         },
         error: (err: HttpErrorResponse) => {
@@ -64,7 +62,7 @@ export class ServerDataService {
 
 
   private publishDataResult = () => {
-    this._dataResults.next(Object.assign({}, this.dataStore).dataResults);
+    this._dataResults.next(this.dataStore.dataResults.slice(0, this.dataStore.dataResults.length));
   };
 
 }

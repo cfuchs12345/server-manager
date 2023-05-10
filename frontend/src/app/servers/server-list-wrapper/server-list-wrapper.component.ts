@@ -42,7 +42,7 @@ export class ServerListWrapperComponent implements OnInit, OnDestroy {
     this.pluginService.loadPlugins();
     this.serverService.listServers();
     this.statusService.listServerStatus(this.servers);
-    this.serverActionService.listConditionCheckResults();
+    this.serverActionService.listActionCheckResults();
 
     setInterval(() => {
       if (this.servers) {
@@ -52,7 +52,7 @@ export class ServerListWrapperComponent implements OnInit, OnDestroy {
 
     setInterval(() => {
       if (this.servers) {
-        this.serverActionService.listConditionCheckResults();
+        this.serverActionService.listActionCheckResults();
       }
     }, 10000);
 

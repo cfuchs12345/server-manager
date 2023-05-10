@@ -1,8 +1,21 @@
-import { Component, Input, OnDestroy, OnChanges } from '@angular/core';
+import {
+  Component,
+  Input,
+  OnInit,
+  OnDestroy,
+  OnChanges,
+  SimpleChanges,
+} from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { Subscription } from 'rxjs';
+import { Subscription, map } from 'rxjs';
+import { ServerActionService } from 'src/app/services/servers/server-action.service';
 import { ServerDataService } from 'src/app/services/servers/server-data.service';
-import { DataResult, Server } from 'src/app/services/servers/types';
+import {
+  ConditionCheckResult,
+  DataResult,
+  Server,
+  SubActionConditionCheck,
+} from 'src/app/services/servers/types';
 
 const action_regex = /\[\[Action.*\]\]/g;
 
@@ -11,32 +24,48 @@ const action_regex = /\[\[Action.*\]\]/g;
   templateUrl: './server-detail.component.html',
   styleUrls: ['./server-detail.component.scss'],
 })
-export class ServerDetailComponent implements OnChanges, OnDestroy {
+export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
   @Input() server: Server | undefined = undefined;
   @Input() showDetail: boolean = false;
   @Input() turnDetail: boolean = false;
 
-  dataResults: Map<String, DataResult> = new Map();
+  dataResults: DataResult[] | undefined = undefined;
   dataResultSubscription: Subscription | undefined = undefined;
+
+  data: SafeHtml;
 
   constructor(
     private sanitizer: DomSanitizer,
     private serverDataService: ServerDataService
-  ) {}
+  ) {
+    this.data = sanitizer.bypassSecurityTrustHtml('');
+  }
 
-  ngOnChanges(): void {
-    if (this.showDetail) {
-      this.dataResultSubscription =
-        this.serverDataService.dataResults.subscribe((result) => {
+  ngOnInit(): void {
+    this.dataResultSubscription = this.serverDataService.dataResults
+      .pipe(
+        map((data) => {
+          return data.filter(
+            (d) => this.server && d.ipaddress === this.server.ipaddress
+          );
+        })
+      )
+      .subscribe((result) => {
           this.dataResults = result;
-        });
+          setTimeout(this.formatData, 100);
+      });
+  }
 
-      if (this.server) {
-        this.serverDataService.queryData(this.server);
-      }
-    } else {
-      if (this.dataResultSubscription) {
-        this.dataResultSubscription.unsubscribe();
+  ngOnChanges(changes: SimpleChanges): void {
+    for (const propName in changes) {
+      if (changes.hasOwnProperty(propName)) {
+        switch (propName) {
+          case 'showDetail': {
+            if (this.server && this.showDetail) {
+              this.serverDataService.queryData(this.server);
+            }
+          }
+        }
       }
     }
   }
@@ -47,61 +76,101 @@ export class ServerDetailComponent implements OnChanges, OnDestroy {
     }
   }
 
-  getDataResult = (): SafeHtml | undefined => {
+  formatData = () => {
     if (!this.server) {
-      return undefined;
+      return;
     }
 
-    var result = this.dataResults.get(this.server.ipaddress);
-    if (result) {
-      var concatString: string = result.results.join('');
+    if (this.dataResults) {
+      var concatString = this.dataResults.map( (d) => d.result).join('');
       concatString = this.replaceSubActions(concatString);
-      return this.sanitizer.bypassSecurityTrustHtml(concatString);
+      this.data = this.sanitizer.bypassSecurityTrustHtml(concatString);
     }
-
-    return this.sanitizer.bypassSecurityTrustHtml('');
   };
 
   replaceSubActions = (input: string): string => {
     const groups = input.match(action_regex);
 
-    let output = input;
-    if (groups) {
-      for (var group of groups) {
-        output = output.replace(group, this.generateSubAction(group));
-      }
+    if (groups === null || groups.length === 0) {
+      return input;
+    }
+
+    var map: Map<string, GUISubAction> = this.generateSubActions(groups);
+
+    return this.replaceActionsInHTML(input, map);
+  };
+
+  replaceActionsInHTML = (
+    input: string,
+    map: Map<string, GUISubAction>
+  ): string => {
+    var output = input;
+    for (const entry of map.entries()) {
+      const to_replace = entry[0];
+      const subAction = entry[1];
+
+      output = output.replace(to_replace, subAction.generateUIElement());
     }
 
     return output;
   };
 
-  generateSubAction = (regex_group: string): string => {
-    const stripped = regex_group.replace('[[', '').replace(']]', '');
-    const split = stripped.split(' ');
-    const feature_id = this.find(split, 'feature.id');
-    const action_id = this.find(split, 'action.id');
-    const action_name = this.find(split, 'action.name');
-    const action_params = this.find(split, 'action.params');
-    const data_id = this.find(split, 'data.id');
+  generateSubActions = (
+    groups: RegExpMatchArray
+  ): Map<string, GUISubAction> => {
+    if (this.server === undefined) {
+      return new Map();
+    }
+    const conditionCheckResults = this.getConditionCheckResults();
 
-    return (
-      '<button onclick="MyServerManagerNS.executeSubAction(\'' +
-      feature_id +
-      "','" +
-      action_id +
-      "', '" +
-      action_name +
-      "', '" +
-      data_id +
-      "','" +
-      action_params +
-      "','" +
-      this.server?.ipaddress +
-      '\')">' +
-      action_name +
-      '</button>'
-    );
+    var map: Map<string, GUISubAction> = new Map();
+    for (var group of groups) {
+      map.set(group, new GUISubAction(this.server.ipaddress, group, conditionCheckResults));
+    }
+    return map;
   };
+
+  getConditionCheckResults = (): ConditionCheckResult[]  => {
+    var list: ConditionCheckResult[] = [];
+
+    if(this.dataResults === undefined) {
+      return list;
+    }
+    for( const dataResult of this.dataResults) {
+      list.push(... dataResult.check_results);
+    }
+    return list;
+  };
+}
+
+
+
+
+class GUISubAction {
+  private conditionMet: boolean = false;
+  private feature_id: string | undefined;
+  private action_id: string | undefined;
+  private action_name: string | undefined;
+  private action_params: string | undefined;
+  private data_id: string | undefined;
+
+  constructor(private ipaddress: string,  regexGroup: string, conditionCheckResults: ConditionCheckResult[]) {
+    const stripped = regexGroup.replace('[[', '').replace(']]', '');
+    const split = stripped.split(' ');
+    this.feature_id = this.find(split, 'feature.id');
+    this.action_id = this.find(split, 'action.id');
+    this.action_name = this.find(split, 'action.name');
+    this.action_params = this.find(split, 'action.params');
+    this.data_id = this.find(split, 'data.id');
+
+    this.conditionMet = this.checkCondition(conditionCheckResults);
+  }
+
+  checkCondition = (conditionCheckResults: ConditionCheckResult[]): boolean => {
+    const found = conditionCheckResults.find( (res) => res.ipaddress === this.ipaddress && res.feature_id === this.feature_id && res.action_id === this.action_id && res.action_params === this.action_params);
+
+    return found !== undefined && found.result;
+  }
 
   find = (split: string[], to_find: string): string | undefined => {
     const found = split.find((s) => s.startsWith(to_find));
@@ -111,4 +180,39 @@ export class ServerDetailComponent implements OnChanges, OnDestroy {
     }
     return undefined;
   };
+
+  generateUIElement = (): string => {
+    if (this.conditionMet) {
+      return (
+        '<button onclick="MyServerManagerNS.executeSubAction(\'' +
+        this.feature_id +
+        "','" +
+        this.action_id +
+        "', '" +
+        this.action_name +
+        "', '" +
+        this.data_id +
+        "','" +
+        this.action_params +
+        "','" +
+        this.ipaddress +
+        '\')">' +
+        this.action_name +
+        '</button>'
+      );
+    }
+    return '';
+  };
+
+  updateStatusFromResults(subActionCheckResult: ConditionCheckResult[]) {
+    for (var c of subActionCheckResult) {
+      if (
+        c.feature_id === this.feature_id &&
+        c.action_id === this.action_id &&
+        c.ipaddress === this.ipaddress
+      ) {
+        this.conditionMet = c.result;
+      }
+    }
+  }
 }

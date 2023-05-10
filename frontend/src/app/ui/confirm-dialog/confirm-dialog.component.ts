@@ -16,7 +16,6 @@ export class ConfirmDialogComponent {
               @Inject(MAT_DIALOG_DATA) public data: any) { }
 
   get_content() : SafeHtml {
-    console.log(this.data.message);
     return this.sanitizer.bypassSecurityTrustHtml(this.data.message);
   }
 }

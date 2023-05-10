@@ -30,8 +30,6 @@ export class ServerSubActionComponent {
   }
 
   executeSubAction = (feature_id: string, action_id: string, action_name: string, data_id: string, action_params: string, ipaddress: string) => {
-  console.log("sub action called: " + feature_id + " " + action_id + " " + data_id + " " + " with params " + action_params);
-
   const plugin = this.pluginCache.getPlugin(feature_id);
 
   if(plugin) {

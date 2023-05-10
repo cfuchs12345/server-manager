@@ -160,83 +160,18 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
                 Ok(result) => HttpResponse::Ok().json(result),
                 Err(err) =>  HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
             }
-        },
-        ServerActionType::ActionConditionCheck => {
-            let params_map = types::QueryParamsAsMap::from(query.params.clone());
-            
-            let feature_id = params_map.get("feature_id").unwrap();
-            let action_id: &String = params_map.get("action_id").unwrap();
-
-            let feature_res = server.find_feature(feature_id.clone());
-
-            if feature_res.is_none() {
-                return HttpResponse::InternalServerError().body(format!("Feature with id {} not known", feature_id));
-            }
-
-            let plugin_opt = inmemory::get_plugin(feature_res.unwrap().id.as_str());
-
-            if plugin_opt.is_none() {
-                return HttpResponse::InternalServerError().body(format!("Plugin with id {} not known", feature_id));
-            }
-            let plugin = plugin_opt.unwrap();
-
-            let action_opt = plugin.actions.iter().find(|a| a.id == *action_id);
-
-            if action_opt.is_none() {
-                return HttpResponse::InternalServerError().body(format!("Action with id {} not known for plugin with id {}", feature_id, plugin.id));
-            }
-
-            let crypto_key = inmemory::get_crypto_key();
-
-
-            let result = features::check_condition_for_action_met( &server, feature_res.unwrap(), action_opt.unwrap(), crypto_key).await;
-            HttpResponse::Ok().json(result.result)
-        }
+        },        
         ServerActionType::QueryData => {       
             let crypto_key = inmemory::get_crypto_key();
 
-            match features::execute_data_query(&server, &data.app_data_template_engine, crypto_key).await {
+            match features::execute_data_query(&server, &data.app_data_template_engine, crypto_key.as_str()).await {
                 Ok(results) => {
+                    log::info!("{:?}", results);
                     HttpResponse::Ok().json(results)
                 }
                 Err(err) =>  HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
             }
-        },
-        ServerActionType::QueryDependencyData => {
-            todo!("needed?")
-        },
-        ServerActionType::IsConditionForFeatureActionMet => {
-            let params_map = types::QueryParamsAsMap::from(query.params.clone());
-            
-            let feature_id = params_map.get("feature_id").unwrap();
-            let action_id: &String = params_map.get("action_id").unwrap();
-            
-
-            let feature_res = server.find_feature(feature_id.clone());
-           
-            if feature_res.is_none() {
-                return HttpResponse::InternalServerError().body(format!("Feature with id {} not known", feature_id));
-            }
-            
-            let plugin_opt = inmemory::get_plugin(feature_res.unwrap().id.as_str());
-
-            if plugin_opt.is_none() {
-                return HttpResponse::InternalServerError().body(format!("Plugin with id {} not known", feature_id));
-            }
-
-            let plugin = plugin_opt.unwrap();
-
-            let action_opt = plugin.actions.iter().find(|a| a.id == *action_id);
-
-            if action_opt.is_none() {
-                return HttpResponse::InternalServerError().body(format!("Action with id {} not known for plugin with id {}", feature_id, plugin.id));
-            }
-            let crypto_key = inmemory::get_crypto_key();
-
-            let result = features::check_condition_for_action_met(&server, feature_res.unwrap(), action_opt.unwrap(), crypto_key).await;
-            HttpResponse::Ok().json(result.result)
-
-        }
+        }        
     }  
 }
 

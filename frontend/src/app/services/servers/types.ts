@@ -51,22 +51,20 @@ export class Server {
 
 
 export class ServerAction {
-  constructor(public action_type: 'FeatureScan' | 'ExecuteFeatureAction' | 'Status' | 'QueryData' | 'ActionConditionCheck', public params: Param[] = []) {}
+  constructor(public action_type: 'FeatureScan' | 'ExecuteFeatureAction' | 'Status' | 'QueryData' | 'ActionConditionCheck' | 'SubActionConditionCheck', public params: Param[] = [], public condition_checks: SubActionConditionCheck[] = []) {}
 }
 
 export class DataResult {
-  constructor(public timeStamp: Date, public results: string[]) {};
+  constructor(public ipaddress: string, public result: string, public check_results: ConditionCheckResult[]) {};
 }
 
-export class ConditionCheck {
-  constructor(public ipaddress: string, public feature_id: string, public action_id: string) {}
+
+export class SubActionConditionCheck {
+  constructor(public feature_id: string, public action_id: string, public data_id: string, public action_params: string  | undefined = undefined) {}
 }
+
 export class ConditionCheckResult {
-  constructor(public ipaddress: string, public feature_id: string, public action_id: string, public result: boolean) {}
-}
-
-export const newConditionCheckResultFromCheck = (check: ConditionCheck, result: boolean) => {
-  return new ConditionCheckResult(check.ipaddress, check.feature_id, check.action_id, result);
+  constructor(public ipaddress: string, public action_id: string,  public action_params: string, public feature_id: string, public result: boolean) {}
 }
 
 

@@ -96,13 +96,12 @@ async fn start_scheduled_jobs() {
     scheduler.add(
         Job::new_async("1/10 * * * * *", |_uuid, _l| {
             Box::pin(async {
-                    features::check_all_main_conditions().await;
+                    features::check_main_action_conditions().await;
             })
         })
         .unwrap(),
 
-    ) .await
-    .unwrap();
+    ) .await.unwrap();
 
     match scheduler.start().await {
         Ok(_res) => log::info!("Schedulder started"),

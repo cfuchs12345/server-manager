@@ -1,6 +1,6 @@
-use crate::plugin_types::{Action, Data, DependsDef, Plugin};
+use crate::plugin_types::{Action, Data, DependsDef, Plugin, SubAction};
 use crate::server_types::{Credential, Feature, Server};
-use crate::types::{ActionOrDataInput, ConditionCheckResult};
+use crate::types::{ActionOrDataInput, ConditionCheckResult, DataResult};
 use crate::{conversion, crypt, http_functions, inmemory};
 use actix_web::Error;
 use base64::{engine::general_purpose, Engine as _};
@@ -24,14 +24,15 @@ enum Placeholder {
 #[derive(PartialEq, Eq)]
 enum CheckType {
     OnlyMainFeatures,
-    OnlySubFeatures,
-    Both
+    OnlySubFeatures
 }
+
 
 lazy_static! {
     static ref PARAM_REGEX: Regex = Regex::new(Placeholder::Param.get_pattern()).unwrap();
     static ref CREDENTIAL_REGEX: Regex = Regex::new(Placeholder::Credential.get_pattern()).unwrap();
     static ref BASE64_REGEX: Regex = Regex::new(Placeholder::Base64.get_pattern()).unwrap();
+    static ref TEMPLATE_SUB_ACTION_REGEX: Regex = Regex::new(r"(\[\[Action .*?\]\])").unwrap();
 }
 
 impl Placeholder {
@@ -119,9 +120,9 @@ pub async fn execute_action(
 pub async fn execute_data_query(
     server: &Server,
     template_engine: &handlebars::Handlebars<'static>,
-    crypto_key: String,
-) -> Result<Vec<String>, Error> {
-    let mut results: Vec<String> = vec![];
+    crypto_key: &str,
+) -> Result<Vec<DataResult>, Error> {
+    let mut results: Vec<DataResult> = vec![];
 
     for feature in &server.features {
         let plugin_opt = inmemory::get_plugin(feature.id.as_str());
@@ -140,22 +141,41 @@ pub async fn execute_data_query(
                 continue;
             }
             let data_response =
-                execute_specific_data_query(server, &plugin, feature, data, crypto_key.clone())
+                execute_specific_data_query(server, &plugin, feature, data, None, crypto_key)
                     .await?;
 
-            if let Some(response) = data_response {
-                if !data.template.is_empty() {
-                    // convert the output with the template
-                    let result = conversion::convert_json_to_html(
-                        data.template.as_str(),
-                        response,
-                        template_engine,
-                        data,
-                    )?;
-                    results.push(inject_meta_data_for_actions(result, feature, data));
-                } else {
-                    // no template - just append
-                    results.push(inject_meta_data_for_actions(response, feature, data));
+
+
+            match data_response {
+                Some(response) => {
+                    let result = if !data.template.is_empty() {
+                        // convert the output with the template
+                        conversion::convert_json_to_html(
+                            data.template.as_str(),
+                            response,
+                            template_engine,
+                            data,
+                        )?
+
+                    } else {
+                        // no template - just append
+                        response
+                    };
+
+                    let enriched_result = inject_meta_data_for_actions(result, feature, data);
+
+                    let actions = extract_actions(&enriched_result);
+                    
+                    let check_results = check_action_conditions(server, actions, crypto_key).await;
+                    log::info!("-- {:?}", check_results);
+                    results.push(DataResult{
+                        ipaddress: server.ipaddress.clone(),
+                        result: enriched_result,
+                        check_results
+                    });
+                },
+                None => {
+
                 }
             }
         }
@@ -164,9 +184,6 @@ pub async fn execute_data_query(
     Ok(results)
 }
 
-fn inject_meta_data_for_actions(input : String, feature: &Feature, data: &Data) -> String {
-    input.replace("[[Action", format!("[[Action feature.id=\"{}\" data.id=\"{}\"", feature.id, data.id).as_str())
-}
 
 /// Executes a specific data query on the given server for a given data point config of a plugin
 /// # Arguments
@@ -181,83 +198,15 @@ async fn execute_specific_data_query(
     plugin: &Plugin,
     feature: &Feature,
     data: &Data,
-    crypto_key: String,
+    action_params: Option<&str>,
+    crypto_key: &str,
 ) -> Result<Option<String>, Error> {
     let input: ActionOrDataInput =
-        ActionOrDataInput::get_input_from_data(data, plugin, feature, crypto_key);
+        ActionOrDataInput::get_input_from_data(data, action_params, plugin, feature, crypto_key);
 
     execute_command(server.ipaddress.clone(), &input).await
 }
 
-pub async fn check_non_main_conditions_of_server(ipaddress: &str) {
-    let server_opt = inmemory::get_server(ipaddress);
-    let crypto_key = inmemory::get_crypto_key();
-
-    let mut vec: Vec<ConditionCheckResult> = Vec::new();
-    if let Some(server) = server_opt {
-        let mut res = check_server_feature_conditions(server, &crypto_key, CheckType::OnlySubFeatures).await;
-        vec.append(&mut res);
-    }
-
-    for result in vec {
-        inmemory::add_condition_result(result);
-    }
-}
-
-pub async fn check_all_main_conditions() {
-    let servers = inmemory::get_all_servers();
-    let crypto_key = inmemory::get_crypto_key();
-
-    let mut vec: Vec<ConditionCheckResult> = Vec::new();
-    for server in servers {
-        let mut res = check_server_feature_conditions(server, &crypto_key, CheckType::OnlyMainFeatures).await;
-        vec.append(&mut res);
-    }
-    
-    for result in vec {
-        inmemory::add_condition_result(result);
-    }
-}
-
-async fn check_server_feature_conditions(server: Server, crypto_key: &String, check_type: CheckType) -> Vec<ConditionCheckResult> {
-    let mut vec = Vec::new();
-
-    for feature in server.clone().features {
-        let plugin_res = inmemory::get_plugin(feature.id.as_str());
-        if plugin_res.is_none() {
-            log::error!("plugin with id {} not found", feature.id);
-            continue;
-        }
-        if let Some(plugin) = plugin_res {
-            for action in plugin.clone().actions {
-                if check_type == CheckType::OnlyMainFeatures && !action.show_on_main {
-                    log::debug!("Skipping action condition check for non-main action {} of feature {}", action.id, feature.id);
-                    continue;
-                }
-                else if check_type == CheckType::OnlySubFeatures && action.show_on_main {
-                    log::debug!("Skipping action condition check for sub-main action {} of feature {}", action.id, feature.id);
-                    continue;
-                }
-                let server_clone = server.clone();
-                let feature_clone = feature.clone();
-                let action_clone = action.clone();
-                let crypto_key_clone = crypto_key.clone();
-
-                let check_res = check_condition_for_action_met(
-                    &server_clone,
-                    &feature_clone,
-                    &action_clone,
-                    crypto_key_clone,
-                )
-                .await;
-
-                vec.push(check_res);
-            }
-        }
-    }
-
-    vec
-}
 
 /// Checks if all conditions that are defined for an action of a plugin are met and that it can be executed by the user
 /// # Arguments
@@ -269,16 +218,26 @@ async fn check_server_feature_conditions(server: Server, crypto_key: &String, ch
 
 pub async fn check_condition_for_action_met(
     server: &Server,
-    feature: &Feature,
-    action: &Action,
-    crypto_key: String,
+    feature: Option<&Feature>,
+    action: Option<&Action>,
+    action_params: Option<String>,
+    crypto_key: &str,
 ) -> ConditionCheckResult {
-    let plugin_res = inmemory::get_plugin(feature.id.as_str());
-
-    if plugin_res.is_none() {
+    if feature.is_none() || action.is_none()  {
         return ConditionCheckResult {
-            action_id: action.id.clone(),
-            feature_id: feature.id.clone(),
+            ipaddress: server.ipaddress.clone(),
+            result: false,
+            ..Default::default()
+        };
+    }
+
+    let plugin_res = inmemory::get_plugin(feature.unwrap().id.as_str());
+
+    if plugin_res.is_none()  {
+        return ConditionCheckResult {
+            action_id: action.unwrap().id.clone(),
+            action_params: action_params.unwrap_or_default(),
+            feature_id: feature.unwrap().id.clone(),
             ipaddress: server.ipaddress.clone(),
             result: false,
         };
@@ -291,7 +250,7 @@ pub async fn check_condition_for_action_met(
             .await
             .unwrap_or(Vec::new());
 
-    let mut result = match action.available_for_state {
+    let mut result = match action.unwrap().available_for_state {
         crate::plugin_types::State::Active => {
             match status.first() {
                 Some(status) => status.is_running,
@@ -313,8 +272,9 @@ pub async fn check_condition_for_action_met(
     if !result {
         // check if status dependency already failed - early exit
         return ConditionCheckResult {
-            action_id: action.id.clone(),
-            feature_id: feature.id.clone(),
+            action_id: action.unwrap().id.clone(),
+            action_params: action_params.unwrap_or_default(),
+            feature_id: feature.unwrap().id.clone(),
             ipaddress: server.ipaddress.clone(),
             result: false,
         };
@@ -324,15 +284,16 @@ pub async fn check_condition_for_action_met(
         if status.is_running {
             // if not running, no need to start any request
             // now check data dependencies one by one
-            for depends in &action.depends {
+            for depends in &action.unwrap().depends {
                 match find_data_for_action_depency(depends, &plugin) {
                     Some(data) => {
                         let response = execute_specific_data_query(
                             server,
                             &plugin,
-                            feature,
+                            &feature.unwrap(),
                             data,
-                            crypto_key.clone(),
+                            action_params.as_deref(),
+                            crypto_key,
                         )
                         .await
                         .unwrap_or_default();
@@ -340,14 +301,14 @@ pub async fn check_condition_for_action_met(
                         result &=
                             response_data_match(depends, response.clone()).unwrap_or_default();
                         if !result {
-                            log::debug!("Depencies for data {} of plugin {} for server {} not met .Reasponse was {:?}", data.id, feature.id, server.ipaddress, response);
+                            log::debug!("Depencies for data {} of plugin {} for server {} not met .Reasponse was {:?}", data.id, feature.unwrap().id, server.ipaddress, response);
                             break;
                         }
                     }
                     None => {
                         let error = format!(
                             "dependent data with id  {} not found for action {}",
-                            depends.data_id, action.id
+                            depends.data_id, action.unwrap().id
                         );
                         log::error!("{}", error);
                         result = false;
@@ -355,17 +316,108 @@ pub async fn check_condition_for_action_met(
                     }
                 }
             }
-        } else if !action.depends.is_empty() {
+        } else if !action.unwrap().depends.is_empty() {
             result = false;
         }
     };
 
     ConditionCheckResult {
-        action_id: action.id.clone(),
-        feature_id: feature.id.clone(),
+        action_id: action.unwrap().id.clone(),
+        action_params: action_params.unwrap_or_default(),
+        feature_id: feature.unwrap().id.clone(),
         ipaddress: server.ipaddress.clone(),
         result,
     }
+}
+
+
+fn inject_meta_data_for_actions(input : String, feature: &Feature, data: &Data) -> String {    
+    input.replace("[[Action ", format!("[[Action feature.id=\"{}\" data.id=\"{}\" ", feature.id, data.id).as_str())
+}
+
+fn extract_actions(input: &str) -> Vec<SubAction> {
+    let mut result = Vec::new();
+    let groups: Vec<String> = TEMPLATE_SUB_ACTION_REGEX.find_iter(input).map(|mat| mat.as_str().to_owned()).collect();
+    for group in groups {
+        result.push(SubAction::from(group));
+    }
+    
+    result
+}
+
+async fn check_action_conditions(server: &Server, sub_actions: Vec<SubAction>, crypto_key: &str) -> Vec<ConditionCheckResult>{
+    let mut results = Vec::new();
+
+    for sub_action in &sub_actions {
+        if sub_action.feature_id.is_none() || sub_action.action_id.is_none() {
+            continue;
+        }
+        let feature = server.find_feature(sub_action.feature_id.as_ref().unwrap().to_owned());
+        let plugin = inmemory::get_plugin(sub_action.feature_id.as_ref().unwrap().as_str());
+        
+        if plugin.is_none() {
+            continue;
+        }
+
+        let res = check_condition_for_action_met(server, feature,  plugin.unwrap().find_action(sub_action.action_id.as_ref().unwrap().as_str()), sub_action.action_params.clone(), crypto_key.clone()).await;
+        results.push(res);
+    }
+    results
+}
+
+pub async fn check_main_action_conditions() {
+    let servers = inmemory::get_all_servers();
+    let crypto_key = inmemory::get_crypto_key();
+
+    let mut vec: Vec<ConditionCheckResult> = Vec::new();
+    for server in servers {
+        let mut res = check_server_feature_conditions(server, &crypto_key, CheckType::OnlyMainFeatures).await;
+        vec.append(&mut res);
+    }
+    
+    for result in vec {
+        inmemory::add_condition_result(result);
+    }
+}
+
+async fn check_server_feature_conditions(server: Server, crypto_key: &str, check_type: CheckType) -> Vec<ConditionCheckResult> {
+    let mut vec = Vec::new();
+
+    for feature in server.clone().features {
+        let plugin_res = inmemory::get_plugin(feature.id.as_str());
+        if plugin_res.is_none() {
+            log::error!("plugin with id {} not found", feature.id);
+            continue;
+        }
+        if let Some(plugin) = plugin_res {
+            for action in plugin.clone().actions {
+                if check_type == CheckType::OnlyMainFeatures && !action.show_on_main {
+                    log::debug!("Skipping action condition check for non-main action {} of feature {}", action.id, feature.id);
+                    continue;
+                }
+                else if check_type == CheckType::OnlySubFeatures && action.show_on_main {
+                    log::debug!("Skipping action condition check for sub-main action {} of feature {}", action.id, feature.id);
+                    continue;
+                }
+                let server_clone = server.clone();
+                let feature_clone = feature.clone();
+                let action_clone = action.clone();
+
+                let check_res = check_condition_for_action_met(
+                    &server_clone,
+                    Some(&feature_clone),
+                    Some(&action_clone),
+                    None,
+                    crypto_key,
+                )
+                .await;
+
+                vec.push(check_res);
+            }
+        }
+    }
+
+    vec
 }
 
 async fn execute_command<'a>(
@@ -410,7 +462,7 @@ async fn execute_http_command<'a>(
             match input.find_arg("body") {
                 Some(arg) => arg.value.as_str(),
                 None => {
-                    log::error!("Actually expected a body for a post request. Continuing with an empty body.");
+                    log::warn!("Actually expected a body for a post request. Continuing with an empty body.");
                     ""
                 }
             }

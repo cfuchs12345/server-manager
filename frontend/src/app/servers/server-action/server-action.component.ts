@@ -32,7 +32,7 @@ export class ServerActionComponent implements OnInit, OnDestroy, OnChanges {
   ) {}
 
   ngOnInit(): void {
-    this.serverActionService.conditionChecks
+    this.serverActionService.actionConditionChecks
       .pipe(
         map((status) =>
           status.filter((status) => this.isCheckResultRequired(status))

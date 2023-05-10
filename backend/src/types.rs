@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 
-use crate::{plugin_types::{ParamDef, ArgDef, Plugin, Data, Action}, server_types::{Credential, Feature, Param}};
+use crate::{plugin_types::{ParamDef, ArgDef, Plugin, Data, Action}, server_types::{Credential, Feature, Param, Server}, inmemory};
 
 pub struct QueryParamsAsMap {
     params: HashMap<String, String>
@@ -62,15 +62,17 @@ impl ActionOrDataInput {
         }
     }
 
-    pub fn get_input_from_data(data: &Data, plugin: &Plugin, feature: &Feature, crypto_key: String) ->  ActionOrDataInput {
+    pub fn get_input_from_data(data: &Data, action_params: Option<&str>, plugin: &Plugin, feature: &Feature, crypto_key: &str) ->  ActionOrDataInput {
+        let action_params = to_params(action_params);
+
         ActionOrDataInput{
             command: data.command.clone(),
             args: data.args.clone(),
             default_params: plugin.params.clone(),
             params: feature.params.clone(),
-            action_params: Vec::new(),
+            action_params,
             credentials: feature.credentials.clone(),
-            crypto_key
+            crypto_key: crypto_key.to_owned()
         }
     }
 
@@ -102,7 +104,6 @@ impl ActionOrDataInput {
     }
 }
 
-
 fn to_params(action_params: Option<&str>) -> Vec<Param> {
     if action_params.is_none() {
         return Vec::new();
@@ -112,7 +113,7 @@ fn to_params(action_params: Option<&str>) -> Vec<Param> {
     let split = action_params.unwrap().split(",");
 
     for str in split {
-        let single_param = str.split_at(str.find("|").unwrap());
+        let single_param = str.split_at(str.find("=").unwrap());
         
         list.push(Param {
             name: single_param.0.to_owned(),
@@ -178,10 +179,7 @@ pub enum ServerActionType {
     FeatureScan,
     Status,
     ExecuteFeatureAction,
-    ActionConditionCheck,
-    QueryDependencyData,
     QueryData,
-    IsConditionForFeatureActionMet,
 }
 
 #[derive(Deserialize, Serialize, Clone, PartialEq, Eq)]
@@ -228,11 +226,12 @@ pub struct ServerAction {
     pub params: Vec<QueryParam>
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Default, Debug)]
 pub struct ConditionCheckResult {
     pub ipaddress: String,
     pub feature_id: String,
     pub action_id: String,
+    pub action_params: String,
     pub result: bool
 }
 
@@ -240,4 +239,11 @@ impl ConditionCheckResult {
     pub fn get_key(self) -> String {
         format!("{}_{}_{}", self.ipaddress, self.feature_id, self.action_id)
     }
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct DataResult {
+    pub ipaddress: String,
+    pub result: String,
+    pub check_results: Vec<ConditionCheckResult>
 }
