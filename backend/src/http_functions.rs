@@ -1,4 +1,5 @@
 use std::{time::Duration};
+use std::path::Path;
 #[cfg(all(target_os="linux"))]
 use tokio::io::Interest;
 #[cfg(all(target_os="linux"))]
@@ -19,8 +20,7 @@ pub async fn execute_socket_request(
     headers: Option<Vec<(String, String)>>,
     body: Option<String>
 )  -> Result<String, reqwest::Error> {
-    use std::path::Path;
-
+    use tokio::io::AsyncReadExt;
     
     let message = "GET ".to_owned() + body.unwrap_or_default().as_str();
 
@@ -28,6 +28,7 @@ pub async fn execute_socket_request(
 
     let stream = UnixStream::connect(socket).await.unwrap();
 
+    let ready = stream.ready(Interest::READABLE | Interest::WRITABLE).await.unwrap();
    
 
     if ready.is_writable() {
@@ -35,13 +36,13 @@ pub async fn execute_socket_request(
         // if the readiness event is a false positive.
         match stream.try_write(message.as_bytes()) {
             Ok(n) => {
-                println!("write {} bytes", n);
+                println!("write {:?} bytes", n);
             }
-            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
                 log::info!("would block");
             }
             Err(e) => {
-                return Err(e.into());
+                log::error!("{}", e);
             }
         }
     }
@@ -54,15 +55,13 @@ pub async fn execute_socket_request(
         match stream.try_read(&mut data) {
             Ok(n) => {
                 println!("read {} bytes", n);    
-                format!("bytes {}", data);
-                let response = data::to_string;
-                format!("response {}", response);
+                format!("bytes {:?}", data);
             }
-            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
                 log::info!("would block");
             }
             Err(e) => {
-                return Err(e.into());
+                log::error!("{}", e);
             }
         }
 
