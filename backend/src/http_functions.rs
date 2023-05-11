@@ -19,7 +19,6 @@ pub async fn execute_socket_request(
     headers: Option<Vec<(String, String)>>,
     body: Option<String>
 )  -> Result<String, reqwest::Error> {
-    use tokio::io::AsyncReadExt;
     
     let message = "GET ".to_owned() + body.unwrap_or_default().as_str();
 
