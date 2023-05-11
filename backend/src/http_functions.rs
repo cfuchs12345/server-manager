@@ -17,7 +17,7 @@ pub async fn execute_socket_request(
     headers: Option<Vec<(String, String)>>,
     body: Option<String>
 )  -> Result<String, reqwest::Error> {
-    let listener = UnixListener::bind(url)?; 
+    let listener = UnixListener::bind(url).unwrap(); 
 
     match listener.accept() {
         Ok((mut socket, addr)) => {

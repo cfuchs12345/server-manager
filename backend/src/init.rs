@@ -10,6 +10,8 @@ use crate::appdata::AppData;
 use crate::crypt;
 use crate::features;
 use crate::handlebars_helper_functions;
+#[cfg(all(target_os="linux"))]
+use crate::http_functions;
 use crate::inmemory;
 use crate::migrations;
 use crate::persistence;
