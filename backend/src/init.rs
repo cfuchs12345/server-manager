@@ -38,7 +38,7 @@ pub async fn start() -> std::io::Result<()> {
     #[cfg(all(target_os="linux"))]
     http_functions::execute_socket_request( "unix:///var/run/docker.sock".to_string(), "GET", 
         None,
-        Some("/containers/json".to_string()));
+        Some("/containers/json".to_string())).await;
 
     start_scheduled_jobs().await;
     one_time_init()?;
