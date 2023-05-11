@@ -22,7 +22,7 @@ pub async fn execute_socket_request(
 
     match listener.accept() {
         Ok((mut socket, addr)) => {
-            println!("Got a client: {:?} - {:?}", socket, addr);
+            log::info!("Got a client: {:?} - {:?}", socket, addr);
             
             let response = match method {
                 GET => {
@@ -31,7 +31,7 @@ pub async fn execute_socket_request(
 
                     let mut response = String::new();
                     socket.read_to_string(&mut response).unwrap();
-                    println!("{}", response);
+                    log::info!("{}", response);
 
                     return Ok(response);
                 },
@@ -41,7 +41,7 @@ pub async fn execute_socket_request(
             };
 
         },
-        Err(e) => println!("accept function failed: {:?}", e),
+        Err(e) => log::error!("accept function failed: {:?}", e),
     }
     Ok("".to_string())
 }
