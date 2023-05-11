@@ -39,7 +39,7 @@ pub async fn execute_socket_request(
 
 fn write_request_and_shutdown(unix_stream: &mut UnixStream, message: String) {
     unix_stream
-        .write(message.as_bytes())
+        .write_all(message.as_bytes())
         .expect("Failed at writing onto the unix stream");
 
     log::info!("We sent a request");
