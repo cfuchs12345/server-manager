@@ -1,8 +1,9 @@
 use std::{time::Duration};
 #[cfg(all(target_os="linux"))]
-use std::os::unix::net::UnixListener;
+use tokio::io::Interest;
 #[cfg(all(target_os="linux"))]
-use std::io::prelude::*;
+use tokio::net::UnixStream;
+
 use http::StatusCode;
 
 use crate::{inmemory};
@@ -18,31 +19,56 @@ pub async fn execute_socket_request(
     headers: Option<Vec<(String, String)>>,
     body: Option<String>
 )  -> Result<String, reqwest::Error> {
-    let listener = UnixListener::bind(url).unwrap(); 
+    use std::path::Path;
 
-    match listener.accept() {
-        Ok((mut socket, addr)) => {
-            log::info!("Got a client: {:?} - {:?}", socket, addr);
-            
-            let response = match method {
-                GET => {
-                    let message = "GET ".to_owned() + body.unwrap_or_default().as_str();
-                    socket.write_all(message.as_bytes());
+    
+    let message = "GET ".to_owned() + body.unwrap_or_default().as_str();
 
-                    let mut response = String::new();
-                    socket.read_to_string(&mut response).unwrap();
-                    log::info!("{}", response);
+    let socket = Path::new(url.as_str());
 
-                    return Ok(response);
-                },
-                y => {
-                    log::error!("method {} currently not supported", y)
-                }
-            };
+    let stream = UnixStream::connect(socket).await.unwrap();
 
-        },
-        Err(e) => log::error!("accept function failed: {:?}", e),
+   
+
+    if ready.is_writable() {
+        // Try to write data, this may still fail with `WouldBlock`
+        // if the readiness event is a false positive.
+        match stream.try_write(message.as_bytes()) {
+            Ok(n) => {
+                println!("write {} bytes", n);
+            }
+            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                log::info!("would block");
+            }
+            Err(e) => {
+                return Err(e.into());
+            }
+        }
     }
+
+
+    if ready.is_readable() {
+        let mut data = vec![0; 1024];
+        // Try to read data, this may still fail with `WouldBlock`
+        // if the readiness event is a false positive.
+        match stream.try_read(&mut data) {
+            Ok(n) => {
+                println!("read {} bytes", n);    
+                format!("bytes {}", data);
+                let response = data::to_string;
+                format!("response {}", response);
+            }
+            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                log::info!("would block");
+            }
+            Err(e) => {
+                return Err(e.into());
+            }
+        }
+
+    }
+    
+
     Ok("".to_string())
 }
 
