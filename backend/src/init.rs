@@ -36,7 +36,7 @@ pub static DB_FILENAME: &str = "./external_files/server-manager.db";
 #[actix_web::main]
 pub async fn start() -> std::io::Result<()> {
     #[cfg(all(target_os="linux"))]
-    http_functions::execute_socket_request( "unix:///var/run/docker.sock".to_string(), "GET", 
+    http_functions::execute_socket_request( "/var/run/docker.sock".to_string(), "GET", 
         None,
         Some("/containers/json".to_string())).await;
 

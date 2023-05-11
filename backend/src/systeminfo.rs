@@ -1,6 +1,30 @@
 use std::{path::Path, net::{IpAddr}};
 
 use crate::{config_types::DNSServer, inmemory};
+use sys_info;
+
+pub fn get_memory_usage() -> String {
+    match sys_info::mem_info() {
+        Ok(mem) => {
+            format!("mem: total {} KB, free {} KB, avail {} KB",
+            mem.total, mem.free, mem.avail)
+        },
+        Err(err) => {
+            format!("Could not get memory information. Error was: {}", err)
+        }
+    }
+}
+
+pub fn get_load_info() -> String {
+    match sys_info::loadavg() {
+        Ok(load) => {
+            format!("load: {} {} {}", load.one, load.five, load.fifteen)
+        },
+        Err(err) => {
+            format!("Could not get load information. Error was: {}", err)
+        }
+    }
+}
 
 pub fn get_systenms_dns_servers() -> Vec<DNSServer> {
     let mut list = Vec::new();
