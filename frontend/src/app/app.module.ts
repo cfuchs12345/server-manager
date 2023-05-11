@@ -56,6 +56,7 @@ import { CacheService } from './services/cache/cache.service';
 import { ImageCache } from './services/cache/image-cache.service';
 import { ServerFeaturesComponent } from './servers/server-features/server-features.component';
 import { ServerSubActionComponent} from './servers/server-sub-action/sub-action.component';
+import { SystemInformationComponent } from './systeminformation/systeminformation.component';
 
 
 
@@ -100,7 +101,8 @@ import { ServerSubActionComponent} from './servers/server-sub-action/sub-action.
     ServerSubActionComponent,
     ServerDetailComponent,
     ServerDetailControlComponent,
-    ServerFeaturesComponent
+    ServerFeaturesComponent,
+    SystemInformationComponent
   ],
   imports: [
     AppRoutingModule,

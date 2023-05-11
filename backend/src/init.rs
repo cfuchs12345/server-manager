@@ -294,6 +294,7 @@ fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(routes::delete_dnsservers);
 
     cfg.service(routes::get_system_dnsservers);
+    cfg.service(routes::get_system_information);
 }
 
 fn init_config() {

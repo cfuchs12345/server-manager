@@ -6,7 +6,7 @@ use crate::config_types::DNSServer;
 use crate::{plugins, features, config, status, types, inmemory, systeminfo};
 use crate::discover::{self};
 use crate::servers;
-use crate::types::{Status, NetworkActionType, ServersActionType, ServersAction, ServerAction, ServerActionType, PluginsAction, NetworksAction};
+use crate::types::{Status, NetworkActionType, ServersActionType, ServersAction, ServerAction, ServerActionType, PluginsAction, NetworksAction, SystemInformation};
 use crate::server_types::{Server};
 
 
@@ -297,3 +297,11 @@ pub async fn delete_dnsservers(data: web::Data<AppData>, path: web::Path<String>
     }
 }
 
+#[put("/backend/system/information")]
+pub async fn get_system_information() -> HttpResponse {
+      HttpResponse::Ok().json(SystemInformation {
+        load_average: systeminfo::get_load_info(),
+        memory_stats: systeminfo::get_memory_stats(),
+        memory_usage: systeminfo::get_memory_usage()
+    })
+}

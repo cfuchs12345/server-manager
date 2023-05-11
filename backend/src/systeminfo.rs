@@ -1,30 +1,48 @@
 use std::{path::Path, net::{IpAddr}};
 
-use crate::{config_types::DNSServer, inmemory};
+use crate::{config_types::DNSServer, inmemory, types::SystemInformationEntry};
 use sys_info;
+use memory_stats::memory_stats;
 
-pub fn get_memory_usage() -> String {
+
+pub fn get_memory_stats() -> Vec<SystemInformationEntry> {
+    match memory_stats() {
+        Some(memory_stats) => {
+            
+            vec![ SystemInformationEntry::new_usize("pysical", memory_stats.physical_mem), SystemInformationEntry::new_usize("virtual", memory_stats.virtual_mem)]
+        },
+        None => {
+            log::error!("Could not get memory stats.");
+            Vec::new()
+        }
+
+    }
+}
+
+pub fn get_memory_usage() -> Vec<SystemInformationEntry> {
     match sys_info::mem_info() {
         Ok(mem) => {
-            format!("mem: total {} KB, free {} KB, avail {} KB",
-            mem.total, mem.free, mem.avail)
+            vec![ SystemInformationEntry::new_u64("mem_total", mem.total), SystemInformationEntry::new_u64("mem_free", mem.free), SystemInformationEntry::new_u64("mem_avail", mem.avail)]
         },
         Err(err) => {
-            format!("Could not get memory information. Error was: {}", err)
+            log::error!("Could not get memory information. Error was: {}", err);
+            Vec::new()
         }
     }
 }
 
-pub fn get_load_info() -> String {
+pub fn get_load_info() -> Vec<SystemInformationEntry> {
     match sys_info::loadavg() {
         Ok(load) => {
-            format!("load: {} {} {}", load.one, load.five, load.fifteen)
+            vec![ SystemInformationEntry::new("load_one", load.one), SystemInformationEntry::new("load_five", load.five), SystemInformationEntry::new("load_fifteen", load.fifteen)]
         },
         Err(err) => {
-            format!("Could not get load information. Error was: {}", err)
+            log::error!("Could not get load information. Error was: {}", err);
+            Vec::new()
         }
     }
 }
+
 
 pub fn get_systenms_dns_servers() -> Vec<DNSServer> {
     let mut list = Vec::new();

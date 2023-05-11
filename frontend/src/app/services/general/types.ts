@@ -31,3 +31,11 @@ export class ConfigAction {
 export class DNSServer {
   constructor(public ipaddress: string, public port: number) {}
 }
+
+export class SystemInformation {
+  constructor( public mem_stats: SystemInformationEntry[],  public memory_usage: SystemInformationEntry[],  public load_average: SystemInformationEntry[]) {};
+}
+
+export class SystemInformationEntry {
+    constructor(public name: string, public value: number) {}
+}

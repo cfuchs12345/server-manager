@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
-import { ConfigAction, DNSServer } from './types';
+import { ConfigAction, DNSServer, SystemInformation } from './types';
 import { ErrorService } from '../errors/error.service';
 
 @Injectable({
@@ -11,18 +11,21 @@ import { ErrorService } from '../errors/error.service';
 export class GeneralService {
   private _dnsServers = new BehaviorSubject<DNSServer[]>([]);
   private _systemDNSServers = new BehaviorSubject<DNSServer[]>([]);
+  private _systemInformation= new BehaviorSubject<SystemInformation | undefined>(undefined);
 
   private dataStore: {
     dnsServers: DNSServer[];
     systemDNSServers: DNSServer[];
+    systemInformation: SystemInformation | undefined;
   } = {
     dnsServers: [],
-    systemDNSServers: []
+    systemDNSServers: [],
+    systemInformation: undefined
   };
 
   readonly dnsServers = this._dnsServers.asObservable();
   readonly systemDNSServers = this._systemDNSServers.asObservable();
-
+  readonly systemInformation = this._systemInformation.asObservable();
 
   constructor(private http: HttpClient, private errorService: ErrorService) {}
 
@@ -90,4 +93,18 @@ export class GeneralService {
       complete: () => {},
     });
   };
+
+
+  getSystemInformation = () => {
+    this.http.get<SystemInformation>('/backend/system/information').subscribe({
+      next: (res) => {
+        this.dataStore.systemInformation = res;
+        this._systemInformation.next(this.dataStore.systemInformation);
+      },
+      error: (err: any) => {
+        this.errorService.newError("General-Service", undefined, err.message);
+      },
+      complete: () => {},
+    });
+  }
 }
