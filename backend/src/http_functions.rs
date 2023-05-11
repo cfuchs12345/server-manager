@@ -35,6 +35,9 @@ pub async fn execute_socket_request(
 
                     return Ok(response);
                 },
+                y => {
+                    log::error!("method {} currently not supported", y)
+                }
             };
 
         },
