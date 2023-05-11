@@ -1,6 +1,7 @@
 use std::{time::Duration};
 #[cfg(all(target_os="linux"))]
 use std::os::unix::net::UnixListener;
+#[cfg(all(target_os="linux"))]
 use std::io::prelude::*;
 use http::StatusCode;
 
@@ -29,7 +30,7 @@ pub async fn execute_socket_request(
                     socket.write_all(message.as_bytes());
 
                     let mut response = String::new();
-                    socket.read_to_string(&mut response)?;
+                    socket.read_to_string(&mut response).unwrap();
                     println!("{}", response);
 
                     return Ok(response);
