@@ -10,7 +10,6 @@ use crate::appdata::AppData;
 use crate::crypt;
 use crate::features;
 use crate::handlebars_helper_functions;
-use crate::http_functions;
 use crate::inmemory;
 use crate::migrations;
 use crate::persistence;
@@ -34,7 +33,7 @@ pub static DB_FILENAME: &str = "./external_files/server-manager.db";
 
 #[actix_web::main]
 pub async fn start() -> std::io::Result<()> {
-    #[cfg(all(target_os="unix"))]
+    #[cfg(all(target_os="linux"))]
     http_functions::execute_socket_request( "unix:///var/run/docker.sock".to_string(), "GET", 
         None,
         Some("/containers/json"));

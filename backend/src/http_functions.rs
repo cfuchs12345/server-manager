@@ -1,5 +1,5 @@
 use std::{time::Duration};
-#[cfg(all(target_os="unix"))]
+#[cfg(all(target_os="linux"))]
 use std::os::unix::net::UnixListener;
 use std::io::prelude::*;
 use http::StatusCode;
