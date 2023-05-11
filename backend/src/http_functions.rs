@@ -1,5 +1,7 @@
 use std::{time::Duration};
-
+#[cfg(all(target_os="unix"))]
+use std::os::unix::net::UnixListener;
+use std::io::prelude::*;
 use http::StatusCode;
 
 use crate::{inmemory};
@@ -7,6 +9,38 @@ use crate::{inmemory};
 pub const GET: &str = "get";
 pub const POST: &str = "post";
 pub const PUT: &str = "put";
+
+#[cfg(all(target_os="linux"))]
+pub async fn execute_socket_request(
+    url: String,
+    method: &str,
+    headers: Option<Vec<(String, String)>>,
+    body: Option<String>
+)  -> Result<String, reqwest::Error> {
+    let listener = UnixListener::bind(url)?; 
+
+    match listener.accept() {
+        Ok((mut socket, addr)) => {
+            println!("Got a client: {:?} - {:?}", socket, addr);
+            
+            let response = match method {
+                GET => {
+                    let message = "GET ".to_owned() + body.unwrap_or_default().as_str();
+                    socket.write_all(message.as_bytes());
+
+                    let mut response = String::new();
+                    socket.read_to_string(&mut response)?;
+                    println!("{}", response);
+
+                    return Ok(response);
+                },
+            };
+
+        },
+        Err(e) => println!("accept function failed: {:?}", e),
+    }
+    Ok("".to_string())
+}
 
 /// Executes an http request on the given url using the given method.
 /// 

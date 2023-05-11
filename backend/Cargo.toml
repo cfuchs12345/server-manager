@@ -38,3 +38,4 @@ ssdp-client = "1.0.0"
 rhai = "1.14.0" 
 quick-xml = {version="0.28.2", features=["serialize"]}
 tokio-cron-scheduler = "0.9.4"
+ 

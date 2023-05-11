@@ -9,10 +9,7 @@ import { DataResult } from './types';
 
 import {
   Server,
-  Param,
   ServerAction,
-  Feature,
-  ServerFeature,
 } from './types';
 import { ErrorService } from '../errors/error.service';
 
