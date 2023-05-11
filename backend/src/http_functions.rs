@@ -1,13 +1,12 @@
 use std::{time::Duration};
 use std::path::Path;
+use std::io::{Read, Write};
 #[cfg(all(target_os="linux"))]
-use tokio::io::Interest;
-#[cfg(all(target_os="linux"))]
-use tokio::net::UnixStream;
+use std::os::unix::net::{UnixListener, UnixStream};
 
 use http::StatusCode;
 
-use crate::{inmemory};
+use crate::inmemory;
 
 pub const GET: &str = "get";
 pub const POST: &str = "post";
@@ -24,52 +23,47 @@ pub async fn execute_socket_request(
     
     let message = "GET ".to_owned() + body.unwrap_or_default().as_str();
 
-    let socket = Path::new(url.as_str());
+    let socket_path = Path::new(url.as_str());
 
-    let stream = UnixStream::connect(socket).await.unwrap();
 
-    let ready = stream.ready(Interest::READABLE | Interest::WRITABLE).await.unwrap();
+    let mut unix_stream =
+    UnixStream::connect(socket_path).expect("Could not create stream");
+
    
-
-    if ready.is_writable() {
-        // Try to write data, this may still fail with `WouldBlock`
-        // if the readiness event is a false positive.
-        match stream.try_write(message.as_bytes()) {
-            Ok(n) => {
-                println!("write {:?} bytes", n);
-            }
-            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                log::info!("would block");
-            }
-            Err(e) => {
-                log::error!("{}", e);
-            }
-        }
-    }
-
-
-    if ready.is_readable() {
-        let mut data = vec![0; 1024];
-        // Try to read data, this may still fail with `WouldBlock`
-        // if the readiness event is a false positive.
-        match stream.try_read(&mut data) {
-            Ok(n) => {
-                println!("read {} bytes", n);    
-                format!("bytes {:?}", data);
-            }
-            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                log::info!("would block");
-            }
-            Err(e) => {
-                log::error!("{}", e);
-            }
-        }
-
-    }
-    
+    write_request_and_shutdown(&mut unix_stream, message);
+    read_from_stream(&mut unix_stream);
 
     Ok("".to_string())
 }
+
+
+fn write_request_and_shutdown(unix_stream: &mut UnixStream, message: String) {
+    unix_stream
+        .write(message.as_bytes())
+        .expect("Failed at writing onto the unix stream");
+
+    log::info!("We sent a request");
+    log::info!("Shutting down writing on the stream, waiting for response...");
+
+    unix_stream
+        .shutdown(std::net::Shutdown::Write)
+        .expect("Could not shutdown writing on the stream");
+
+    
+}
+
+fn read_from_stream(unix_stream: &mut UnixStream) -> String {
+    let mut response = String::new();
+    unix_stream
+        .read_to_string(&mut response)
+        .expect("Failed at reading the unix stream");
+
+        log::info!("We received this response: {}", response);
+    response
+}
+
+
+
 
 /// Executes an http request on the given url using the given method.
 /// 
