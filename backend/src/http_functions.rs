@@ -2,7 +2,7 @@ use std::{time::Duration};
 use std::path::Path;
 use std::io::{Read, Write};
 #[cfg(all(target_os="linux"))]
-use std::os::unix::net::{UnixListener, UnixStream};
+use std::os::unix::net::UnixStream;
 
 use http::StatusCode;
 
@@ -11,53 +11,67 @@ use crate::inmemory;
 pub const GET: &str = "get";
 pub const POST: &str = "post";
 pub const PUT: &str = "put";
+pub const DELETE: &str = "delete";
+
+const SOCKET_HTTP_POSTFIX: &str = " HTTP/1.1\r\nHost:localhost\r\n\r\n";
 
 #[cfg(all(target_os="linux"))]
 pub async fn execute_socket_request(
-    url: String,
+    path: String,
+    url: &str,
     method: &str,
     headers: Option<Vec<(String, String)>>,
     body: Option<String>
 )  -> Result<String, reqwest::Error> {
     
-    let message = "GET ".to_owned() + body.unwrap_or_default().as_str();
+    
+    let mut request_str = String::new();
 
-    let socket_path = Path::new(url.as_str());
+    match method {
+        GET | POST | DELETE | PUT => {
+            request_str.push_str(method.to_uppercase().as_str());
+            request_str.push_str(" ");
+            request_str.push_str( url);
+            request_str.push_str(SOCKET_HTTP_POSTFIX);
+        },
+        y => { // default is also GET
+            request_str.push_str("GET");
+            request_str.push_str(" ");
+            request_str.push_str( url);
+            request_str.push_str(SOCKET_HTTP_POSTFIX);            
+        }
+    }
 
-
+    let socket_path = Path::new(path.as_str());
+    
     let mut unix_stream =
-    UnixStream::connect(socket_path).expect("Could not create stream");
-
+    UnixStream::connect(&socket_path).expect("Could not create stream");
    
-    write_request_and_shutdown(&mut unix_stream, message);
-    read_from_stream(&mut unix_stream);
-
-    Ok("".to_string())
+    write_request_and_shutdown(&mut unix_stream, request_str);
+    Ok(read_from_stream(&mut unix_stream))
 }
 
-
+#[cfg(all(target_os="linux"))]
 fn write_request_and_shutdown(unix_stream: &mut UnixStream, message: String) {
+    log::debug!("sending message {}", message);
+
     unix_stream
         .write_all(message.as_bytes())
         .expect("Failed at writing onto the unix stream");
 
-    log::info!("We sent a request");
-    log::info!("Shutting down writing on the stream, waiting for response...");
-
     unix_stream
         .shutdown(std::net::Shutdown::Write)
         .expect("Could not shutdown writing on the stream");
-
-    
 }
 
+#[cfg(all(target_os="linux"))]
 fn read_from_stream(unix_stream: &mut UnixStream) -> String {
     let mut response = String::new();
     unix_stream
         .read_to_string(&mut response)
         .expect("Failed at reading the unix stream");
 
-        log::info!("We received this response: {}", response);
+        log::debug!("We received this response: {}", response);
     response
 }
 
