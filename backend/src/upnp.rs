@@ -7,7 +7,7 @@ use std::{
     time::{Duration}, collections::HashMap
 };
 
-use crate::{server_types::{Feature, FeaturesOfServer, Param}, http_functions, plugin_types::Plugin, inmemory};
+use crate::{models::{server::{FeaturesOfServer, Feature, Param}, plugin::Plugin}, datastore, common};
 
 const LOCATION: &str = "location";
 const UPNP: &str = "upnp";
@@ -82,7 +82,7 @@ pub async fn upnp_discover(
 
     let mut serverfeature_by_location: HashMap<String,FeaturesOfServer> = HashMap::new();
 
-    let found = inmemory::get_plugin(UPNP);
+    let found = datastore::get_plugin(UPNP);
     if found.is_none() {
         log::error!("Found no plugin for UPnP - returning empty list");
         return Ok(Vec::new());
@@ -158,7 +158,7 @@ pub async fn parse_device_info_from_location(server_features_with_upnp: Vec<Feat
                     Some( location_param ) =>  {
                         log::info!("found location {} for UPnP device {}", location_param.value, fos.ipaddress);
 
-                        match http_functions::execute_http_request(location_param.value.clone(), http_functions::GET, None, None).await {
+                        match common::execute_http_request(location_param.value.clone(), common::GET, None, None).await {
                             Ok(text) => {
                                 
                                         log::info!("executed request on location {} of UPnP device {}", location_param.value, fos.ipaddress);

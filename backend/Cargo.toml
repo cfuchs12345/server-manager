@@ -3,6 +3,10 @@ name = "server-manager-rust"
 version = "0.1.0"
 edition = "2021"
 
+[build]
+target = "x86_64-pc-windows-msvc"
+
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -36,9 +40,9 @@ thiserror = "1.0.40"
 magic-crypt = "3.1.12"
 hex = "0.4.3"
 ssdp-client = "1.0.0"
-rhai = "1.14.0"
 quick-xml = {version="0.28.2", features=["serialize"]}
 tokio-cron-scheduler = "0.9.4"
 sys-info = "0.9.1" 
 memory-stats = {version="1.0.0", features=["always_use_statm"]} 
+async-trait = "0.1.68"
  

@@ -1,29 +1,19 @@
-mod appdata;
-mod config;
-mod discover;
-mod errors;
 mod init;
-mod persistence;
-mod plugins;
-mod routes;
-mod servers;
-mod types;
-mod features;
-mod plugin_types;
-mod server_types;
-mod config_types;
-mod conversion;
-mod handlebars_helper_functions;
-mod status;
-mod crypt;
-mod migrations;
+
 mod upnp;
-mod http_functions;
-mod inmemory;
 mod systeminfo;
 
-pub fn main() {
-    let result = init::start();
+mod webserver;
+mod commands;
+mod plugin_execution;
+mod datastore;
+mod migrations;
+mod common;
+mod models;
+
+#[actix_web::main]
+pub async fn main() {
+    let result = init::start().await;
 
     if let Some(err) = result.err() {
         println!("Error: {err}");

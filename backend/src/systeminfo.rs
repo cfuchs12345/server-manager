@@ -1,6 +1,6 @@
 use std::{path::Path, net::{IpAddr}};
 
-use crate::{config_types::DNSServer, inmemory, types::SystemInformationEntry};
+use crate::{models::{response::system_information::SystemInformationEntry, config::dns_server::DNSServer}, datastore};
 use sys_info;
 use memory_stats::memory_stats;
 
@@ -62,10 +62,10 @@ pub fn get_systenms_dns_servers() -> Vec<DNSServer> {
         }
     }
     else {
-        if let Ok(dev_server) = inmemory::get_config().get("dev_dns_server1") {
+        if let Ok(dev_server) = datastore::get_config().get("dev_dns_server1") {
             list.push(DNSServer { ipaddress: dev_server, port: 53 })
         }
-        if let Ok(dev_server) = inmemory::get_config().get("dev_dns_server2") {
+        if let Ok(dev_server) = datastore::get_config().get("dev_dns_server2") {
             list.push(DNSServer { ipaddress: dev_server, port: 53 })
         }
 
