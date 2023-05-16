@@ -9,6 +9,8 @@ pub struct SubAction {
     pub action_id: Option<String>,
     #[serde(default)]
     pub action_params: Option<String>,
+    #[serde(default)]
+    pub action_image: Option<String>,
 }
 
 impl From<String> for SubAction {
@@ -20,7 +22,8 @@ impl From<String> for SubAction {
         SubAction {
             feature_id:  map.get("feature.id").map(|v| v.to_owned()),
             action_id: map.get("action.id").map(|v| v.to_owned()),
-            action_params:  map.get("action.params").map(|v| v.to_owned())
+            action_params:  map.get("action.params").map(|v| v.to_owned()),
+            action_image:  map.get("action.image").map(|v| v.to_owned())
          }
     }
 }

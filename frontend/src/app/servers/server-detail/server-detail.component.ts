@@ -152,6 +152,7 @@ class GUISubAction {
   private action_id: string | undefined;
   private action_name: string | undefined;
   private action_params: string | undefined;
+  private action_image: string | undefined;
   private data_id: string | undefined;
 
   constructor(private ipaddress: string,  regexGroup: string, conditionCheckResults: ConditionCheckResult[]) {
@@ -161,6 +162,7 @@ class GUISubAction {
     this.action_id = this.find(split, 'action.id');
     this.action_name = this.find(split, 'action.name');
     this.action_params = this.find(split, 'action.params');
+    this.action_image = this.find(split, 'action.image');
     this.data_id = this.find(split, 'data.id');
 
     this.conditionMet = this.checkCondition(conditionCheckResults);
@@ -183,8 +185,27 @@ class GUISubAction {
 
   generateUIElement = (): string => {
     if (this.conditionMet) {
-      return (
-        '<button onclick="MyServerManagerNS.executeSubAction(\'' +
+      let inner:string = "";
+
+      if( this.action_image !== undefined && this.action_image !== '') {
+        return '<input type="image" src="'+this.action_image+'" alt="'+this.action_name+'" onclick="MyServerManagerNS.executeSubAction(\'' +
+        this.feature_id +
+        "','" +
+        this.action_id +
+        "', '" +
+        this.action_name +
+        "', '" +
+        this.data_id +
+        "','" +
+        this.action_params +
+        "','" +
+        this.ipaddress +
+        '\')"></input>';
+      }
+      else if ( this.action_name !== undefined ) {
+        inner = this.action_name;
+
+        return '<button onclick="MyServerManagerNS.executeSubAction(\'' +
         this.feature_id +
         "','" +
         this.action_id +
@@ -197,9 +218,9 @@ class GUISubAction {
         "','" +
         this.ipaddress +
         '\')">' +
-        this.action_name +
-        '</button>'
-      );
+        inner +
+        '</button>';
+      }
     }
     return '';
   };

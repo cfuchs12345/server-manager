@@ -39,18 +39,18 @@ export class SystemInformationComponent implements OnInit, OnDestroy  {
       case 'memory_stats': {
         const found = this.systemInformation.memory_stats.find( (i) => i.name === name);
 
-        return found !== undefined ? parseFloat((found.value /1024/1024).toFixed(2)) : undefined;
+        return found !== undefined ? this.round(found.value /1024/1024, 2) : undefined;
       }
       case 'memory_usage': {
         const found = this.systemInformation.memory_usage.find( (i) => i.name === name);
 
-        return found !== undefined ? parseFloat((found.value /1024/1024).toFixed(2)) : undefined;
+        return found !== undefined ? this.round(found.value /1024/1024, 2) : undefined;
 
       }
       case 'load_average': {
         const found = this.systemInformation.load_average.find( (i) => i.name === name);
 
-        return found !== undefined ? parseFloat(found.value.toFixed(4)) : undefined;
+        return found !== undefined ? this.round(found.value, 4) : undefined;
 
       }
     }
@@ -59,4 +59,9 @@ export class SystemInformationComponent implements OnInit, OnDestroy  {
     return undefined;
   }
 
+  round = (number: number, digits: number): number => {
+    return parseFloat(number.toFixed(digits));
+  }
+
 }
+

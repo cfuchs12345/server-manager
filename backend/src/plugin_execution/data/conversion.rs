@@ -17,14 +17,16 @@ pub fn convert_result_string_to_html(
     template_engine: &handlebars::Handlebars<'static>,
     data: &Data,
 ) -> Result<String, AppError> {
+    log::info!("Data input is: {}", input);
+
     let data_value = create_data_input_structure(data, input);
-    
+
     format_data_with_template_engine(data_value, template_engine, template)
 }
 
 fn create_data_input_structure(data: &Data, input: String) -> Option<Value> {
     match &data.result_format {
-        ResultFormat::XML => {
+        ResultFormat::XML => { 
             Some(json!(Xml {
                 // wrap the xml in a JSON as content of "data" property
                 data: input
@@ -53,12 +55,14 @@ fn format_data_with_template_engine(
 ) -> Result<String, AppError> {
     match data_value {
         Some(data) => {
+            if data.is_array() && data.as_array().unwrap().is_empty() {
+                return Ok("".to_string()); // no data input - return empty string
+            }
             log::debug!("Putting data into context: {:?}", data);
 
-            let res = engine
-                .render(template, &data);
+            let res = engine.render(template, &data);
             res.map_err(|e| AppError::CouldNotRenderData(format!("{:?}", e)))
         }
-        None => Ok("".to_string()) // no data input - return empty string
+        None => Ok("".to_string()), // no data input - return empty string
     }
 }
