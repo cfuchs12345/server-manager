@@ -18,20 +18,6 @@ pub fn default_decrypt(to_decrypt: &str, crypto_key: &str) -> String {
     mc.decrypt_base64_to_string(to_decrypt).unwrap()
 }
 
-#[allow(dead_code)]
-pub fn encrypt(to_encrypt: String, key: &str) -> String {
-    let mc = new_magic_crypt!(key, 256);
-
-    mc.encrypt_str_to_base64(to_encrypt)
-}
-
-#[allow(dead_code)]
-pub fn decrypt(to_decrypt: String, key: &str) -> String {
-    let mc = new_magic_crypt!(key, 256);
-
-    mc.decrypt_base64_to_string(to_decrypt)
-        .expect("Could not decrypt value. Did you change the crypt key?")
-}
 
 #[cfg(test)]
 mod tests {
@@ -44,11 +30,11 @@ mod tests {
 
     #[test]
     fn test_roundtrip() {
-        let key = "this is a key".to_string();
+        let key = "this is a key";
 
-        let encrypted = encrypt(
-            "this is a text that should be encrypted and decrypted".to_string(),
-            &key,
+        let encrypted = default_encrypt(
+            "this is a text that should be encrypted and decrypted",
+            key,
         );
 
         println!("encrypted value: {}", encrypted);
@@ -58,7 +44,7 @@ mod tests {
             "this is a text that should be encrypted and decrypted"
         );
 
-        let decrypted = decrypt(encrypted, &key);
+        let decrypted = default_decrypt(encrypted.as_str(), key);
 
         assert_eq!(
             &decrypted,
