@@ -19,7 +19,6 @@ pub static DB_FILENAME: &str = "./external_files/server-manager.db";
 
 
 pub async fn start() -> std::io::Result<()> { 
-
     scheduling::start_scheduled_jobs().await;
     one_time_init()?;
     load_env_file();
