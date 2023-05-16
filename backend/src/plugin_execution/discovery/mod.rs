@@ -3,21 +3,24 @@ use futures::future::join_all;
 use ipnet::Ipv4Net;
 use lazy_static::lazy_static;
 use log::{error, warn};
-use rhai::{Scope, Engine};
-use rlua::Lua;
 
 use std::{
-    io::Error,
-    io::ErrorKind,
     net::{IpAddr, SocketAddrV4},
-    vec
+    vec,
 };
 use surge_ping::{Client, Config};
 use tokio::sync::Semaphore;
 
-use crate::{models::{config::dns_server::DNSServer, response::host_information::HostInformation}, models::{server::{Server, FeaturesOfServer, Feature}, plugin::{Plugin, detection::DetectionEntry}}, common, upnp, commands::{self}};
-
-
+use crate::{
+    commands::{self},
+    common,
+    models::{config::dns_server::DNSServer, response::host_information::HostInformation, error::AppError},
+    models::{
+        plugin::{detection::DetectionEntry, Plugin},
+        server::{Feature, FeaturesOfServer, Server},
+    },
+    upnp,
+};
 
 lazy_static! {
     static ref SEMAPHORE_AUTO_DISCOVERY: Semaphore = Semaphore::new(1);
@@ -27,7 +30,7 @@ pub async fn auto_discover_servers_in_network(
     network_as_string: &String,
     lookup_names: bool,
     dns_servers: Vec<DNSServer>,
-) -> Result<Vec<HostInformation>, std::io::Error> {
+) -> Result<Vec<HostInformation>, AppError> {
     let permit = SEMAPHORE_AUTO_DISCOVERY.acquire().await.unwrap();
 
     log::debug!(
@@ -44,7 +47,7 @@ pub async fn auto_discover_servers_in_network(
                 "Could not parse network {:?}. Error was {:?}",
                 network_as_string, e
             );
-            return Err(std::io::Error::from(ErrorKind::InvalidData));
+            return Err(AppError::InvalidArgument("network".to_owned(), Some(network_as_string.to_owned())));
         }
     };
 
@@ -54,25 +57,19 @@ pub async fn auto_discover_servers_in_network(
 
 pub async fn discover_features_of_all_servers(
     servers: Vec<Server>,
-    upnp_activated: bool
+    upnp_activated: bool,
 ) -> Result<Vec<FeaturesOfServer>, std::io::Error> {
-    
     let wait_time_for_upnp = 15; // in seconds
-    
-   
 
     let upnp_future = upnp::upnp_discover(wait_time_for_upnp, upnp_activated);
 
     // list of async tasks executed by tokio
     let mut tasks = Vec::new();
     for server in servers {
-        let ipaddress = server.ipaddress.clone();
+        let ip_address = server.ipaddress.clone();
 
-        tasks.push(tokio::spawn(async move {
-            discover_features(
-                ipaddress.as_str()
-            )
-            .await
+        tasks.push(tokio::spawn( async move {
+            discover_features(ip_address.as_str()).await
         }));
     }
 
@@ -81,10 +78,11 @@ pub async fn discover_features_of_all_servers(
 
     let mut features_from_plugin_discovery: Vec<FeaturesOfServer> = result
         .iter()
-        .map(move |r| r.as_ref().unwrap())
-        .map(move |r| r.as_ref().unwrap().to_owned())
-        .filter(|f| !f.features.is_empty())
+        .map(|f| f.as_ref().unwrap())
+        .map(|f| f.as_ref().unwrap())
+        .map(|f| f.to_owned())
         .collect();
+
 
     let mut features_from_upnp_discovery = upnp_future.await?;
 
@@ -94,18 +92,14 @@ pub async fn discover_features_of_all_servers(
     ))
 }
 
-
-
-pub async fn discover_features(
-    ipaddress: &str
-) -> Result<FeaturesOfServer, std::io::Error> {
+pub async fn discover_features(ipaddress: &str) -> Result<FeaturesOfServer, std::io::Error> {
     let mut features_of_server = FeaturesOfServer {
         ipaddress: ipaddress.to_string(),
         features: vec![],
     };
 
     let client = common::create_http_client();
-    
+
     let plugins = crate::datastore::get_all_plugins();
 
     for plugin in plugins {
@@ -164,13 +158,13 @@ async fn auto_discover_servers(
     network: &Ipv4Net,
     lookup_names: bool,
     dns_servers: Vec<DNSServer>,
-) -> Result<Vec<HostInformation>, std::io::Error> {
+) -> Result<Vec<HostInformation>, AppError> {
     let socket_addresses = parse_ip_and_port_into_socket_address(dns_servers);
 
     let hosts = network.hosts();
 
     if hosts.count() > 512 {
-        return Err(std::io::Error::from(ErrorKind::InvalidData));
+        return Err(AppError::InvalidArgument("Too many hosts in the network".to_owned(), None));
     }
 
     let list = match Client::new(&Config::default()) {
@@ -221,7 +215,10 @@ fn merge_features(
             .iter()
             .find(|r| r.ipaddress == feature_list2.ipaddress)
         {
-            feature_list1.to_owned().features.append(&mut feature_list2.features);
+            feature_list1
+                .to_owned()
+                .features
+                .append(&mut feature_list2.features);
         } else {
             result.push(feature_list2.to_owned());
         }
@@ -240,7 +237,7 @@ fn parse_ip_and_port_into_socket_address(dns_servers: Vec<DNSServer>) -> Vec<Soc
 }
 
 fn concat_ip_and_port(dns_server: &DNSServer) -> String {
-    dns_server.ipaddress.to_owned() + ":" + dns_server.port.to_string().as_str()
+    format!("{}:{}", dns_server.ipaddress, dns_server.port)
 }
 
 async fn discover_host(
@@ -249,13 +246,17 @@ async fn discover_host(
     lookup_names: bool,
     upsstream_server: Vec<UpstreamServer>,
 ) -> HostInformation {
-    let ping_response = commands::ping::ping(addr, client_v4);
+    let ping_response_fut = commands::ping::ping(addr, client_v4);
 
-    let is_running = ping_response.await;
+    let lookup_hostname_fut = match lookup_names {
+        true => Some(lookup_hostname(addr, upsstream_server)),
+        false => None
+    };    
 
-    let dnsnames = match lookup_names {
-        true => lookup_hostname(addr, upsstream_server).await,
-        false => vec![],
+    let is_running = ping_response_fut.await;
+    let dnsnames = match lookup_hostname_fut {
+        Some(servers) => servers.await,
+        None => Vec::new()
     };
 
     HostInformation {
@@ -271,7 +272,6 @@ async fn lookup_hostname(addr: IpAddr, upsstream_server: Vec<UpstreamServer>) ->
 
     result.unwrap()
 }
-
 
 fn get_urls_for_check(detection_entry: &DetectionEntry, ipaddress: &str) -> Vec<String> {
     detection_entry
@@ -306,48 +306,23 @@ async fn check_plugin_match(input: &str, plugin: &Plugin) -> bool {
     }
 }
 
-pub fn plugin_detect_match(plugin: &Plugin, input: &str) -> Result<bool, Error> {
+pub fn plugin_detect_match(plugin: &Plugin, input: &str) -> Result<bool, AppError> {
     let script = plugin.detection.script.script.clone();
     let script_type = plugin.detection.script.script_type.clone();
 
     let is_lua = matches!(script_type.as_str(), "lua");
     let is_rhai = matches!(script_type.as_str(), "rhai");
 
-    if !is_lua && !is_rhai {
-        return Err(Error::new(
-            std::io::ErrorKind::Other,
-            "Only LUA and RHAI scripts are currently supported",
-        ));
-    }
 
-    let mut result = false;
-    
     if is_lua {
-        let lua = Lua::new();
-
-        lua.context(|lua_ctx| {
-            let globals = lua_ctx.globals();
-            globals
-                .set("input", "[[".to_string() + input + "]]")
-                .expect("Could not set global value");
-
-            result = lua_ctx.load(&script).eval().unwrap();
-        });
+        Ok(common::match_with_lua(input, &script))
+    } else if is_rhai {
+        Ok(common::match_with_rhai(input, &script))
     }
-    else if is_rhai {
-        let mut scope = Scope::new();
-        
-        scope.push("input", input.to_owned());
-
-        let engine = Engine::new();        
-        if let Ok(value) = engine.eval_with_scope::<bool>(&mut scope, &script) {
-            result = value;
-        }
+    else {
+        Err(AppError::InvalidArgument("script".to_string(), Some(script_type)))
     }
-
-    Ok(result)
 }
-
 
 
 #[cfg(test)]
@@ -386,4 +361,5 @@ mod tests {
 
         assert_eq!(true, result.unwrap());
     }
+
 }

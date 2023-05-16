@@ -3,12 +3,21 @@ mod conversion;
 use lazy_static::lazy_static;
 use regex::Regex;
 
-use crate::{models::{server::{Server, Feature}, error::AppError, plugin::{Plugin, data::Data, sub_action::SubAction}, input::ActionOrDataInput, response::data_result::DataResult}, commands, datastore, plugin_execution::actions};
+use crate::{
+    commands, datastore,
+    models::{
+        error::AppError,
+        input::ActionOrDataInput,
+        plugin::{data::Data, sub_action::SubAction, Plugin},
+        response::data_result::DataResult,
+        server::{Feature, Server},
+    },
+    plugin_execution::actions,
+};
 
 lazy_static! {
     static ref TEMPLATE_SUB_ACTION_REGEX: Regex = Regex::new(r"(\[\[Action .*?\]\])").unwrap();
 }
-
 
 /// Executes all data queries on the given server for all given plugins
 /// # Arguments
@@ -19,7 +28,7 @@ lazy_static! {
 pub async fn execute_data_query(
     server: &Server,
     template_engine: &handlebars::Handlebars<'static>,
-    crypto_key: &str,
+    crypto_key: String,
 ) -> Result<Vec<DataResult>, AppError> {
     let mut results: Vec<DataResult> = vec![];
 
@@ -36,26 +45,32 @@ pub async fn execute_data_query(
             log::debug!("Plugin data execute {} {}", plugin.id, data.id);
 
             if !data.output {
-                log::debug!("Skipping data entry {} of plugin {} since it is marked as output = false", data.id, plugin.id);
+                log::debug!(
+                    "Skipping data entry {} of plugin {} since it is marked as output = false",
+                    data.id,
+                    plugin.id
+                );
                 continue;
             }
-            let data_response =
-                execute_specific_data_query(server, &plugin, feature, data, None, crypto_key)
-                    .await?;
+            let data_response = execute_specific_data_query(
+                server,
+                &plugin,
+                feature,
+                data,
+                None,
+                crypto_key.as_str(),
+            )
+            .await?;
 
-
-
-            
             if let Some(response) = data_response {
                 let result = if !data.template.is_empty() {
                     // convert the output with the template
-                    conversion::convert_json_to_html(
+                    conversion::convert_result_string_to_html(
                         data.template.as_str(),
                         response,
                         template_engine,
                         data,
                     )?
-
                 } else {
                     // no template - just append
                     response
@@ -64,13 +79,15 @@ pub async fn execute_data_query(
                 let enriched_result = inject_meta_data_for_actions(result, feature, data);
 
                 let actions = extract_actions(&enriched_result);
-                
-                let check_results = actions::check_action_conditions(server, actions, crypto_key).await;
+
+                let check_results =
+                    actions::check_action_conditions(server.clone(), actions, crypto_key.clone())
+                        .await;
                 log::info!("-- {:?}", check_results);
-                results.push(DataResult{
+                results.push(DataResult {
                     ipaddress: server.ipaddress.clone(),
                     result: enriched_result,
-                    check_results
+                    check_results,
                 });
             }
         }
@@ -78,7 +95,6 @@ pub async fn execute_data_query(
 
     Ok(results)
 }
-
 
 /// Executes a specific data query on the given server for a given data point config of a plugin
 /// # Arguments
@@ -102,20 +118,26 @@ pub async fn execute_specific_data_query(
     commands::execute_command(Some(server.ipaddress.clone()), &input).await
 }
 
-
-
-
 fn extract_actions(input: &str) -> Vec<SubAction> {
     let mut result = Vec::new();
-    let groups: Vec<String> = TEMPLATE_SUB_ACTION_REGEX.find_iter(input).map(|mat| mat.as_str().to_owned()).collect();
+    let groups: Vec<String> = TEMPLATE_SUB_ACTION_REGEX
+        .find_iter(input)
+        .map(|mat| mat.as_str().to_owned())
+        .collect();
     for group in groups {
         result.push(SubAction::from(group));
     }
-    
+
     result
 }
 
-
-fn inject_meta_data_for_actions(input : String, feature: &Feature, data: &Data) -> String {    
-    input.replace("[[Action ", format!("[[Action feature.id=\"{}\" data.id=\"{}\" ", feature.id, data.id).as_str())
+fn inject_meta_data_for_actions(input: String, feature: &Feature, data: &Data) -> String {
+    input.replace(
+        "[[Action ",
+        format!(
+            "[[Action feature.id=\"{}\" data.id=\"{}\" ",
+            feature.id, data.id
+        )
+        .as_str(),
+    )
 }

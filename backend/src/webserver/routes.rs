@@ -151,7 +151,7 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
             let action_id: &String = params_map.get("action_id").unwrap();
             let action_params = params_map.get_as_str("action_params");
             
-            let feature_res = server.find_feature(feature_id.clone());
+            let feature_res = server.find_feature(feature_id);
 
             if feature_res.is_none() {
                 log::error!("Feature id {} not found for server {:?}", feature_id, server);
@@ -159,7 +159,7 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
             }
             let crypto_key = datastore::get_crypto_key();
 
-            match plugin_execution::execute_action(&server, feature_res.unwrap(), action_id, action_params, crypto_key).await {
+            match plugin_execution::execute_action(&server, &feature_res.unwrap(), action_id, action_params, crypto_key).await {
                 Ok(result) => HttpResponse::Ok().json(result),
                 Err(err) =>  HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
             }
@@ -167,7 +167,7 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
         ServerActionType::QueryData => {       
             let crypto_key = datastore::get_crypto_key();
 
-            match plugin_execution::execute_data_query(&server, &data.app_data_template_engine, crypto_key.as_str()).await {
+            match plugin_execution::execute_data_query(&server, &data.app_data_template_engine, crypto_key).await {
                 Ok(results) => {
                     log::info!("{:?}", results);
                     HttpResponse::Ok().json(results)

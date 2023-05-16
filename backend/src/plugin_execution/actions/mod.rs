@@ -1,5 +1,7 @@
 mod conditions;
 
+use futures::future::join_all;
+
 use crate::{commands, datastore, models::{plugin::sub_action::SubAction, server::{Server, Feature}, error::AppError, input::ActionOrDataInput}, models::response::data_result::ConditionCheckResult};
 
 
@@ -63,24 +65,29 @@ pub async fn execute_action(
 
 
 
-pub async fn check_action_conditions(server: &Server, sub_actions: Vec<SubAction>, crypto_key: &str) -> Vec<ConditionCheckResult>{
-    let mut results = Vec::new();
-
+pub async fn check_action_conditions(server: Server, sub_actions: Vec<SubAction>, crypto_key: String) -> Vec<ConditionCheckResult>{
+    
+    let mut tasks = Vec::new();
     for sub_action in &sub_actions {
         if sub_action.feature_id.is_none() || sub_action.action_id.is_none() {
             continue;
         }
-        let feature = server.find_feature(sub_action.feature_id.as_ref().unwrap().to_owned());
+
+        let feature = server.find_feature(sub_action.feature_id.as_ref().unwrap());
         let plugin = datastore::get_plugin(sub_action.feature_id.as_ref().unwrap().as_str());
         
         if plugin.is_none() {
             continue;
         }
 
-        let res = conditions::check_condition_for_action_met(server, feature,  plugin.unwrap().find_action(sub_action.action_id.as_ref().unwrap().as_str()), sub_action.action_params.clone(), crypto_key).await;
-        results.push(res);
+        tasks.push(tokio::spawn(
+            conditions::check_condition_for_action_met(server.clone(), feature,  plugin.unwrap().find_action(sub_action.action_id.as_ref().unwrap().as_str()).map(|v| v.to_owned()), sub_action.action_params.clone(), crypto_key.clone())));
     }
-    results
+    let results = join_all(tasks).await;    
+    
+    let vec:Vec<ConditionCheckResult> = results.iter().map(|r| r.as_ref().unwrap().to_owned()).collect();
+    log::debug!("number of results is {}", vec.len());
+    vec
 }
 
 

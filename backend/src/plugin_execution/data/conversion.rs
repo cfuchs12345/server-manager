@@ -1,59 +1,64 @@
-use serde::{Serialize, Deserialize};
-use serde_json::{Value, json};
+use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
 
-use crate::models::{plugin::data::{Data, ResultFormat}, error::AppError};
-
+use crate::models::{
+    error::AppError,
+    plugin::data::{Data, ResultFormat},
+};
 
 #[derive(Serialize, Deserialize)]
 struct Xml {
-    data: String
+    data: String,
 }
 
-pub fn convert_json_to_html(
+pub fn convert_result_string_to_html(
     template: &str,
     input: String,
     template_engine: &handlebars::Handlebars<'static>,
     data: &Data,
 ) -> Result<String, AppError> {
-    let engine = template_engine.clone();
+    let data_value = create_data_input_structure(data, input);
+    
+    format_data_with_template_engine(data_value, template_engine, template)
+}
 
-    let data_value: Option<Value> = match &data.result_format {
+fn create_data_input_structure(data: &Data, input: String) -> Option<Value> {
+    match &data.result_format {
         ResultFormat::XML => {
-            Some(json!(Xml { // wrap the xml in a JSON as content of "data" property
+            Some(json!(Xml {
+                // wrap the xml in a JSON as content of "data" property
                 data: input
             }))
-        },
-        _ => {
-            match serde_json::from_str(input.as_str()) {
-                Ok(val) => Some(val),
-                Err(err) => {
-                    if !input.trim().is_empty() {
-                        log::error!("input '{}' was no valid json. Resulted in the following error: {}", input, err);
-                    }                        
-                    None
+        }
+        ResultFormat::JSON => match serde_json::from_str(input.as_str()) {
+            Ok(val) => Some(val),
+            Err(err) => {
+                if !input.trim().is_empty() {
+                    log::error!(
+                        "input '{}' was no valid json. Resulted in the following error: {}",
+                        input,
+                        err
+                    );
                 }
+                None
             }
-        }
-    }; 
-
-    let res_string = if let Some(data) = data_value {
-        log::debug!("Putting data into context: {:?}", data);
-
-        let result = engine
-            .render(template, &data)
-            .map_err(|err| AppError::Unknown(Box::new(err)));  
-
-
-        if let Ok(rendered) = result {
-            rendered
-        }
-        else {
-            log::error!("Error during template rendering: {:?}", &result);
-            "".to_string()
-        }
+        },
     }
-    else {
-        "".to_string()
-    };
-    Ok(res_string)
+}
+
+fn format_data_with_template_engine(
+    data_value: Option<Value>,
+    engine: &handlebars::Handlebars,
+    template: &str,
+) -> Result<String, AppError> {
+    match data_value {
+        Some(data) => {
+            log::debug!("Putting data into context: {:?}", data);
+
+            let res = engine
+                .render(template, &data);
+            res.map_err(|e| AppError::CouldNotRenderData(format!("{:?}", e)))
+        }
+        None => Ok("".to_string()) // no data input - return empty string
+    }
 }

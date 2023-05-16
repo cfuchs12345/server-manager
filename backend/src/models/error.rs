@@ -8,6 +8,7 @@ pub enum AppError {
     UnknownPluginData(String,String),
     Unknown(Box<dyn Error>),
     MissingArgument(String),
+    CouldNotRenderData(String)
 }
 
 impl AppError {

@@ -18,8 +18,8 @@ impl PartialEq for Server {
 }
 
 impl Server {
-    pub fn find_feature( &self, feature_id: String) -> Option<&Feature> {
-        self.features.iter().find(|f| f.id == feature_id)
+    pub fn find_feature( &self, feature_id: &str) -> Option<Feature> {
+        self.features.iter().find(|f| f.id == feature_id).cloned()
     }
 }
 

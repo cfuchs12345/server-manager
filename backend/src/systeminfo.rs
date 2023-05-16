@@ -1,7 +1,6 @@
 use std::{path::Path, net::{IpAddr}};
 
 use crate::{models::{response::system_information::SystemInformationEntry, config::dns_server::DNSServer}, datastore};
-use sys_info;
 use memory_stats::memory_stats;
 
 
