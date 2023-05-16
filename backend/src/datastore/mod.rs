@@ -41,7 +41,7 @@ pub use crate::datastore::inmemory::get_all_plugins_map;
 pub use crate::datastore::inmemory::get_status;
 pub use crate::datastore::inmemory::clean_plugin_cache;
 
-pub fn init() {
+pub fn init_cache() {
     if let Ok(number) = plugins::init_cache() {
         log::debug!("Loaded {} plugins into cache", number);
     };

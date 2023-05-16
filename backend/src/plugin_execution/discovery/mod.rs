@@ -19,7 +19,7 @@ use crate::{
         plugin::{detection::DetectionEntry, Plugin},
         server::{Feature, FeaturesOfServer, Server},
     },
-    upnp,
+    other_functions::upnp,
 };
 
 lazy_static! {

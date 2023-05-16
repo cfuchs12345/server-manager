@@ -5,6 +5,7 @@ use super::{persistence::{Persistence}, Entry};
 
 
 const TABLE_DNS_SERVERS: &str = "dns_servers";
+const TABLE_ENCRYPTION: &str = "encryption";
 
 fn json_to_dnsserver(json: &str) -> DNSServer {
     serde_json::from_str(json).unwrap()
@@ -51,7 +52,7 @@ pub async fn load_all_dnsservers(persistence: &Persistence) -> Result<Vec<DNSSer
 pub async fn insert_new_encryption_key(persistence: &Persistence) {
     persistence
         .insert(
-            "encryption",
+            TABLE_ENCRYPTION,
             Entry {
                 key: "default".to_string(),
                 value: common::get_random_key32().unwrap(),

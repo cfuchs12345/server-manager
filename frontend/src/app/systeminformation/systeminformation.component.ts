@@ -21,6 +21,8 @@ export class SystemInformationComponent implements OnInit, OnDestroy  {
         this.systemInformation = info;
       }
     );
+
+    this.generalService.getSystemInformation();
   }
   ngOnDestroy(): void {
     if( this.systemInformationSubscription ) {
@@ -28,27 +30,27 @@ export class SystemInformationComponent implements OnInit, OnDestroy  {
     }
   }
 
-  find = (infoType: 'mem_stats' | 'memory_usage' | 'load_average', name: string ): number | undefined => {
+  find = (infoType: 'memory_stats' | 'memory_usage' | 'load_average', name: string ): number | undefined => {
     if(this.systemInformation === undefined) {
       return undefined;
     }
 
     switch(infoType) {
-      case 'mem_stats': {
-        const found = this.systemInformation.mem_stats.find( (i) => i.name === name);
+      case 'memory_stats': {
+        const found = this.systemInformation.memory_stats.find( (i) => i.name === name);
 
-        return found !== undefined ? found.value : undefined;
+        return found !== undefined ? parseFloat((found.value /1024/1024).toFixed(2)) : undefined;
       }
       case 'memory_usage': {
         const found = this.systemInformation.memory_usage.find( (i) => i.name === name);
 
-        return found !== undefined ? found.value : undefined;
+        return found !== undefined ? parseFloat((found.value /1024/1024).toFixed(2)) : undefined;
 
       }
       case 'load_average': {
         const found = this.systemInformation.load_average.find( (i) => i.name === name);
 
-        return found !== undefined ? found.value : undefined;
+        return found !== undefined ? parseFloat(found.value.toFixed(4)) : undefined;
 
       }
     }

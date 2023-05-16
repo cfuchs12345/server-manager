@@ -9,12 +9,12 @@ pub fn create_templateengine() -> handlebars::Handlebars<'static> {
 
     log::debug!("dir: {}", template_base_path);
 
-    create_and_configure_template_engine(&template_base_path)
+    configure(&template_base_path)
 }
 
 
 
-fn create_and_configure_template_engine(
+fn configure(
     template_base_path: &str,
 ) -> handlebars::Handlebars<'static> {
     let mut handlebars = handlebars::Handlebars::new();

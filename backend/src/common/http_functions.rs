@@ -15,6 +15,8 @@ pub const DELETE: &str = "delete";
 const SOCKET_HTTP_POSTFIX: &str = " HTTP/1.1\r\nHost:localhost\r\n\r\n";
 
 
+
+
 #[cfg(all(target_os="linux"))]
 pub async fn execute_socket_request(
     path: String,
@@ -24,6 +26,8 @@ pub async fn execute_socket_request(
     body: Option<String>
 )  -> Result<String, reqwest::Error> {
     
+    //#[cfg(all(target_os="linux"))]
+    //http_functions::execute_socket_request( "/var/run/docker.sock".to_string(), "/containers/json", http_functions::GET, None, None).await.unwrap();
     
     let mut request_str = String::new();
 

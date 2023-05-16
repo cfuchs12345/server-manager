@@ -166,13 +166,8 @@ pub async fn is_plugin_disabled(plugin_id: &str, persistence: &Persistence) ->  
 
 #[cfg(test)]
 mod tests {
-
-    use config::Config;
-
-    
-
+    use config::Config;    
     use crate::models::plugin::{detection::{Detection, DetectionEntry}, common::{Script, ArgDef}, action::{Action, State}};
-
     use super::*;
 
     #[test]

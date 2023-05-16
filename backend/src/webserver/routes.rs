@@ -9,7 +9,7 @@ use crate::models::response::status::Status;
 use crate::models::response::system_information::SystemInformation;
 use crate::models::server::Server;
 use crate::webserver::appdata::AppData;
-use crate::{systeminfo, datastore, plugin_execution};
+use crate::{other_functions::systeminfo, datastore, plugin_execution};
 
 
 
@@ -300,7 +300,7 @@ pub async fn delete_dnsservers(data: web::Data<AppData>, path: web::Path<String>
     }
 }
 
-#[put("/backend/system/information")]
+#[get("/backend/system/information")]
 pub async fn get_system_information() -> HttpResponse {
       HttpResponse::Ok().json(SystemInformation {
         load_average: systeminfo::get_load_info(),

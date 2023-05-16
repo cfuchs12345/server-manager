@@ -8,7 +8,7 @@ pub fn get_memory_stats() -> Vec<SystemInformationEntry> {
     match memory_stats() {
         Some(memory_stats) => {
             
-            vec![ SystemInformationEntry::new_usize("pysical", memory_stats.physical_mem), SystemInformationEntry::new_usize("virtual", memory_stats.virtual_mem)]
+            vec![ SystemInformationEntry::new_usize("physical", memory_stats.physical_mem), SystemInformationEntry::new_usize("virtual", memory_stats.virtual_mem)]
         },
         None => {
             log::error!("Could not get memory stats.");

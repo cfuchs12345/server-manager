@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use serde_json::Value as Json;
 use handlebars::{Helper, Handlebars, Context, RenderContext, Output, HelperResult, handlebars_helper};
 
-use crate::upnp;
+use crate::other_functions::upnp;
 
 fn sort_fct(
     h: &Helper,
@@ -154,19 +154,6 @@ fn parse_xml_input_as_upnp_device_fct(
 
 
 
-
-
-
-handlebars_helper!(readable_time: |secs: Json| to_readable_time(secs));
-handlebars_helper!(readable_mem: |mem: Json| to_readable_mem(mem));
-
-pub fn register(handlebars: &mut Handlebars) {
-    handlebars.register_helper("readable-time", Box::new(readable_time));
-    handlebars.register_helper("readable-mem", Box::new(readable_mem));
-    handlebars.register_helper("sort", Box::new(sort_fct));
-    handlebars.register_helper("data_to_upnp_device", Box::new(parse_xml_input_as_upnp_device_fct));
-}
-
 fn to_readable_mem( value: &Json) -> String {
     if value.is_i64() {
         match value.as_i64() {
@@ -204,4 +191,16 @@ fn to_readable_time( value: &Json) -> String {
     else {
         value.as_str().unwrap().to_owned()
     }
+}
+
+
+
+handlebars_helper!(readable_time: |secs: Json| to_readable_time(secs));
+handlebars_helper!(readable_mem: |mem: Json| to_readable_mem(mem));
+
+pub fn register(handlebars: &mut Handlebars) {
+    handlebars.register_helper("readable-time", Box::new(readable_time));
+    handlebars.register_helper("readable-mem", Box::new(readable_mem));
+    handlebars.register_helper("sort", Box::new(sort_fct));
+    handlebars.register_helper("data_to_upnp_device", Box::new(parse_xml_input_as_upnp_device_fct));
 }

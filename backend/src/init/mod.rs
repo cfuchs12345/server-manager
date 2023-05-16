@@ -19,8 +19,6 @@ pub static DB_FILENAME: &str = "./external_files/server-manager.db";
 
 
 pub async fn start() -> std::io::Result<()> { 
-    //#[cfg(all(target_os="linux"))]
-    //http_functions::execute_socket_request( "/var/run/docker.sock".to_string(), "/containers/json", http_functions::GET, None, None).await.unwrap();
 
     scheduling::start_scheduled_jobs().await;
     one_time_init()?;
@@ -93,7 +91,7 @@ fn init_config() {
 
     datastore::set_config(config);    
     env_logger::init();
-    datastore::init();    
+    datastore::init_cache();    
 }
 
 async fn init_config_post_db(persistence: &Persistence) {

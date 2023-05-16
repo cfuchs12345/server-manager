@@ -33,7 +33,7 @@ export class DNSServer {
 }
 
 export class SystemInformation {
-  constructor( public mem_stats: SystemInformationEntry[],  public memory_usage: SystemInformationEntry[],  public load_average: SystemInformationEntry[]) {};
+  constructor( public memory_stats: SystemInformationEntry[],  public memory_usage: SystemInformationEntry[],  public load_average: SystemInformationEntry[]) {};
 }
 
 export class SystemInformationEntry {
