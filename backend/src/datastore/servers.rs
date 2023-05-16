@@ -1,5 +1,5 @@
 
-use crate::models::server::Server;
+use crate::models::{server::Server, error::AppError};
 
 use super::{persistence::{Persistence}, inmemory, Entry};
 
@@ -23,21 +23,21 @@ fn server_to_entry(server: &Server) -> Entry {
     }    
 }
 
-pub async fn insert_server(persistence: &Persistence, server: &Server) -> Result<bool, std::io::Error> {
+pub async fn insert_server(persistence: &Persistence, server: &Server) -> Result<bool, AppError> {
     inmemory::add_server(server);
     let result = persistence.insert(TABLE, server_to_entry(server)).await.unwrap();
 
     Ok(result > 0)
 }
 
-pub async fn update_server(persistence: &Persistence, server: &Server) -> Result<bool, std::io::Error> {
+pub async fn update_server(persistence: &Persistence, server: &Server) -> Result<bool, AppError> {
     inmemory::add_server(server);
     let result = persistence.update(TABLE, server_to_entry(server)).await.unwrap();
 
     Ok(result > 0)
 }
 
-pub async fn delete_server(persistence: &Persistence, ipaddress: &str) -> Result<bool, std::io::Error> {
+pub async fn delete_server(persistence: &Persistence, ipaddress: &str) -> Result<bool, AppError> {
     inmemory::remove_server(ipaddress);
     let result = persistence.delete(TABLE, ipaddress).await.unwrap();
 
@@ -46,7 +46,7 @@ pub async fn delete_server(persistence: &Persistence, ipaddress: &str) -> Result
 
 
 
-pub async fn load_all_servers(persistence: &Persistence, use_cache: bool) -> Result<Vec<Server>,  std::io::Error> {
+pub async fn load_all_servers(persistence: &Persistence, use_cache: bool) -> Result<Vec<Server>, AppError> {
     if use_cache {
         Ok(inmemory::get_all_servers())
     }
@@ -57,14 +57,14 @@ pub async fn load_all_servers(persistence: &Persistence, use_cache: bool) -> Res
     }
 }
 
-pub async fn get_server(persistence: &Persistence, ipaddress: String)  -> Result<Server,  std::io::Error> {
+pub async fn get_server(persistence: &Persistence, ipaddress: String)  -> Result<Server, AppError> {
     let opt = persistence.get(TABLE, &ipaddress).await.unwrap();
     match opt {
         Some(entry) => {
             Ok(json_to_server(&entry.value))
         },
         None => {
-            Err(std::io::Error::new(std::io::ErrorKind::NotFound, format!("Could not find server for ip address {}", ipaddress)))
+            Err(AppError::ServerNotFound(ipaddress))
         }
     }
 }

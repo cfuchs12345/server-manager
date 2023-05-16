@@ -1,6 +1,6 @@
-use crate::{models::config::dns_server::DNSServer, common};
+use crate::{models::{config::dns_server::DNSServer, error::AppError}, common};
 
-use super::{persistence::{Persistence}, Entry};
+use super::{persistence::Persistence, Entry};
 
 
 
@@ -25,21 +25,21 @@ fn dnsserver_to_entry(server: &DNSServer) -> Entry {
 }
 
 
-pub async fn insert_dnsserver(persistence: &Persistence, server: &DNSServer) -> Result<bool, std::io::Error> {
+pub async fn insert_dnsserver(persistence: &Persistence, server: &DNSServer) -> Result<bool, AppError> {
     let result = persistence.insert(TABLE_DNS_SERVERS, dnsserver_to_entry(server)).await.unwrap();
 
     Ok(result > 0)
 }
 
 
-pub async fn delete_dnsserver(persistence: &Persistence, ipaddress: &str) -> Result<bool, std::io::Error> {
+pub async fn delete_dnsserver(persistence: &Persistence, ipaddress: &str) -> Result<bool, AppError> {
     let result = persistence.delete(TABLE_DNS_SERVERS, ipaddress).await.unwrap();
 
     Ok(result > 0)
 }
 
 
-pub async fn load_all_dnsservers(persistence: &Persistence) -> Result<Vec<DNSServer>,  std::io::Error> {
+pub async fn load_all_dnsservers(persistence: &Persistence) -> Result<Vec<DNSServer>, AppError> {
     let server_entries = persistence.get_all(TABLE_DNS_SERVERS).await.unwrap();
 
 

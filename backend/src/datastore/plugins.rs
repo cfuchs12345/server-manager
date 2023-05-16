@@ -4,10 +4,10 @@ use lazy_static::lazy_static;
 use log::debug;
 
 use std::collections::HashMap;
-use std::io::Error;
 use std::{fs::File, io::BufReader};
 
 use crate::datastore;
+use crate::models::error::AppError;
 use crate::models::plugin::Plugin;
 
 use super::persistence::Persistence;
@@ -19,7 +19,7 @@ lazy_static! {
     static ref  PLUGIN_NAME_TO_FILENAME: Mutex<HashMap<String,String>> =  Mutex::new(HashMap::new());
 }
 
-pub fn get_all_plugin_filenames(plugin_base_path: &str) -> Result<Vec<String>, Error> {
+pub fn get_all_plugin_filenames(plugin_base_path: &str) -> Result<Vec<String>, AppError> {
     let mut plugin_file_names: Vec<String> = vec![];
 
     let paths = std::fs::read_dir(plugin_base_path)?;
@@ -41,7 +41,7 @@ pub fn init_cache_silent() {
     }
 }
 
-pub fn init_cache() -> Result<usize, Error>{
+pub fn init_cache() -> Result<usize, AppError>{
 
     let plugins = futures::executor::block_on(
         load_all()
@@ -54,7 +54,7 @@ pub fn init_cache() -> Result<usize, Error>{
     Ok(len)
 }
 
-async fn load_all() -> Result<Vec<Plugin>, Error> {
+async fn load_all() -> Result<Vec<Plugin>, AppError> {
     datastore::clean_plugin_cache();
     let plugin_base_path = datastore::get_config().get_string("plugin_base_path").unwrap();
 
@@ -75,7 +75,7 @@ async fn load_all() -> Result<Vec<Plugin>, Error> {
 
 
 
-pub async fn load_plugin(plugin_base_path: &str, plugin_file_name: &str) -> Result<Plugin, Error> {
+pub async fn load_plugin(plugin_base_path: &str, plugin_file_name: &str) -> Result<Plugin, AppError> {
     match File::open(plugin_base_path.to_owned() + "/" + plugin_file_name) {
         Ok(file) => {
             let reader = BufReader::new(file);
@@ -88,15 +88,15 @@ pub async fn load_plugin(plugin_base_path: &str, plugin_file_name: &str) -> Resu
                 }
                 Err(err) => {
                     log::error!("Error while parsing plugin file {} was: {}", plugin_file_name,  err);
-                    Err(Error::from(err))
+                    Err(AppError::from(err))
                 }
             }
         }
-        Err(err) => Err(err),
+        Err(err) => Err(AppError::from(err)),
     }
 }
 
-pub async fn get_disabled_plugins(persistence: &Persistence) -> Result<Vec<String>, Error>{
+pub async fn get_disabled_plugins(persistence: &Persistence) -> Result<Vec<String>, AppError>{
     match persistence.get(TABLE_PLUGIN_CONFIG, "disabled_ids").await {
         Ok(res) => {
             match  res {
@@ -108,16 +108,13 @@ pub async fn get_disabled_plugins(persistence: &Persistence) -> Result<Vec<Strin
                 }
             }            
         }
-        Err(_err) => {
-            Err(Error::new(
-                std::io::ErrorKind::Other,
-                "Could not load disabled plugins from database",
-            ))
+        Err(err) => {
+            Err(AppError::from(err))
         }
     }
 }
 
-pub async fn disable_plugins(persistence: &Persistence, plugin_ids: Vec<String>) -> Result<bool, Error> {
+pub async fn disable_plugins(persistence: &Persistence, plugin_ids: Vec<String>) -> Result<bool, AppError> {
     match persistence.delete(TABLE_PLUGIN_CONFIG, "disabled_ids").await {
         Ok(_res) => {
             match persistence.insert(TABLE_PLUGIN_CONFIG, Entry {
@@ -127,24 +124,18 @@ pub async fn disable_plugins(persistence: &Persistence, plugin_ids: Vec<String>)
                 Ok(_res) => {
                     Ok(true)
                 },
-                Err(_err) => {
-                    Err(Error::new(
-                        std::io::ErrorKind::Other,
-                        "Could not insert entry for disabled plugins",
-                    ))
+                Err(err) => {
+                    Err(AppError::from(err))
                 }
             }                                
         },
-        Err(_err) => {
-            Err(Error::new(
-                std::io::ErrorKind::Other,
-                "Could not delete old entry for disabled plugins",
-            ))
+        Err(err) => {
+            Err(AppError::from(err))
         }
     }
 }
 
-pub async fn is_plugin_disabled(plugin_id: &str, persistence: &Persistence) ->  Result<bool, Error> {
+pub async fn is_plugin_disabled(plugin_id: &str, persistence: &Persistence) ->  Result<bool, AppError> {
     match persistence.get(TABLE_PLUGIN_CONFIG, "disabled_ids").await {
         Ok(res) => {
             match res {
@@ -155,11 +146,8 @@ pub async fn is_plugin_disabled(plugin_id: &str, persistence: &Persistence) ->  
                 None => Ok(false) // default is that it is activated
             }            
         },
-        Err(_err) => {
-            Err(Error::new(
-                std::io::ErrorKind::Other,
-                "Could load plugin configuration",
-            ))
+        Err(err) => {
+            Err(AppError::from(err))
         }
     }
 }
