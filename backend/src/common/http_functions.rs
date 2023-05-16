@@ -6,6 +6,8 @@ use crate::datastore;
 
 #[cfg(all(target_os="linux"))]
 use std::os::unix::net::UnixStream;
+#[cfg(all(target_os="linux"))]
+use std::io::prelude::*;
 
 pub const GET: &str = "get";
 pub const POST: &str = "post";
