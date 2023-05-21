@@ -12,9 +12,9 @@ mod socket;
 mod common;
 pub mod ping;
 
-lazy_static!(
+lazy_static!{
     static ref HTTP_COMMAND:http::HttpCommand = http::HttpCommand::new();
-);
+}
 
 
 pub async fn execute_command<'a>(
