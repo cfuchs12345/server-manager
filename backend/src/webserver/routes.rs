@@ -12,6 +12,7 @@ use crate::models::error::AppError;
 use crate::models::request::plugin::PluginsAction;
 use crate::models::request::server::{ServersAction, ServersActionType, ServerActionType, ServerAction, NetworksAction, NetworkActionType};
 use crate::models::request::common::QueryParamsAsMap;
+use crate::models::request::user::PasswordChange;
 use crate::models::response::status::Status;
 use crate::models::response::system_information::SystemInformation;
 use crate::models::server::Server;
@@ -410,6 +411,12 @@ pub async fn delete_user(data: web::Data<AppData>,  path: web::Path<String>) -> 
         Err(err) =>  HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
     }
 }
+
+#[put("/user/{user_id}/changepassword")]
+pub async fn put_user_changepassword(data: web::Data<AppData>, query: web::Json<PasswordChange>) -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+
 
 #[get("users/authenticate/otk")]
 pub async fn get_one_time_key() -> HttpResponse {

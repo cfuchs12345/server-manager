@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { ConfigureDNSDialog as ConfigureDNSDialog, dialogSettings as configureDNSDialogSettings } from './dialogs/dialog-configuredns';
-import { ConfigureUsersDialog,  dialogSettings as configureUsersDialogSettings } from './dialogs/dialog-configureusers';
+import { ConfigureDNSDialog as ConfigureDNSDialog, dialogSettings as configureDNSDialogSettings } from './dialogs/dialog-configure-dns';
+import { ConfigureUsersDialog,  dialogSettings as configureUsersDialogSettings } from './dialogs/dialog-configure-users';
+import { ChangePasswordDialog,  dialogSettings as changePasswordDialogSettings } from './dialogs/dialog-change-password';
 
 @Component({
   selector: 'app-general-configuration',
@@ -14,18 +15,25 @@ export class GeneralConfigurationComponent {
 
   buttonTextManageDNSServers: string = 'DNS Servers';
   buttonTextManageUsers: string = 'Users';
+  buttonTextChangePassword: string = 'Change your password';
 
   constructor(private dialog: MatDialog) {}
 
-  openDialogManageDNSServers() {
+  openDialogManageDNSServers = () => {
     this.dialog.open(ConfigureDNSDialog, {
       ...configureDNSDialogSettings()
     });
   }
 
-  openDialogManageUsers() {
+  openDialogManageUsers = () => {
     this.dialog.open(ConfigureUsersDialog, {
       ...configureUsersDialogSettings()
+    });
+  }
+
+  openDialogChangePassword= () => {
+    this.dialog.open(ChangePasswordDialog, {
+      ...changePasswordDialogSettings()
     });
   }
 }

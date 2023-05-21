@@ -12,7 +12,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatInputModule } from '@angular/material/input';
-import { MatTableModule } from '@angular/material/table'
+import { MatTableModule } from '@angular/material/table';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
@@ -45,26 +45,29 @@ import { DisablePluginsModalComponent } from './configuration/plugin-configurati
 import { PluginConfigurationComponent } from './configuration/plugin-configuration/plugin-configuration.component';
 import { ConfigureDnsModalComponent } from './configuration/general-configuration/dialogs/configure-dns-modal/configure-dns-modal.component';
 import { ConfigureUsersModalComponent } from './configuration/general-configuration/dialogs/configure-users-modal/configure-users-modal.component';
-import { ConfigureDNSDialog } from './configuration/general-configuration/dialogs/dialog-configuredns';
-import { ConfigureUsersDialog } from './configuration/general-configuration/dialogs/dialog-configureusers';
-import { ConfigureFeaturesModalComponent } from './configuration/server-configuration/dialogs/configure-features-modal/configure-features-modal.component';
+import { ConfigureDNSDialog } from './configuration/general-configuration/dialogs/dialog-configure-dns';
+import { ConfigureUsersDialog } from './configuration/general-configuration/dialogs/dialog-configure-users';
+import { ChangePasswordDialog } from './configuration/general-configuration/dialogs/dialog-change-password'
 import { ConfigureFeaturesDialog } from './configuration/server-configuration/dialogs/dialog-configure-features';
 import { ConfirmDialogComponent } from './ui/confirm-dialog/confirm-dialog.component';
+import { ConfigureFeaturesModalComponent } from './configuration/server-configuration/dialogs/configure-features-modal/configure-features-modal.component';
+import { ChangePasswordModalComponent } from './configuration/general-configuration/dialogs/change-password-modal/change-password-modal.component';
 import { MessageDialogComponent } from './ui/message_dialog/message-dialog.component';
 import { DeleteServerModalComponent } from './configuration/server-configuration/dialogs/delete-server-modal/delete-server-modal.component';
 import { ErrorsListComponent } from './errors/errors-list/errors-list.component';
 import { ErrorComponent } from './errors/error/error.component';
 import { ErrorService } from './services/errors/error.service';
-import { EncryptionService  } from './services/encryption/encryption.service';
+import { EncryptionService } from './services/encryption/encryption.service';
 import { CacheService } from './services/cache/cache.service';
 import { ImageCache } from './services/cache/image-cache.service';
 import { ServerFeaturesComponent } from './servers/server-features/server-features.component';
-import { ServerSubActionComponent} from './servers/server-sub-action/sub-action.component';
+import { ServerSubActionComponent } from './servers/server-sub-action/sub-action.component';
 import { SystemInformationComponent } from './systeminformation/systeminformation.component';
 import { MainComponent } from './main/main.component';
 import { LoginComponent } from './login/login.component';
 import { RegisterComponent } from './register/register.component';
 import { TokenInterceptor } from './auth/token.interceptor';
+import { ErrorInterceptor } from './auth/error.interceptor';
 
 @NgModule({
   declarations: [
@@ -79,6 +82,7 @@ import { TokenInterceptor } from './auth/token.interceptor';
     ConfigureDNSDialog,
     ConfigureUsersDialog,
     ConfigureFeaturesDialog,
+    ChangePasswordDialog,
 
     ActiveLightComponent,
     AutodiscoverServerModalComponent,
@@ -98,6 +102,7 @@ import { TokenInterceptor } from './auth/token.interceptor';
     ConfigureDnsModalComponent,
     ConfigureUsersModalComponent,
     ConfigureFeaturesModalComponent,
+    ChangePasswordModalComponent,
     ConfirmDialogComponent,
     MessageDialogComponent,
     ErrorsListComponent,
@@ -113,7 +118,7 @@ import { TokenInterceptor } from './auth/token.interceptor';
     SystemInformationComponent,
     MainComponent,
     LoginComponent,
-    RegisterComponent
+    RegisterComponent,
   ],
   imports: [
     AppRoutingModule,
@@ -133,9 +138,17 @@ import { TokenInterceptor } from './auth/token.interceptor';
     MatTableModule,
     ReactiveFormsModule,
     LayoutModule,
-    MatSelectModule
+    MatSelectModule,
   ],
-  providers: [ErrorService, EncryptionService, CacheService, ImageCache, { provide: Window, useValue: window },{ provide: HTTP_INTERCEPTORS, useClass: TokenInterceptor, multi: true }],
-  bootstrap: [AppComponent]
+  providers: [
+    ErrorService,
+    EncryptionService,
+    CacheService,
+    ImageCache,
+    { provide: Window, useValue: window },
+    { provide: HTTP_INTERCEPTORS, useClass: TokenInterceptor, multi: true },
+    { provide: HTTP_INTERCEPTORS, useClass: ErrorInterceptor, multi: true },
+  ],
+  bootstrap: [AppComponent],
 })
-export class AppModule { }
+export class AppModule {}

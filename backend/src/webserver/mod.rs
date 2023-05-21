@@ -50,6 +50,7 @@ pub async fn start_webserver(
             .wrap(Logger::default())
             .service(web::scope("/backend").configure(init_token_secured_api).wrap( HttpAuthentication::bearer(validator_fn)))
             .service(web::scope("/backend_nt").configure(init_no_token_api))
+            .configure(init_static)
     })
     .bind(bind_address)?
     .run()
@@ -84,7 +85,6 @@ async fn token_is_valid(token: &str) -> Result<bool, actix_web::Error> {
     Ok(datastore::is_valid_token(token))
 }
 
-
 fn init_no_token_api(cfg: &mut web::ServiceConfig) {
     cfg.service(routes::get_one_time_key);
     cfg.service(routes::authenticate);
@@ -93,25 +93,6 @@ fn init_no_token_api(cfg: &mut web::ServiceConfig) {
 }
 
 fn init_token_secured_api(cfg: &mut web::ServiceConfig) {
-    // Files for frontend ==>
-    cfg.route("/favicon.ico", web::get().to(fav_icon));
-    cfg.route("/", web::get().to(index_html));
-    cfg.route("/index.html", web::get().to(index_html));
-    cfg.route("/{filename:main.*\\.js}", web::get().to(named_file));
-    cfg.route("/{filename:polyfills.*\\.js}", web::get().to(named_file));
-    cfg.route("/{filename:runtime.*\\.js}", web::get().to(named_file));
-    cfg.route("/{filename:styles.*}", web::get().to(named_file));
-    cfg.route(
-        "/{filename:3rdpartylicenses.txt}",
-        web::get().to(named_file),
-    );
-
-    cfg.route(
-        "/assets/svg/{filename:.*\\.svg}",
-        web::get().to(named_file_svg),
-    );
-    // <== files for frontend
-
     cfg.service(routes::post_networks_action);
 
     cfg.service(routes::post_servers);
@@ -137,6 +118,29 @@ fn init_token_secured_api(cfg: &mut web::ServiceConfig) {
     cfg.service(routes::get_users);
     cfg.service(routes::post_user);
     cfg.service(routes::delete_user);
+    cfg.service(routes::put_user_changepassword);
+}
+
+
+fn init_static(cfg: &mut web::ServiceConfig) {
+    // Files for frontend ==>
+    cfg.route("/favicon.ico", web::get().to(fav_icon));
+    cfg.route("/", web::get().to(index_html));
+    cfg.route("/index.html", web::get().to(index_html));
+    cfg.route("/{filename:main.*\\.js}", web::get().to(named_file));
+    cfg.route("/{filename:polyfills.*\\.js}", web::get().to(named_file));
+    cfg.route("/{filename:runtime.*\\.js}", web::get().to(named_file));
+    cfg.route("/{filename:styles.*}", web::get().to(named_file));
+    cfg.route(
+        "/{filename:3rdpartylicenses.txt}",
+        web::get().to(named_file),
+    );
+
+    cfg.route(
+        "/assets/svg/{filename:.*\\.svg}",
+        web::get().to(named_file_svg),
+    );
+    // <== files for frontend
 }
 
 async fn fav_icon(_req: HttpRequest) -> Result<fs::NamedFile> {

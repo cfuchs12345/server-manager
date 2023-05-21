@@ -1,14 +1,16 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { User, UserInitialPassword, UserPasswordHash } from './types';
+import { User, UserInitialPassword, UserPasswordHash, UserToken } from './types';
 import { ErrorService } from '../errors/error.service';
 import { BehaviorSubject } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
+import { AuthenticationService } from '../auth/authentication.service';
+import { EncryptionService } from '../encryption/encryption.service';
+import { OneTimeKey } from '../auth/types';
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
-
   private _users = new BehaviorSubject<User[]>([]);
   private _initialPassword = new BehaviorSubject<UserInitialPassword | null | undefined>(undefined);
 
@@ -19,7 +21,7 @@ export class UserService {
   readonly users = this._users.asObservable();
   readonly initialPassword = this._initialPassword.asObservable();
 
-  constructor(private http: HttpClient, private errorService: ErrorService) {}
+  constructor(private http: HttpClient, private errorService: ErrorService, private encryptionService: EncryptionService) {}
 
   loadUsers = async () => {
       this.http.get<User[]>('/backend/users').subscribe({
@@ -81,6 +83,28 @@ export class UserService {
             },
           });
       }
+    }
+
+    changePassword = (userId: string, oldPassword: string, newPassword: string, otk: OneTimeKey) => {
+      const secret = this.encryptionService.makeSecret(userId, otk.key);
+      const body = JSON.stringify( {
+        "old_password" : this.encryptionService.encrypt(oldPassword, secret),
+        "new_password": this.encryptionService.encrypt(newPassword, secret)
+      });
+      this.http
+      .put<any>('/backend/user/' + userId + "/changepassword", body,  {
+        headers: defaultHeadersForJSON(),
+      }).subscribe( {
+        next: (res) => {
+
+        },
+        error: (err: any) => {
+          this.errorService.newError("User-Service", userId, err.message);
+        },
+        complete: () => {
+
+        },
+    });
     }
 
     confirmInitialPasswordReceived = () => {

@@ -16,7 +16,7 @@ const UTF8 = 'utf8'
 @Injectable()
 export class EncryptionService {
 
-  getKey(salt: Buffer, secret: string) {
+  private getKey(salt: Buffer, secret: string) {
     return pbkdf2Sync(secret, salt, 100000, 32, SHA);
   }
 
