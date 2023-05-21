@@ -413,8 +413,73 @@ pub async fn delete_user(data: web::Data<AppData>,  path: web::Path<String>) -> 
 }
 
 #[put("/user/{user_id}/changepassword")]
-pub async fn put_user_changepassword(data: web::Data<AppData>, query: web::Json<PasswordChange>) -> HttpResponse {
-    HttpResponse::Ok().finish()
+pub async fn put_user_changepassword(data: web::Data<AppData>, req: HttpRequest, query: web::Json<PasswordChange>) -> HttpResponse {
+    let headers = req.headers();
+    let custom_header = headers.get(HeaderName::from_static("x-custom"));
+
+    if custom_header.is_some()  {
+        let otk_tuple_res = get_existing_otk(custom_header.unwrap());
+
+        if otk_tuple_res.is_err() {
+            log::error!("Could not get related authorization information {:?}", otk_tuple_res);
+            return HttpResponse::Unauthorized().finish();
+        }
+
+        let otk_tuple = otk_tuple_res.unwrap();
+        let secret = common::make_aes_secrect(&query.user_id.as_str(), otk_tuple.1.as_str());        
+        
+
+        match common::aes_decrypt(&query.old_password, secret.as_str()) {
+            Ok(decrypted_old) => {
+                match datastore::get_user(&data.app_data_persistence, &query.user_id.as_str()).await {
+                    Ok(mut user) => {
+                        match user.check_password(&decrypted_old) {
+                            Ok(res) => {
+                                if res { 
+                                    match common::aes_decrypt(&query.new_password, secret.as_str()) {
+                                        Ok(decrypted_new) => {
+                                            user.update_password_hash(common::hash_password(decrypted_new.as_str()).unwrap());
+                                            match datastore::update_user(&data.app_data_persistence, &user).await {
+                                                Ok(res) => {
+                                                    if res {
+                                                        return HttpResponse::Ok().finish();
+                                                    }
+                                                    else {
+                                                        log::error!("User was not updated");
+                                                    }
+                                                },
+                                                Err(err) => {
+                                                    log::error!("Error during password update {}", err);
+                                                }
+                                            }                                   
+                                           
+                                        },
+                                        Err(err) => {
+                                            log::error!("Error during password update {}", err);
+                                        }
+                                    }
+                                }
+                                else {
+                                    log::error!("Password check of old password failed");
+                                }
+                            },
+                            Err(err) => {
+                                log::error!("Error during password update {}", err);
+                            }
+                        }
+                    },
+                    Err(err) => {
+                        log::error!("Error during password update {}", err);
+                    }
+                }
+            },
+            Err(err) => {
+                log::error!("Error during password update {}", err);
+            }
+        }
+    }
+
+    return HttpResponse::Unauthorized().finish();
 }
 
 
@@ -497,7 +562,7 @@ pub async fn authenticate(data: web::Data<AppData>, req: HttpRequest) -> HttpRes
             }
         }
     }
-    HttpResponse::InternalServerError().body("Database could not be updated")
+    return HttpResponse::Unauthorized().finish();
 }
 
 fn get_existing_otk(header_value: &HeaderValue) -> Result<(NaiveDateTime, String), AppError>{

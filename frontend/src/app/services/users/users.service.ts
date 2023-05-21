@@ -1,11 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
-import { User, UserInitialPassword, UserPasswordHash, UserToken } from './types';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { User, UserInitialPassword } from './types';
 import { ErrorService } from '../errors/error.service';
 import { BehaviorSubject } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
-import { AuthenticationService } from '../auth/authentication.service';
 import { EncryptionService } from '../encryption/encryption.service';
 import { OneTimeKey } from '../auth/types';
 
@@ -88,12 +86,19 @@ export class UserService {
     changePassword = (userId: string, oldPassword: string, newPassword: string, otk: OneTimeKey) => {
       const secret = this.encryptionService.makeSecret(userId, otk.key);
       const body = JSON.stringify( {
+        "user_id": userId,
         "old_password" : this.encryptionService.encrypt(oldPassword, secret),
         "new_password": this.encryptionService.encrypt(newPassword, secret)
       });
+
+      const headers = new HttpHeaders({
+        'Content-Type': 'application/json',
+        'X-custom': `${otk.id}`,
+      });
+
       this.http
       .put<any>('/backend/user/' + userId + "/changepassword", body,  {
-        headers: defaultHeadersForJSON(),
+        headers: headers,
       }).subscribe( {
         next: (res) => {
 
