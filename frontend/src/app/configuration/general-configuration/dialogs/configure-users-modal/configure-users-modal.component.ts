@@ -96,7 +96,7 @@ export class ConfigureUsersModalComponent
     ) {
       this.userService.saveUser(
         new User(this.userId.value, this.fullName.value, this.email.value)
-      );
+      ,false);
     }
   };
 

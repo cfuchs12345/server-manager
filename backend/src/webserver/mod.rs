@@ -89,6 +89,7 @@ fn init_no_token_api(cfg: &mut web::ServiceConfig) {
     cfg.service(routes::get_one_time_key);
     cfg.service(routes::authenticate);
     cfg.service(routes::get_users_exist);
+    cfg.service(routes::post_first_user);
 }
 
 fn init_token_secured_api(cfg: &mut web::ServiceConfig) {

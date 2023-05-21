@@ -35,11 +35,13 @@ export class UserService {
       });
     }
 
-    saveUser = (user: User) => {
+    saveUser = (user: User, firstUser: boolean) => {
       const body = JSON.stringify(user);
 
+      const url = firstUser ? '/backend_nt/users_first' : '/backend/users';
+
       this.http
-      .post<string | undefined | null>('/backend/users', body, {
+      .post<string | undefined | null>(url, body, {
         headers: defaultHeadersForJSON(),
       })
       .subscribe({

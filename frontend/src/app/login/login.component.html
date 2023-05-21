@@ -1,7 +1,12 @@
 <div  class="centered">
   <div fxLayout="row">
-    <div fxFlex="100" style="align-items: center; justify-content: center">
-      <mat-form-field style="margin: 5px; width: 100%;">
+    <div fxFlex="100" class="formHeading">
+        <h2>Login</h2>
+    </div>
+  </div>
+  <div fxLayout="row">
+    <div fxFlex="100" class="formDiv">
+      <mat-form-field class="formElement">
         <mat-label>{{ userIdLabel }}</mat-label>
         <input
           matInput
@@ -14,8 +19,8 @@
     </div>
   </div>
   <div fxLayout="row">
-    <div fxFlex="100" style="align-items: center; justify-content: center">
-      <mat-form-field style="margin: 5px; width: 100%;">
+    <div fxFlex="100" class="formDiv">
+      <mat-form-field class="formElement">
         <mat-label>{{ passwordLabel }}</mat-label>
         <input
           matInput
@@ -29,11 +34,10 @@
     </div>
   </div>
   <div fxLayout="row">
-    <div fxFlex="100" style="align-items: center; justify-content: right; text-align: right;">
+    <div fxFlex="100" class="formDivButton">
       <button
       mat-raised-button
       color="primary"
-      style="margin: 5px"
       [disabled]="password.invalid || userId.invalid"
       (click)="onClickLogin()"
     >

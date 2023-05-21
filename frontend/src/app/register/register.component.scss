@@ -7,3 +7,22 @@
   left: 50%;
   margin: -100px 0 0 -150px;
 }
+
+.formHeading {
+  text-align: center;
+}
+
+.formDiv {
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.formDivButton {
+  justify-content: right !important;
+  text-align: right !important;
+}
+
+.formElement {
+  width: 100%;
+  margin: 5px;
+}

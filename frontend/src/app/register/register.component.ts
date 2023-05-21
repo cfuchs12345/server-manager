@@ -62,14 +62,14 @@ export class RegisterComponent implements OnInit, OnDestroy {
             }).afterClosed().subscribe( (any) => {
               setTimeout(() => {
                 this.router.navigate(["/login"]);
-              },200);
+              },50);
 
             });
           }
           else {
             setTimeout(() => {
               this.router.navigate(["/login"]);
-            },200);
+            },50);
 
           }
         }
@@ -109,7 +109,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
     ) {
       this.userService.saveUser(
         new User(this.userId.value, this.fullName.value, this.email.value)
-      );
+      ,true);
     }
   };
 }

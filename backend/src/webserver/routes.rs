@@ -342,6 +342,26 @@ pub async fn get_users_exist(data: web::Data<AppData>) -> HttpResponse {
 
 #[post("/users")]
 pub async fn post_user(data: web::Data<AppData>, query: web::Json<User>) -> HttpResponse {
+    save_user_common(data, query).await
+}
+
+#[post("/users_first")]
+pub async fn post_first_user(data: web::Data<AppData>, query: web::Json<User>) -> HttpResponse {
+    match datastore::load_all_users(&data.app_data_persistence).await {
+        Ok(result) => {
+            if !result.is_empty() {
+                HttpResponse::Unauthorized().finish()
+            }
+            else {
+                save_user_common(data, query).await
+            }
+        }
+        Err(err) => HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
+    }   
+}
+
+
+async fn save_user_common(data: web::Data<AppData>, query: web::Json<User>)  -> HttpResponse {
     let initial_password = common::generate_short_random_string();
     
 
@@ -375,8 +395,6 @@ pub async fn post_user(data: web::Data<AppData>, query: web::Json<User>) -> Http
         Err(err) => 
             HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
     }
-
-   
 }
 
 
