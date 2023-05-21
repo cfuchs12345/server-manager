@@ -1,19 +1,28 @@
 use actix_web::delete;
 use actix_web::{web, get, put, post, HttpRequest, HttpResponse};
+use http::{HeaderName, header, HeaderValue};
+use lazy_static::lazy_static;
+use sqlx::types::chrono::NaiveDateTime;
+use tokio::sync::RwLock;
 use crate::commands::ping;
+use crate::common;
+use crate::common::OneTimeKey;
 use crate::models::config::dns_server::DNSServer;
+use crate::models::error::AppError;
 use crate::models::request::plugin::PluginsAction;
 use crate::models::request::server::{ServersAction, ServersActionType, ServerActionType, ServerAction, NetworksAction, NetworkActionType};
 use crate::models::request::common::QueryParamsAsMap;
 use crate::models::response::status::Status;
 use crate::models::response::system_information::SystemInformation;
 use crate::models::server::Server;
+use crate::models::token::UserToken;
+use crate::models::users::User;
 use crate::webserver::appdata::AppData;
 use crate::{other_functions::systeminfo, datastore, plugin_execution};
 
 
 
-#[post("/backend/networks/actions")]
+#[post("/networks/actions")]
 pub async fn post_networks_action(data: web::Data<AppData>, query: web::Json<NetworksAction>)  ->  HttpResponse {
     let params_map = QueryParamsAsMap::from(query.params.clone());
 
@@ -60,16 +69,15 @@ pub async fn post_networks_action(data: web::Data<AppData>, query: web::Json<Net
     } 
 }
 
-#[get("/backend/servers")]
+#[get("/servers")]
 pub async fn get_servers(data: web::Data<AppData<>>) -> HttpResponse {
-//    let server_list = servers::get_all.await;
     match datastore::load_all_servers(&data.app_data_persistence, true).await {
         Ok(result) => HttpResponse::Ok().json(result),
         Err(err) => HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
     }    
 }
 
-#[post("/backend/servers")]
+#[post("/servers")]
 pub async fn post_servers(data: web::Data<AppData>, query: web::Json<Server>) -> HttpResponse {
     match datastore::insert_server(&data.app_data_persistence, &query.0).await {
         Ok(result) => match result  {
@@ -80,7 +88,7 @@ pub async fn post_servers(data: web::Data<AppData>, query: web::Json<Server>) ->
     }
 }
 
-#[post("/backend/servers/actions")]
+#[post("/servers/actions")]
 pub async fn post_servers_actions(data: web::Data<AppData>, query: web::Json<ServersAction>) -> HttpResponse {
     let params_map = QueryParamsAsMap::from(query.params.clone());
 
@@ -116,7 +124,7 @@ pub async fn post_servers_actions(data: web::Data<AppData>, query: web::Json<Ser
     }   
 }
 
-#[post("/backend/servers/{ipaddress}/actions")]
+#[post("/servers/{ipaddress}/actions")]
 pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: web::Json<ServerAction>, path: web::Path<String>) -> HttpResponse {
     let ipaddress = path.into_inner();
 
@@ -169,7 +177,6 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
 
             match plugin_execution::execute_data_query(&server, &data.app_data_template_engine, crypto_key).await {
                 Ok(results) => {
-                    log::info!("{:?}", results);
                     HttpResponse::Ok().json(results)
                 }
                 Err(err) =>  HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
@@ -180,7 +187,7 @@ pub async fn post_servers_by_ipaddress_action(data: web::Data<AppData>, query: w
 
 
 
-#[put("/backend/servers/{ipaddress}")]
+#[put("/servers/{ipaddress}")]
 pub async fn put_servers_by_ipaddress(data: web::Data<AppData>, query: web::Json<Server>) -> HttpResponse {
     match datastore::update_server(&data.app_data_persistence, &query.0).await {
         Ok(result) => match result {
@@ -191,7 +198,7 @@ pub async fn put_servers_by_ipaddress(data: web::Data<AppData>, query: web::Json
     }
 }
 
-#[delete("/backend/servers/{ipaddress}")]
+#[delete("/servers/{ipaddress}")]
 pub async fn delete_servers_by_ipaddress(data: web::Data<AppData>,  path: web::Path<String>) -> HttpResponse {
     let ipaddress = path.into_inner();
     
@@ -206,12 +213,12 @@ pub async fn delete_servers_by_ipaddress(data: web::Data<AppData>,  path: web::P
 
 
 
-#[get("/backend/plugins")]
+#[get("/plugins")]
 pub async fn get_plugins(_data: web::Data<AppData>, _req: HttpRequest) -> HttpResponse {
     HttpResponse::Ok().json(datastore::get_all_plugins())
 }
 
-#[get("/backend/plugins/actions")]
+#[get("/plugins/actions")]
 pub async fn get_plugins_actions(data: web::Data<AppData>, query: web::Query<std::collections::HashMap<String, String>>) -> HttpResponse {
     let params = query.into_inner();
 
@@ -240,7 +247,7 @@ pub async fn get_plugins_actions(data: web::Data<AppData>, query: web::Query<std
     }    
 }
 
-#[put("/backend/plugins/actions")]
+#[put("/plugins/actions")]
 pub async fn put_plugins_actions(data: web::Data<AppData>,  query: web::Json<PluginsAction>) -> HttpResponse {
     let action = query.into_inner();
     let params_map = QueryParamsAsMap::from(action.params);
@@ -261,7 +268,7 @@ pub async fn put_plugins_actions(data: web::Data<AppData>,  query: web::Json<Plu
     }
 }
 
-#[post("/backend/configurations/dnsservers")]
+#[post("/configurations/dnsservers")]
 pub async fn post_dnsservers(data: web::Data<AppData>,  query: web::Json<DNSServer>)  -> HttpResponse {
     let persistence = &data.app_data_persistence;
 
@@ -273,13 +280,13 @@ pub async fn post_dnsservers(data: web::Data<AppData>,  query: web::Json<DNSServ
     }
 }
 
-#[get("/backend/systeminformation/dnsservers")]
+#[get("/systeminformation/dnsservers")]
 pub async fn get_system_dnsservers(_data: web::Data<AppData>)  -> HttpResponse {
     HttpResponse::Ok().json( systeminfo::get_systenms_dns_servers() )
 }
 
 
-#[get("/backend/configurations/dnsservers")]
+#[get("/configurations/dnsservers")]
 pub async fn get_dnsservers(data: web::Data<AppData>)  -> HttpResponse {
     let persistence = &data.app_data_persistence;
 
@@ -289,7 +296,9 @@ pub async fn get_dnsservers(data: web::Data<AppData>)  -> HttpResponse {
     }
 }
 
-#[delete("/backend/configurations/dnsservers/{ipaddress}")]
+
+
+#[delete("/configurations/dnsservers/{ipaddress}")]
 pub async fn delete_dnsservers(data: web::Data<AppData>, path: web::Path<String>)  -> HttpResponse {
     let persistence = &data.app_data_persistence;
     let ipaddress = path.into_inner();
@@ -300,11 +309,183 @@ pub async fn delete_dnsservers(data: web::Data<AppData>, path: web::Path<String>
     }
 }
 
-#[get("/backend/system/information")]
+#[get("/system/information")]
 pub async fn get_system_information() -> HttpResponse {
       HttpResponse::Ok().json(SystemInformation {
         load_average: systeminfo::get_load_info(),
         memory_stats: systeminfo::get_memory_stats(),
         memory_usage: systeminfo::get_memory_usage()
     })
+}
+
+#[get("/system/smtpconfigvalid")]
+pub async fn get_smtp_config_valid()  -> HttpResponse {
+    HttpResponse::Ok().json(common::is_smtp_config_valid())
+}
+
+#[get("/users")]
+pub async fn get_users(data: web::Data<AppData>) -> HttpResponse {
+    match datastore::load_all_users(&data.app_data_persistence).await {
+        Ok(result) => HttpResponse::Ok().json(result),
+        Err(err) => HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
+    }    
+}
+
+#[get("/users/exist")]
+pub async fn get_users_exist(data: web::Data<AppData>) -> HttpResponse {
+    match datastore::load_all_users(&data.app_data_persistence).await {
+        Ok(result) => HttpResponse::Ok().json(!result.is_empty()),
+        Err(err) => HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
+    }    
+}
+
+
+#[post("/users")]
+pub async fn post_user(data: web::Data<AppData>, query: web::Json<User>) -> HttpResponse {
+    let initial_password = common::generate_short_random_string();
+    
+
+    match common::hash_password(initial_password.as_str()) {
+        Ok(password_hash) => {
+            let mut user = query.0;
+            user.update_password_hash(password_hash);           
+        
+            
+            match datastore::insert_user(&data.app_data_persistence, &user).await {
+                Ok(result) => match result  {
+                    true => {        
+                        if common::is_smtp_config_valid() {
+                            let from_address = datastore::get_config().get_string("email_from").unwrap();
+
+                            common::send_email(from_address.as_str(),
+                             &user.get_email(),
+                             "Your initial password for the Server-Manager",
+                             format!("Hello {},\n\nyour user id is '{}' and the initial password is: '{}'.\n\nRegards,\nyour Server-Manager", user.get_full_name(), user.get_user_id(), initial_password).as_str()).await;
+                            HttpResponse::Ok().finish()    
+                        }
+                        else {
+                            HttpResponse::Ok().json(initial_password)
+                        }    
+                    }
+                    _ => HttpResponse::InternalServerError().body("Database could not be updated")
+                },
+                Err(err) => HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
+            }
+        },
+        Err(err) => 
+            HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
+    }
+
+   
+}
+
+
+#[delete("/users/{user_id}")]
+pub async fn delete_user(data: web::Data<AppData>,  path: web::Path<String>) -> HttpResponse {
+    let user_id = path.into_inner();
+    
+    match datastore::delete_user(&data.app_data_persistence, &user_id).await {
+        Ok(result) => match result {
+            true => HttpResponse::Ok().finish(),
+            false =>  HttpResponse::InternalServerError().body("Database could not be updated")
+        },
+        Err(err) =>  HttpResponse::InternalServerError().body(format!("Unexpected error occurred: {:?}", err))
+    }
+}
+
+#[get("users/authenticate/otk")]
+pub async fn get_one_time_key() -> HttpResponse {
+    
+    let otk = OneTimeKey::generate();
+
+    HttpResponse::Ok().json(otk)
+}
+
+
+#[post("users/authenticate")]
+pub async fn authenticate(data: web::Data<AppData>, req: HttpRequest) -> HttpResponse {
+    let headers = req.headers();
+    let auth_header = headers.get(header::AUTHORIZATION);
+    let custom_header = headers.get(HeaderName::from_static("x-custom"));
+
+    if custom_header.is_some() &&  auth_header.is_some() {
+       let otk_tuple_res = get_existing_otk(custom_header.unwrap());
+
+       let auth_values_res = get_auth_data_split(auth_header.unwrap());
+
+        if otk_tuple_res.is_err() || auth_values_res.is_err() {
+            log::error!("Could not get related authorization information {:?}, {:?}", otk_tuple_res, auth_values_res);
+            return HttpResponse::Unauthorized().finish();
+        }
+
+        let otk_tuple = otk_tuple_res.unwrap();     
+
+        match  auth_values_res.unwrap() {
+            Some(auth_values) => {
+                let user_id = auth_values.0;                
+                let secret = common::make_aes_secrect(user_id.as_str(), otk_tuple.1.as_str());
+
+                match common::aes_decrypt(&auth_values.1, secret.as_str()) {
+                    Ok(decrypted) => {
+
+
+                        match datastore::get_user(&data.app_data_persistence, user_id.as_str()).await {
+                            Ok(user) => {
+
+                                match user.check_password(&decrypted) {
+                                    Ok(result) => {
+                                        if result {
+                                            let token = common::generate_long_random_string();
+                                            datastore::insert_token(&token);
+                    
+                                            return HttpResponse::Ok().json(UserToken{
+                                                user_id,
+                                                token
+                                            });
+                                        }
+                                        else {
+                                            return HttpResponse::Unauthorized().body("The given password was invalid");
+                                        }
+                                    },
+                                    Err(_err) => {
+                                        return HttpResponse::Unauthorized().finish();
+                                    }
+                                }
+
+                               
+        
+                            },
+                            Err(_err) => {
+                                return HttpResponse::Unauthorized().finish();
+                            }                            
+                        }
+
+                    },
+                    Err(_err) => {
+                        log::error!("Could not decrypt password before checking against hash");
+                        return HttpResponse::Unauthorized().finish();
+                    }
+                }
+            },
+            None => {
+                return HttpResponse::Unauthorized().finish();
+            }
+        }
+    }
+    HttpResponse::InternalServerError().body("Database could not be updated")
+}
+
+fn get_existing_otk(header_value: &HeaderValue) -> Result<(NaiveDateTime, String), AppError>{
+    let number: u32 = header_value.to_str()?.parse()?;
+    
+    common::OneTimeKey::get_token(number).ok_or(AppError::UnAuthorized)
+}
+
+fn get_auth_data_split(header_value: &HeaderValue) -> Result<Option<(String, String)>, AppError> {
+    let val_str = header_value.to_str().unwrap();
+    let cut_val_str = val_str.replace("Basic ", "");
+    
+    let decoded = common::decode_base64_urlsafe_with_pad(cut_val_str.as_str());
+    
+    Ok(decoded.split_once(':').map(|v| (v.0.to_owned(), v.1.to_owned())))
 }

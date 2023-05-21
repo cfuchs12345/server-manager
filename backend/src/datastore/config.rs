@@ -40,7 +40,7 @@ pub async fn delete_dnsserver(persistence: &Persistence, ipaddress: &str) -> Res
 
 
 pub async fn load_all_dnsservers(persistence: &Persistence) -> Result<Vec<DNSServer>, AppError> {
-    let server_entries = persistence.get_all(TABLE_DNS_SERVERS).await.unwrap();
+    let server_entries = persistence.get_all(TABLE_DNS_SERVERS, Some("inet_aton(key) asc")).await.unwrap();
 
 
     Ok(entries_to_dnsservers(server_entries))

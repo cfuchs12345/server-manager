@@ -1,0 +1,44 @@
+<div  class="centered">
+  <div fxLayout="row">
+    <div fxFlex="100" style="align-items: center; justify-content: center">
+      <mat-form-field style="margin: 5px; width: 100%;">
+        <mat-label>{{ userIdLabel }}</mat-label>
+        <input
+          matInput
+          [placeholder]="userIdPlaceholder"
+          [formControl]="userId"
+        />
+        <mat-error *ngIf="userId.invalid">{{ getErrorMessagUserId() }}</mat-error>
+        <mat-hint>{{ userIdHint }}</mat-hint>
+      </mat-form-field>
+    </div>
+  </div>
+  <div fxLayout="row">
+    <div fxFlex="100" style="align-items: center; justify-content: center">
+      <mat-form-field style="margin: 5px; width: 100%;">
+        <mat-label>{{ passwordLabel }}</mat-label>
+        <input
+          matInput
+          type="password"
+          [placeholder]="passwordPlaceholder"
+          [formControl]="password"
+        />
+        <mat-error *ngIf="password.invalid">{{ getErrorMessagPassword() }}</mat-error>
+        <mat-hint>{{ passwordHint }}</mat-hint>
+      </mat-form-field>
+    </div>
+  </div>
+  <div fxLayout="row">
+    <div fxFlex="100" style="align-items: center; justify-content: right; text-align: right;">
+      <button
+      mat-raised-button
+      color="primary"
+      style="margin: 5px"
+      [disabled]="password.invalid || userId.invalid"
+      (click)="onClickLogin()"
+    >
+      {{ buttonTextLogin}}
+    </button>
+    </div>
+  </div>
+</div>

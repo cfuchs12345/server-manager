@@ -9,6 +9,7 @@ use std::path::Path;
 use crate::datastore;
 use crate::datastore::Persistence;
 use crate::migrations;
+use crate::models::error::AppError;
 use crate::webserver;
 use crate::webserver::AppData;
 
@@ -18,7 +19,7 @@ pub static ENV_FILENAME: &str = "./external_files/.env";
 pub static DB_FILENAME: &str = "./external_files/server-manager.db";
 
 
-pub async fn start() -> std::io::Result<()> { 
+pub async fn start() -> Result<(), AppError> { 
     scheduling::start_scheduled_jobs().await;
     one_time_init()?;
     load_env_file();
@@ -64,7 +65,7 @@ async fn create_persistence() -> Persistence {
     Persistence::new(&db_url).await
 }
 
-fn one_time_init() -> std::io::Result<()> {
+fn one_time_init() -> Result<(), AppError> {
     files::copy_files_into_external_folder()?;
 
     Ok(())

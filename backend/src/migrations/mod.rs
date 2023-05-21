@@ -56,9 +56,6 @@ pub async fn save_migration(neccessary_migrations: &[MigrationTypes], persistenc
             if !servers.is_empty() {
                 let servers_data_to_encrypt: Vec<&Server> = servers.iter().filter(|server| server_needs_encryption(server, &plugins_map)).collect();
 
-                log::info!("server that need encryption: {} ", servers_data_to_encrypt.len() );
-                
-
                 let crypto_key_entry = data.app_data_persistence.get("encryption", "default").await.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?.ok_or(std::io::Error::new(std::io::ErrorKind::Other, "No crypto key in db found"))?;
 
                
@@ -73,12 +70,11 @@ pub async fn save_migration(neccessary_migrations: &[MigrationTypes], persistenc
                             let credential_def = plugin.credentials.iter().find(|c| c.name == credential.name).unwrap().to_owned();
 
                             if credential_def.encrypt {
-                                log::info!("will encrypt {} {}", feature.id, credential.name);
+                                log::debug!("will encrypt {} {}", feature.id, credential.name);
                                 
                                 new_credentials.push(Credential { name: credential.name.clone(), encrypted: true, value: common::default_encrypt(&credential.value, &crypto_key_entry.value) });
                             }
                             else {
-                                log::info!("will not encrypt {} {}", feature.id, credential.name);
                                 new_credentials.push(credential.to_owned());
                             }
 

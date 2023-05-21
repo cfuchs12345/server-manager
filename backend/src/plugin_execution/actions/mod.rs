@@ -51,7 +51,7 @@ pub async fn execute_action(
             commands::execute_command(Some(server.ipaddress.clone()), &input)
                 .await
                 .map(|res| {
-                    log::info!("Response for server action was: {:?}", res);
+                    log::debug!("Response for server action was: {:?}", res);
                     true
                 })
         }

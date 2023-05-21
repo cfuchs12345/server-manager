@@ -4,6 +4,8 @@ use std::{collections::HashMap, sync::RwLock};
 
 use crate::{models::{plugin::Plugin, server::Server}, models::response::{status::Status, data_result::ConditionCheckResult}};
 
+use crate::models::token::TokenInfo;
+
 
 struct ConfigHolder {
     config: Option<Config>,
@@ -17,6 +19,7 @@ impl ConfigHolder {
 }
 
 lazy_static! {
+    static ref TOKENS: RwLock<HashMap<String, TokenInfo>> = RwLock::new(HashMap::new());
     static ref CONFIG: RwLock<ConfigHolder> = RwLock::new(ConfigHolder::new());
     static ref PLUGIN_CACHE: RwLock<HashMap<String, Plugin>> = RwLock::new(HashMap::new());
     static ref SERVER_CACHE: RwLock<HashMap<String, Server>> = RwLock::new(HashMap::new());
@@ -136,4 +139,35 @@ pub fn insert_condition_result(to_add: ConditionCheckResult) {
     let mut cache = SERVER_ACTION_CONDITION_RESULTS.try_write().unwrap();
     
     cache.insert(to_add.clone().get_key(), to_add);
+}
+
+
+pub fn insert_token(token: &str) {
+    let mut store = TOKENS.try_write().unwrap();
+
+    store.insert(token.to_owned(), TokenInfo::new());
+}
+
+pub fn delete_token(token: &str) {
+    let mut store = TOKENS.try_write().unwrap();
+    store.remove(token);
+}
+
+pub fn delete_expired_tokens() {
+    let mut store = TOKENS.try_write().unwrap();
+    log::debug!("Number of tokens before cleanup of expired tokens {}", store.len());
+    store.retain(|_k, v| !v.is_expired());
+    log::debug!("Number of tokens after cleanup of expired tokens {}", store.len());
+    
+}
+
+pub fn is_valid_token(token: &str) -> bool {
+    let store = TOKENS.try_read().unwrap();
+
+    match store.get(token) {
+        Some(found) => !found.is_expired(),
+        None => {
+            false
+        }
+    }
 }

@@ -102,7 +102,7 @@ pub async fn execute_http_command<'a>(
             normal_and_masked_body.1
         );
 
-        log::info!(
+        log::debug!(
             "About to execute method {} on url {} with body {}",
             method.value,
             normal_and_masked_url.0,

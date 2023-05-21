@@ -32,8 +32,6 @@ export class ServerService {
   constructor(private http: HttpClient, private errorService: ErrorService) {}
 
   deleteServers = (servers: Server[]) => {
-    var isLast = false;
-
     for (const [i, server] of servers.entries()) {
       this.http
         .delete<any>('/backend/servers/' + server.ipaddress, {
@@ -149,7 +147,7 @@ export class ServerService {
 
   private publishServers = () => {
     this.dataStore.servers.sort( this.compareServers )
-    this._servers.next(this.dataStore.servers.slice(0, this.dataStore.servers.length));
+    this._servers.next(this.dataStore.servers.slice());
   };
 
 

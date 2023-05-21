@@ -4,5 +4,12 @@
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"
+  },
+  "/backend_nt/*": {
+    "target": "http://127.0.0.1:8088",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
   }
+
 }

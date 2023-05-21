@@ -76,7 +76,7 @@ pub async fn upnp_discover(
 ) -> Result<Vec<FeaturesOfServer>, std::io::Error> {
 
     if !upnp_activated {
-        log::info!("Skipping UPnP device discovery since the plugin is disabled");
+        log::debug!("Skipping UPnP device discovery since the plugin is disabled");
         return Ok(Vec::new());
     }
 
@@ -88,7 +88,7 @@ pub async fn upnp_discover(
         return Ok(Vec::new());
     }
     else {
-        log::info!("Starting UPnP device discovery");
+        log::debug!("Starting UPnP device discovery");
     }
     let plugin = found.unwrap();
 
@@ -101,7 +101,7 @@ pub async fn upnp_discover(
                     Ok(res) => {
                         let location = res.location();
                         if !serverfeature_by_location.contains_key(location) {
-                            log::info!("Found UPnP device that responded with location {}", location);
+                            log::debug!("Found UPnP device that responded with location {}", location);
                         }
                         else {
                             continue;
@@ -141,7 +141,7 @@ pub async fn upnp_discover(
             log::error!("Error while reading responses: {}", err);
         }
     }
-    log::info!("UPnP device discovery done. Found {} distinct devices", serverfeature_by_location.len());
+    log::debug!("UPnP device discovery done. Found {} distinct devices", serverfeature_by_location.len());
     Ok( serverfeature_by_location.iter().map(|e| e.1.to_owned()).collect())
 }
 
@@ -152,16 +152,16 @@ pub async fn parse_device_info_from_location(server_features_with_upnp: Vec<Feat
 
         match fos.features.iter().find( |f| f.id == plugin.id) {            
             Some(upnp_feature) => {
-                log::info!("server {} uses the plugin {}", fos.ipaddress, plugin.id);
+                log::debug!("server {} uses the plugin {}", fos.ipaddress, plugin.id);
 
                 match upnp_feature.params.iter().find( |p| p.name == LOCATION) {
                     Some( location_param ) =>  {
-                        log::info!("found location {} for UPnP device {}", location_param.value, fos.ipaddress);
+                        log::debug!("found location {} for UPnP device {}", location_param.value, fos.ipaddress);
 
                         match common::execute_http_request(location_param.value.clone(), common::GET, None, None).await {
                             Ok(text) => {
                                 
-                                        log::info!("executed request on location {} of UPnP device {}", location_param.value, fos.ipaddress);
+                                        log::debug!("executed request on location {} of UPnP device {}", location_param.value, fos.ipaddress);
 
                                         parse_upnp_description(text.as_str());
                                 
@@ -189,7 +189,7 @@ pub fn parse_upnp_description(text: &str) -> Option<DeviceRoot> {
     let device_res = from_str::<DeviceRoot>(text);
     match device_res {
         Ok(device) => {
-            log::info!("parsed result {:?}", device);
+            log::debug!("parsed result {:?}", device);
             Some(device)
         },
         Err(err) => {

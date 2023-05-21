@@ -124,7 +124,7 @@ fn parse_xml_input_as_upnp_device_fct(
                     }
                 };
 
-                log::info!("Converted incoming data to {:?}", device);
+                log::debug!("Converted incoming data to {:?}", device);
 
                 let mut ctx = ctx.clone();
                 match ctx.data_mut() {

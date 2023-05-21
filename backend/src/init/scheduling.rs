@@ -10,9 +10,10 @@ pub async fn start_scheduled_jobs() {
     schedule_cache_update(&scheduler).await;
     schedule_status_check(&scheduler).await;
     schedule_condition_checks(&scheduler).await;
+    schedule_token_cleanup(&scheduler).await;
 
     match scheduler.start().await {
-        Ok(_res) => log::info!("Schedulder started"),
+        Ok(_res) => log::debug!("Schedulder started"),
         Err(err) => log::error!("Could not start schedulder due to : {}", err),
     }
 }
@@ -53,4 +54,14 @@ async fn schedule_cache_update(scheduler: &JobScheduler) {
         )
         .await
         .unwrap();
+}
+
+async fn schedule_token_cleanup(scheduler: &JobScheduler) {
+    scheduler.add(
+        Job::new("0 0 * * * *", |_uuid, _l| {            
+                    crate::datastore::delete_expired_tokens();
+        })        
+        .unwrap(),
+
+    ) .await.unwrap();
 }

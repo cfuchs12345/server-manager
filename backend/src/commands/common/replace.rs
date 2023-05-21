@@ -1,8 +1,7 @@
-use base64::{engine::general_purpose, Engine as _};
 use lazy_static::lazy_static;
 use regex::Regex;
 
-use crate::models::{input::ActionOrDataInput, server::Credential};
+use crate::{models::{input::ActionOrDataInput, server::Credential}, common};
 
 
 
@@ -129,8 +128,8 @@ fn replace_base64_encoded(input: String) -> String {
 
     for placeholder in Placeholder::Base64.extract_placeholders(input) {
         let to_encode = Placeholder::Base64.strip_of_marker(&placeholder);
-
-        let replacement = encode_base64(&to_encode);
+        
+        let replacement = common::encode_base64(Placeholder::Base64.strip_of_marker(to_encode.as_str()).as_str());
 
         result = result.replace(placeholder.as_str(), replacement.as_str());
     }
@@ -152,9 +151,6 @@ fn decrypt(credential: &Credential, crypto_key: &str) -> String {
     }
 }
 
-fn encode_base64(placeholder: &str) -> String {
-    general_purpose::STANDARD_NO_PAD.encode(Placeholder::Base64.strip_of_marker(placeholder))
-}
 
 
 #[cfg(test)]
@@ -197,11 +193,5 @@ mod tests {
             Placeholder::Base64.strip_of_marker(&"${encode_base64(USERNAME)}".to_string()),
             "USERNAME"
         );
-    }
-
-    #[test]
-    fn test_encode_bas64() {
-        assert_eq!(encode_base64(&"USERNAME".to_string()), "VVNFUk5BTUU");
-        assert_eq!(encode_base64(&"test:test".to_string()), "dGVzdDp0ZXN0");
     }
 }

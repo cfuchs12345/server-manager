@@ -71,7 +71,7 @@ export class GeneralService {
     this.http.get<DNSServer[]>('/backend/configurations/dnsservers').subscribe({
       next: (res) => {
         this.dataStore.dnsServers = res;
-        this._dnsServers.next(this.dataStore.dnsServers.slice(0, this.dataStore.dnsServers.length));
+        this._dnsServers.next(this.dataStore.dnsServers.slice());
       },
       error: (err: any) => {
         this.errorService.newError("General-Service", undefined, err.message);
@@ -85,7 +85,7 @@ export class GeneralService {
     this.http.get<DNSServer[]>('/backend/systeminformation/dnsservers').subscribe({
       next: (res) => {
         this.dataStore.systemDNSServers = res;
-        this._systemDNSServers.next(this.dataStore.systemDNSServers.slice(0, this.dataStore.systemDNSServers.length));
+        this._systemDNSServers.next(this.dataStore.systemDNSServers.slice());
       },
       error: (err: any) => {
         this.errorService.newError("General-Service", undefined, err.message);

@@ -75,16 +75,13 @@ export class PluginService {
 
   private publishDisabledPlugins = ()=> {
     this._disabledPlugins.next(
-      this.dataStore.disabledPlugins.slice(
-        0,
-        this.dataStore.disabledPlugins.length
-      )
+      this.dataStore.disabledPlugins.slice()
     );
   }
 
   private publishPlugins = () => {
     this._plugins.next(
-      this.dataStore.plugins.slice(0, this.dataStore.plugins.length)
+      this.dataStore.plugins.slice()
     );
   }
 

@@ -1,8 +1,13 @@
-use std::{error::Error, fmt::Display};
+use std::{error::Error, fmt::Display, num::ParseIntError};
+
+use actix_web::{ResponseError, HttpResponse};
+use http::{StatusCode, header};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
 pub enum AppError {
     ServerNotFound(String),
+    UserNotFound(String),
     InvalidArgument(String, Option<String>),
     UnknownPlugin(String),
     UnknownPluginAction(String, String),
@@ -10,13 +15,21 @@ pub enum AppError {
     Unknown(Box<dyn Error>),
     DatabaseError(Box<dyn Error>),
     MissingArgument(String),
-    CouldNotRenderData(String)
+    CouldNotRenderData(String),
+    UnAuthorized,
+    DecryptionError
+}
+
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
+pub struct AppErrorResponse {
+    error: String
 }
 
 impl Display for AppError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             AppError::ServerNotFound(ipaddress) => write!(f, "A server with address {} could not be found", ipaddress),
+            AppError::UserNotFound(user_id) => write!(f, "A user with id {} could not be found", user_id),
             AppError::InvalidArgument(name, opt_value) => match opt_value {
                 Some(value) => 
                 write!(f, "Invalid Argument {} with value {}", name, value)
@@ -31,6 +44,8 @@ impl Display for AppError {
             AppError::DatabaseError(err) => write!(f, "A database error occurred {}",err),
             AppError::MissingArgument(name) => write!(f, "Argument with name {} is missing or not set", name),            
             AppError::CouldNotRenderData(data) => write!(f, "Could not render data {}", data),
+            AppError::UnAuthorized => write!(f, "User is not authorized"),
+            AppError::DecryptionError => write!(f, "Data could not be decrypted"),
 
         }
     }
@@ -53,5 +68,41 @@ impl From<sqlx::Error> for AppError {
     }
 }
 
+impl From<bcrypt::BcryptError> for AppError {
+    fn from(err: bcrypt::BcryptError) -> Self {
+        AppError::Unknown(Box::new(err))
+    }
+}
+
+
+impl From<header::ToStrError> for AppError {
+    fn from(err: header::ToStrError) -> Self {
+        AppError::Unknown(Box::new(err))
+    }
+}
+
+
+impl From<ParseIntError> for AppError {
+    fn from(err: ParseIntError) -> Self {
+        AppError::Unknown(Box::new(err))
+    }
+}
+
+
+impl ResponseError for AppError {
+
+    fn status_code(&self) -> StatusCode {
+        match self {
+            Self::UnAuthorized => StatusCode::UNAUTHORIZED,
+            _ => StatusCode::INTERNAL_SERVER_ERROR
+        }
+    }
+
+    fn error_response(&self) -> HttpResponse {
+        HttpResponse::build(self.status_code()).json(AppErrorResponse {
+            error: format!("{:?}", self),
+        })
+    }
+}
 
 impl std::error::Error for AppError {}

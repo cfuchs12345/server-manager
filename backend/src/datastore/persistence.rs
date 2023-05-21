@@ -23,10 +23,12 @@ impl Persistence {
             ("migration", vec![("date", "DATETIME"), ("name", "TEXT")]),
             ("encryption", vec![("key", "TEXT"),("value", "TEXT")]),
             ("servers", vec![("key", "TEXT"),("value", "TEXT")]),
+            ("users", vec![("key", "TEXT"),("value", "TEXT")]),
             ("plugin_config", vec![("key", "TEXT"), ("value", "TEXT")]),
             ("dns_servers", vec![("key", "TEXT"), ("value", "TEXT")]),
         ]).await.unwrap();
         instance.create_index( vec![ ("servers", true, vec!["key"])]).await.unwrap();
+        instance.create_index( vec![ ("users", true, vec!["key"])]).await.unwrap();
         instance.create_index( vec![ ("plugin_config", true, vec!["key"])]).await.unwrap();
         instance.create_index( vec![ ("dns_servers", true, vec!["key"])]).await.unwrap();
         instance
@@ -113,10 +115,10 @@ impl Persistence {
 
 
 
-    pub async fn get_all(& self, table: &str) -> Result<Vec<Entry>, Error> {
+    pub async fn get_all(& self, table: &str, order_by: Option<&str>) -> Result<Vec<Entry>, Error> {
         let mut transaction = self.pool.begin().await?;
 
-        let select = get_select_all_statement(table, Some("inet_aton(key) asc")); // inet_aton is a function from inet extension - converts the xxx.xxx.xxx.xxx in a numeric value so that it can be easily sorted
+        let select = get_select_all_statement(table, order_by); // inet_aton is a function from inet extension - converts the xxx.xxx.xxx.xxx in a numeric value so that it can be easily sorted
 
         let result: Vec<Entry> =  sqlx::query_as(select.as_str()).fetch_all(&mut transaction).await.unwrap();
         transaction.commit().await?;

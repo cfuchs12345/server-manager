@@ -17,7 +17,7 @@ pub fn convert_result_string_to_html(
     template_engine: &handlebars::Handlebars<'static>,
     data: &Data,
 ) -> Result<String, AppError> {
-    log::info!("Data input is: {}", input);
+    log::debug!("Data input is: {}", input);
 
     let data_value = create_data_input_structure(data, input);
 

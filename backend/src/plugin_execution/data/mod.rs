@@ -83,7 +83,7 @@ pub async fn execute_data_query(
                 let check_results =
                     actions::check_action_conditions(server.clone(), actions, crypto_key.clone())
                         .await;
-                log::info!("-- {:?}", check_results);
+
                 results.push(DataResult {
                     ipaddress: server.ipaddress.clone(),
                     result: enriched_result,

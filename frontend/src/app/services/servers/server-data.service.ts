@@ -60,7 +60,7 @@ export class ServerDataService {
 
 
   private publishDataResult = () => {
-    this._dataResults.next(this.dataStore.dataResults.slice(0, this.dataStore.dataResults.length));
+    this._dataResults.next(this.dataStore.dataResults.slice());
   };
 
 }

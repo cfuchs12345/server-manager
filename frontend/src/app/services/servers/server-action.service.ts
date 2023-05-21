@@ -82,10 +82,7 @@ export class ServerActionService {
 
   private publishActionCheckResult = () => {
     this._actionConditionChecks.next(
-      this.dataStore.actionConditionChecks.slice(
-        0,
-        this.dataStore.actionConditionChecks.length
-      )
+      this.dataStore.actionConditionChecks.slice()
     );
   };
 }

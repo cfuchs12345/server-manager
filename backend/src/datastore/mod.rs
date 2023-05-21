@@ -3,6 +3,7 @@ mod config;
 mod inmemory;
 mod servers;
 mod plugins;
+mod users;
 mod model;
 
 pub use persistence::Persistence;
@@ -24,6 +25,17 @@ pub use crate::datastore::servers::get_server;
 pub use crate::datastore::servers::insert_server;
 pub use crate::datastore::servers::delete_server;
 pub use crate::datastore::servers::update_server;
+
+pub use crate::datastore::users::insert_user;
+pub use crate::datastore::users::update_user;
+pub use crate::datastore::users::delete_user;
+pub use crate::datastore::users::load_all_users;
+pub use crate::datastore::users::get_user;
+
+pub use crate::datastore::inmemory::is_valid_token;
+pub use crate::datastore::inmemory::insert_token;
+pub use crate::datastore::inmemory::delete_token;
+pub use crate::datastore::inmemory::delete_expired_tokens;
 
 pub use crate::datastore::inmemory::get_all_plugins;
 pub use crate::datastore::inmemory::get_all_servers;
@@ -50,3 +62,5 @@ pub fn init_cache() {
 pub fn update_cache() {
     plugins::init_cache_silent();
 }
+
+

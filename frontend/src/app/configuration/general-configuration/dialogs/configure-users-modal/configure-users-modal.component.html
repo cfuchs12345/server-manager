@@ -1,0 +1,81 @@
+<hr>
+<b>Add User</b>
+<br />
+<div fxLayout="row">
+  <div fxFlex="100" fxFlex.gt-xs="70" fxFlexFill>
+    <mat-form-field style="margin: 5px; min-width: 400px">
+      <mat-label>{{ userIdLabel }}</mat-label>
+      <input matInput [placeholder]="useridPlaceholder" [formControl]="userId" />
+      <mat-error *ngIf="userId.invalid">{{
+        getUserIdMessage()
+      }}</mat-error>
+      <mat-hint>{{ userIdHint }}</mat-hint>
+    </mat-form-field>
+  </div>
+</div>
+<div fxLayout="row">
+  <div fxFlex="100" fxFlex.gt-xs="70" fxFlexFill>
+    <mat-form-field style="margin: 5px; min-width: 400px">
+      <mat-label>{{ fullNameLabel }}</mat-label>
+      <input matInput [placeholder]="fullNamePlaceholder" [formControl]="fullName" />
+      <mat-error *ngIf="fullName.invalid">{{
+        getFullNameMessage()
+      }}</mat-error>
+      <mat-hint>{{ fullNameHint }}</mat-hint>
+    </mat-form-field>
+  </div>
+</div>
+<div fxLayout="row">
+  <div fxFlex="100" fxFlex.gt-xs="70" fxFlexFill>
+    <mat-form-field style="margin: 5px; min-width: 400px">
+      <mat-label>{{ emailLabel }}</mat-label>
+      <input matInput [placeholder]="emailPlaceholder" [formControl]="email" />
+      <mat-error *ngIf="email.invalid">{{
+        getEmailMessage()
+      }}</mat-error>
+      <mat-hint>{{ emailHint }}</mat-hint>
+    </mat-form-field>
+  </div>
+</div>
+<div fxLayout="row">
+  <button
+  mat-raised-button
+  color="primary"
+  style="margin: 5px"
+  (click)="onClickSaveUser()"
+  [disabled]="!this.userId.valid || !this.fullName.valid || !this.email.valid"
+>
+  {{ buttonTextAdd }}
+</button>
+</div>
+<hr>
+<b>Delete Users</b>
+<br/>
+<div fxLayout="row">
+  <div fxFlex="100" style="align-items: center; justify-content: center">
+    <button mat-raised-button color="primary" style="margin: 5px" (click)="onClickDeleteUsers()" [disabled]="usersSelected() === 0">
+      {{ buttonTextDelete }}
+    </button>
+  </div>
+</div>
+<div fxLayout="row">
+  <table mat-table [dataSource]="users" class="mat-elevation-z8">
+    <ng-container matColumnDef="delete">
+      <th mat-header-cell *matHeaderCellDef><span (click)="onClickSelectAll()"  style="cursor: pointer;">{{ selectAll ? '&#9745;' : '&#9744;'}}</span>&nbsp;&nbsp;Delete</th>
+      <td mat-cell *matCellDef="let user">
+        <div (click)="onClickSelectUser(user)" style="cursor: pointer;">{{ isSelected(user) ? '&#9745;' : '&#9744;'}}</div>
+      </td>
+    </ng-container>
+    <ng-container matColumnDef="user_id">
+      <th mat-header-cell *matHeaderCellDef>User Id</th>
+      <td mat-cell *matCellDef="let user">{{ user.user_id }}</td>
+    </ng-container>
+    <ng-container matColumnDef="full_name">
+      <th mat-header-cell *matHeaderCellDef>Full Name</th>
+      <td mat-cell *matCellDef="let user">{{ user.full_name }}</td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+  </table>
+</div>

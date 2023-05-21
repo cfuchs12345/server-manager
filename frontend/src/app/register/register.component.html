@@ -1,0 +1,53 @@
+<div  class="centered">
+  <div fxLayout="row">
+    <div fxFlex="100" style="align-items: center; justify-content: center">
+      <mat-form-field style="margin: 5px; width: 100%;">
+        <mat-label>{{ userIdLabel }}</mat-label>
+        <input
+          matInput
+          [placeholder]="useridPlaceholder"
+          [formControl]="userId"
+        />
+        <mat-error *ngIf="userId.invalid">{{ getUserIdMessage() }}</mat-error>
+        <mat-hint>{{ userIdHint }}</mat-hint>
+      </mat-form-field>
+    </div>
+  </div>
+  <div fxLayout="row">
+    <div fxFlex="100" style="align-items: center; justify-content: center">
+      <mat-form-field style="margin: 5px; width: 100%">
+        <mat-label>{{ fullNameLabel }}</mat-label>
+        <input matInput [placeholder]="fullNamePlaceholder" [formControl]="fullName" />
+        <mat-error *ngIf="fullName.invalid">{{
+          getFullNameMessage()
+        }}</mat-error>
+        <mat-hint>{{ fullNameHint }}</mat-hint>
+      </mat-form-field>
+    </div>
+  </div>
+  <div fxLayout="row">
+    <div fxFlex="100" style="align-items: center; justify-content: center">
+      <mat-form-field style="margin: 5px; width: 100%">
+        <mat-label>{{ emailLabel }}</mat-label>
+        <input matInput [placeholder]="emailPlaceholder" [formControl]="email" />
+        <mat-error *ngIf="email.invalid">{{
+          getEmailMessage()
+        }}</mat-error>
+        <mat-hint>{{ emailHint }}</mat-hint>
+      </mat-form-field>
+    </div>
+  </div>
+  <div fxLayout="row">
+    <div fxFlex="100" style="align-items: center; justify-content: right; text-align: right;">
+      <button
+      mat-raised-button
+      color="primary"
+      style="margin: 5px"
+      [disabled]="email.invalid || fullName.invalid"
+      (click)="onClickSave()"
+    >
+      {{ buttonText }}
+    </button>
+    </div>
+  </div>
+</div>

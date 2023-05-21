@@ -24,6 +24,9 @@ http = "0.2.9"
 ipnet = "2.7.2"
 actix-web = "4"
 actix-files = "0.6.2"
+actix-identity = "0.5.2"
+actix-session = { version="0.7.2", features = ["cookie-session"] }
+actix-web-httpauth = "0.8.0"
 tokio = { version = "1.21.2", features = ["full"] }
 dnsclient = { version = "0.1.17"}
 futures = "0.3.28"
@@ -45,4 +48,9 @@ tokio-cron-scheduler = "0.9.4"
 sys-info = "0.9.1" 
 memory-stats = {version="1.0.0", features=["always_use_statm"]} 
 async-trait = "0.1.68"
- 
+lettre = "0.10.4"
+bcrypt = "0.14.0"
+aes-gcm = "0.10.1"
+pbkdf2 = "0.12.1"
+sha2 = "0.10.6"
+aes = "0.8.2"
