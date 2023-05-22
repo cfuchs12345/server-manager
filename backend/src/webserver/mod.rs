@@ -4,7 +4,6 @@ mod routes;
 use actix_identity::IdentityMiddleware;
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_web_httpauth::{extractors::{AuthenticationError, bearer::BearerAuth}, middleware::HttpAuthentication, headers::www_authenticate::bearer::Bearer};
-use actix_web_httpauth::headers::www_authenticate::basic::Basic;
 pub use appdata::AppData;
 
 use actix_files as fs;

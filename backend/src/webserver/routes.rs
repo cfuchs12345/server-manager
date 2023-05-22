@@ -425,12 +425,12 @@ pub async fn put_user_changepassword(data: web::Data<AppData>, req: HttpRequest,
         }
 
         let otk_tuple = otk_tuple_res.unwrap();
-        let secret = common::make_aes_secrect(&query.user_id.as_str(), otk_tuple.1.as_str());        
+        let secret = common::make_aes_secrect(query.user_id.as_str(), otk_tuple.1.as_str());        
         
 
         match common::aes_decrypt(&query.old_password, secret.as_str()) {
             Ok(decrypted_old) => {
-                match datastore::get_user(&data.app_data_persistence, &query.user_id.as_str()).await {
+                match datastore::get_user(&data.app_data_persistence, query.user_id.as_str()).await {
                     Ok(mut user) => {
                         match user.check_password(&decrypted_old) {
                             Ok(res) => {
@@ -478,7 +478,7 @@ pub async fn put_user_changepassword(data: web::Data<AppData>, req: HttpRequest,
         }
     }
 
-    return HttpResponse::Unauthorized().finish();
+    HttpResponse::Unauthorized().finish()
 }
 
 
@@ -561,7 +561,7 @@ pub async fn authenticate(data: web::Data<AppData>, req: HttpRequest) -> HttpRes
             }
         }
     }
-    return HttpResponse::Unauthorized().finish();
+    HttpResponse::Unauthorized().finish()
 }
 
 fn get_existing_otk(header_value: &HeaderValue) -> Result<(NaiveDateTime, String), AppError>{
