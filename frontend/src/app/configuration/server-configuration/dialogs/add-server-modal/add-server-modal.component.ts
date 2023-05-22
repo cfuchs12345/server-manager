@@ -90,7 +90,7 @@ export class AddServerModalComponent implements OnInit {
       const features = this.selectedServer.features;
       features.push(new Feature(this.selectedPlugin.id, this.selectedPlugin.name, [], []));
       const featureOfServer = new ServerFeature( this.selectedServer.ipaddress, features, true);
-      this.serverService.updateServerFeatures([featureOfServer]);
+      this.serverService.updateServerFeatures([featureOfServer], false);
     }
   }
 

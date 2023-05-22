@@ -82,7 +82,7 @@ export class DeleteServerModalComponent implements OnInit, OnDestroy {
 
       const featuresOfServer = new ServerFeature(this.selectedServer.ipaddress, features, true);
 
-      this.serverService.updateServerFeatures([featuresOfServer]);
+      this.serverService.updateServerFeatures([featuresOfServer], false);
     }
   }
 
