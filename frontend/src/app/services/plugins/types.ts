@@ -15,11 +15,11 @@ export class Script {
 }
 
 export class CredentialDefinition {
-  constructor(public name: string, public credential_type: string, public encrypt: boolean, public default_value:string) {};
+  constructor(public name: string, public credential_type: string, public encrypt: boolean, public default_value:string, public mandatory: boolean = false) {};
 }
 
 export class ParamDefinition {
-  constructor(public name: string, public param_type: string, public default_value: string){};
+  constructor(public name: string, public param_type: string, public default_value: string, public mandatory: boolean = false){};
 }
 
 export class DependsDef {

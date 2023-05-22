@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, ValidatorFn, Validators } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { PluginService } from 'src/app/services/plugins/plugin.service';
 import {
@@ -98,7 +98,7 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
 
   createInputControls = () => {
     this.paramsFromPlugin.forEach((param) =>
-      this.form.addControl('param.' + param.name, new FormControl('', []))
+        this.form.addControl('param.' + param.name, new FormControl('',  param.mandatory ? [Validators.required] : []))
     );
     this.credentialsFromPlugin.forEach((credential) => {
       if (credential.encrypt) {
@@ -106,10 +106,11 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
       }
       this.form.addControl(
         'credential.' + credential.name,
-        new FormControl('', [])
+        new FormControl('', credential.mandatory ? [Validators.required] : [])
       );
     });
   };
+
 
   setInitialValuesOnInputControls = () => {
     this.paramsFromFeature.forEach((param) =>
@@ -135,10 +136,10 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
     }
 
     const paramDef = this.paramsFromPlugin.find((param) => param.name === name);
-    if (paramDef) {
+    if (paramDef && paramDef.default_value && paramDef.default_value.length > 0) {
       return paramDef.default_value;
     }
-    return '';
+    return 'None';
   };
 
   getCurrentCredentialValue = (name: string): string => {
@@ -163,10 +164,10 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
     const credential = this.credentialsFromPlugin.find(
       (credential) => credential.name === name
     );
-    if (credential) {
+    if (credential && credential.default_value && credential.default_value.length > 0) {
       return credential.default_value;
     }
-    return '';
+    return 'None';
   };
 
   isPasswordCredential = (name: string): boolean => {

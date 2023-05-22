@@ -14,6 +14,7 @@ import {
 import { MatTableDataSource } from '@angular/material/table';
 import { RowData } from 'src/app/services/general/types';
 import { Server } from 'src/app/services/servers/types';
+import { AuthenticationService } from 'src/app/services/auth/authentication.service';
 
 const initialDisplayedColumns: string[] = [
   'icons',
@@ -58,21 +59,25 @@ export class ServerListComponent implements OnChanges {
     this.dataSource.filter = (event.target as HTMLInputElement).value.trim();
   }
 
-  constructor() {}
+  constructor(private authService: AuthenticationService) {}
 
   ngOnChanges(): void {
       this.dataSource.data = this.toRowData(this.servers);
   }
 
 
-  expandRow = (rowData: RowData) => {
+  onClickExpandRow = (rowData: RowData) => {
     this.expandedElement = this.expandedElement === rowData ? null : rowData;
 
 
     rowData.show_details = !rowData.show_details;
-  };
+  }
 
-  turnDetailChange(event: boolean) {
+  onClickLogout = () => {
+    this.authService.logout();
+  }
+
+  onClickTurnDetailChange = (event: boolean) => {
     this.turnDetail = event;
   }
 

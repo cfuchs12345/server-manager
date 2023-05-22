@@ -1,8 +1,11 @@
 <div fxLayout="row" fxLayoutAlign="start center">
-  <div fxFlex="100" class="app-left-align">
+  <div fxFlex="90" class="app-left-align">
     <mat-form-field class="app-filter-table-input">
       <input matInput (keyup)="applyFilter($event)" placeholder="Filter" />
     </mat-form-field>
+  </div>
+  <div fxFlex="10" class="app-right-align">
+      <img src="assets/svg/logout-svgrepo-com.svg" (click)="onClickLogout()">
   </div>
 </div>
 <table
@@ -13,7 +16,7 @@
 >
   <ng-container matColumnDef="icons">
     <th mat-header-cell *matHeaderCellDef>Status</th>
-    <td mat-cell *matCellDef="let rowData" (click)="expandRow(rowData)">
+    <td mat-cell *matCellDef="let rowData" (click)="onClickExpandRow(rowData)">
       <div fxLayout="row" class="app-status">
         <app-server-icon [server]="rowData.server" />
         <app-server-status [server]="rowData.server" />
@@ -23,28 +26,28 @@
 
   <ng-container matColumnDef="ipaddress">
     <th mat-header-cell *matHeaderCellDef>IP</th>
-    <td mat-cell *matCellDef="let rowData" (click)="expandRow(rowData)">
+    <td mat-cell *matCellDef="let rowData" (click)="onClickExpandRow(rowData)">
       {{ rowData.ipaddress }}
     </td>
   </ng-container>
 
   <ng-container matColumnDef="name">
     <th mat-header-cell *matHeaderCellDef>Name</th>
-    <td mat-cell *matCellDef="let rowData" (click)="expandRow(rowData)">
+    <td mat-cell *matCellDef="let rowData" (click)="onClickExpandRow(rowData)">
       {{ rowData.name }}
     </td>
   </ng-container>
 
   <ng-container matColumnDef="dnsname">
     <th mat-header-cell *matHeaderCellDef>DNS Name</th>
-    <td mat-cell *matCellDef="let rowData" (click)="expandRow(rowData)">
+    <td mat-cell *matCellDef="let rowData" (click)="onClickExpandRow(rowData)">
       {{ rowData.dnsname }}
     </td>
   </ng-container>
 
   <ng-container matColumnDef="features">
     <th mat-header-cell *matHeaderCellDef>Features</th>
-    <td mat-cell *matCellDef="let rowData" (click)="expandRow(rowData)">
+    <td mat-cell *matCellDef="let rowData" (click)="onClickExpandRow(rowData)">
         <app-server-features [server]="rowData.server"/>
     </td>
   </ng-container>
@@ -76,7 +79,7 @@
         class="element-detail"
         [@detailExpand]="rowData == expandedElement ? 'expanded' : 'collapsed'"
       >
-        <app-server-control-detail [server]="rowData.server" (turnDetail)="turnDetailChange($event)"/>
+        <app-server-control-detail [server]="rowData.server" (turnDetail)="onClickTurnDetailChange($event)"/>
       </div>
     </td>
   </ng-container>

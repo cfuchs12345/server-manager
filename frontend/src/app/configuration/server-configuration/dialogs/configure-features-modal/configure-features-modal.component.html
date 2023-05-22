@@ -60,8 +60,10 @@
       color="primary"
       style="margin: 5px"
       (click)="onClickSaveFeatureSettings()"
+      [disabled]="!this.form.valid"
     >
       {{ buttonTextSaveFeatureSettings }}
     </button>
   </div>
+  <div>{{this.form.errors}}</div>
 </div>

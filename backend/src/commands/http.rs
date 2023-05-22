@@ -129,6 +129,7 @@ pub async fn execute_http_command<'a>(
         );
         return Ok(None);
     }
+    log::info!("{} {} {}", normal_and_masked_url.0, method.value.as_str(), normal_and_masked_body.0);
 
     let text = crate::common::execute_http_request(
         normal_and_masked_url.0,

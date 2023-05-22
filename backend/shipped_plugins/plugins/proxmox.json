@@ -23,24 +23,28 @@
             "name": "username",
             "credential_type": "username",
             "encrypt": false,
+            "mandatory": true,
             "default_value": ""
         },
         {
             "name": "realm",
             "credential_type": "realm",
             "encrypt": false,
+            "mandatory": true,
             "default_value": ""
         },
         {
             "name": "tokenid",
             "credential_type": "token_id",
             "encrypt": false,
+            "mandatory": true,
             "default_value": ""
         },
         {
             "name": "token",
             "credential_type": "token",
             "encrypt": true,
+            "mandatory": true,
             "default_value": ""
         }
     ],
@@ -58,7 +62,8 @@
         {
             "name": "nodename",
             "param_type": "string",
-            "default_value": "no default. This is the name of your Proxmox host"
+            "mandatory": true,
+            "default_value": ""
         }
     ],
     "data": [

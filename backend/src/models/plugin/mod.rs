@@ -43,7 +43,9 @@ impl Plugin {
 pub struct ParamDef {
     pub name: String,
     pub param_type: String,
-    pub default_value: String
+    pub default_value: String,
+    #[serde(default = "default_false")]
+    pub mandatory: bool,
 }
 
 impl PartialEq for ParamDef {
@@ -57,5 +59,13 @@ pub struct CredentialDef {
     pub name: String,
     pub credential_type: String,
     pub encrypt: bool,
-    pub default_value: String
+    pub default_value: String,
+    #[serde(default = "default_false")]
+    pub mandatory: bool,
+}
+
+
+
+fn default_false() -> bool {
+    false
 }

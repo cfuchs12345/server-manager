@@ -56,7 +56,7 @@ export class AuthenticationService {
     return this.http.get<boolean>('/backend_nt/users/exist');
   }
 
-  logout() {
+  logout = () => {
     this._userTokenSubject.next(null);
     this.router.navigate(['/login']);
   }
