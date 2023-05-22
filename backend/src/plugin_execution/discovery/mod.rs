@@ -14,7 +14,9 @@ use tokio::sync::Semaphore;
 use crate::{
     commands::{self},
     common,
-    models::{config::dns_server::DNSServer, response::host_information::HostInformation, error::AppError},
+    models::{
+        config::dns_server::DNSServer, error::AppError, response::host_information::HostInformation,
+    },
     models::{
         plugin::{detection::DetectionEntry, Plugin},
         server::{Feature, FeaturesOfServer, Server},
@@ -47,7 +49,10 @@ pub async fn auto_discover_servers_in_network(
                 "Could not parse network {:?}. Error was {:?}",
                 network_as_string, e
             );
-            return Err(AppError::InvalidArgument("network".to_owned(), Some(network_as_string.to_owned())));
+            return Err(AppError::InvalidArgument(
+                "network".to_owned(),
+                Some(network_as_string.to_owned()),
+            ));
         }
     };
 
@@ -68,7 +73,7 @@ pub async fn discover_features_of_all_servers(
     for server in servers {
         let ip_address = server.ipaddress.clone();
 
-        tasks.push(tokio::spawn( async move {
+        tasks.push(tokio::spawn(async move {
             discover_features(ip_address.as_str()).await
         }));
     }
@@ -76,19 +81,22 @@ pub async fn discover_features_of_all_servers(
     // wait for all tasks to finish
     let result = join_all(tasks).await;
 
-    let mut features_from_plugin_discovery: Vec<FeaturesOfServer> = result
+    let features_from_plugin_discovery: Vec<FeaturesOfServer> = result
         .iter()
         .map(|f| f.as_ref().unwrap())
         .map(|f| f.as_ref().unwrap())
         .map(|f| f.to_owned())
         .collect();
 
-
-    let mut features_from_upnp_discovery = upnp_future.await?;
+    let features_from_upnp_discovery = upnp_future.await?;
+    log::info!(
+        "features_from_upnp_discovery {:?}",
+        features_from_upnp_discovery
+    );
 
     Ok(merge_features(
-        &mut features_from_plugin_discovery,
-        &mut features_from_upnp_discovery,
+        features_from_plugin_discovery,
+        features_from_upnp_discovery,
     ))
 }
 
@@ -164,7 +172,10 @@ async fn auto_discover_servers(
     let hosts = network.hosts();
 
     if hosts.count() > 512 {
-        return Err(AppError::InvalidArgument("Too many hosts in the network".to_owned(), None));
+        return Err(AppError::InvalidArgument(
+            "Too many hosts in the network".to_owned(),
+            None,
+        ));
     }
 
     let list = match Client::new(&Config::default()) {
@@ -205,24 +216,26 @@ async fn auto_discover_servers(
 }
 
 fn merge_features(
-    list1: &mut Vec<FeaturesOfServer>,
-    list2: &mut Vec<FeaturesOfServer>,
+    mut list1: Vec<FeaturesOfServer>,
+    list2: Vec<FeaturesOfServer>,
 ) -> Vec<FeaturesOfServer> {
     let mut result: Vec<FeaturesOfServer> = Vec::new();
-    result.append(list1);
-    for feature_list2 in list2 {
-        if let Some(feature_list1) = result
-            .iter()
-            .find(|r| r.ipaddress == feature_list2.ipaddress)
-        {
-            feature_list1
-                .to_owned()
-                .features
-                .append(&mut feature_list2.features);
-        } else {
-            result.push(feature_list2.to_owned());
+    result.append(&mut list1);
+
+    // test if we need to merge with an entry that is already there for a server and we just need to add features to the list
+    for feature in &mut result {
+        if let Some(to_add) = list2.iter().find( |f| f.ipaddress == feature.ipaddress).cloned().as_mut() {            
+            feature.features.append(&mut to_add.features);            
         }
     }
+
+    // if server is not already there, just add the whole FeaturesOfServer
+    for feature in list2 {
+        if !result.iter().any(|f| f.ipaddress == feature.ipaddress) {
+            result.push(feature);
+        }
+    }
+
     result
 }
 
@@ -250,13 +263,13 @@ async fn discover_host(
 
     let lookup_hostname_fut = match lookup_names {
         true => Some(lookup_hostname(addr, upsstream_server)),
-        false => None
-    };    
+        false => None,
+    };
 
     let is_running = ping_response_fut.await;
     let dnsnames = match lookup_hostname_fut {
         Some(servers) => servers.await,
-        None => Vec::new()
+        None => Vec::new(),
     };
 
     HostInformation {
@@ -313,17 +326,17 @@ pub fn plugin_detect_match(plugin: &Plugin, input: &str) -> Result<bool, AppErro
     let is_lua = matches!(script_type.as_str(), "lua");
     let is_rhai = matches!(script_type.as_str(), "rhai");
 
-
     if is_lua {
         Ok(common::match_with_lua(input, &script))
     } else if is_rhai {
         Ok(common::match_with_rhai(input, &script))
-    }
-    else {
-        Err(AppError::InvalidArgument("script".to_string(), Some(script_type)))
+    } else {
+        Err(AppError::InvalidArgument(
+            "script".to_string(),
+            Some(script_type),
+        ))
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -362,4 +375,85 @@ mod tests {
         assert_eq!(true, result.unwrap());
     }
 
+    #[test]
+    fn test_merge_features() {
+        let list1 = vec![
+            FeaturesOfServer {
+                ipaddress: "192.168.178.1".to_owned(),
+                features: vec![Feature {
+                    id: "proxmox".to_string(),
+                    name: "proxmox".to_string(),
+                    credentials: vec![],
+                    params: vec![],
+                }],
+            },
+            FeaturesOfServer {
+                ipaddress: "192.168.178.2".to_owned(),
+                features: vec![Feature {
+                    id: "nas".to_string(),
+                    name: "nas".to_string(),
+                    credentials: vec![],
+                    params: vec![],
+                }],
+            },
+        ];
+
+        let list2 = vec![FeaturesOfServer {
+            ipaddress: "192.168.178.2".to_owned(),
+            features: vec![Feature {
+                id: "upnp".to_string(),
+                name: "upnp".to_string(),
+                credentials: vec![],
+                params: vec![],
+            }],
+        }];
+
+        let res = merge_features(list1, list2);
+
+        assert_eq!(res.len(), 2); // since only two different ips
+        assert_eq!(res.get(0).unwrap().features.len(), 1); // only proxmox
+        assert_eq!(res.get(1).unwrap().features.len(), 2); // nas and upnp
+    }
+
+
+    #[test]
+    fn test_merge_features2() {
+        let list1 = vec![
+            FeaturesOfServer {
+                ipaddress: "192.168.178.1".to_owned(),
+                features: vec![Feature {
+                    id: "proxmox".to_string(),
+                    name: "proxmox".to_string(),
+                    credentials: vec![],
+                    params: vec![],
+                }],
+            },
+            FeaturesOfServer {
+                ipaddress: "192.168.178.2".to_owned(),
+                features: vec![Feature {
+                    id: "nas".to_string(),
+                    name: "nas".to_string(),
+                    credentials: vec![],
+                    params: vec![],
+                }],
+            },
+        ];
+
+        let list2 = vec![FeaturesOfServer {
+            ipaddress: "192.168.178.3".to_owned(),
+            features: vec![Feature {
+                id: "upnp".to_string(),
+                name: "upnp".to_string(),
+                credentials: vec![],
+                params: vec![],
+            }],
+        }];
+
+        let res = merge_features(list1, list2);
+
+        assert_eq!(res.len(), 3); // since only two different ips
+        assert_eq!(res.get(0).unwrap().features.len(), 1); // only proxmox
+        assert_eq!(res.get(1).unwrap().features.len(), 1); // nas
+        assert_eq!(res.get(2).unwrap().features.len(), 1); // upnp
+    }
 }

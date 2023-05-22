@@ -76,7 +76,7 @@ export class FeatureScanModalComponent implements OnInit, OnDestroy {
   onClickSaveServerFeatures = () => {
     const soSave = this.discoveredServerFeatures.filter((f) => f.selected);
 
-    this.serverService.updateServerFeatures(soSave);
+    this.serverService.updateServerFeatures(soSave, false);
 
     this.ref.close();
   };

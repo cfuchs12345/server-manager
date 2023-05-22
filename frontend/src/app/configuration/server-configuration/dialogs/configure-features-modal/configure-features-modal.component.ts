@@ -216,7 +216,7 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
       true
     );
 
-    this.serverService.updateServerFeatures([serverFeature]);
+    this.serverService.updateServerFeatures([serverFeature], true);
   };
 
   makeCredentials = (): Credential[] => {

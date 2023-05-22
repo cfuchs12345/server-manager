@@ -93,7 +93,7 @@ export class ServerService {
   };
 
 
-  updateServerFeatures = (featuresToSet: ServerFeature[]) => {
+  updateServerFeatures = (featuresToSet: ServerFeature[], overwriteParams: boolean) => {
     var featuresToSetMap: Map<string, Feature[]> = new Map();
     featuresToSet.forEach((server_feature) => {
       featuresToSetMap.set(server_feature.ipaddress, server_feature.features);
@@ -111,7 +111,8 @@ export class ServerService {
       }
       let newFeatureList = this.updateOrAddFeature(
         featuresToSetForServer,
-        server
+        server,
+        overwriteParams
       );
       newFeatureList = this.removeFeaturesNoLongerInList(
         featuresToSetForServer,
@@ -168,7 +169,8 @@ export class ServerService {
 
   private updateOrAddFeature = (
     foundFeature: Feature[],
-    server: Server
+    server: Server,
+    overwriteParams: boolean
   ): Server => {
     for (var feature of foundFeature) {
       var existing = server.features.find((f) => f.id === feature.id);
@@ -182,7 +184,7 @@ export class ServerService {
             feature.credentials
           )
         );
-      } else {
+      } else if (overwriteParams) {
         existing.name = feature.name;
         existing.params = feature.params;
         existing.credentials = feature.credentials;

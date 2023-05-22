@@ -1,9 +1,7 @@
 use actix_web::delete;
 use actix_web::{web, get, put, post, HttpRequest, HttpResponse};
 use http::{HeaderName, header, HeaderValue};
-use lazy_static::lazy_static;
 use sqlx::types::chrono::NaiveDateTime;
-use tokio::sync::RwLock;
 use crate::commands::ping;
 use crate::common;
 use crate::common::OneTimeKey;
@@ -107,6 +105,7 @@ pub async fn post_servers_actions(data: web::Data<AppData>, query: web::Json<Ser
             match datastore::load_all_servers(&data.app_data_persistence, true).await {                
                 Ok(servers) => {
                     let upnp_activated = !datastore::is_plugin_disabled("upnp", &data.app_data_persistence).await.unwrap_or(true);
+                    log::info!("upnp_activated {} ", upnp_activated);
                     let list = plugin_execution::discover_features_of_all_servers(servers, upnp_activated).await.unwrap();
                     log::debug!("list of found features: {:?}", list);
                     HttpResponse::Ok().json(list)       
