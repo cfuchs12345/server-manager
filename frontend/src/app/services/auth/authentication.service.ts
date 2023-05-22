@@ -57,6 +57,7 @@ export class AuthenticationService {
   }
 
   logout = () => {
+    this.userToken = undefined;
     this._userTokenSubject.next(null);
     this.router.navigate(['/login']);
   }
