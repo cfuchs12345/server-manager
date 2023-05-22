@@ -76,7 +76,7 @@ async fn validator_fn(
         },
         Err(err) => {
             log::error!("Error while validating token: {}", err);
-            Err((AuthenticationError::new(Bearer::default()).into(), req)) 
+            Err((AuthenticationError::new(Bearer::default()).into(), req))
         }                    
     }
 }

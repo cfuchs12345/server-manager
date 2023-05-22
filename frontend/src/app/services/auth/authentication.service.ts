@@ -43,6 +43,7 @@ export class AuthenticationService {
               this._userTokenSubject.next(userToken);
               return userToken;
             })
+
           );
       })
     );
