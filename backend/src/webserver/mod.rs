@@ -3,7 +3,7 @@ mod routes;
 
 use actix_identity::IdentityMiddleware;
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
-use actix_web_httpauth::{extractors::{AuthenticationError, bearer::BearerAuth}, middleware::HttpAuthentication};
+use actix_web_httpauth::{extractors::{AuthenticationError, bearer::BearerAuth}, middleware::HttpAuthentication, headers::www_authenticate::bearer::Bearer};
 use actix_web_httpauth::headers::www_authenticate::basic::Basic;
 pub use appdata::AppData;
 
@@ -71,12 +71,12 @@ async fn validator_fn(
             }
             else {
                 log::warn!("Token is invalid");
-                Err((AuthenticationError::new(Basic::default()).into(), req))
+                Err((AuthenticationError::new(Bearer::default()).into(), req))
             }
         },
         Err(err) => {
             log::error!("Error while validating token: {}", err);
-            Err((AuthenticationError::new(Basic::default()).into(), req))
+            Err((AuthenticationError::new(Bearer::default()).into(), req)) 
         }                    
     }
 }

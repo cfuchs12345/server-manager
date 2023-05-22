@@ -40,7 +40,7 @@ pub async fn post_networks_action(data: web::Data<AppData>, query: web::Json<Net
                 let mut dns_servers_found = false;
                 let mut dns_servers_query_had_error = false;               
 
-                let dns_servers = match dns_server_result { 
+                let dns_servers = match dns_server_result {
                     Ok(res) => {
                         dns_servers_found = !res.is_empty();
                         res
