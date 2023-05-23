@@ -3,7 +3,11 @@ mod routes;
 
 use actix_identity::IdentityMiddleware;
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
-use actix_web_httpauth::{extractors::{AuthenticationError, bearer::BearerAuth}, middleware::HttpAuthentication, headers::www_authenticate::bearer::Bearer};
+use actix_web_httpauth::{
+    extractors::{bearer::BearerAuth, AuthenticationError},
+    headers::www_authenticate::bearer::Bearer,
+    middleware::HttpAuthentication,
+};
 pub use appdata::AppData;
 
 use actix_files as fs;
@@ -12,10 +16,12 @@ use actix_web::{
 };
 use std::{path::PathBuf, time::Duration};
 
-use crate::{datastore::{self}, models::{error::AppError}};
+use crate::{
+    datastore::{self},
+    models::error::AppError,
+};
 
 const AUTO_LOGOUT_AFTER_MINUTES: u64 = 30;
-
 
 pub async fn start_webserver(
     bind_address: String,
@@ -30,8 +36,8 @@ pub async fn start_webserver(
             // Install the identity framework first.
             .wrap(
                 IdentityMiddleware::builder()
-                .login_deadline(Some(Duration::from_secs(60 * AUTO_LOGOUT_AFTER_MINUTES)))
-                .build(),
+                    .login_deadline(Some(Duration::from_secs(60 * AUTO_LOGOUT_AFTER_MINUTES)))
+                    .build(),
             )
             // The identity system is built on top of sessions. You must install the session
             // middleware to leverage `actix-identity`. The session middleware must be mounted
@@ -47,7 +53,11 @@ pub async fn start_webserver(
             )
             .app_data(web::Data::new(app_data.clone()))
             .wrap(Logger::default())
-            .service(web::scope("/backend").configure(init_token_secured_api).wrap( HttpAuthentication::bearer(validator_fn)))
+            .service(
+                web::scope("/backend")
+                    .configure(init_token_secured_api)
+                    .wrap(HttpAuthentication::bearer(validator_fn)),
+            )
             .service(web::scope("/backend_nt").configure(init_no_token_api))
             .configure(init_static)
     })
@@ -67,16 +77,15 @@ async fn validator_fn(
         Ok(valid) => {
             if valid {
                 Ok(req)
-            }
-            else {
+            } else {
                 log::warn!("Token is invalid");
                 Err((AuthenticationError::new(Bearer::default()).into(), req))
             }
-        },
+        }
         Err(err) => {
             log::error!("Error while validating token: {}", err);
             Err((AuthenticationError::new(Bearer::default()).into(), req))
-        }                    
+        }
     }
 }
 
@@ -119,7 +128,6 @@ fn init_token_secured_api(cfg: &mut web::ServiceConfig) {
     cfg.service(routes::delete_user);
     cfg.service(routes::put_user_changepassword);
 }
-
 
 fn init_static(cfg: &mut web::ServiceConfig) {
     // Files for frontend ==>
