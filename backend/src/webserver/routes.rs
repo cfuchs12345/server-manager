@@ -120,12 +120,12 @@ pub async fn post_servers_actions(
                         !datastore::is_plugin_disabled("upnp", &data.app_data_persistence)
                             .await
                             .unwrap_or(true);
-                    log::info!("upnp_activated {} ", upnp_activated);
+                    
                     let list =
                         plugin_execution::discover_features_of_all_servers(servers, upnp_activated)
                             .await
                             .unwrap();
-                    log::debug!("list of found features: {:?}", list);
+                    
                     HttpResponse::Ok().json(list)
                 }
                 Err(err) => {
@@ -402,6 +402,7 @@ pub async fn post_first_user(data: web::Data<AppData>, query: web::Json<User>) -
     match datastore::load_all_users(&data.app_data_persistence).await {
         Ok(result) => {
             if !result.is_empty() {
+                log::error!("Called function that is used for initial user save that allows and update without authorization. However, there are already users. So this is not the initial user creation.");
                 HttpResponse::Unauthorized().finish()
             } else {
                 save_user_common(data, query).await
