@@ -2,7 +2,7 @@ mod conditions;
 
 use futures::future::join_all;
 
-use crate::{commands, datastore, models::{plugin::sub_action::SubAction, server::{Server, Feature}, error::AppError, input::ActionOrDataInput}, models::response::data_result::ConditionCheckResult};
+use crate::{commands, datastore, models::{plugin::{sub_action::SubAction}, server::{Server, Feature}, error::AppError}, models::response::data_result::ConditionCheckResult};
 
 
 #[derive(PartialEq, Eq)]
@@ -39,20 +39,12 @@ pub async fn execute_action(
 
     match plugin.find_action(action_id) {
         Some(plugin_action) => {
-            let input: ActionOrDataInput = ActionOrDataInput::get_input_from_action(
-                plugin_action,
-                action_params,
-                &plugin,
-                feature,
-                crypto_key,
-            );
+            let input = commands::make_command_input_from_subaction("http", server, &crypto_key, plugin_action, action_params, feature, &plugin);
 
-            commands::execute_command(Some(server.ipaddress.clone()), &input)
-                .await
-                .map(|res| {
-                    log::debug!("Response for server action was: {:?}", res);
-                    true
-                })
+            let result = commands::execute(&input)
+                .await?;
+
+            Ok(result.get_result().is_some())
         }
         None => {
             let error = format!("{} is not a action of plugin {}", action_id, feature.id);

@@ -1,144 +1,132 @@
-use std::pin::Pin;
+use super::{common::replace, Command, CommandInput, CommandResult};
+use crate::models::{error::AppError};
 use async_trait::async_trait;
-use crate::models::{input::ActionOrDataInput, error::AppError};
-use super::{common::replace, Command, CommandResult,  CommandInput};
+use std::{pin::Pin};
 
+#[derive(Clone)]
 pub struct HttpCommand {
+    name: String,
+}
 
+impl HttpCommand {
+    pub fn new() -> Self {
+        HttpCommand {
+            name: "http".to_string(),
+        }
+    }
 }
 
 #[async_trait]
 impl Command for HttpCommand {
-    fn new() -> Self {
-        HttpCommand {            
-        }
-    }
-
     fn get_name(&self) -> &str {
-        "http"
+        self.name.as_str()
     }
 
-    async fn execute (&self, input: CommandInput ) -> Pin<Box<dyn CommandResult>> {
-        //let res = execute_http_command(ipaddress, input).await;
+    async fn execute(&self, input: &CommandInput) -> Result<Pin<Box<dyn CommandResult>>, AppError> {
+        let url = input
+            .find_single_arg("url")?;
+        let method = input
+            .find_single_arg("method")?;
+        let headers = input
+            .find_all_args("header")?;
 
-       //execute_http_request(url, method, headers, body)
+        let body: &str = match method {
+            "post" =>  input.find_single_arg("body").unwrap_or( {
+                log::warn!("Actually expected a body for a post request. Continuing with an empty body.");
+                ""
+            }),
+            "put" => input.find_single_arg("body").unwrap_or( {
+                    log::error!("Actually expected a body for a put request. Continuing with an empty body.");
+                    ""
+            }),
+            _ => "",
+        };
 
-        Box::pin(HttpCommandResult::new())
+        let normal_and_masked_url: (String, String) =
+            replace::replace(url, input)?;
+        let normal_and_masked_body: (String, String) =
+            replace::replace(body, input)?;
+        let normal_and_replaced_headers: Vec<(String, String)> =
+            replace::replace_list(headers, input)?;
+
+        if !body.is_empty() {
+            log::debug!(
+                "About to execute method {} on url {} with body {}",
+                method,
+                normal_and_masked_url.1,
+                normal_and_masked_body.1
+            );
+
+            log::debug!(
+                "About to execute method {} on url {} with body {}",
+                method,
+                normal_and_masked_url.0,
+                normal_and_masked_body.0
+            );
+        } else {
+            log::debug!(
+                "About to execute method {} on url {}",
+                method,
+                normal_and_masked_url.1
+            );
+
+            log::debug!(
+                "About to execute method {} on url {}",
+                method,
+                normal_and_masked_url.0
+            );
+        }
+
+        if normal_and_masked_url.0.trim().is_empty() {
+            log::warn!(
+            "Given url is empty after replacing placeholders. Was before replace: {}. Request will not be executed",
+            url
+        );
+            return Err(AppError::InvalidArgument("url".to_string(), None)); 
+        }
+        log::info!(
+            "{} {} {}",
+            normal_and_masked_url.0,
+            method,
+            normal_and_masked_body.0
+        );
+
+        match crate::common::execute_http_request(
+            normal_and_masked_url.0,
+            method,
+            Some(normal_and_replaced_headers),
+            Some(normal_and_masked_body.0),
+        )
+        .await {
+            Ok(response_string) => {
+                log::info!("response {}", response_string);
+                Ok(Box::pin(HttpCommandResult::new(Some(response_string))))
+            }
+            Err(err) => {
+                log::error!("Error: {}", err);
+                Err(AppError::from(err))
+            }
+        }
+        
+
+       
     }
 }
 
 struct HttpCommandResult {
+    result: Option<String>
 }
 
 impl HttpCommandResult {
-    fn new() -> Self {
-        HttpCommandResult {  }
+    fn new(result: Option<String>) -> Self {
+        HttpCommandResult {
+            result
+        }
     }
 }
 
 impl CommandResult for HttpCommandResult {
-    fn get_result(&self) -> Option<&str> {
-        None
+    fn get_result(&self) -> Option<String> {
+        self.result.clone()
     }
-
-    fn get_error_message(&self) -> Option<&str> {
-        None
-    }
-
-    fn is_error(&self) -> bool {
-        false
-    }
-}
-
-
-pub async fn execute_http_command<'a>(
-    ipaddress: String,
-    input: &ActionOrDataInput,
-) -> Result<Option<String>, AppError> {
-    let url = input
-        .find_arg("url")
-        .ok_or(AppError::MissingArgument("url".to_string()))?;
-    let method = input
-        .find_arg("method")
-        .ok_or(AppError::MissingArgument("method".to_string()))?;
-    let headers = input
-        .find_all_args("header")
-        .iter()
-        .map(|argdef| argdef.value.clone())
-        .collect();
-
-    let body: &str = match method.value.as_str() {
-        "post" => {
-            match input.find_arg("body") {
-                Some(arg) => arg.value.as_str(),
-                None => {
-                    log::warn!("Actually expected a body for a post request. Continuing with an empty body.");
-                    ""
-                }
-            }
-        }
-        "put" => {
-            match input.find_arg("body") {
-                Some(arg) => arg.value.as_str(),
-                None => {
-                    log::error!("Actually expected a body for a put request. Continuing with an empty body.");
-                    ""
-                }
-            }
-        }
-        _ => "",
-    };
-
-    let normal_and_masked_url: (String, String) = replace::replace(url.value.clone(), &ipaddress, input);
-    let normal_and_masked_body: (String, String) = replace::replace(body.to_string(), &ipaddress, input);
-    let normal_and_replaced_headers: Vec<(String, String)> =
-        replace::replace_list(headers, &ipaddress, input);
-
-    if !body.is_empty() {
-        log::debug!(
-            "About to execute method {} on url {} with body {}",
-            method.value,
-            normal_and_masked_url.1,
-            normal_and_masked_body.1
-        );
-
-        log::debug!(
-            "About to execute method {} on url {} with body {}",
-            method.value,
-            normal_and_masked_url.0,
-            normal_and_masked_body.0
-        );
-    } else {
-        log::debug!(
-            "About to execute method {} on url {}",
-            method.value,
-            normal_and_masked_url.1
-        );
-
-        log::debug!(
-            "About to execute method {} on url {}",
-            method.value,
-            normal_and_masked_url.0
-        );
-    }
-
-    if normal_and_masked_url.0.trim().is_empty() {
-        log::warn!(
-            "Given url is empty after replacing placeholders. Was before replace: {}. Request will not be executed",
-            url.value
-        );
-        return Ok(None);
-    }
-    log::info!("{} {} {}", normal_and_masked_url.0, method.value.as_str(), normal_and_masked_body.0);
-
-    let text = crate::common::execute_http_request(
-        normal_and_masked_url.0,
-        method.value.as_str(),
-        Some(normal_and_replaced_headers),
-        Some(normal_and_masked_body.0),
-    )
-    .await
-    .unwrap_or_default();
-
-    Ok(Some(text))
 }

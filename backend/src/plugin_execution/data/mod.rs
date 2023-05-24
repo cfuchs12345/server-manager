@@ -7,7 +7,6 @@ use crate::{
     commands, datastore,
     models::{
         error::AppError,
-        input::ActionOrDataInput,
         plugin::{data::Data, sub_action::SubAction, Plugin},
         response::data_result::DataResult,
         server::{Feature, Server},
@@ -112,10 +111,12 @@ pub async fn execute_specific_data_query(
     action_params: Option<&str>,
     crypto_key: &str,
 ) -> Result<Option<String>, AppError> {
-    let input: ActionOrDataInput =
-        ActionOrDataInput::get_input_from_data(data, action_params, plugin, feature, crypto_key);
+        let input = commands::make_command_input_from_data("http", server, &crypto_key, data, action_params, feature, &plugin);
 
-    commands::execute_command(Some(server.ipaddress.clone()), &input).await
+        let result = commands::execute(&input).await?;
+
+      
+        Ok(result.get_result().map(|r| r.to_owned()))      
 }
 
 fn extract_actions(input: &str) -> Vec<SubAction> {

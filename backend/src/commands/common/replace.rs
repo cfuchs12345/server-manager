@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use regex::Regex;
 
-use crate::{models::{input::ActionOrDataInput, server::Credential}, common};
+use crate::{models::{server::Credential, error::AppError}, common, commands::CommandInput};
 
 
 
@@ -55,72 +55,67 @@ impl Placeholder {
 
 
 pub fn replace_list(
-    input_strings: Vec<String>,
-    ipaddress: &str,
-    input: &ActionOrDataInput,
-) -> Vec<(String, String)> {
+    input_strings: Vec<&str>,
+    input: &CommandInput,
+) -> Result<Vec<(String, String)>, AppError> {
     let mut result: Vec<(String, String)> = vec![];
 
     for input_string in input_strings {
-        let res = replace(input_string, ipaddress, input);
+        let res = replace(input_string, input)?;
         result.push(res);
     }
 
-    result
+    Ok( result )
 }
-pub fn replace(input_string: String, ipaddress: &str, input: &ActionOrDataInput) -> (String, String) {
-    let mut result: String = input_string;
+pub fn replace(input_string: &str, input: &CommandInput) -> Result< (String, String), AppError> {
+    let mut result: String = input_string.to_owned();
     let mut masked: String;
 
-    result = result.replace("${IP}", ipaddress);
-    result = replace_param(result, input);
-    let both: (String, String) = replace_credentials(result, input); // we now have two string - the unmasked and the masked which can be logged for example
+    if let Some(ip_address) = input.get_ipaddress() {
+        result = result.replace("${IP}", ip_address.as_str());
+    }
+    
+    result = replace_param(result, input)?;
+    let both: (String, String) = replace_credentials(result, input)?; // we now have two string - the unmasked and the masked which can be logged for example
     result = both.0;
     masked = both.1;
     result = replace_base64_encoded(result); // base 64 encode should happen on both idependently
     masked = replace_base64_encoded(masked); // actually the base 64 encoded masked version outputs an incorrect encoded value
 
-    (result, masked)
+    Ok( (result, masked) )
 }
 
-fn replace_param(input_string: String, input: &ActionOrDataInput) -> String {
+fn replace_param(input_string: String, input: &CommandInput) -> Result<String, AppError> {
     let mut result = input_string.clone();
 
     for placeholder in Placeholder::Param.extract_placeholders(input_string) {
         let name = Placeholder::Param.strip_of_marker(&placeholder);
 
-        let replacement_option = input.find_param(name.as_str());
+        let replacement = input.find_param(name.as_str())?;
 
-        if let Some(replacement) = replacement_option {
-            result = result.replace(placeholder.as_str(), replacement.value.as_str());
-        } else {
-            log::error!("Found no replacement for placeholder {}", placeholder);
-        }
+        result = result.replace(placeholder.as_str(), replacement);
     }
-    result
+    Ok( result )
 }
 
-fn replace_credentials(input_string: String, input: &ActionOrDataInput) -> (String, String) {
+fn replace_credentials(input_string: String, input: &CommandInput) -> Result<(String, String), AppError> {
     let mut result = input_string.clone();
     let mut masked = input_string.clone();
 
     for placeholder in Placeholder::Credential.extract_placeholders(input_string) {
         let name = Placeholder::Credential.strip_of_marker(&placeholder);
 
-        let replacement = get_credential_value(name.as_str(), input);
-
-        if let Some(replacement_tuple) = replacement {
-            result = result.replace(placeholder.as_str(), replacement_tuple.0.as_str());
-            if replacement_tuple.1 {
-                masked = masked.replace(placeholder.as_str(), "******");
-            } else {
-                masked = masked.replace(placeholder.as_str(), replacement_tuple.0.as_str());
-            }
+        let replacement = get_credential_value(name.as_str(), input)?;
+        
+        result = result.replace(placeholder.as_str(), replacement.0.as_str());
+        if replacement.1 {
+            masked = masked.replace(placeholder.as_str(), "******");
         } else {
-            log::error!("Found no replacement for placeholder {}", placeholder);
+            masked = masked.replace(placeholder.as_str(), replacement.0.as_str());
         }
+        
     }
-    (result, masked)
+    Ok( (result, masked) )
 }
 
 fn replace_base64_encoded(input: String) -> String {
@@ -137,10 +132,12 @@ fn replace_base64_encoded(input: String) -> String {
     result
 }
 
-fn get_credential_value(name: &str, input: &ActionOrDataInput) -> Option<(String, bool)> {
-    input
-        .find_credential(name)
-        .map(|credential| (decrypt(credential, input.crypto_key.as_ref().unwrap()), credential.encrypted))
+fn get_credential_value(name: &str, input: &CommandInput) -> Result<(String, bool), AppError> {
+    let credential = input
+        .find_credential(name)?;
+
+
+    Ok( (decrypt(&credential, input.crypto_key.as_str()), credential.encrypted) )
 }
 
 fn decrypt(credential: &Credential, crypto_key: &str) -> String {

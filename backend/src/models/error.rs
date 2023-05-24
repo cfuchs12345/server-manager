@@ -9,6 +9,9 @@ pub enum AppError {
     ServerNotFound(String),
     UserNotFound(String),
     InvalidArgument(String, Option<String>),
+    ArgumentNotFound(String),
+    CredentialNotFound(String),
+    CommandNotFound(String),
     UnknownPlugin(String),
     UnknownPluginAction(String, String),
     #[allow(dead_code)]
@@ -16,6 +19,7 @@ pub enum AppError {
     Unknown(Box<dyn Error>),
     DataNotFound(String),
     DatabaseError(Box<dyn Error>),
+    HttpError(Box<dyn Error>),
     MissingArgument(String),
     CouldNotRenderData(String),
     UnAuthorized,
@@ -40,12 +44,16 @@ impl Display for AppError {
                 None => 
                     write!(f, "Invalid Argument {}", name)
             },
+            AppError::ArgumentNotFound(name) => write!(f, "Argument with name {} could not be found", name),
+            AppError::CredentialNotFound(name) => write!(f, "Credential with name {} could not be found", name),
+            AppError::CommandNotFound(name)=> write!(f, "Command with name {} could not be found", name),
             AppError::UnknownPlugin(name) => write!(f, "A plugin with id {} is not known", name),
             AppError::UnknownPluginAction(plugin_name, name) => write!(f, "A plugin action with id {} is not know for a plugin with id {}", name, plugin_name),
             AppError::UnknownPluginData(plugin_name, name) => write!(f, "A plugin data query with id {} is not know for a plugin with id {}", name, plugin_name),
             AppError::Unknown(err) => write!(f, "An unknown error occurred {}",err),
             AppError::DataNotFound(name) =>write!(f, "data {} not found", name),
             AppError::DatabaseError(err) => write!(f, "A database error occurred {}",err),
+            AppError::HttpError(err) => write!(f, "A http request error occurred {}",err),
             AppError::MissingArgument(name) => write!(f, "Argument with name {} is missing or not set", name),            
             AppError::CouldNotRenderData(data) => write!(f, "Could not render data {}", data),
             AppError::UnAuthorized => write!(f, "User is not authorized"),
@@ -70,6 +78,12 @@ impl From<serde_json::Error> for AppError {
 impl From<sqlx::Error> for AppError {
     fn from(err: sqlx::Error) -> Self {
         AppError::DatabaseError(Box::new(err))
+    }
+}
+
+impl From<reqwest::Error> for AppError {
+    fn from(err:reqwest::Error) -> Self {
+        AppError::HttpError(Box::new(err))
     }
 }
 
