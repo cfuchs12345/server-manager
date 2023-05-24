@@ -11,13 +11,16 @@ pub enum AppError {
     InvalidArgument(String, Option<String>),
     UnknownPlugin(String),
     UnknownPluginAction(String, String),
+    #[allow(dead_code)]
     UnknownPluginData(String,String),
     Unknown(Box<dyn Error>),
+    DataNotFound(String),
     DatabaseError(Box<dyn Error>),
     MissingArgument(String),
     CouldNotRenderData(String),
     UnAuthorized,
-    DecryptionError
+    DecryptionError,
+    ParseError(Box<dyn Error>),
 }
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
@@ -41,11 +44,13 @@ impl Display for AppError {
             AppError::UnknownPluginAction(plugin_name, name) => write!(f, "A plugin action with id {} is not know for a plugin with id {}", name, plugin_name),
             AppError::UnknownPluginData(plugin_name, name) => write!(f, "A plugin data query with id {} is not know for a plugin with id {}", name, plugin_name),
             AppError::Unknown(err) => write!(f, "An unknown error occurred {}",err),
+            AppError::DataNotFound(name) =>write!(f, "data {} not found", name),
             AppError::DatabaseError(err) => write!(f, "A database error occurred {}",err),
             AppError::MissingArgument(name) => write!(f, "Argument with name {} is missing or not set", name),            
             AppError::CouldNotRenderData(data) => write!(f, "Could not render data {}", data),
             AppError::UnAuthorized => write!(f, "User is not authorized"),
             AppError::DecryptionError => write!(f, "Data could not be decrypted"),
+            AppError::ParseError(err) => write!(f, "Could not parse given data {}",err),
 
         }
     }

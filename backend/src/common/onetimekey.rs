@@ -21,7 +21,7 @@ pub struct OneTimeKey {
     key: String
 }
 
-impl OneTimeKey {  
+impl OneTimeKey {    
     pub fn generate() -> Self {
         let mut rng = rand::thread_rng();
 
@@ -40,23 +40,16 @@ impl OneTimeKey {
         OneTimeKey { id,  key}
     }
 
-    pub fn invalidate(&self) {
-        GENERATED_KEYS.try_write().unwrap().remove(&self.id);
-    }
-
-    pub fn invalidate_expired(&self) {
-        let now = Utc::now().naive_utc().timestamp();
-        let map = GENERATED_KEYS.try_write().unwrap();
-
-        for val in map.values() {
-            if now - val.0.timestamp() > 30 * 5 {
-                self.invalidate()
-            }
-        }
-    }
-
     pub fn get_token(id: u32) -> Option<(NaiveDateTime, String)>{
         GENERATED_KEYS.try_read().unwrap().get(&id).map(|val| val.to_owned())
     }
+}
+
+pub fn invalidate_expired_one_time_keys() {
+    let now = Utc::now().naive_utc().timestamp();
+    let mut map = GENERATED_KEYS.try_write().unwrap();
+
+
+    map.retain(|_, v| now - v.0.timestamp() < 30 * 5);
 }
 

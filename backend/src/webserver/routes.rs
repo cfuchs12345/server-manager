@@ -442,7 +442,7 @@ async fn save_user_common(data: web::Data<AppData>, query: web::Json<User>) -> H
             HttpResponse::Ok().json(initial_password)
         }
     } else {
-        return HttpResponse::InternalServerError().finish();
+        HttpResponse::InternalServerError().finish()
     }
 }
 

@@ -1,7 +1,7 @@
 use core::fmt;
 use std::{path::Path, collections::HashMap};
 
-use crate::{webserver::AppData, init, datastore::{Persistence, self, Migration}, common, models::{server::{Server, Credential, Feature}, plugin::Plugin}};
+use crate::{webserver::AppData, init, datastore::{Persistence, self, Migration}, common, models::{server::{Server, Credential, Feature}, plugin::Plugin, error::AppError}};
 
 
 
@@ -35,11 +35,11 @@ pub fn check_necessary_migration() -> Vec<MigrationTypes> {
     migrations
 }
 
-pub fn do_db_location_migration() -> std::result::Result<u64, std::io::Error> {
+pub fn do_db_location_migration() -> std::result::Result<u64, AppError> {
     let old_path = Path::new("./server-manager.db");
     let new_path = Path::new(init::DB_FILENAME);
 
-    std::fs::copy(old_path,  new_path)
+    std::fs::copy(old_path,  new_path).map_err(|e| AppError::Unknown(Box::new(e)))
 }
 
 
@@ -48,49 +48,45 @@ pub async fn save_migration(neccessary_migrations: &[MigrationTypes], persistenc
     persistence.save_migrations(migrations).await.unwrap();
 }
 
- pub async fn do_encryption_migration(data: &AppData) -> std::result::Result<(), std::io::Error>{
-    match datastore::load_all_servers(&data.app_data_persistence, false).await {
-        Ok(servers) => {
-            let plugins_map = datastore::get_all_plugins_map();
+ pub async fn do_encryption_migration(data: &AppData) -> std::result::Result<(), AppError>{
 
-            if !servers.is_empty() {
-                let servers_data_to_encrypt: Vec<&Server> = servers.iter().filter(|server| server_needs_encryption(server, &plugins_map)).collect();
+    let servers = datastore::load_all_servers(&data.app_data_persistence, false).await?;
+    
+    let plugins_map = datastore::get_all_plugins_map();
 
-                let crypto_key_entry = data.app_data_persistence.get("encryption", "default").await.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?.ok_or(std::io::Error::new(std::io::ErrorKind::Other, "No crypto key in db found"))?;
+    if !servers.is_empty() {
+        let servers_data_to_encrypt: Vec<&Server> = servers.iter().filter(|server| server_needs_encryption(server, &plugins_map)).collect();
 
-               
-                for server in servers_data_to_encrypt {
-                    let mut s = server.to_owned();
+        let crypto_key_entry = data.app_data_persistence.get("encryption", "default").await?.ok_or_else(|| AppError::DataNotFound("encryption/default".to_string()))?;
 
-                    for mut feature in &mut s.features {
-                        let plugin = plugins_map.get(&feature.id.clone()).unwrap();
+        
+        for server in servers_data_to_encrypt {
+            let mut s = server.to_owned();
 
-                        let mut new_credentials: Vec<Credential> = Vec::new();
-                        for credential in &feature.credentials {
-                            let credential_def = plugin.credentials.iter().find(|c| c.name == credential.name).unwrap().to_owned();
+            for mut feature in &mut s.features {
+                let plugin = plugins_map.get(&feature.id.clone()).unwrap();
 
-                            if credential_def.encrypt {
-                                log::debug!("will encrypt {} {}", feature.id, credential.name);
-                                
-                                new_credentials.push(Credential { name: credential.name.clone(), encrypted: true, value: common::default_encrypt(&credential.value, &crypto_key_entry.value) });
-                            }
-                            else {
-                                new_credentials.push(credential.to_owned());
-                            }
+                let mut new_credentials: Vec<Credential> = Vec::new();
+                for credential in &feature.credentials {
+                    let credential_def = plugin.credentials.iter().find(|c| c.name == credential.name).unwrap().to_owned();
 
-                            }
+                    if credential_def.encrypt {
+                        log::debug!("will encrypt {} {}", feature.id, credential.name);
                         
-                        feature.credentials = new_credentials;
+                        new_credentials.push(Credential { name: credential.name.clone(), encrypted: true, value: common::default_encrypt(&credential.value, &crypto_key_entry.value) });
                     }
-                    
-                    update_server( &s, &data.app_data_persistence);
-                }   
-            }            
-        },
-        Err(err) => {
-            log::error!("Error while loading servers: {}", err);
-        }
-    }
+                    else {
+                        new_credentials.push(credential.to_owned());
+                    }
+
+                    }
+                
+                feature.credentials = new_credentials;
+            }
+            
+            update_server( &s, &data.app_data_persistence);
+        }   
+    }            
     Ok(())
 }
 

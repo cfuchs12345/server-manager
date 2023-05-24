@@ -76,6 +76,7 @@ struct ErrorCommandResult {
 }
 
 impl ErrorCommandResult {
+    #[allow(dead_code)]
     pub fn new(message: &str) -> Self {  
         ErrorCommandResult {
             is_error: true,

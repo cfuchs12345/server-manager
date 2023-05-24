@@ -28,6 +28,7 @@ pub use mail::is_smtp_config_valid;
 pub use mail::send_email;
 
 pub use onetimekey::OneTimeKey;
+pub use onetimekey::invalidate_expired_one_time_keys;
 
 
 const URLSAFE_WITH_PAD: engine::GeneralPurpose =

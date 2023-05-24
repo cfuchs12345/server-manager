@@ -1,7 +1,7 @@
 use tokio_cron_scheduler::{Job, JobScheduler};
 
 
-use crate::{datastore, commands::ping};
+use crate::{datastore, commands::ping, common};
 
 
 pub async fn start_scheduled_jobs() {
@@ -11,6 +11,7 @@ pub async fn start_scheduled_jobs() {
     schedule_status_check(&scheduler).await;
     schedule_condition_checks(&scheduler).await;
     schedule_token_cleanup(&scheduler).await;
+    schedule_one_time_crypt_key_cleanup(&scheduler).await;
 
     match scheduler.start().await {
         Ok(_res) => log::debug!("Schedulder started"),
@@ -60,6 +61,17 @@ async fn schedule_token_cleanup(scheduler: &JobScheduler) {
     scheduler.add(
         Job::new("0 0 * * * *", |_uuid, _l| {            
                     crate::datastore::delete_expired_tokens();
+        })        
+        .unwrap(),
+
+    ) .await.unwrap();
+}
+
+
+async fn schedule_one_time_crypt_key_cleanup(scheduler: &JobScheduler) {
+    scheduler.add(
+        Job::new("1/20 * * * * *", |_uuid, _l| {            
+                    common::invalidate_expired_one_time_keys();
         })        
         .unwrap(),
 

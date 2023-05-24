@@ -19,50 +19,34 @@ pub fn convert_result_string_to_html(
 ) -> Result<String, AppError> {
     log::debug!("Data input is: {}", input);
 
-    let data_value = create_data_input_structure(data, input);
+    let data_value = create_data_input_structure(data, input)?;
 
     format_data_with_template_engine(data_value, template_engine, template)
 }
 
-fn create_data_input_structure(data: &Data, input: String) -> Option<Value> {
+fn create_data_input_structure(data: &Data, input: String) -> Result<Value, AppError> {
     match &data.result_format {
         ResultFormat::XML => { 
-            Some(json!(Xml {
+            Ok(json!(Xml {
                 // wrap the xml in a JSON as content of "data" property
                 data: input
             }))
         }
-        ResultFormat::JSON => match serde_json::from_str(input.as_str()) {
-            Ok(val) => Some(val),
-            Err(err) => {
-                if !input.trim().is_empty() {
-                    log::error!(
-                        "input '{}' was no valid json. Resulted in the following error: {}",
-                        input,
-                        err
-                    );
-                }
-                None
-            }
-        },
+        ResultFormat::JSON => serde_json::from_str(input.as_str()).map_err(|e| AppError::ParseError(Box::new(e)))
     }
 }
 
 fn format_data_with_template_engine(
-    data_value: Option<Value>,
+    data_value: Value,
     engine: &handlebars::Handlebars,
     template: &str,
 ) -> Result<String, AppError> {
-    match data_value {
-        Some(data) => {
-            if data.is_array() && data.as_array().unwrap().is_empty() {
-                return Ok("".to_string()); // no data input - return empty string
-            }
-            log::debug!("Putting data into context: {:?}", data);
-
-            let res = engine.render(template, &data);
-            res.map_err(|e| AppError::CouldNotRenderData(format!("{:?}", e)))
-        }
-        None => Ok("".to_string()), // no data input - return empty string
+    if data_value.is_array() && data_value.as_array().unwrap().is_empty() {
+        return Ok("".to_string()); // no data input - return empty string
     }
+    log::debug!("Putting data into context: {:?}", data_value);
+
+    let res = engine.render(template, &data_value);
+    res.map_err(|e| AppError::CouldNotRenderData(format!("{:?}", e)))
+    
 }

@@ -148,11 +148,6 @@ pub fn insert_token(token: &str) {
     store.insert(token.to_owned(), TokenInfo::new());
 }
 
-pub fn delete_token(token: &str) {
-    let mut store = TOKENS.try_write().unwrap();
-    store.remove(token);
-}
-
 pub fn delete_expired_tokens() {
     let mut store = TOKENS.try_write().unwrap();
     log::debug!("Number of tokens before cleanup of expired tokens {}", store.len());

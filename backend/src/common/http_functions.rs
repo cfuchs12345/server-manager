@@ -16,8 +16,10 @@ use std::path::Path;
 pub const GET: &str = "get";
 pub const POST: &str = "post";
 pub const PUT: &str = "put";
-pub const DELETE: &str = "delete";
 
+#[allow(dead_code)]
+pub const DELETE: &str = "delete";
+#[allow(dead_code)]
 const SOCKET_HTTP_POSTFIX: &str = " HTTP/1.1\r\nHost:localhost\r\n\r\n";
 
 

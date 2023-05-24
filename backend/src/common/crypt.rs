@@ -1,17 +1,18 @@
-use magic_crypt::{new_magic_crypt, MagicCryptTrait};
-use rand::{thread_rng, Error, RngCore};
-use bcrypt::{DEFAULT_COST, hash, verify};
-use pbkdf2::{pbkdf2_hmac_array};
+use aes::cipher::consts::U16;
 use aes_gcm::{
     aead::{Aead, KeyInit},
-    Nonce, AesGcm, aes::Aes256 // Or `Aes128Gcm`
+    aes::Aes256, // Or `Aes128Gcm`
+    AesGcm,
+    Nonce,
 };
-use aes::{cipher::consts::U16};
 use base64::{engine::general_purpose, Engine as _};
+use bcrypt::{hash, verify, DEFAULT_COST};
+use magic_crypt::{new_magic_crypt, MagicCryptTrait};
+use pbkdf2::pbkdf2_hmac_array;
+use rand::{thread_rng, Error, RngCore};
 use sha2::Sha256;
 
-use crate::{models::error::AppError};
-
+use crate::models::error::AppError;
 
 pub type Aes256Gcm16 = AesGcm<Aes256, U16>;
 
@@ -33,11 +34,13 @@ pub fn default_decrypt(to_decrypt: &str, crypto_key: &str) -> String {
 }
 
 pub fn aes_decrypt(to_decrypt: &str, secret: &str) -> Result<String, AppError> {
-    let bytes = general_purpose::STANDARD.decode(to_decrypt).map_err(|e| AppError::Unknown(Box::new(e)))?;
-      
+    let bytes = general_purpose::STANDARD
+        .decode(to_decrypt)
+        .map_err(|e| AppError::Unknown(Box::new(e)))?;
+
     let salt = &bytes[..64];
-    let iv = &bytes[64..64+16];    
-    let text = &bytes[64+16..]; // including tag postfix
+    let iv = &bytes[64..64 + 16];
+    let text = &bytes[64 + 16..]; // including tag postfix
 
     let key = pbkdf2_hmac_array::<Sha256, 32>(secret.as_bytes(), salt, 100000);
 
@@ -46,14 +49,19 @@ pub fn aes_decrypt(to_decrypt: &str, secret: &str) -> Result<String, AppError> {
     // nonce / iv from sender
     let nonce = Nonce::from_slice(iv);
     match cipher.decrypt(nonce, text) {
-        Ok(decrypted) => 
-            Ok(String::from_utf8(decrypted).map_err(|e| AppError::Unknown(Box::new(e)))?),        
-        Err(_err) => Err(AppError::DecryptionError)
+        Ok(decrypted) => {
+            Ok(String::from_utf8(decrypted).map_err(|e| AppError::Unknown(Box::new(e)))?)
+        }
+        Err(_err) => Err(AppError::DecryptionError),
     }
 }
 
 pub fn make_aes_secrect(user_id: &str, otk: &str) -> String {
-    let fp = if user_id.len() > 5 { &user_id[user_id.len()-5..] } else { user_id};
+    let fp = if user_id.len() > 5 {
+        &user_id[user_id.len() - 5..]
+    } else {
+        user_id
+    };
     let sp = &otk[..otk.len() - fp.len()];
     format!("{}{}", fp, sp)
 }
@@ -65,7 +73,6 @@ pub fn hash_password(to_hash: &str) -> Result<String, AppError> {
 pub fn verify_password(password: &str, hashed_password: &str) -> Result<bool, AppError> {
     verify(password, hashed_password).map_err(AppError::from)
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -79,26 +86,12 @@ mod tests {
     #[test]
     fn test_roundtrip() {
         let key = "this is a key";
+        let input = "this is a text that should be encrypted and decrypted";
 
-        let encrypted = default_encrypt(
-            "this is a text that should be encrypted and decrypted",
-            key,
-        );
-
-        println!("encrypted value: {}", encrypted);
-
-        assert_ne!(
-            encrypted,
-            "this is a text that should be encrypted and decrypted"
-        );
+        let encrypted = default_encrypt(input, key);
+        assert_ne!(encrypted, input);
 
         let decrypted = default_decrypt(encrypted.as_str(), key);
-
-        assert_eq!(
-            &decrypted,
-            "this is a text that should be encrypted and decrypted"
-        );
-
-        println!("decrypted value: {}", decrypted);
+        assert_eq!(&decrypted, input);
     }
 }

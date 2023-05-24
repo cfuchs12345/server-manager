@@ -34,7 +34,6 @@ pub use crate::datastore::users::get_user;
 
 pub use crate::datastore::inmemory::is_valid_token;
 pub use crate::datastore::inmemory::insert_token;
-pub use crate::datastore::inmemory::delete_token;
 pub use crate::datastore::inmemory::delete_expired_tokens;
 
 pub use crate::datastore::inmemory::get_all_plugins;

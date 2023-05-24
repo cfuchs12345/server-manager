@@ -32,8 +32,7 @@ pub async fn execute_action(
 ) -> Result<bool, AppError> {
     let plugin_res = datastore::get_plugin(feature.id.as_str());
     if plugin_res.is_none() {
-        log::error!("Plugin not found {}", feature.id);
-        return Ok(false);
+        return Err(AppError::UnknownPlugin(feature.id.clone()));
     }
 
     let plugin = plugin_res.unwrap();

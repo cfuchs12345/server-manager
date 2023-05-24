@@ -14,6 +14,7 @@ pub struct User {
 }
 
 impl User {
+    #[allow(dead_code)]
     pub fn new(user_id: String, full_name: String, email: String, password_hash: String) -> Self {
         User {
             user_id,

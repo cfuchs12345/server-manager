@@ -1,6 +1,5 @@
 mod actions;
 mod data;
-mod common;
 mod discovery;
 
 pub use discovery::discover_features;
