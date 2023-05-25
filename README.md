@@ -22,12 +22,49 @@ Currently working Plugins/Features:
 - Tasmota (query data, power switch of power outlets)
 - PiHole data query
 
+The server manager can be executed as a docker container by using this docker-compose.yml:
+
+    version: "3"
+    services:
+      server:
+        image: docker.registry.lan:5000/afoxdocker/docker-server-manager
+        container_name: server-manager
+        environment:
+           - USER_UID=1000
+           - USER_GID=1000
+        restart: always
+        # if you want to use wake on lan actions, the network_mode has to be host
+        # consequence -> if "network_mode: host" the port mapping doesn't work. You need to change the port of the internal server in the .env file in the config folder
+        network_mode: host
+        volumes:
+          - ./config:/external_files
+          - ./log:/var/log
+          - /etc/timezone:/etc/timezone:ro
+          - /etc/localtime:/etc/localtime:ro
+          - /var/run/docker.sock:/var/run/docker.sock
+
+Some notes:
+
+- Passwords/credentials can be marked in the plugin so that they are automatically encrypted
+- User passwords are not sent cleartext - even if the web server is running only via HTTP, since there is an internal AES-GCM encryption for sensitive data with one-time encryption key that always change
+- Passwords are not stored as cleartext but using bcrypt hashes
+
+My ToDo list:
+
+- Docker plugin for Socket based installation on the same host
+- Docker plugin for port based connection for supporting remote docker installations
+- Extract more data for existing plugins
+- Control UPnP devices with their exposed actions
+- Store received information as time series and build graphs (Grafana-like)
+- more Plugins (nearly everything that offers a REST, SOAP API is possible) CrowdSec, PfSense and many more is possible...
+- maybe build an agent that can be installed on remote machines to get information from the OS or installations like Wireguard, that offer no direct API
+
 ## How the main screen looks like
 
 ![The main screen](main_screen.png)
 
 
-## This is how a UPnP is showing it's data
+## This is how a UPnP device is showing it's data
 
 ![The Synology UPnP screen](synology_upnp.png)
 
