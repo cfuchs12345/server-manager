@@ -22,6 +22,8 @@ Currently working Plugins/Features:
 - Tasmota (query data, power switch of power outlets)
 - PiHole data query
 
+### Docker Config
+
 The server manager can be executed as a docker container by using this docker-compose.yml:
 
     version: "3"
@@ -42,6 +44,37 @@ The server manager can be executed as a docker container by using this docker-co
           - /etc/timezone:/etc/timezone:ro
           - /etc/localtime:/etc/localtime:ro
           - /var/run/docker.sock:/var/run/docker.sock
+
+### first startup / directory structure
+
+After the first startup, the following folder hierarchy is created which contains a .env config file and the folders for the plugins/templates where users can extend the manager with custom plugins:
+
+    ./config
+          /plugins
+          /templates
+          .env
+          server-manager.db
+
+### .env Configuration
+
+    # Log level of the application
+    RUST_LOG=warn
+
+    # URL and port where the http server binds to
+    BIND_ADDRESS=0.0.0.0:8088
+    
+    PLUGIN_BASE_PATH=external_files/plugins
+    TEMPLATE_BASE_PATH=external_files/templates/
+
+    # Deactivate if are using only SSL certificates which are signed by a public authority
+    ACCEPT_SELF_SIGNED_CERTIFICATES=true
+
+    SESSION_SECRET_KEY=<a unique generated secret key - do not delete since already encrypted data cannot be decrypted anymore>
+
+    SMTP_HOST=<your mail server>
+    SMTP_USERNAME=<the user name for your mail server>
+    SMTP_PASSWORD=<the password for your mail server>
+    EMAIL_FROM=<the from address that will be used to send mails>
 
 Some notes:
 
