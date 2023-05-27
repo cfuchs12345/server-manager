@@ -1,15 +1,14 @@
-pub mod data;
-pub mod detection;
 pub mod action;
 pub mod common;
+pub mod data;
+pub mod detection;
 pub mod sub_action;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-use self::{data::Data, action::Action, detection::Detection};
+use self::{action::Action, data::Data, detection::Detection};
 
-
-#[derive(Serialize, Deserialize, Debug, Clone, Eq,)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq)]
 pub struct Plugin {
     pub id: String,
     pub name: String,
@@ -35,11 +34,11 @@ impl PartialEq for Plugin {
 
 impl Plugin {
     pub fn find_action(&self, action_id: &str) -> Option<&Action> {
-        self.actions.iter().find( |plugin| plugin.id == action_id)
+        self.actions.iter().find(|plugin| plugin.id == action_id)
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq,)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq)]
 pub struct ParamDef {
     pub name: String,
     pub param_type: String,
@@ -54,7 +53,7 @@ impl PartialEq for ParamDef {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq,)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct CredentialDef {
     pub name: String,
     pub credential_type: String,
@@ -63,8 +62,6 @@ pub struct CredentialDef {
     #[serde(default = "default_false")]
     pub mandatory: bool,
 }
-
-
 
 fn default_false() -> bool {
     false

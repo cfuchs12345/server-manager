@@ -1,9 +1,11 @@
 use lazy_static::lazy_static;
 use regex::Regex;
 
-use crate::{models::{server::Credential, error::AppError}, common, commands::CommandInput};
-
-
+use crate::{
+    commands::CommandInput,
+    common,
+    models::{error::AppError, server::Credential},
+};
 
 /// This enum hides the actual regular expressions and the matching and provides methods for
 /// * easy extraction of matched strings
@@ -14,15 +16,11 @@ enum Placeholder {
     Base64,
 }
 
-
 lazy_static! {
     static ref PARAM_REGEX: Regex = Regex::new(Placeholder::Param.get_pattern()).unwrap();
     static ref CREDENTIAL_REGEX: Regex = Regex::new(Placeholder::Credential.get_pattern()).unwrap();
     static ref BASE64_REGEX: Regex = Regex::new(Placeholder::Base64.get_pattern()).unwrap();
-    
 }
-
-
 
 impl Placeholder {
     fn get_pattern(&self) -> &str {
@@ -52,8 +50,6 @@ impl Placeholder {
     }
 }
 
-
-
 pub fn replace_list(
     input_strings: Vec<&str>,
     input: &CommandInput,
@@ -65,16 +61,16 @@ pub fn replace_list(
         result.push(res);
     }
 
-    Ok( result )
+    Ok(result)
 }
-pub fn replace(input_string: &str, input: &CommandInput) -> Result< (String, String), AppError> {
+pub fn replace(input_string: &str, input: &CommandInput) -> Result<(String, String), AppError> {
     let mut result: String = input_string.to_owned();
     let mut masked: String;
 
     if let Some(ipaddress) = input.get_ipaddress() {
         result = result.replace("${IP}", format!("{}", ipaddress).as_str());
     }
-    
+
     result = replace_param(result, input)?;
     let both: (String, String) = replace_credentials(result, input)?; // we now have two string - the unmasked and the masked which can be logged for example
     result = both.0;
@@ -82,7 +78,7 @@ pub fn replace(input_string: &str, input: &CommandInput) -> Result< (String, Str
     result = replace_base64_encoded(result); // base 64 encode should happen on both idependently
     masked = replace_base64_encoded(masked); // actually the base 64 encoded masked version outputs an incorrect encoded value
 
-    Ok( (result, masked) )
+    Ok((result, masked))
 }
 
 fn replace_param(input_string: String, input: &CommandInput) -> Result<String, AppError> {
@@ -95,10 +91,13 @@ fn replace_param(input_string: String, input: &CommandInput) -> Result<String, A
 
         result = result.replace(placeholder.as_str(), replacement);
     }
-    Ok( result )
+    Ok(result)
 }
 
-fn replace_credentials(input_string: String, input: &CommandInput) -> Result<(String, String), AppError> {
+fn replace_credentials(
+    input_string: String,
+    input: &CommandInput,
+) -> Result<(String, String), AppError> {
     let mut result = input_string.clone();
     let mut masked = input_string.clone();
 
@@ -106,16 +105,15 @@ fn replace_credentials(input_string: String, input: &CommandInput) -> Result<(St
         let name = Placeholder::Credential.strip_of_marker(&placeholder);
 
         let replacement = get_credential_value(name.as_str(), input)?;
-        
+
         result = result.replace(placeholder.as_str(), replacement.0.as_str());
         if replacement.1 {
             masked = masked.replace(placeholder.as_str(), "******");
         } else {
             masked = masked.replace(placeholder.as_str(), replacement.0.as_str());
         }
-        
     }
-    Ok( (result, masked) )
+    Ok((result, masked))
 }
 
 fn replace_base64_encoded(input: String) -> String {
@@ -123,8 +121,12 @@ fn replace_base64_encoded(input: String) -> String {
 
     for placeholder in Placeholder::Base64.extract_placeholders(input) {
         let to_encode = Placeholder::Base64.strip_of_marker(&placeholder);
-        
-        let replacement = common::encode_base64(Placeholder::Base64.strip_of_marker(to_encode.as_str()).as_str());
+
+        let replacement = common::encode_base64(
+            Placeholder::Base64
+                .strip_of_marker(to_encode.as_str())
+                .as_str(),
+        );
 
         result = result.replace(placeholder.as_str(), replacement.as_str());
     }
@@ -133,12 +135,14 @@ fn replace_base64_encoded(input: String) -> String {
 }
 
 fn get_credential_value(name: &str, input: &CommandInput) -> Result<(String, bool), AppError> {
-    let credential = input
-        .find_credential(name)?;
+    let credential = input.find_credential(name)?;
 
-    let key = input.crypto_key.clone().ok_or(AppError::InvalidArgument("crypto_key".to_string(), None))?;
+    let key = input
+        .crypto_key
+        .clone()
+        .ok_or(AppError::InvalidArgument("crypto_key".to_string(), None))?;
 
-    Ok( (decrypt(&credential, key.as_str()), credential.encrypted) )
+    Ok((decrypt(&credential, key.as_str()), credential.encrypted))
 }
 
 fn decrypt(credential: &Credential, crypto_key: &str) -> String {
@@ -148,8 +152,6 @@ fn decrypt(credential: &Credential, crypto_key: &str) -> String {
         credential.value.clone()
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {

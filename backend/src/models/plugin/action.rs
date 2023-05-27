@@ -1,17 +1,16 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use super::common::ArgDef;
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default,  PartialEq, Eq,)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq)]
 pub enum State {
     #[default]
     Active,
     Inactive,
-    Any
+    Any,
 }
 
-
-#[derive(Serialize, Deserialize, Debug, Clone, Eq,)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq)]
 pub struct Action {
     pub id: String,
     #[serde(default)]
@@ -21,7 +20,7 @@ pub struct Action {
     #[serde(default)]
     pub depends: Vec<DependsDef>,
     #[serde(default)]
-    pub available_for_state : State,
+    pub available_for_state: State,
     #[serde(default = "default_true")]
     pub needs_confirmation: bool,
     #[serde(default)]
@@ -40,14 +39,13 @@ impl PartialEq for Action {
     }
 }
 
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq,)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct DependsDef {
     pub data_id: String,
     #[serde(default)]
     pub script_type: String,
     #[serde(default)]
-    pub script: String
+    pub script: String,
 }
 
 fn default_true() -> bool {

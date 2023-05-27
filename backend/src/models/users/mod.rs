@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::common;
 
@@ -20,11 +20,11 @@ impl User {
             user_id,
             full_name,
             email,
-            password_hash
+            password_hash,
         }
     }
 
-    pub fn update_password_hash( &mut self, password_hash: String) {
+    pub fn update_password_hash(&mut self, password_hash: String) {
         self.password_hash = password_hash;
     }
 

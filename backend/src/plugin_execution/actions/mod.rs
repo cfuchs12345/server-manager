@@ -43,9 +43,6 @@ pub async fn execute_action(
 
     match plugin.find_action(action_id) {
         Some(plugin_action) => {
-
-            
-
             let input = match plugin_action.command.as_str() {
                 commands::http::HTTP => commands::http::make_command_input_from_subaction(
                     server,
@@ -59,10 +56,13 @@ pub async fn execute_action(
                 commands::ping::PING => commands::ping::make_input(server.ipaddress),
                 y => {
                     log::error!("Unknown command {}", y);
-                    return Err(AppError::InvalidArgument("command".to_owned(), Some(y.to_owned())));
+                    return Err(AppError::InvalidArgument(
+                        "command".to_owned(),
+                        Some(y.to_owned()),
+                    ));
                 }
             };
-            let res: HttpCommandResult = commands::execute(input).await?;            
+            let res: HttpCommandResult = commands::execute(input).await?;
 
             Ok(!res.get_response().is_empty())
         }

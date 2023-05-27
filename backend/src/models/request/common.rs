@@ -2,25 +2,25 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Deserialize, Serialize, Clone, PartialEq, Eq)]
 pub struct QueryParam {
     pub name: String,
-    pub value: String
+    pub value: String,
 }
 
-
-
 pub struct QueryParamsAsMap {
-    params: HashMap<String, String>
+    params: HashMap<String, String>,
 }
 
 impl From<Vec<QueryParam>> for QueryParamsAsMap {
     fn from(input_params: Vec<QueryParam>) -> Self {
         QueryParamsAsMap {
-            params: input_params.iter().map( |param| (param.name.clone(), param.value.clone())).collect()
+            params: input_params
+                .iter()
+                .map(|param| (param.name.clone(), param.value.clone()))
+                .collect(),
         }
-    }    
+    }
 }
 
 impl QueryParamsAsMap {
@@ -38,7 +38,7 @@ impl QueryParamsAsMap {
                 let res: Vec<String> = value.split(split).map(str::to_string).collect();
                 Some(res)
             }
-            None => None
+            None => None,
         }
     }
 }

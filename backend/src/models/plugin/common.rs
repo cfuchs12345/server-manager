@@ -1,11 +1,9 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-
-
-#[derive(Serialize, Deserialize, Debug, Clone, Eq,)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq)]
 pub struct ArgDef {
     pub arg_type: String,
-    pub value: String
+    pub value: String,
 }
 
 impl PartialEq for ArgDef {
@@ -14,10 +12,8 @@ impl PartialEq for ArgDef {
     }
 }
 
-
-#[derive(Serialize, Deserialize, Debug, Default, Clone, PartialEq, Eq,)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone, PartialEq, Eq)]
 pub struct Script {
     pub script_type: String,
     pub script: String,
 }
-

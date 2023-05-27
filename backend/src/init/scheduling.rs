@@ -1,8 +1,6 @@
 use tokio_cron_scheduler::{Job, JobScheduler};
 
-
-use crate::{datastore, common, other_functions};
-
+use crate::{common, datastore, other_functions};
 
 pub async fn start_scheduled_jobs() {
     let scheduler = JobScheduler::new().await.unwrap();
@@ -20,15 +18,17 @@ pub async fn start_scheduled_jobs() {
 }
 
 async fn schedule_condition_checks(scheduler: &JobScheduler) {
-    scheduler.add(
-        Job::new_async("1/10 * * * * *", |_uuid, _l| {
-            Box::pin(async {
+    scheduler
+        .add(
+            Job::new_async("1/10 * * * * *", |_uuid, _l| {
+                Box::pin(async {
                     crate::plugin_execution::check_main_action_conditions().await;
+                })
             })
-        })
-        .unwrap(),
-
-    ) .await.unwrap();
+            .unwrap(),
+        )
+        .await
+        .unwrap();
 }
 
 async fn schedule_status_check(scheduler: &JobScheduler) {
@@ -36,7 +36,9 @@ async fn schedule_status_check(scheduler: &JobScheduler) {
         .add(
             Job::new_async("1/5 * * * * *", |_uuid, _l| {
                 Box::pin(async {
-                    other_functions::statuscheck::status_check_all().await.expect("Error during scheduled status check");
+                    other_functions::statuscheck::status_check_all()
+                        .await
+                        .expect("Error during scheduled status check");
                 })
             })
             .unwrap(),
@@ -58,22 +60,25 @@ async fn schedule_cache_update(scheduler: &JobScheduler) {
 }
 
 async fn schedule_token_cleanup(scheduler: &JobScheduler) {
-    scheduler.add(
-        Job::new("0 0 * * * *", |_uuid, _l| {            
-                    crate::datastore::delete_expired_tokens();
-        })        
-        .unwrap(),
-
-    ) .await.unwrap();
+    scheduler
+        .add(
+            Job::new("0 0 * * * *", |_uuid, _l| {
+                crate::datastore::delete_expired_tokens();
+            })
+            .unwrap(),
+        )
+        .await
+        .unwrap();
 }
 
-
 async fn schedule_one_time_crypt_key_cleanup(scheduler: &JobScheduler) {
-    scheduler.add(
-        Job::new("1/20 * * * * *", |_uuid, _l| {            
-                    common::invalidate_expired_one_time_keys();
-        })        
-        .unwrap(),
-
-    ) .await.unwrap();
+    scheduler
+        .add(
+            Job::new("1/20 * * * * *", |_uuid, _l| {
+                common::invalidate_expired_one_time_keys();
+            })
+            .unwrap(),
+        )
+        .await
+        .unwrap();
 }

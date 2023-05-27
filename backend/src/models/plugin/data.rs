@@ -2,8 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use super::common::ArgDef;
 
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq,)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Data {
     pub id: String,
     #[serde(default)]
@@ -26,13 +25,12 @@ pub struct Data {
     pub args: Vec<ArgDef>,
 }
 
-
-#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq,)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq)]
 #[allow(clippy::upper_case_acronyms)]
 pub enum ResultFormat {
     #[default]
     JSON,
-    XML
+    XML,
 }
 
 fn default_true() -> bool {

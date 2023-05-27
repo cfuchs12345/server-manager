@@ -1,6 +1,6 @@
 use std::net::IpAddr;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq)]
 pub struct Server {
@@ -10,7 +10,7 @@ pub struct Server {
     #[serde(default)]
     pub dnsname: String,
     #[serde(default)]
-    pub features: Vec<Feature>
+    pub features: Vec<Feature>,
 }
 
 impl PartialEq for Server {
@@ -20,11 +20,10 @@ impl PartialEq for Server {
 }
 
 impl Server {
-    pub fn find_feature( &self, feature_id: &str) -> Option<Feature> {
+    pub fn find_feature(&self, feature_id: &str) -> Option<Feature> {
         self.features.iter().find(|f| f.id == feature_id).cloned()
     }
 }
-
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize, Eq)]
 pub struct Feature {
@@ -34,7 +33,7 @@ pub struct Feature {
     #[serde(default)]
     pub params: Vec<Param>,
     #[serde(default)]
-    pub credentials: Vec<Credential>
+    pub credentials: Vec<Credential>,
 }
 
 impl PartialEq for Feature {
@@ -43,13 +42,12 @@ impl PartialEq for Feature {
     }
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize, Eq)]
 pub struct Param {
     #[serde(default)]
     pub name: String,
     #[serde(default)]
-    pub value: String
+    pub value: String,
 }
 
 impl PartialEq for Param {
@@ -58,7 +56,6 @@ impl PartialEq for Param {
     }
 }
 
-
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct Credential {
     #[serde(default)]
@@ -66,9 +63,8 @@ pub struct Credential {
     #[serde(default)]
     pub encrypted: bool,
     #[serde(default)]
-    pub value: String    
+    pub value: String,
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq)]
 pub struct FeaturesOfServer {

@@ -1,6 +1,5 @@
 use std::net::IpAddr;
 
-use crate::{common, other_functions};
 use crate::common::OneTimeKey;
 use crate::models::config::dns_server::DNSServer;
 use crate::models::error::AppError;
@@ -17,6 +16,7 @@ use crate::models::server::Server;
 use crate::models::token::UserToken;
 use crate::models::users::User;
 use crate::webserver::appdata::AppData;
+use crate::{common, other_functions};
 use crate::{datastore, other_functions::systeminfo, plugin_execution};
 use actix_web::delete;
 use actix_web::{get, post, put, web, HttpRequest, HttpResponse};
@@ -107,11 +107,21 @@ pub async fn post_servers_actions(
     match query.action_type {
         ServersActionType::Status => {
             let ips_to_check: Vec<IpAddr> = match params_map.get("ipaddresses") {
-                Some(_list) => params_map.get_split_by("ipaddresses", ",").unwrap().iter().flat_map(|s| { let ip: Result<IpAddr, _> = s.parse(); ip}).collect(),
+                Some(_list) => params_map
+                    .get_split_by("ipaddresses", ",")
+                    .unwrap()
+                    .iter()
+                    .flat_map(|s| {
+                        let ip: Result<IpAddr, _> = s.parse();
+                        ip
+                    })
+                    .collect(),
                 None => Vec::new(),
             };
 
-            let list = other_functions::statuscheck::status_check(ips_to_check, true).await.unwrap();
+            let list = other_functions::statuscheck::status_check(ips_to_check, true)
+                .await
+                .unwrap();
             HttpResponse::Ok().json(list)
         }
         ServersActionType::FeatureScan => {
@@ -121,12 +131,12 @@ pub async fn post_servers_actions(
                         !datastore::is_plugin_disabled("upnp", &data.app_data_persistence)
                             .await
                             .unwrap_or(true);
-                    
+
                     let list =
                         plugin_execution::discover_features_of_all_servers(servers, upnp_activated)
                             .await
                             .unwrap();
-                    
+
                     HttpResponse::Ok().json(list)
                 }
                 Err(err) => {
@@ -158,8 +168,6 @@ pub async fn post_servers_by_ipaddress_action(
             .body(format!("Server with ip {} not found", &ipaddress));
     }
     let server = server_res.unwrap();
-
-
 
     match query.action_type {
         ServerActionType::FeatureScan => {
@@ -359,7 +367,7 @@ pub async fn get_dnsservers(data: web::Data<AppData>) -> HttpResponse {
 #[delete("/configurations/dnsservers/{ipaddress}")]
 pub async fn delete_dnsservers(data: web::Data<AppData>, path: web::Path<String>) -> HttpResponse {
     let persistence = &data.app_data_persistence;
-    
+
     let Ok(ipaddress): Result<IpAddr,_> = path.into_inner().parse() else {
         return HttpResponse::InternalServerError().body("IP Address is incorrect");
     };

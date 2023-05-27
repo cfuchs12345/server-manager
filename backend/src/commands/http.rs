@@ -1,6 +1,9 @@
 use std::any::Any;
 
-use super::{common::{replace, self}, Command, CommandInput, CommandResult, Parameters};
+use super::{
+    common::{self, replace},
+    Command, CommandInput, CommandResult, Parameters,
+};
 use crate::models::{
     error::AppError,
     plugin::{action::Action, data::Data, Plugin},
@@ -130,10 +133,11 @@ pub fn make_command_input_from_subaction(
     feature: &Feature,
     plugin: &Plugin,
 ) -> Result<CommandInput, AppError> {
-    let params = Parameters::new(        
+    let params = Parameters::new(
         common::action_params_to_command_args(action_params),
         common::feature_params_to_command_args(feature),
-        common::plugin_default_params_to_command_args(plugin));
+        common::plugin_default_params_to_command_args(plugin),
+    );
 
     Ok(CommandInput::new(
         HTTP,
@@ -153,17 +157,18 @@ pub fn make_command_input_from_data(
     feature: &Feature,
     plugin: &Plugin,
 ) -> Result<CommandInput, AppError> {
-    let params = Parameters::new(        
+    let params = Parameters::new(
         common::action_params_to_command_args(action_params),
         common::feature_params_to_command_args(feature),
-        common::plugin_default_params_to_command_args(plugin));
+        common::plugin_default_params_to_command_args(plugin),
+    );
 
     Ok(CommandInput::new(
         HTTP,
         Some(crypto_key),
         Some(server.ipaddress),
         common::data_args_to_command_args(data),
-       params,
+        params,
         feature.credentials.clone(),
     ))
 }

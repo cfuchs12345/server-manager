@@ -1,24 +1,20 @@
-use std::{net::IpAddr, time::Duration, any::Any};
 use async_trait::async_trait;
 use rand::random;
-use surge_ping::{Client, PingIdentifier, PingSequence, IcmpPacket, Config};
+use std::{any::Any, net::IpAddr, time::Duration};
+use surge_ping::{Client, Config, IcmpPacket, PingIdentifier, PingSequence};
 
-use crate::{models::error::AppError};
+use crate::models::error::AppError;
 
-use super::{Command,CommandInput, CommandResult};
-
+use super::{Command, CommandInput, CommandResult};
 
 pub const PING: &str = "ping";
 
-
 #[derive(Clone)]
-pub struct PingCommand {
-}
+pub struct PingCommand {}
 
 impl PingCommand {
     pub fn new() -> Self {
-        PingCommand {
-        }
+        PingCommand {}
     }
 }
 
@@ -31,17 +27,15 @@ impl Command for PingCommand {
     async fn execute(&self, input: &CommandInput) -> Result<Box<dyn Any + Sync + Send>, AppError> {
         let client = Client::new(&Config::default())?;
 
-        if let Some(ipaddress) =  input.get_ipaddress() {
+        if let Some(ipaddress) = input.get_ipaddress() {
             let payload = [0; 56];
             let mut interval = tokio::time::interval(Duration::from_secs(1));
-            
 
             let mut pinger = client.pinger(ipaddress, PingIdentifier(random())).await;
             pinger.timeout(Duration::from_secs(1));
-        
+
             let mut reachable = false;
 
-        
             for idx in 0..3 {
                 interval.tick().await;
                 match pinger.ping(PingSequence(idx), &payload).await {
@@ -65,23 +59,29 @@ impl Command for PingCommand {
     }
 }
 
-
 pub fn make_input(address: IpAddr) -> CommandInput {
-    CommandInput::new(PING, None, Some(address), Vec::new(), super::Parameters::empty(), Vec::new())
+    CommandInput::new(
+        PING,
+        None,
+        Some(address),
+        Vec::new(),
+        super::Parameters::empty(),
+        Vec::new(),
+    )
 }
 
 #[derive(Clone)]
 pub struct PingCommandResult {
     result: bool,
-    ipaddress: IpAddr
+    ipaddress: IpAddr,
 }
 impl PingCommandResult {
-    fn new(result: bool,ipaddress: IpAddr) -> Self {
-        PingCommandResult {result, ipaddress}
+    fn new(result: bool, ipaddress: IpAddr) -> Self {
+        PingCommandResult { result, ipaddress }
     }
 
     pub fn get_ipaddress(&self) -> IpAddr {
-       self.ipaddress
+        self.ipaddress
     }
 
     pub fn get_result(&self) -> bool {
@@ -89,6 +89,4 @@ impl PingCommandResult {
     }
 }
 
-impl CommandResult for PingCommandResult {
-
-}
+impl CommandResult for PingCommandResult {}

@@ -1,6 +1,6 @@
 use std::net::IpAddr;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::commands::ping::PingCommandResult;
 
@@ -10,12 +10,11 @@ pub struct Status {
     pub ipaddress: IpAddr,
 }
 
-
 impl Status {
     pub fn new(ipaddress: IpAddr) -> Self {
         Status {
             is_running: false,
-            ipaddress
+            ipaddress,
         }
     }
 }
@@ -30,8 +29,7 @@ impl From<PingCommandResult> for Status {
     fn from(res: PingCommandResult) -> Self {
         Status {
             is_running: res.get_result(),
-            ipaddress: res.get_ipaddress()
+            ipaddress: res.get_ipaddress(),
         }
     }
 }
-

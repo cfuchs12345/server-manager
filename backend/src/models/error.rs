@@ -1,8 +1,8 @@
-use std::str::ParseBoolError;
-use std::{fmt::Display, num::ParseIntError, net::AddrParseError};
-use actix_web::{ResponseError, HttpResponse};
-use http::{StatusCode, header};
+use actix_web::{HttpResponse, ResponseError};
+use http::{header, StatusCode};
 use serde::{Deserialize, Serialize};
+use std::str::ParseBoolError;
+use std::{fmt::Display, net::AddrParseError, num::ParseIntError};
 use surge_ping::SurgeError;
 
 #[derive(Debug)]
@@ -16,7 +16,7 @@ pub enum AppError {
     UnknownPlugin(String),
     UnknownPluginAction(String, String),
     #[allow(dead_code)]
-    UnknownPluginData(String,String),
+    UnknownPluginData(String, String),
     Unknown(String),
     DataNotFound(String),
     DatabaseError(String),
@@ -30,37 +30,53 @@ pub enum AppError {
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub struct AppErrorResponse {
-    error: String
+    error: String,
 }
 
 impl Display for AppError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AppError::ServerNotFound(ipaddress) => write!(f, "A server with address {} could not be found", ipaddress),
-            AppError::UserNotFound(user_id) => write!(f, "A user with id {} could not be found", user_id),
+            AppError::ServerNotFound(ipaddress) => {
+                write!(f, "A server with address {} could not be found", ipaddress)
+            }
+            AppError::UserNotFound(user_id) => {
+                write!(f, "A user with id {} could not be found", user_id)
+            }
             AppError::InvalidArgument(name, opt_value) => match opt_value {
-                Some(value) => 
-                write!(f, "Invalid Argument {} with value {}", name, value)
-                ,
-                None => 
-                    write!(f, "Invalid Argument {}", name)
+                Some(value) => write!(f, "Invalid Argument {} with value {}", name, value),
+                None => write!(f, "Invalid Argument {}", name),
             },
-            AppError::ArgumentNotFound(name) => write!(f, "Argument with name {} could not be found", name),
-            AppError::CredentialNotFound(name) => write!(f, "Credential with name {} could not be found", name),
-            AppError::CommandNotFound(name)=> write!(f, "Command with name {} could not be found", name),
+            AppError::ArgumentNotFound(name) => {
+                write!(f, "Argument with name {} could not be found", name)
+            }
+            AppError::CredentialNotFound(name) => {
+                write!(f, "Credential with name {} could not be found", name)
+            }
+            AppError::CommandNotFound(name) => {
+                write!(f, "Command with name {} could not be found", name)
+            }
             AppError::UnknownPlugin(name) => write!(f, "A plugin with id {} is not known", name),
-            AppError::UnknownPluginAction(plugin_name, name) => write!(f, "A plugin action with id {} is not know for a plugin with id {}", name, plugin_name),
-            AppError::UnknownPluginData(plugin_name, name) => write!(f, "A plugin data query with id {} is not know for a plugin with id {}", name, plugin_name),
-            AppError::Unknown(err) => write!(f, "An unknown error occurred {}",err),
-            AppError::DataNotFound(name) =>write!(f, "data {} not found", name),
-            AppError::DatabaseError(err) => write!(f, "A database error occurred {}",err),
-            AppError::HttpError(err) => write!(f, "A http request error occurred {}",err),
-            AppError::MissingArgument(name) => write!(f, "Argument with name {} is missing or not set", name),            
+            AppError::UnknownPluginAction(plugin_name, name) => write!(
+                f,
+                "A plugin action with id {} is not know for a plugin with id {}",
+                name, plugin_name
+            ),
+            AppError::UnknownPluginData(plugin_name, name) => write!(
+                f,
+                "A plugin data query with id {} is not know for a plugin with id {}",
+                name, plugin_name
+            ),
+            AppError::Unknown(err) => write!(f, "An unknown error occurred {}", err),
+            AppError::DataNotFound(name) => write!(f, "data {} not found", name),
+            AppError::DatabaseError(err) => write!(f, "A database error occurred {}", err),
+            AppError::HttpError(err) => write!(f, "A http request error occurred {}", err),
+            AppError::MissingArgument(name) => {
+                write!(f, "Argument with name {} is missing or not set", name)
+            }
             AppError::CouldNotRenderData(data) => write!(f, "Could not render data {}", data),
             AppError::UnAuthorized => write!(f, "User is not authorized"),
             AppError::DecryptionError => write!(f, "Data could not be decrypted"),
-            AppError::ParseError(err) => write!(f, "Could not parse given data {}",err),
-
+            AppError::ParseError(err) => write!(f, "Could not parse given data {}", err),
         }
     }
 }
@@ -83,7 +99,7 @@ impl From<sqlx::Error> for AppError {
 }
 
 impl From<reqwest::Error> for AppError {
-    fn from(err:reqwest::Error) -> Self {
+    fn from(err: reqwest::Error) -> Self {
         AppError::HttpError(format!("{}", err))
     }
 }
@@ -94,13 +110,11 @@ impl From<bcrypt::BcryptError> for AppError {
     }
 }
 
-
 impl From<header::ToStrError> for AppError {
     fn from(err: header::ToStrError) -> Self {
         AppError::Unknown(format!("{}", err))
     }
 }
-
 
 impl From<ParseIntError> for AppError {
     fn from(err: ParseIntError) -> Self {
@@ -126,13 +140,11 @@ impl From<SurgeError> for AppError {
     }
 }
 
-
 impl ResponseError for AppError {
-
     fn status_code(&self) -> StatusCode {
         match self {
             Self::UnAuthorized => StatusCode::UNAUTHORIZED,
-            _ => StatusCode::INTERNAL_SERVER_ERROR
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 

@@ -1,12 +1,12 @@
-mod init;
-mod webserver;
 mod commands;
-mod plugin_execution;
-mod datastore;
-mod migrations;
 mod common;
+mod datastore;
+mod init;
+mod migrations;
 mod models;
 mod other_functions;
+mod plugin_execution;
+mod webserver;
 
 #[actix_web::main]
 pub async fn main() {

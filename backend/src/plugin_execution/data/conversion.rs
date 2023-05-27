@@ -26,13 +26,13 @@ pub fn convert_result_string_to_html(
 
 fn create_data_input_structure(data: &Data, input: String) -> Result<Value, AppError> {
     match &data.result_format {
-        ResultFormat::XML => { 
+        ResultFormat::XML => {
             Ok(json!(Xml {
                 // wrap the xml in a JSON as content of "data" property
                 data: input
             }))
         }
-        ResultFormat::JSON => serde_json::from_str(input.as_str()).map_err(AppError::from)
+        ResultFormat::JSON => serde_json::from_str(input.as_str()).map_err(AppError::from),
     }
 }
 
@@ -48,5 +48,4 @@ fn format_data_with_template_engine(
 
     let res = engine.render(template, &data_value);
     res.map_err(|e| AppError::CouldNotRenderData(format!("{:?}", e)))
-    
 }

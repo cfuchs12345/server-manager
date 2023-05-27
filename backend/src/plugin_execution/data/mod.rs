@@ -4,7 +4,8 @@ use lazy_static::lazy_static;
 use regex::Regex;
 
 use crate::{
-    commands::{self, http::HttpCommandResult}, datastore,
+    commands::{self, http::HttpCommandResult},
+    datastore,
     models::{
         error::AppError,
         plugin::{data::Data, sub_action::SubAction, Plugin},
@@ -111,11 +112,18 @@ pub async fn execute_specific_data_query(
     action_params: Option<&str>,
     crypto_key: &str,
 ) -> Result<Option<String>, AppError> {
-        let input = commands::http::make_command_input_from_data(server, crypto_key, data, action_params, feature, plugin)?;
+    let input = commands::http::make_command_input_from_data(
+        server,
+        crypto_key,
+        data,
+        action_params,
+        feature,
+        plugin,
+    )?;
 
-        let result:HttpCommandResult = commands::execute(input).await?;
-      
-        Ok(Some(result.get_response()))
+    let result: HttpCommandResult = commands::execute(input).await?;
+
+    Ok(Some(result.get_response()))
 }
 
 fn extract_actions(input: &str) -> Vec<SubAction> {

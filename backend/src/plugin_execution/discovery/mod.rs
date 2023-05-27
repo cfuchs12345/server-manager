@@ -198,10 +198,9 @@ async fn auto_discover_servers(
     let list = result
         .iter()
         .flat_map(move |r| r.as_ref().ok())
-        .flat_map(|r|r.as_ref().ok())
+        .flat_map(|r| r.as_ref().ok())
         .map(|hi| hi.to_owned())
         .collect();
-       
 
     Ok(list)
 }
@@ -215,8 +214,13 @@ fn merge_features(
 
     // test if we need to merge with an entry that is already there for a server and we just need to add features to the list
     for feature in &mut result {
-        if let Some(to_add) = list2.iter().find( |f| f.ipaddress == feature.ipaddress).cloned().as_mut() {            
-            feature.features.append(&mut to_add.features);            
+        if let Some(to_add) = list2
+            .iter()
+            .find(|f| f.ipaddress == feature.ipaddress)
+            .cloned()
+            .as_mut()
+        {
+            feature.features.append(&mut to_add.features);
         }
     }
 
@@ -405,7 +409,6 @@ mod tests {
         assert_eq!(res.get(0).unwrap().features.len(), 1); // only proxmox
         assert_eq!(res.get(1).unwrap().features.len(), 2); // nas and upnp
     }
-
 
     #[test]
     fn test_merge_features2() {

@@ -1,14 +1,12 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use super::common::QueryParam;
-
-
 
 #[derive(Deserialize, Serialize, Clone, PartialEq, Eq)]
 pub enum ServersActionType {
     Status,
     FeatureScan,
-    ActionConditionCheck
+    ActionConditionCheck,
 }
 
 #[derive(Deserialize, Serialize, Clone, PartialEq, Eq)]
@@ -21,13 +19,12 @@ pub enum ServerActionType {
 
 #[derive(Deserialize, Serialize, Clone, PartialEq, Eq)]
 pub enum NetworkActionType {
-    AutoDiscover
+    AutoDiscover,
 }
 
-
 /**
- * 
- * 
+ *
+ *
  * Discovery Query:
  * "action_type", AutoDiscover
  * "network" : "xxx.xxx.xxx.xxx/xx",
@@ -37,18 +34,17 @@ pub enum NetworkActionType {
 #[derive(Deserialize, Serialize, Clone)]
 pub struct NetworksAction {
     pub action_type: NetworkActionType,
-    pub params: Vec<QueryParam>
+    pub params: Vec<QueryParam>,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct ServersAction {
     pub action_type: ServersActionType,
-    pub params: Vec<QueryParam>
+    pub params: Vec<QueryParam>,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct ServerAction {
     pub action_type: ServerActionType,
-    pub params: Vec<QueryParam>
+    pub params: Vec<QueryParam>,
 }
-

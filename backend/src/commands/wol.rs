@@ -3,20 +3,18 @@ use std::any::Any;
 use async_trait::async_trait;
 use mac_address::MacAddress;
 
-use crate::{models::{error::AppError, server::Feature}};
+use crate::models::{error::AppError, server::Feature};
 
-use super::{Command, CommandInput, CommandResult, common};
-
+use super::{common, Command, CommandInput, CommandResult};
 
 pub const WOL: &str = "wol";
 
 #[derive(Clone)]
-pub struct WoLCommand {
-}
+pub struct WoLCommand {}
 
 impl WoLCommand {
     pub fn new() -> Self {
-        WoLCommand{}
+        WoLCommand {}
     }
 }
 
@@ -54,13 +52,9 @@ impl Command for WoLCommand {
     }
 }
 
+struct WolCommandResult {}
 
-struct WolCommandResult {
-
-}
-
-impl CommandResult for WolCommandResult {
-}
+impl CommandResult for WolCommandResult {}
 
 impl WolCommandResult {
     fn new() -> Self {
@@ -69,7 +63,11 @@ impl WolCommandResult {
 }
 
 pub fn make_input(feature: &Feature) -> CommandInput {
-    let params = super::Parameters::new(Vec::new(),common::feature_params_to_command_args(feature), Vec::new());
-    
-    CommandInput::new(WOL, None, None, Vec::new(), params , Vec::new())
+    let params = super::Parameters::new(
+        Vec::new(),
+        common::feature_params_to_command_args(feature),
+        Vec::new(),
+    );
+
+    CommandInput::new(WOL, None, None, Vec::new(), params, Vec::new())
 }

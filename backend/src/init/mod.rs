@@ -1,7 +1,6 @@
-mod template_engine;
-mod scheduling;
 mod files;
-
+mod scheduling;
+mod template_engine;
 
 use config::Config;
 use std::path::Path;
@@ -13,13 +12,11 @@ use crate::models::error::AppError;
 use crate::webserver;
 use crate::webserver::AppData;
 
-
 pub static ENV_FILENAME: &str = "./external_files/.env";
 
 pub static DB_FILENAME: &str = "./external_files/server-manager.db";
 
-
-pub async fn start() -> Result<(), AppError> { 
+pub async fn start() -> Result<(), AppError> {
     scheduling::start_scheduled_jobs().await;
     one_time_init()?;
     load_env_file();
@@ -33,19 +30,19 @@ pub async fn start() -> Result<(), AppError> {
     let app_data = create_common_app_data();
     one_time_post_db_startup(&app_data).await;
 
-    
     migrations::execute_post_db_startup_migrations(&neccessary_migrations, &app_data).await;
     migrations::save_migration(&neccessary_migrations, &app_data.app_data_persistence).await;
-    
+
     init_server_list(&app_data.app_data_persistence).await;
     init_config_post_db(&app_data.app_data_persistence).await;
-    
+
     webserver::start_webserver(bind_address, app_data).await
-    
 }
 
 async fn init_server_list(persistence: &Persistence) {
-   let servers =  datastore::load_all_servers(persistence, false).await.unwrap();
+    let servers = datastore::load_all_servers(persistence, false)
+        .await
+        .unwrap();
 
     datastore::cache_servers(servers);
 }
@@ -79,23 +76,29 @@ fn load_env_file() {
     dotenvy::from_path(Path::new(ENV_FILENAME)).ok();
 }
 
-
-
-
 fn init_config() {
     let config = Config::builder()
         .add_source(config::Environment::default())
         .build()
         .expect("Could not load config from env properties"); // ok to panic, if the config cannot be loaded
 
-
-    datastore::set_config(config);    
+    datastore::set_config(config);
     env_logger::init();
-    datastore::init_cache();    
+    datastore::init_cache();
 }
 
 async fn init_config_post_db(persistence: &Persistence) {
-    let crypto_key = persistence.get("encryption", "default").await.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e)).unwrap().ok_or(std::io::Error::new(std::io::ErrorKind::Other, "No crypto key in db found")).unwrap().value;
-    
+    let crypto_key = persistence
+        .get("encryption", "default")
+        .await
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
+        .unwrap()
+        .ok_or(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "No crypto key in db found",
+        ))
+        .unwrap()
+        .value;
+
     datastore::set_crypto_key(crypto_key);
 }
