@@ -106,8 +106,8 @@ pub async fn post_servers_actions(
 
     match query.action_type {
         ServersActionType::Status => {
-            let ips_to_check: Vec<IpAddr> = match params_map.get("ip_addresses") {
-                Some(_list) => params_map.get_split_by("ip_addresses", ",").unwrap().iter().flat_map(|s| { let ip: Result<IpAddr, _> = s.parse(); ip}).collect(),
+            let ips_to_check: Vec<IpAddr> = match params_map.get("ipaddresses") {
+                Some(_list) => params_map.get_split_by("ipaddresses", ",").unwrap().iter().flat_map(|s| { let ip: Result<IpAddr, _> = s.parse(); ip}).collect(),
                 None => Vec::new(),
             };
 
@@ -359,7 +359,10 @@ pub async fn get_dnsservers(data: web::Data<AppData>) -> HttpResponse {
 #[delete("/configurations/dnsservers/{ipaddress}")]
 pub async fn delete_dnsservers(data: web::Data<AppData>, path: web::Path<String>) -> HttpResponse {
     let persistence = &data.app_data_persistence;
-    let ipaddress = path.into_inner();
+    
+    let Ok(ipaddress): Result<IpAddr,_> = path.into_inner().parse() else {
+        return HttpResponse::InternalServerError().body("IP Address is incorrect");
+    };
 
     match datastore::delete_dnsserver(persistence, &ipaddress).await {
         Ok(_res) => HttpResponse::Ok().finish(),

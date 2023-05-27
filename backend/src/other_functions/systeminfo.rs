@@ -91,7 +91,7 @@ fn get_dns_from_line(line: &str) -> Option<DNSServer> {
                     IpAddr::V4(ipv4) => {
                         if ipv4.is_private() {
                             return Some(DNSServer{
-                                ipaddress: ip,
+                                ipaddress: an_address,
                                 port: 53 // resolv.conf is not allowing ports as far as I know, so it should be always 53
                             });
                         }
@@ -100,7 +100,7 @@ fn get_dns_from_line(line: &str) -> Option<DNSServer> {
                         let v6_upper = ipv6.to_string().to_uppercase();
                         if v6_upper.starts_with("FE80") || v6_upper.starts_with("FC00") { // currently only link local addresses or RFC 4193 ULA. Hard to tell if it is a private address othewise, if a prefix is used
                             return Some(DNSServer{
-                                ipaddress: ipv6.to_string(),
+                                ipaddress: an_address,
                                 port: 53 // resolv.conf is not allowing ports as far as I know, so it should be always 53
                             });
                         }

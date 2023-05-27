@@ -265,7 +265,7 @@ async fn discover_host(
 
     Ok(HostInformation {
         is_running: result.get_result(),
-        ipaddress: addr.to_string(),
+        ipaddress: addr,
         dnsname: dnsnames.join(","),
     })
 }

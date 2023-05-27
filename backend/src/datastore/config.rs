@@ -1,3 +1,5 @@
+use std::net::IpAddr;
+
 use crate::{models::{config::dns_server::DNSServer, error::AppError}, common};
 
 use super::{persistence::Persistence, Entry};
@@ -17,10 +19,10 @@ fn entries_to_dnsservers(jsons: Vec<Entry>) -> Vec<DNSServer> {
     ).collect()
 }
 
-fn dnsserver_to_entry(server: &DNSServer) -> Entry {
+fn dnsserver_to_entry(dns_server: &DNSServer) -> Entry {
     Entry {
-        key: server.ipaddress.clone(),
-        value: serde_json::to_string(server).unwrap()
+        key: format!("{}", dns_server.ipaddress),
+        value: serde_json::to_string(dns_server).unwrap()
     }    
 }
 
@@ -32,8 +34,8 @@ pub async fn insert_dnsserver(persistence: &Persistence, server: &DNSServer) -> 
 }
 
 
-pub async fn delete_dnsserver(persistence: &Persistence, ipaddress: &str) -> Result<bool, AppError> {
-    let result = persistence.delete(TABLE_DNS_SERVERS, ipaddress).await.unwrap();
+pub async fn delete_dnsserver(persistence: &Persistence, ipaddress: &IpAddr) -> Result<bool, AppError> {
+    let result = persistence.delete(TABLE_DNS_SERVERS, format!("{}", ipaddress).as_str()).await.unwrap();
 
     Ok(result > 0)
 }
