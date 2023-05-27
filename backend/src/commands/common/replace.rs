@@ -71,8 +71,8 @@ pub fn replace(input_string: &str, input: &CommandInput) -> Result< (String, Str
     let mut result: String = input_string.to_owned();
     let mut masked: String;
 
-    if let Some(ip_address) = input.get_ipaddress() {
-        result = result.replace("${IP}", format!("{}", ip_address).as_str());
+    if let Some(ipaddress) = input.get_ipaddress() {
+        result = result.replace("${IP}", format!("{}", ipaddress).as_str());
     }
     
     result = replace_param(result, input)?;

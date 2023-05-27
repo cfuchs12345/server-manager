@@ -100,8 +100,8 @@ pub struct CommandInput {
 }
 
 impl CommandInput {    
-    pub fn new(name: &str, crypto_key: Option<&str>, ip_address: Option<IpAddr>, action_args: Vec<CommandArg>, parameters: Parameters, credentials: Vec<Credential>) -> Self {
-        CommandInput { name: name.to_owned(), crypto_key: crypto_key.map(|c| c.to_owned()), ipaddress: ip_address.map(|i| i.to_owned()), action_args, parameters, credentials }
+    pub fn new(name: &str, crypto_key: Option<&str>, ipaddress: Option<IpAddr>, action_args: Vec<CommandArg>, parameters: Parameters, credentials: Vec<Credential>) -> Self {
+        CommandInput { name: name.to_owned(), crypto_key: crypto_key.map(|c| c.to_owned()), ipaddress: ipaddress.map(|i| i.to_owned()), action_args, parameters, credentials }
     }
     fn get_name(&self) -> &str {
         self.name.as_str()
