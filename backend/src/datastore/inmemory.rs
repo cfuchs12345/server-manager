@@ -1,6 +1,6 @@
 use config::Config;
 use lazy_static::lazy_static;
-use std::{collections::HashMap, sync::RwLock};
+use std::{collections::HashMap, sync::RwLock, net::IpAddr};
 
 use crate::{models::{plugin::Plugin, server::Server}, models::response::{status::Status, data_result::ConditionCheckResult}};
 
@@ -22,8 +22,8 @@ lazy_static! {
     static ref TOKENS: RwLock<HashMap<String, TokenInfo>> = RwLock::new(HashMap::new());
     static ref CONFIG: RwLock<ConfigHolder> = RwLock::new(ConfigHolder::new());
     static ref PLUGIN_CACHE: RwLock<HashMap<String, Plugin>> = RwLock::new(HashMap::new());
-    static ref SERVER_CACHE: RwLock<HashMap<String, Server>> = RwLock::new(HashMap::new());
-    static ref SERVER_STATUS_CACHE: RwLock<HashMap<String, Status>> = RwLock::new(HashMap::new());
+    static ref SERVER_CACHE: RwLock<HashMap<IpAddr, Server>> = RwLock::new(HashMap::new());
+    static ref SERVER_STATUS_CACHE: RwLock<HashMap<IpAddr, Status>> = RwLock::new(HashMap::new());
     static ref SERVER_ACTION_CONDITION_RESULTS: RwLock<HashMap<String, ConditionCheckResult>> = RwLock::new(HashMap::new());
 }
 
@@ -99,11 +99,11 @@ pub fn cache_servers(servers: Vec<Server>) {
     let mut cache = SERVER_CACHE.try_write().unwrap();
 
     for server in servers {
-        cache.insert(server.ipaddress.clone(), server);
+        cache.insert(server.ipaddress, server);
     }
 }
 
-pub fn remove_server(ipaddress:  &str) {
+pub fn remove_server(ipaddress:  &IpAddr) {
     let mut cache = SERVER_CACHE.try_write().unwrap();
     let mut status_cache = SERVER_STATUS_CACHE.try_write().unwrap();
     cache.remove(ipaddress);
@@ -113,20 +113,20 @@ pub fn remove_server(ipaddress:  &str) {
 pub fn add_server(server: &Server) {
     let mut cache = SERVER_CACHE.try_write().unwrap();
 
-    cache.insert(server.ipaddress.clone(), server.clone());
+    cache.insert(server.ipaddress, server.clone());
 }
 
 pub fn cache_status(status: Vec<Status>) {
     let mut cache = SERVER_STATUS_CACHE.try_write().unwrap();
     for s in status {
-        cache.insert(s.ipaddress.clone(), s);
+        cache.insert(s.ipaddress, s);
     }
 }
 
-pub fn get_status(ipaddress: String) -> Option<Status> {
+pub fn get_status(ipaddress: &IpAddr) -> Option<Status> {
     let cache = SERVER_STATUS_CACHE.try_read().unwrap();
 
-    cache.get(ipaddress.as_str()).cloned()
+    cache.get(ipaddress).cloned()
 }
 
 pub fn get_all_condition_results() -> Vec<ConditionCheckResult> {

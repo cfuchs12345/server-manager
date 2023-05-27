@@ -4,6 +4,7 @@ use std::time::Duration;
 use http::StatusCode;
 
 use crate::datastore;
+use crate::models::error::AppError;
 
 #[cfg(all(target_os="linux"))]
 use std::os::unix::net::UnixStream;
@@ -104,14 +105,14 @@ fn read_from_stream(unix_stream: &mut UnixStream) -> String {
 /// * `
 /// # Errors
 /// * `request::error::Error` if the request fails during execution
-/// * ` std::io::Error`if the given metho is invalid
+/// * ` AppError`if the given metho is invalid
 ///
 pub async fn execute_http_request(
     url: String,
     method: &str,
     headers: Option<Vec<(String, String)>>,
     body: Option<String>
-) -> Result<String, reqwest::Error> {
+) -> Result<String, AppError> {
     
     let client = create_http_client();
 
@@ -134,7 +135,7 @@ pub async fn execute_http_request(
             y => Ok(format!("Returned StatusCode was not ACCEPTED or OK but {:?}", y))
         }
     },
-    Err(err)=> Err(err)
+    Err(err)=> Err(AppError::from(err))
     }
 }
 

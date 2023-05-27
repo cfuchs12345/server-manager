@@ -1,16 +1,21 @@
-use serde::{Serialize, Deserialize};
 
+
+use std::net::{IpAddr, Ipv4Addr};
+
+use serde::{Serialize, Deserialize};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct DataResult {
-    pub ipaddress: String,
+    #[serde(default = "default_ipaddress")]
+    pub ipaddress: IpAddr,
     pub result: String,
     pub check_results: Vec<ConditionCheckResult>
 }
 
-#[derive(Deserialize, Serialize, Clone, Default, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct ConditionCheckResult {
-    pub ipaddress: String,
+    #[serde(default = "default_ipaddress")]
+    pub ipaddress: IpAddr,
     pub feature_id: String,
     pub action_id: String,
     pub action_params: String,
@@ -23,3 +28,12 @@ impl ConditionCheckResult {
     }
 }
 
+fn default_ipaddress() -> IpAddr {
+    IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))
+}
+
+
+
+mod test {
+    
+}

@@ -4,7 +4,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 
 use crate::{
-    commands, datastore,
+    commands::{self, http::HttpCommandResult}, datastore,
     models::{
         error::AppError,
         plugin::{data::Data, sub_action::SubAction, Plugin},
@@ -84,7 +84,7 @@ pub async fn execute_data_query(
                         .await;
 
                 results.push(DataResult {
-                    ipaddress: server.ipaddress.clone(),
+                    ipaddress: server.ipaddress,
                     result: enriched_result,
                     check_results,
                 });
@@ -111,12 +111,11 @@ pub async fn execute_specific_data_query(
     action_params: Option<&str>,
     crypto_key: &str,
 ) -> Result<Option<String>, AppError> {
-        let input = commands::make_command_input_from_data("http", server, &crypto_key, data, action_params, feature, &plugin);
+        let input = commands::http::make_command_input_from_data(server, crypto_key, data, action_params, feature, plugin)?;
 
-        let result = commands::execute(&input).await?;
-
+        let result:HttpCommandResult = commands::execute(input).await?;
       
-        Ok(result.get_result().map(|r| r.to_owned()))      
+        Ok(Some(result.get_response()))
 }
 
 fn extract_actions(input: &str) -> Vec<SubAction> {

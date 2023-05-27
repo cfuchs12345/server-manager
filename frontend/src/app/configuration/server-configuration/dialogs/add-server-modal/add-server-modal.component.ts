@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormControl, Validators } from '@angular/forms';
+import { AbstractControl, FormControl, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { Subscription } from 'rxjs';
 import { PluginService } from 'src/app/services/plugins/plugin.service';
@@ -8,6 +8,8 @@ import { ServerService } from 'src/app/services/servers/server.service';
 import { Feature, Server, ServerFeature } from 'src/app/services/servers/types';
 import { ConfirmDialogComponent } from 'src/app/ui/confirm-dialog/confirm-dialog.component';
 import { ServerAddressType } from 'src/types/ServerAddress';
+import {Validator} from 'ip-num/Validator'
+
 
 @Component({
   selector: 'app-add-server-modal',
@@ -15,16 +17,16 @@ import { ServerAddressType } from 'src/types/ServerAddress';
   styleUrls: ['./add-server-modal.component.scss'],
 })
 export class AddServerModalComponent implements OnInit {
-  ipplaceholder: string = 'xxx.xxx.xxx.xxx';
+  ipplaceholder: string = 'xxx.xxx.xxx.xxx or xxxx:xxxx...';
   ipAddressLabel: string = 'IP Address';
-  ipaddressHint: string = 'Example: 192.168.178.111';
+  ipaddressHint: string = 'Example: 192.168.178.111 or FE80::1';
   nameLabel: string = 'Name';
   nameHint: string = '';
   buttonTextAddServer: string = 'Add Server';
   name = new FormControl('', []);
   ipaddress = new FormControl('', [
     Validators.required,
-    Validators.pattern(ServerAddressType.IPV4),
+    ipValidator(),
   ]);
 
   buttonTextAddFeature="Add Feature";
@@ -71,7 +73,7 @@ export class AddServerModalComponent implements OnInit {
     if (this.ipaddress.hasError('required')) {
       return 'You must enter a value';
     }
-    return this.ipaddress.hasError('pattern')
+    return this.ipaddress.hasError('ip')
       ? 'The IP address format is not correct'
       : 'Unknown error';
   }
@@ -106,4 +108,13 @@ export class AddServerModalComponent implements OnInit {
   private isFeatureAlreadySet(id: string, features: Feature[]) {
     return features.filter( (feature) => feature.id === id).length > 0;
   }
+}
+
+export function ipValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    let [validv4, errv4] = Validator.isValidIPv4String(control.value);
+    let [validv6, errv6]  = Validator.isValidIPv6String(control.value);
+
+    return !validv4 && !validv6 ? {ip: {value: "invalid address"}}: null;
+  };
 }

@@ -1,51 +1,52 @@
-use super::{common::replace, Command, CommandInput, CommandResult};
-use crate::models::{error::AppError};
+use std::any::Any;
+
+use super::{common::{replace, self}, Command, CommandInput, CommandResult, Parameters};
+use crate::models::{
+    error::AppError,
+    plugin::{action::Action, data::Data, Plugin},
+    server::{Feature, Server},
+};
 use async_trait::async_trait;
-use std::{pin::Pin};
+
+pub const HTTP: &str = "http";
 
 #[derive(Clone)]
-pub struct HttpCommand {
-    name: String,
-}
-
+pub struct HttpCommand {}
 impl HttpCommand {
     pub fn new() -> Self {
-        HttpCommand {
-            name: "http".to_string(),
-        }
+        HttpCommand {}
     }
 }
 
 #[async_trait]
 impl Command for HttpCommand {
     fn get_name(&self) -> &str {
-        self.name.as_str()
+        HTTP
     }
 
-    async fn execute(&self, input: &CommandInput) -> Result<Pin<Box<dyn CommandResult>>, AppError> {
-        let url = input
-            .find_single_arg("url")?;
-        let method = input
-            .find_single_arg("method")?;
-        let headers = input
-            .find_all_args("header")?;
+    async fn execute(&self, input: &CommandInput) -> Result<Box<dyn Any + Sync + Send>, AppError> {
+        let url = input.find_single_arg("url")?;
+        let method = input.find_single_arg("method")?;
+        let headers = input.find_all_args("header")?;
 
         let body: &str = match method {
-            "post" =>  input.find_single_arg("body").unwrap_or( {
-                log::warn!("Actually expected a body for a post request. Continuing with an empty body.");
+            "post" => input.find_single_arg("body").unwrap_or({
+                log::warn!(
+                    "Actually expected a body for a post request. Continuing with an empty body."
+                );
                 ""
             }),
-            "put" => input.find_single_arg("body").unwrap_or( {
-                    log::error!("Actually expected a body for a put request. Continuing with an empty body.");
-                    ""
+            "put" => input.find_single_arg("body").unwrap_or({
+                log::error!(
+                    "Actually expected a body for a put request. Continuing with an empty body."
+                );
+                ""
             }),
             _ => "",
         };
 
-        let normal_and_masked_url: (String, String) =
-            replace::replace(url, input)?;
-        let normal_and_masked_body: (String, String) =
-            replace::replace(body, input)?;
+        let normal_and_masked_url: (String, String) = replace::replace(url, input)?;
+        let normal_and_masked_body: (String, String) = replace::replace(body, input)?;
         let normal_and_replaced_headers: Vec<(String, String)> =
             replace::replace_list(headers, input)?;
 
@@ -82,7 +83,7 @@ impl Command for HttpCommand {
             "Given url is empty after replacing placeholders. Was before replace: {}. Request will not be executed",
             url
         );
-            return Err(AppError::InvalidArgument("url".to_string(), None)); 
+            return Err(AppError::InvalidArgument("url".to_string(), None));
         }
         log::info!(
             "{} {} {}",
@@ -91,42 +92,78 @@ impl Command for HttpCommand {
             normal_and_masked_body.0
         );
 
-        match crate::common::execute_http_request(
+        let response_string = crate::common::execute_http_request(
             normal_and_masked_url.0,
             method,
             Some(normal_and_replaced_headers),
             Some(normal_and_masked_body.0),
         )
-        .await {
-            Ok(response_string) => {
-                log::info!("response {}", response_string);
-                Ok(Box::pin(HttpCommandResult::new(Some(response_string))))
-            }
-            Err(err) => {
-                log::error!("Error: {}", err);
-                Err(AppError::from(err))
-            }
-        }
-        
+        .await?;
 
-       
+        Ok(Box::new(HttpCommandResult::new(response_string.as_str())))
     }
 }
 
-struct HttpCommandResult {
-    result: Option<String>
+#[derive(Clone)]
+pub struct HttpCommandResult {
+    response: String,
 }
-
 impl HttpCommandResult {
-    fn new(result: Option<String>) -> Self {
+    fn new(response: &str) -> Self {
         HttpCommandResult {
-            result
+            response: response.to_owned(),
         }
+    }
+
+    pub fn get_response(&self) -> String {
+        self.response.clone()
     }
 }
 
-impl CommandResult for HttpCommandResult {
-    fn get_result(&self) -> Option<String> {
-        self.result.clone()
-    }
+impl CommandResult for HttpCommandResult {}
+
+pub fn make_command_input_from_subaction(
+    server: &Server,
+    crypto_key: &str,
+    action: &Action,
+    action_params: Option<&str>,
+    feature: &Feature,
+    plugin: &Plugin,
+) -> Result<CommandInput, AppError> {
+    let params = Parameters::new(        
+        common::action_params_to_command_args(action_params),
+        common::feature_params_to_command_args(feature),
+        common::plugin_default_params_to_command_args(plugin));
+
+    Ok(CommandInput::new(
+        HTTP,
+        Some(crypto_key),
+        Some(server.ipaddress),
+        common::action_args_to_command_args(action),
+        params,
+        feature.credentials.clone(),
+    ))
+}
+
+pub fn make_command_input_from_data(
+    server: &Server,
+    crypto_key: &str,
+    data: &Data,
+    action_params: Option<&str>,
+    feature: &Feature,
+    plugin: &Plugin,
+) -> Result<CommandInput, AppError> {
+    let params = Parameters::new(        
+        common::action_params_to_command_args(action_params),
+        common::feature_params_to_command_args(feature),
+        common::plugin_default_params_to_command_args(plugin));
+
+    Ok(CommandInput::new(
+        HTTP,
+        Some(crypto_key),
+        Some(server.ipaddress),
+        common::data_args_to_command_args(data),
+       params,
+        feature.credentials.clone(),
+    ))
 }

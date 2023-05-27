@@ -1,32 +1,32 @@
-use std::pin::Pin;
+use std::any::Any;
 
 use async_trait::async_trait;
 use mac_address::MacAddress;
 
-use crate::models::{error::AppError};
+use crate::{models::{error::AppError, server::Feature}};
 
-use super::{Command, CommandInput, CommandResult};
+use super::{Command, CommandInput, CommandResult, common};
+
+
+pub const WOL: &str = "wol";
 
 #[derive(Clone)]
 pub struct WoLCommand {
-    name: String,
 }
 
 impl WoLCommand {
     pub fn new() -> Self {
-        WoLCommand {
-            name: "wol".to_string(),
-        }
+        WoLCommand{}
     }
 }
 
 #[async_trait]
 impl Command for WoLCommand {
     fn get_name(&self) -> &str {
-        self.name.as_str()
+        WOL
     }
 
-    async fn execute(&self, input: &CommandInput) -> Result<Pin<Box<dyn CommandResult>>, AppError> {
+    async fn execute(&self, input: &CommandInput) -> Result<Box<dyn Any + Sync + Send>, AppError> {
         let feature_param = input.find_param("mac_address")?;
 
         let address = feature_param.parse::<MacAddress>().map_err(|_| {
@@ -41,14 +41,14 @@ impl Command for WoLCommand {
                     "Successfully send magic packet to host with mac address {}",
                     address
                 );
-                Ok(Box::pin(WolCommandResult::new(Some("SENT".to_string()))))
+                Ok(Box::new(WolCommandResult::new()))
             }
             Err(err) => {
                 log::error!(
                     "Could not send magic packet due to technical problems: {:?}",
                     err
                 );
-                Err(AppError::Unknown(Box::new(err)))
+                Err(AppError::Unknown(format!("{}", err)))
             }
         }
     }
@@ -56,19 +56,20 @@ impl Command for WoLCommand {
 
 
 struct WolCommandResult {
-    result: Option<String>
-}
 
-impl WolCommandResult {
-    fn new(result: Option<String>) -> Self {
-        WolCommandResult {
-            result
-        }
-    }
 }
 
 impl CommandResult for WolCommandResult {
-    fn get_result(&self) -> Option<String> {
-        self.result.clone()
+}
+
+impl WolCommandResult {
+    fn new() -> Self {
+        WolCommandResult {}
     }
+}
+
+pub fn make_input(feature: &Feature) -> CommandInput {
+    let params = super::Parameters::new(Vec::new(),common::feature_params_to_command_args(feature), Vec::new());
+    
+    CommandInput::new(WOL, None, None, Vec::new(), params , Vec::new())
 }

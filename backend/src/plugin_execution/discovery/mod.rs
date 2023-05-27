@@ -5,14 +5,13 @@ use lazy_static::lazy_static;
 use log::{error, warn};
 
 use std::{
-    net::{IpAddr, SocketAddrV4},
+    net::{IpAddr, SocketAddr},
     vec,
 };
-use surge_ping::{Client, Config};
 use tokio::sync::Semaphore;
 
 use crate::{
-    commands::{self},
+    commands::{self, ping::PingCommandResult},
     common,
     models::{
         config::dns_server::DNSServer, error::AppError, response::host_information::HostInformation,
@@ -63,7 +62,7 @@ pub async fn auto_discover_servers_in_network(
 pub async fn discover_features_of_all_servers(
     servers: Vec<Server>,
     upnp_activated: bool,
-) -> Result<Vec<FeaturesOfServer>, std::io::Error> {
+) -> Result<Vec<FeaturesOfServer>, AppError> {
     let wait_time_for_upnp = 15; // in seconds
 
     let upnp_future = upnp::upnp_discover(wait_time_for_upnp, upnp_activated);
@@ -71,10 +70,8 @@ pub async fn discover_features_of_all_servers(
     // list of async tasks executed by tokio
     let mut tasks = Vec::new();
     for server in servers {
-        let ip_address = server.ipaddress.clone();
-
         tasks.push(tokio::spawn(async move {
-            discover_features(ip_address.as_str()).await
+            discover_features(server.ipaddress).await
         }));
     }
 
@@ -100,9 +97,9 @@ pub async fn discover_features_of_all_servers(
     ))
 }
 
-pub async fn discover_features(ipaddress: &str) -> Result<FeaturesOfServer, std::io::Error> {
+pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, AppError> {
     let mut features_of_server = FeaturesOfServer {
-        ipaddress: ipaddress.to_string(),
+        ipaddress,
         features: vec![],
     };
 
@@ -178,39 +175,33 @@ async fn auto_discover_servers(
         ));
     }
 
-    let list = match Client::new(&Config::default()) {
-        Ok(client) => {
-            // list of async tasks executed by tokio
-            let mut tasks = Vec::new();
+    // list of async tasks executed by tokio
+    let mut tasks = Vec::new();
 
-            for ipv4_addr in hosts {
-                let addr = IpAddr::V4(ipv4_addr);
+    for ipv4_addr in hosts {
+        let addr = IpAddr::V4(ipv4_addr);
 
-                let upstream_servers = socket_addresses
-                    .iter()
-                    .map(|socket_addr| UpstreamServer::new(*socket_addr))
-                    .collect();
+        let upstream_servers = socket_addresses
+            .iter()
+            .map(|socket_addr| UpstreamServer::new(*socket_addr))
+            .collect();
 
-                tasks.push(tokio::spawn(discover_host(
-                    addr,
-                    client.clone(),
-                    lookup_names,
-                    upstream_servers,
-                )));
-            }
-            // wait for all tasks to finish
-            let result = join_all(tasks).await;
+        tasks.push(tokio::spawn(discover_host(
+            addr,
+            lookup_names,
+            upstream_servers,
+        )));
+    }
+    // wait for all tasks to finish
+    let result = join_all(tasks).await;
 
-            result
-                .iter()
-                .map(move |r| r.as_ref().unwrap().to_owned())
-                .collect()
-        }
-        e => {
-            error!("Error while creating ping client: {:?}", e.err());
-            vec![]
-        }
-    };
+    let list = result
+        .iter()
+        .flat_map(move |r| r.as_ref().ok())
+        .flat_map(|r|r.as_ref().ok())
+        .map(|hi| hi.to_owned())
+        .collect();
+       
 
     Ok(list)
 }
@@ -239,11 +230,11 @@ fn merge_features(
     result
 }
 
-fn parse_ip_and_port_into_socket_address(dns_servers: Vec<DNSServer>) -> Vec<SocketAddrV4> {
+fn parse_ip_and_port_into_socket_address(dns_servers: Vec<DNSServer>) -> Vec<SocketAddr> {
     dns_servers
         .iter()
         .map(|dns_server| {
-            let socket_addr: SocketAddrV4 = concat_ip_and_port(dns_server).parse().unwrap();
+            let socket_addr: SocketAddr = concat_ip_and_port(dns_server).parse().unwrap();
             socket_addr
         })
         .collect()
@@ -255,28 +246,28 @@ fn concat_ip_and_port(dns_server: &DNSServer) -> String {
 
 async fn discover_host(
     addr: IpAddr,
-    client_v4: Client,
     lookup_names: bool,
     upsstream_server: Vec<UpstreamServer>,
-) -> HostInformation {
-    let ping_response_fut = commands::ping::ping(addr, client_v4);
+) -> Result<HostInformation, AppError> {
+    let input = commands::ping::make_input(addr);
+    let ping_response_fut = commands::execute::<PingCommandResult>(input);
 
     let lookup_hostname_fut = match lookup_names {
         true => Some(lookup_hostname(addr, upsstream_server)),
         false => None,
     };
 
-    let is_running = ping_response_fut.await;
+    let result = ping_response_fut.await?;
     let dnsnames = match lookup_hostname_fut {
         Some(servers) => servers.await,
         None => Vec::new(),
     };
 
-    HostInformation {
-        is_running,
+    Ok(HostInformation {
+        is_running: result.get_result(),
         ipaddress: addr.to_string(),
         dnsname: dnsnames.join(","),
-    }
+    })
 }
 
 async fn lookup_hostname(addr: IpAddr, upsstream_server: Vec<UpstreamServer>) -> Vec<String> {
@@ -286,14 +277,14 @@ async fn lookup_hostname(addr: IpAddr, upsstream_server: Vec<UpstreamServer>) ->
     result.unwrap()
 }
 
-fn get_urls_for_check(detection_entry: &DetectionEntry, ipaddress: &str) -> Vec<String> {
+fn get_urls_for_check(detection_entry: &DetectionEntry, ipaddress: IpAddr) -> Vec<String> {
     detection_entry
         .defaultports
         .iter()
         .map(|port| {
             let url = detection_entry
                 .url
-                .replace("${IP}", ipaddress)
+                .replace("${IP}", format!("{}", ipaddress).as_str())
                 .replace("${PORT}", port.to_string().as_str());
             url
         })
@@ -379,7 +370,7 @@ mod tests {
     fn test_merge_features() {
         let list1 = vec![
             FeaturesOfServer {
-                ipaddress: "192.168.178.1".to_owned(),
+                ipaddress: "192.168.178.1".parse().unwrap(),
                 features: vec![Feature {
                     id: "proxmox".to_string(),
                     name: "proxmox".to_string(),
@@ -388,7 +379,7 @@ mod tests {
                 }],
             },
             FeaturesOfServer {
-                ipaddress: "192.168.178.2".to_owned(),
+                ipaddress: "192.168.178.2".parse().unwrap(),
                 features: vec![Feature {
                     id: "nas".to_string(),
                     name: "nas".to_string(),
@@ -399,7 +390,7 @@ mod tests {
         ];
 
         let list2 = vec![FeaturesOfServer {
-            ipaddress: "192.168.178.2".to_owned(),
+            ipaddress: "192.168.178.2".parse().unwrap(),
             features: vec![Feature {
                 id: "upnp".to_string(),
                 name: "upnp".to_string(),
@@ -420,7 +411,7 @@ mod tests {
     fn test_merge_features2() {
         let list1 = vec![
             FeaturesOfServer {
-                ipaddress: "192.168.178.1".to_owned(),
+                ipaddress: "192.168.178.1".parse().unwrap(),
                 features: vec![Feature {
                     id: "proxmox".to_string(),
                     name: "proxmox".to_string(),
@@ -429,7 +420,7 @@ mod tests {
                 }],
             },
             FeaturesOfServer {
-                ipaddress: "192.168.178.2".to_owned(),
+                ipaddress: "192.168.178.2".parse().unwrap(),
                 features: vec![Feature {
                     id: "nas".to_string(),
                     name: "nas".to_string(),
@@ -440,7 +431,7 @@ mod tests {
         ];
 
         let list2 = vec![FeaturesOfServer {
-            ipaddress: "192.168.178.3".to_owned(),
+            ipaddress: "192.168.178.3".parse().unwrap(),
             features: vec![Feature {
                 id: "upnp".to_string(),
                 name: "upnp".to_string(),

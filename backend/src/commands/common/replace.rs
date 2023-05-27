@@ -72,7 +72,7 @@ pub fn replace(input_string: &str, input: &CommandInput) -> Result< (String, Str
     let mut masked: String;
 
     if let Some(ip_address) = input.get_ipaddress() {
-        result = result.replace("${IP}", ip_address.as_str());
+        result = result.replace("${IP}", format!("{}", ip_address).as_str());
     }
     
     result = replace_param(result, input)?;
@@ -136,8 +136,9 @@ fn get_credential_value(name: &str, input: &CommandInput) -> Result<(String, boo
     let credential = input
         .find_credential(name)?;
 
+    let key = input.crypto_key.clone().ok_or(AppError::InvalidArgument("crypto_key".to_string(), None))?;
 
-    Ok( (decrypt(&credential, input.crypto_key.as_str()), credential.encrypted) )
+    Ok( (decrypt(&credential, key.as_str()), credential.encrypted) )
 }
 
 fn decrypt(credential: &Credential, crypto_key: &str) -> String {

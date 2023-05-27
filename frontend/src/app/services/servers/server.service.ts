@@ -85,7 +85,7 @@ export class ServerService {
           },
           complete: () => {
             if ( i === servers.length -1) {
-              setTimeout(this.publishServers, 500);
+              setTimeout(this.publishServers, 0);
             }
           },
         });

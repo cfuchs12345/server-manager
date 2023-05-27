@@ -1,7 +1,7 @@
 use tokio_cron_scheduler::{Job, JobScheduler};
 
 
-use crate::{datastore, commands::ping, common};
+use crate::{datastore, common, other_functions};
 
 
 pub async fn start_scheduled_jobs() {
@@ -36,7 +36,7 @@ async fn schedule_status_check(scheduler: &JobScheduler) {
         .add(
             Job::new_async("1/5 * * * * *", |_uuid, _l| {
                 Box::pin(async {
-                    ping::status_check_all().await;
+                    other_functions::statuscheck::status_check_all().await.expect("Error during scheduled status check");
                 })
             })
             .unwrap(),

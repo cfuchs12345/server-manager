@@ -1,8 +1,10 @@
+use std::net::IpAddr;
+
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq)]
 pub struct Server {
-    pub ipaddress: String,
+    pub ipaddress: IpAddr,
     #[serde(default)]
     pub name: String,
     #[serde(default)]
@@ -70,7 +72,7 @@ pub struct Credential {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq)]
 pub struct FeaturesOfServer {
-    pub ipaddress: String,
+    pub ipaddress: IpAddr,
     pub features: Vec<Feature>,
 }
 
@@ -79,5 +81,3 @@ impl PartialEq for FeaturesOfServer {
         self.ipaddress == other.ipaddress
     }
 }
-
-

@@ -1,6 +1,6 @@
 use futures::future::join_all;
 
-use crate::{models::{response::data_result::ConditionCheckResult, response::status::Status}, plugin_execution::data, datastore, models::{plugin::{action::{State, Action, DependsDef}, Plugin, data::Data}, server::{Server, Feature}, error::AppError}, commands::ping, common};
+use crate::{models::{response::data_result::ConditionCheckResult, response::status::Status}, plugin_execution::data, datastore, models::{plugin::{action::{State, Action, DependsDef}, Plugin, data::Data}, server::{Server, Feature}, error::AppError}, common, other_functions};
 
 use super::CheckType;
 
@@ -22,9 +22,11 @@ pub async fn check_condition_for_action_met(
 ) -> ConditionCheckResult {
     if feature.is_none() || action.is_none()  {
         return ConditionCheckResult {
-            ipaddress: server.ipaddress.clone(),
+            ipaddress: server.ipaddress,
             result: false,
-            ..Default::default()
+            action_id: "".to_string(),
+            feature_id: "".to_string(),
+            action_params: "".to_string()
         };
     }
 
@@ -35,7 +37,7 @@ pub async fn check_condition_for_action_met(
             action_id: action.unwrap().id,
             action_params: action_params.unwrap_or_default(),
             feature_id: feature.unwrap().id,
-            ipaddress: server.ipaddress.clone(),
+            ipaddress: server.ipaddress,
             result: false,
         };
     }
@@ -43,7 +45,7 @@ pub async fn check_condition_for_action_met(
     let plugin = plugin_res.unwrap();
 
     let status: Vec<Status> =
-        ping::status_check(vec![server.ipaddress.clone()], true)
+        other_functions::statuscheck::status_check(vec![server.ipaddress], true)
             .await
             .unwrap_or(Vec::new());
 
@@ -72,7 +74,7 @@ pub async fn check_condition_for_action_met(
             action_id: action.unwrap().id,
             action_params: action_params.unwrap_or_default(),
             feature_id: feature.unwrap().id,
-            ipaddress: server.ipaddress.clone(),
+            ipaddress: server.ipaddress,
             result: false,
         };
     }
@@ -122,7 +124,7 @@ pub async fn check_condition_for_action_met(
         action_id: action.as_ref().unwrap().id.clone(),
         action_params: action_params.unwrap_or_default(),
         feature_id: feature.unwrap().id,
-        ipaddress: server.ipaddress.clone(),
+        ipaddress: server.ipaddress,
         result,
     }
 }

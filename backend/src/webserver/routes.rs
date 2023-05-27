@@ -1,5 +1,6 @@
-use crate::commands::ping;
-use crate::common;
+use std::net::IpAddr;
+
+use crate::{common, other_functions};
 use crate::common::OneTimeKey;
 use crate::models::config::dns_server::DNSServer;
 use crate::models::error::AppError;
@@ -105,12 +106,12 @@ pub async fn post_servers_actions(
 
     match query.action_type {
         ServersActionType::Status => {
-            let ips_to_check = match params_map.get("ip_addresses") {
-                Some(_list) => params_map.get_split_by("ip_addresses", ",").unwrap(),
+            let ips_to_check: Vec<IpAddr> = match params_map.get("ip_addresses") {
+                Some(_list) => params_map.get_split_by("ip_addresses", ",").unwrap().iter().flat_map(|s| { let ip: Result<IpAddr, _> = s.parse(); ip}).collect(),
                 None => Vec::new(),
             };
 
-            let list = ping::status_check(ips_to_check, true).await.unwrap();
+            let list = other_functions::statuscheck::status_check(ips_to_check, true).await.unwrap();
             HttpResponse::Ok().json(list)
         }
         ServersActionType::FeatureScan => {
@@ -146,9 +147,11 @@ pub async fn post_servers_by_ipaddress_action(
     query: web::Json<ServerAction>,
     path: web::Path<String>,
 ) -> HttpResponse {
-    let ipaddress = path.into_inner();
+    let Ok(ipaddress): Result<IpAddr,_> = path.into_inner().parse() else {
+        return HttpResponse::InternalServerError().body("IP Address is incorrect");
+    };
 
-    let server_res = datastore::get_server(&data.app_data_persistence, ipaddress.clone()).await;
+    let server_res = datastore::get_server(&data.app_data_persistence, &ipaddress).await;
 
     if server_res.is_err() {
         return HttpResponse::InternalServerError()
@@ -156,16 +159,18 @@ pub async fn post_servers_by_ipaddress_action(
     }
     let server = server_res.unwrap();
 
+
+
     match query.action_type {
         ServerActionType::FeatureScan => {
-            match plugin_execution::discover_features(&ipaddress).await {
+            match plugin_execution::discover_features(ipaddress).await {
                 Ok(list) => HttpResponse::Ok().json(list),
                 Err(err) => HttpResponse::InternalServerError()
                     .body(format!("Unexpected error occurred: {:?}", err)),
             }
         }
         ServerActionType::Status => {
-            match ping::status_check(vec![ipaddress.clone()], false).await {
+            match other_functions::statuscheck::status_check(vec![ipaddress], false).await {
                 Ok(list) => HttpResponse::Ok().json(list.first().unwrap_or(&Status {
                     ipaddress,
                     is_running: false,
@@ -246,7 +251,9 @@ pub async fn delete_servers_by_ipaddress(
     data: web::Data<AppData>,
     path: web::Path<String>,
 ) -> HttpResponse {
-    let ipaddress = path.into_inner();
+    let Ok(ipaddress) = path.into_inner().parse() else {
+        return HttpResponse::InternalServerError().body("IP Address is incorrect");
+    };
 
     match datastore::delete_server(&data.app_data_persistence, &ipaddress).await {
         Ok(result) => match result {

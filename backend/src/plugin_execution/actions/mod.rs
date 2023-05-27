@@ -2,18 +2,22 @@ mod conditions;
 
 use futures::future::join_all;
 
-use crate::{commands, datastore, models::{plugin::{sub_action::SubAction}, server::{Server, Feature}, error::AppError}, models::response::data_result::ConditionCheckResult};
-
+use crate::{
+    commands::{self, http::HttpCommandResult},
+    datastore,
+    models::response::data_result::ConditionCheckResult,
+    models::{
+        error::AppError,
+        plugin::sub_action::SubAction,
+        server::{Feature, Server},
+    },
+};
 
 #[derive(PartialEq, Eq)]
 pub enum CheckType {
     OnlyMainFeatures,
-    OnlySubFeatures
+    OnlySubFeatures,
 }
-
-
-
-
 
 /// Executes a defined action of a plugin on the given server
 /// # Arguments
@@ -39,25 +43,45 @@ pub async fn execute_action(
 
     match plugin.find_action(action_id) {
         Some(plugin_action) => {
-            let input = commands::make_command_input_from_subaction("http", server, &crypto_key, plugin_action, action_params, feature, &plugin);
 
-            let result = commands::execute(&input)
-                .await?;
+            
 
-            Ok(result.get_result().is_some())
+            let input = match plugin_action.command.as_str() {
+                commands::http::HTTP => commands::http::make_command_input_from_subaction(
+                    server,
+                    &crypto_key,
+                    plugin_action,
+                    action_params,
+                    feature,
+                    &plugin,
+                )?,
+                commands::wol::WOL => commands::wol::make_input(feature),
+                commands::ping::PING => commands::ping::make_input(server.ipaddress),
+                y => {
+                    log::error!("Unknown command {}", y);
+                    return Err(AppError::InvalidArgument("command".to_owned(), Some(y.to_owned())));
+                }
+            };
+            let res: HttpCommandResult = commands::execute(input).await?;            
+
+            Ok(!res.get_response().is_empty())
         }
         None => {
             let error = format!("{} is not a action of plugin {}", action_id, feature.id);
             log::error!("{}", error);
-            Err(AppError::UnknownPluginAction(plugin.id, action_id.to_string()))
+            Err(AppError::UnknownPluginAction(
+                plugin.id,
+                action_id.to_string(),
+            ))
         }
     }
 }
 
-
-
-pub async fn check_action_conditions(server: Server, sub_actions: Vec<SubAction>, crypto_key: String) -> Vec<ConditionCheckResult>{
-    
+pub async fn check_action_conditions(
+    server: Server,
+    sub_actions: Vec<SubAction>,
+    crypto_key: String,
+) -> Vec<ConditionCheckResult> {
     let mut tasks = Vec::new();
     for sub_action in &sub_actions {
         if sub_action.feature_id.is_none() || sub_action.action_id.is_none() {
@@ -66,22 +90,31 @@ pub async fn check_action_conditions(server: Server, sub_actions: Vec<SubAction>
 
         let feature = server.find_feature(sub_action.feature_id.as_ref().unwrap());
         let plugin = datastore::get_plugin(sub_action.feature_id.as_ref().unwrap().as_str());
-        
+
         if plugin.is_none() {
             continue;
         }
 
-        tasks.push(tokio::spawn(
-            conditions::check_condition_for_action_met(server.clone(), feature,  plugin.unwrap().find_action(sub_action.action_id.as_ref().unwrap().as_str()).map(|v| v.to_owned()), sub_action.action_params.clone(), crypto_key.clone())));
+        tasks.push(tokio::spawn(conditions::check_condition_for_action_met(
+            server.clone(),
+            feature,
+            plugin
+                .unwrap()
+                .find_action(sub_action.action_id.as_ref().unwrap().as_str())
+                .map(|v| v.to_owned()),
+            sub_action.action_params.clone(),
+            crypto_key.clone(),
+        )));
     }
-    let results = join_all(tasks).await;    
-    
-    let vec:Vec<ConditionCheckResult> = results.iter().map(|r| r.as_ref().unwrap().to_owned()).collect();
+    let results = join_all(tasks).await;
+
+    let vec: Vec<ConditionCheckResult> = results
+        .iter()
+        .map(|r| r.as_ref().unwrap().to_owned())
+        .collect();
     log::debug!("number of results is {}", vec.len());
     vec
 }
-
-
 
 pub async fn check_main_action_conditions() {
     let servers = datastore::get_all_servers();
@@ -89,10 +122,15 @@ pub async fn check_main_action_conditions() {
 
     let mut vec: Vec<ConditionCheckResult> = Vec::new();
     for server in servers {
-        let mut res = conditions::check_all_action_conditions(server, &crypto_key, CheckType::OnlyMainFeatures).await;
+        let mut res = conditions::check_all_action_conditions(
+            server,
+            &crypto_key,
+            CheckType::OnlyMainFeatures,
+        )
+        .await;
         vec.append(&mut res);
     }
-    
+
     for result in vec {
         datastore::insert_condition_result(result);
     }

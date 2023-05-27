@@ -31,12 +31,13 @@ export class AutodiscoverServerModalComponent implements OnInit, OnDestroy {
 
   displayedColumns = ['selected', 'ipaddress', 'dnsname', 'running'];
 
+  existing_servers: Server[] = [];
   servers: HostInformation[] = [];
   dnsservers: DNSServer[] = [];
 
   subscriptionServers: Subscription | undefined = undefined;
   subscriptionDNSServers: Subscription | undefined = undefined;
-
+  subscriptionExistingServers: Subscription | undefined = undefined;
 
   constructor(
     private serverService: ServerService,
@@ -54,18 +55,23 @@ export class AutodiscoverServerModalComponent implements OnInit, OnDestroy {
 
     this.subscriptionServers = this.discoverService.discoveredServers.subscribe((servers) => {
       if (servers) {
-        for (let i = 0; i < servers.length; i++) {
-          servers[i].selected = true;
+        let retained_list = servers.filter(  s => !this.existing_servers.find( e => e.ipaddress === s.ipaddress)  );
+
+        for (let i = 0; i < retained_list.length; i++) {
+          retained_list[i].selected = true;
         }
-        this.servers = servers;
+        this.servers = retained_list;
       } else {
         // clear messages when empty message received
         this.servers = [];
       }
       this.loading = false;
     });
-
+    this.subscriptionExistingServers = this.serverService.servers.subscribe((servers) =>{
+      this.existing_servers = servers;
+    });
     this.generalService.listDNSServers();
+    this.serverService.listServers();
   }
 
 
@@ -76,6 +82,9 @@ export class AutodiscoverServerModalComponent implements OnInit, OnDestroy {
     }
     if( this.subscriptionDNSServers ) {
       this.subscriptionDNSServers.unsubscribe();
+    }
+    if( this.subscriptionExistingServers ) {
+      this.subscriptionExistingServers.unsubscribe();
     }
     this.discoverService.resetDiscoveredServers();
   }

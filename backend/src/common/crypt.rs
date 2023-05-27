@@ -36,7 +36,7 @@ pub fn default_decrypt(to_decrypt: &str, crypto_key: &str) -> String {
 pub fn aes_decrypt(to_decrypt: &str, secret: &str) -> Result<String, AppError> {
     let bytes = general_purpose::STANDARD
         .decode(to_decrypt)
-        .map_err(|e| AppError::Unknown(Box::new(e)))?;
+        .map_err(|e| AppError::Unknown(format!("{}", e)))?;
 
     let salt = &bytes[..64];
     let iv = &bytes[64..64 + 16];
@@ -44,13 +44,13 @@ pub fn aes_decrypt(to_decrypt: &str, secret: &str) -> Result<String, AppError> {
 
     let key = pbkdf2_hmac_array::<Sha256, 32>(secret.as_bytes(), salt, 100000);
 
-    let cipher = Aes256Gcm16::new_from_slice(&key).map_err(|e| AppError::Unknown(Box::new(e)))?;
+    let cipher = Aes256Gcm16::new_from_slice(&key).map_err(|e| AppError::Unknown(format!("{}", e)))?;
 
     // nonce / iv from sender
     let nonce = Nonce::from_slice(iv);
     match cipher.decrypt(nonce, text) {
         Ok(decrypted) => {
-            Ok(String::from_utf8(decrypted).map_err(|e| AppError::Unknown(Box::new(e)))?)
+            Ok(String::from_utf8(decrypted).map_err(|e|  AppError::Unknown(format!("{}", e)))?)
         }
         Err(_err) => Err(AppError::DecryptionError),
     }

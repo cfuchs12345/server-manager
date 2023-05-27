@@ -4,10 +4,10 @@ use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use ssdp_client::SearchTarget;
 use std::{
-    time::{Duration}, collections::HashMap
+    time::{Duration}, collections::HashMap, net::IpAddr
 };
 
-use crate::{models::{server::{FeaturesOfServer, Feature, Param}, plugin::Plugin}, datastore, common};
+use crate::{models::{server::{FeaturesOfServer, Feature, Param}, plugin::Plugin, error::AppError}, datastore, common};
 
 const LOCATION: &str = "location";
 const UPNP: &str = "upnp";
@@ -73,7 +73,7 @@ pub struct Service {
 pub async fn upnp_discover(
     wait_time_for_upnp: usize,
     upnp_activated: bool
-) -> Result<Vec<FeaturesOfServer>, std::io::Error> {
+) -> Result<Vec<FeaturesOfServer>, AppError> {
 
     if !upnp_activated {
         log::debug!("Skipping UPnP device discovery since the plugin is disabled");
@@ -82,15 +82,10 @@ pub async fn upnp_discover(
 
     let mut serverfeature_by_location: HashMap<String,FeaturesOfServer> = HashMap::new();
 
-    let found = datastore::get_plugin(UPNP);
-    if found.is_none() {
-        log::error!("Found no plugin for UPnP - returning empty list");
+    let Some(plugin) = datastore::get_plugin(UPNP) else {
+        log::debug!("UPNP Plugin not found");
         return Ok(Vec::new());
-    }
-    else {
-        log::debug!("Starting UPnP device discovery");
-    }
-    let plugin = found.unwrap();
+    };
 
     let search_target = SearchTarget::RootDevice;
 
@@ -109,7 +104,7 @@ pub async fn upnp_discover(
 
                         match Url::parse(location) {
                             Ok(url) => {
-                                let host_address = url.host().unwrap().to_string();
+                                let host_address: IpAddr = url.host().unwrap().to_string().parse()?;
 
                                 serverfeature_by_location.insert(location.to_string(), FeaturesOfServer {
                                     ipaddress: host_address,

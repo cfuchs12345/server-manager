@@ -1,8 +1,9 @@
-use std::{error::Error, fmt::Display, num::ParseIntError};
-
+use std::str::ParseBoolError;
+use std::{fmt::Display, num::ParseIntError, net::AddrParseError};
 use actix_web::{ResponseError, HttpResponse};
 use http::{StatusCode, header};
 use serde::{Deserialize, Serialize};
+use surge_ping::SurgeError;
 
 #[derive(Debug)]
 pub enum AppError {
@@ -16,15 +17,15 @@ pub enum AppError {
     UnknownPluginAction(String, String),
     #[allow(dead_code)]
     UnknownPluginData(String,String),
-    Unknown(Box<dyn Error>),
+    Unknown(String),
     DataNotFound(String),
-    DatabaseError(Box<dyn Error>),
-    HttpError(Box<dyn Error>),
+    DatabaseError(String),
+    HttpError(String),
     MissingArgument(String),
     CouldNotRenderData(String),
     UnAuthorized,
     DecryptionError,
-    ParseError(Box<dyn Error>),
+    ParseError(String),
 }
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
@@ -66,44 +67,62 @@ impl Display for AppError {
 
 impl From<std::io::Error> for AppError {
     fn from(err: std::io::Error) -> Self {
-        AppError::Unknown(Box::new(err))
+        AppError::Unknown(format!("{}", err))
     }
 }
 impl From<serde_json::Error> for AppError {
     fn from(err: serde_json::Error) -> Self {
-        AppError::Unknown(Box::new(err))
+        AppError::Unknown(format!("{}", err))
     }
 }
 
 impl From<sqlx::Error> for AppError {
     fn from(err: sqlx::Error) -> Self {
-        AppError::DatabaseError(Box::new(err))
+        AppError::DatabaseError(format!("{}", err))
     }
 }
 
 impl From<reqwest::Error> for AppError {
     fn from(err:reqwest::Error) -> Self {
-        AppError::HttpError(Box::new(err))
+        AppError::HttpError(format!("{}", err))
     }
 }
 
 impl From<bcrypt::BcryptError> for AppError {
     fn from(err: bcrypt::BcryptError) -> Self {
-        AppError::Unknown(Box::new(err))
+        AppError::Unknown(format!("{}", err))
     }
 }
 
 
 impl From<header::ToStrError> for AppError {
     fn from(err: header::ToStrError) -> Self {
-        AppError::Unknown(Box::new(err))
+        AppError::Unknown(format!("{}", err))
     }
 }
 
 
 impl From<ParseIntError> for AppError {
     fn from(err: ParseIntError) -> Self {
-        AppError::Unknown(Box::new(err))
+        AppError::ParseError(format!("{}", err))
+    }
+}
+
+impl From<ParseBoolError> for AppError {
+    fn from(err: ParseBoolError) -> Self {
+        AppError::ParseError(format!("{}", err))
+    }
+}
+
+impl From<AddrParseError> for AppError {
+    fn from(err: AddrParseError) -> Self {
+        AppError::ParseError(format!("{}", err))
+    }
+}
+
+impl From<SurgeError> for AppError {
+    fn from(err: SurgeError) -> Self {
+        AppError::Unknown(format!("{}", err))
     }
 }
 

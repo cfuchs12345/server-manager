@@ -39,7 +39,7 @@ pub fn do_db_location_migration() -> std::result::Result<u64, AppError> {
     let old_path = Path::new("./server-manager.db");
     let new_path = Path::new(init::DB_FILENAME);
 
-    std::fs::copy(old_path,  new_path).map_err(|e| AppError::Unknown(Box::new(e)))
+    std::fs::copy(old_path,  new_path).map_err(|e| AppError::Unknown(format!("{}", e)))
 }
 
 

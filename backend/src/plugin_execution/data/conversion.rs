@@ -32,7 +32,7 @@ fn create_data_input_structure(data: &Data, input: String) -> Result<Value, AppE
                 data: input
             }))
         }
-        ResultFormat::JSON => serde_json::from_str(input.as_str()).map_err(|e| AppError::ParseError(Box::new(e)))
+        ResultFormat::JSON => serde_json::from_str(input.as_str()).map_err(AppError::from)
     }
 }
 
