@@ -11,6 +11,7 @@ LABEL version ${VERSION}
 
 RUN apt-get update \
 && apt-get upgrade -y \
+&& apt-get install libssl-dev -y \
 && apt-get clean
 # && apt install -y openssh-server \
 # && ssh-keygen -A
