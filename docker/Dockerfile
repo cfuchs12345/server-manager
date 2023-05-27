@@ -11,7 +11,7 @@ LABEL version ${VERSION}
 
 RUN apt update \
 && apt upgrade -y \
-&& apt install wget -y \
+&& apt install wget gnupg -y \
 & apt-key adv --keyserver keyserver.ubuntu.com --recv-keys D8FF8E1F7DF8B07E
 # && apt install -y openssh-server \
 # && ssh-keygen -A
