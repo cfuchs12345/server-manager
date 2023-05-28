@@ -121,7 +121,7 @@ pub async fn execute_specific_data_query(
         plugin,
     )?;
 
-    let result: HttpCommandResult = commands::execute(input).await?;
+    let result: HttpCommandResult = commands::execute(input, false).await?;
 
     Ok(Some(result.get_response()))
 }

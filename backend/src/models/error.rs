@@ -27,6 +27,7 @@ pub enum AppError {
     DecryptionError,
     ParseError(String),
     EmailConfigError(String),
+    Suppressed(String),
 }
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
@@ -83,6 +84,7 @@ impl Display for AppError {
                 "the email config in the env file is invalid for property: {}",
                 name
             ),
+            AppError::Suppressed(err) => write!(f, "Explicitly suppressed error {}", err),
         }
     }
 }

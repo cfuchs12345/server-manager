@@ -56,7 +56,7 @@ pub async fn execute_action(
                     &plugin,
                 )?;
 
-                let res: HttpCommandResult = commands::execute(input).await?;
+                let res: HttpCommandResult = commands::execute(input, false).await?;
 
                 Ok(!res.get_response().is_empty())
             }
@@ -68,21 +68,21 @@ pub async fn execute_action(
                     feature,
                     &plugin,
                 )?;
-                let res: SocketCommandResult = commands::execute(input).await?;
+                let res: SocketCommandResult = commands::execute(input, false).await?;
 
                 Ok(!res.get_response().is_empty())
             }
             commands::wol::WOL => {
                 let input = commands::wol::make_input(feature);
 
-                let res: WolCommandResult = commands::execute(input).await?;
+                let res: WolCommandResult = commands::execute(input, false).await?;
 
                 Ok(res.get_result())
             }
             commands::ping::PING => {
                 let input = commands::ping::make_input(server.ipaddress);
 
-                let res: PingCommandResult = commands::execute(input).await?;
+                let res: PingCommandResult = commands::execute(input, false).await?;
 
                 Ok(res.get_result())
             }
