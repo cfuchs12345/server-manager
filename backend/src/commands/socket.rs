@@ -1,4 +1,4 @@
-use std::{any::Any, net::IpAddr};
+use std::any::Any;
 
 use super::{
     common::{self, replace},
@@ -161,7 +161,6 @@ impl SocketCommandResult {
 impl CommandResult for SocketCommandResult {}
 
 pub fn make_command_input_from_subaction(
-    server: &Server,
     crypto_key: &str,
     action: &Action,
     action_params: Option<&str>,
@@ -177,7 +176,7 @@ pub fn make_command_input_from_subaction(
     Ok(CommandInput::new(
         SOCKET,
         Some(crypto_key),
-        Some(server.ipaddress),
+        None,
         common::args_to_command_args(&action.args),
         params,
         feature.credentials.clone(),
@@ -186,7 +185,6 @@ pub fn make_command_input_from_subaction(
 
 #[allow(dead_code)]
 pub fn make_command_input_from_data(
-    server: &Server,
     crypto_key: &str,
     data: &Data,
     action_params: Option<&str>,
@@ -202,7 +200,7 @@ pub fn make_command_input_from_data(
     Ok(CommandInput::new(
         SOCKET,
         Some(crypto_key),
-        Some(server.ipaddress),
+        None,
         common::args_to_command_args(&data.args),
         params,
         feature.credentials.clone(),
@@ -210,7 +208,6 @@ pub fn make_command_input_from_data(
 }
 
 pub fn make_command_input_from_detection(
-    ipaddress: &IpAddr,
     detection_entry: &DetectionEntry,
 ) -> Result<CommandInput, AppError> {
     let params = Parameters::new(
@@ -222,7 +219,7 @@ pub fn make_command_input_from_detection(
     Ok(CommandInput::new(
         SOCKET,
         None,
-        Some(ipaddress.to_owned()),
+        None,
         common::args_to_command_args(&detection_entry.args),
         params,
         Vec::new(),

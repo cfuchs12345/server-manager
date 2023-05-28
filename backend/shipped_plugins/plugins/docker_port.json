@@ -6,7 +6,42 @@
     "detection": {
         "list": [
             {
-                "params": [],
+                "params": [
+                    {
+                        "name": "port",
+                        "param_type": "number",
+                        "default_value": "2375"
+                    },
+                    {
+                        "name": "protocol",
+                        "param_type": "string",
+                        "default_value": "http"
+                    }
+                ],
+                "args": [
+                    {
+                        "arg_type": "method",
+                        "value": "get"
+                    },
+                    {
+                        "arg_type": "url",
+                        "value": "${params.protocol}://${IP}:${params.port}"
+                    }
+                ]
+            },
+            {
+                "params": [
+                    {
+                        "name": "port",
+                        "param_type": "number",
+                        "default_value": "2376"
+                    },
+                    {
+                        "name": "protocol",
+                        "param_type": "string",
+                        "default_value": "https"
+                    }
+                ],
                 "args": [
                     {
                         "arg_type": "method",

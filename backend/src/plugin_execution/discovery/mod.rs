@@ -122,10 +122,8 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
 
             let response = match plugin.detection.command.as_str() {
                 commands::socket::SOCKET => {
-                    let input = commands::socket::make_command_input_from_detection(
-                        &ipaddress,
-                        detection_entry,
-                    )?;
+                    let input =
+                        commands::socket::make_command_input_from_detection(detection_entry)?;
                     match commands::execute::<SocketCommandResult>(input).await {
                         Ok(result) => result.get_response(),
                         Err(err) => {
