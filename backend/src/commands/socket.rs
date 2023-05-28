@@ -96,30 +96,32 @@ impl Command for SocketCommand {
             normal_and_masked_body.0
         );
 
-        #[cfg(all(target_os = "linux"))]
-        let response_string = execute_windows_dummy(
+        #[cfg(target_os = "linux")]
+        let response_string = execute(
             socket,
             normal_and_masked_url.0.as_str(),
             method,
             Some(normal_and_replaced_headers),
             Some(normal_and_masked_body.0),
-        );
+        )
+        .await;
 
-        #[cfg(all(target_os = "windows"))]
-        let response_string = execute_windows_dummy(
+        #[cfg(not(target_os = "linux"))]
+        let response_string = execute(
             socket,
             normal_and_masked_url.0.as_str(),
             method,
             Some(normal_and_replaced_headers),
             Some(normal_and_masked_body.0),
-        );
+        )
+        .await;
 
         Ok(Box::new(SocketCommandResult::new(response_string.as_str())))
     }
 }
 
-#[cfg(all(target_os = "linux"))]
-fn execute_linux(
+#[cfg(target_os = "linux")]
+async fn execute(
     socket: &str,
     url: &str,
     method: &str,
@@ -136,8 +138,8 @@ fn execute_linux(
     .await?
 }
 
-#[cfg(all(target_os = "windows"))]
-fn execute_windows_dummy(
+#[cfg(not(target_os = "linux"))]
+async fn execute(
     _socket: &str,
     _url: &str,
     _method: &str,
