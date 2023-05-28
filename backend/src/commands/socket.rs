@@ -31,7 +31,9 @@ impl Command for SocketCommand {
         let url = input.find_single_arg("url")?;
         let method = input.find_single_arg("method")?;
         let headers = input.find_all_args("header")?;
-        let socket = input.find_single_arg("socket")?;
+        let socket = input
+            .find_single_arg("socket")
+            .unwrap_or(input.find_param("socket")?);
 
         let body: &str = match method {
             "post" => input.find_single_arg("body").unwrap_or({

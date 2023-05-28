@@ -36,7 +36,7 @@ pub async fn execute_socket_request(
 
     let socket_path = Path::new(socket);
 
-    let mut unix_stream = UnixStream::connect(socket_path).expect("Could not create stream");
+    let mut unix_stream = UnixStream::connect(socket_path)?;
 
     let request_str = match method {
         GET | POST | DELETE | PUT => {
