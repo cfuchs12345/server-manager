@@ -104,7 +104,7 @@ impl Command for SocketCommand {
             Some(normal_and_replaced_headers),
             Some(normal_and_masked_body.0),
         )
-        .await;
+        .await?;
 
         #[cfg(not(target_os = "linux"))]
         let response_string = execute(
@@ -114,7 +114,7 @@ impl Command for SocketCommand {
             Some(normal_and_replaced_headers),
             Some(normal_and_masked_body.0),
         )
-        .await;
+        .await?;
 
         Ok(Box::new(SocketCommandResult::new(response_string.as_str())))
     }
