@@ -20,7 +20,7 @@ pub const PUT: &str = "put";
 pub const DELETE: &str = "delete";
 
 #[cfg(all(target_os = "linux"))]
-const SOCKET_HTTP_POSTFIX: &str = " HTTP/1.1\r\nHost:localhost\r\n\r\n";
+const SOCKET_HTTP_POSTFIX: &str = "HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n";
 
 #[cfg(all(target_os = "linux"))]
 pub async fn execute_socket_request(
@@ -132,21 +132,19 @@ fn create_http_client() -> reqwest::Client {
 fn write_request_and_shutdown(
     unix_stream: &mut UnixStream,
     request: String,
-    header_map: http::HeaderMap,
+    _header_map: http::HeaderMap, // how to handle headers with sockets?
     body: Option<String>,
 ) -> Result<(), AppError> {
     let mut message = request;
 
-    header_map.iter().for_each(|h| {
-        message.push_str(format!("{}:{}", h.0, h.1.to_str().unwrap_or_default()).as_str())
-    });
-
     if let Some(body) = body {
-        message.push('\n');
-        message.push_str(body.as_str());
+        if !body.trim().is_empty() {
+            message.push_str(body.as_str());
+            message.push_str("\r\n");
+        }
     }
 
-    log::debug!("sending message {}", message);
+    log::info!("sending message {}", message);
 
     unix_stream.write_all(message.as_bytes())?;
 
