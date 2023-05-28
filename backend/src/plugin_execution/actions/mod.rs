@@ -62,7 +62,6 @@ pub async fn execute_action(
             }
             commands::socket::SOCKET => {
                 let input = commands::socket::make_command_input_from_subaction(
-                    server,
                     &crypto_key,
                     plugin_action,
                     action_params,

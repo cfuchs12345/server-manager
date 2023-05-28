@@ -228,7 +228,7 @@ mod tests {
             }],
         };
 
-        let expected = "{\"id\":\"test\",\"name\":\"Test\",\"description\":\"\",\"server_icon\":\"\",\"detection\":{\"list\":[{\"defaultports\":[80,81],\"url\":\"http://${IP}:${PORT}\"}],\"script\":{\"script_type\":\"lua\",\"script\":\"Dummy script\"},\"detection_possible\":false},\"credentials\":[],\"params\":[],\"data\":[],\"actions\":[{\"id\":\"\",\"name\":\"\",\"show_on_main\":false,\"depends\":[],\"available_for_state\":\"Any\",\"needs_confirmation\":false,\"description\":\"\",\"icon\":\"\",\"command\":\"http\",\"args\":[{\"arg_type\":\"method\",\"value\":\"get\"},{\"arg_type\":\"url\",\"value\":\"url\"}]}]}";
+        let expected = "{\"id\":\"test\",\"name\":\"Test\",\"description\":\"\",\"server_icon\":\"\",\"detection\":{\"list\":[{\"params\":[{\"name\":\"port\",\"param_type\":\"string\",\"default_value\":\"80\",\"mandatory\":true}],\"args\":[{\"arg_type\":\"method\",\"value\":\"get\"},{\"arg_type\":\"url\",\"value\":\"url\"}]}],\"script\":{\"script_type\":\"lua\",\"script\":\"Dummy script\"},\"detection_possible\":false,\"command\":\"http\"},\"credentials\":[],\"params\":[],\"data\":[],\"actions\":[{\"id\":\"\",\"name\":\"\",\"show_on_main\":false,\"depends\":[],\"available_for_state\":\"Any\",\"needs_confirmation\":false,\"description\":\"\",\"icon\":\"\",\"command\":\"http\",\"args\":[{\"arg_type\":\"method\",\"value\":\"get\"},{\"arg_type\":\"url\",\"value\":\"url\"}]}]}";
 
         let result = serde_json::to_string(&testee).unwrap();
         assert_eq!(expected, result);
@@ -273,7 +273,7 @@ mod tests {
             actions: vec![Action {
                 id: "".to_string(),
                 name: "".to_string(),
-                show_on_main: true,
+                show_on_main: false,
                 depends: vec![],
                 available_for_state: State::Any,
                 needs_confirmation: false,
@@ -293,7 +293,7 @@ mod tests {
             }],
         };
 
-        let test_string: &str = "{\"id\":\"test\",\"name\":\"Test\",\"description\":\"\",\"server_icon\":\"\",\"detection\":{\"list\":[{\"defaultports\":[80,81],\"url\":\"http://${IP}:${PORT}\"}],\"script\":{\"script_type\":\"lua\",\"script\":\"Dummy script\"},\"detection_possible\":false},\"credentials\":[],\"params\":[],\"data\":[],\"actions\":[{\"id\":\"\",\"name\":\"\",\"depends\":[],\"available_for_state\":\"Any\",\"needs_confirmation\":false,\"description\":\"\",\"icon\":\"\",\"command\":\"http\",\"args\":[{\"arg_type\":\"method\",\"value\":\"get\"},{\"arg_type\":\"url\",\"value\":\"url\"}]}]}";
+        let test_string: &str = "{\"id\":\"test\",\"name\":\"Test\",\"description\":\"\",\"server_icon\":\"\",\"detection\":{\"list\":[{\"params\":[{\"name\":\"port\",\"param_type\":\"string\",\"default_value\":\"80\",\"mandatory\":true}],\"args\":[{\"arg_type\":\"method\",\"value\":\"get\"},{\"arg_type\":\"url\",\"value\":\"url\"}]}],\"script\":{\"script_type\":\"lua\",\"script\":\"Dummy script\"},\"detection_possible\":false,\"command\":\"http\"},\"credentials\":[],\"params\":[],\"data\":[],\"actions\":[{\"id\":\"\",\"name\":\"\",\"show_on_main\":false,\"depends\":[],\"available_for_state\":\"Any\",\"needs_confirmation\":false,\"description\":\"\",\"icon\":\"\",\"command\":\"http\",\"args\":[{\"arg_type\":\"method\",\"value\":\"get\"},{\"arg_type\":\"url\",\"value\":\"url\"}]}]}";
 
         let result: Plugin = serde_json::from_str(test_string).unwrap();
 
