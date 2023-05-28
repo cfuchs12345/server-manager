@@ -1,6 +1,8 @@
 use rhai::{Engine, Scope};
 use rlua::Lua;
 
+use crate::models::error::AppError;
+
 const INPUT: &str = "input";
 
 pub fn match_with_rhai(input: &str, script: &str) -> bool {
@@ -26,6 +28,36 @@ pub fn match_with_lua(input: &str, script: &str) -> bool {
     });
 
     result
+}
+
+pub fn process_with_lua(input: &str, script: &str) -> Result<String, AppError> {
+    let lua = Lua::new();
+    let mut result: Result<String, AppError> = Ok("".to_string());
+
+    lua.context(|lua_ctx| {
+        let globals = lua_ctx.globals();
+        globals
+            .set(INPUT, input)
+            .expect("Could not set global value");
+
+        result = lua_ctx
+            .load(script)
+            .eval()
+            .map_err(|e| AppError::ScriptError(format!("{}", e)));
+    });
+
+    result
+}
+
+pub fn process_with_rhai(input: &str, script: &str) -> Result<String, AppError> {
+    let mut scope = Scope::new();
+
+    scope.push(INPUT, input.to_owned());
+
+    let engine = Engine::new();
+    engine
+        .eval_with_scope::<String>(&mut scope, script)
+        .map_err(|e| AppError::ScriptError(format!("{}", e)))
 }
 
 fn wrap_in_brackets(input: &str) -> String {

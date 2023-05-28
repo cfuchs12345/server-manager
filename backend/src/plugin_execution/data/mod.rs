@@ -5,10 +5,10 @@ use regex::Regex;
 
 use crate::{
     commands::{self, http::HttpCommandResult, socket::SocketCommandResult},
-    datastore,
+    common, datastore,
     models::{
         error::AppError,
-        plugin::{data::Data, sub_action::SubAction, Plugin},
+        plugin::{common::Script, data::Data, sub_action::SubAction, Plugin},
         response::data_result::DataResult,
         server::{Feature, Server},
     },
@@ -112,7 +112,7 @@ pub async fn execute_specific_data_query(
     action_params: Option<&str>,
     crypto_key: &str,
 ) -> Result<Option<String>, AppError> {
-    let response = match data.command.as_str() {
+    let mut response = match data.command.as_str() {
         commands::socket::SOCKET => {
             let input = commands::socket::make_command_input_from_data(
                 crypto_key,
@@ -140,7 +140,27 @@ pub async fn execute_specific_data_query(
         }
     };
 
+    if let Some(script) = &data.post_process {
+        response = post_process(response.as_str(), script)?;
+    }
+
     Ok(Some(response))
+}
+
+fn post_process(response: &str, script: &Script) -> Result<String, AppError> {
+    let is_lua = matches!(script.script_type.as_str(), "lua");
+    let is_rhai = matches!(script.script_type.as_str(), "rhai");
+
+    if is_lua {
+        common::process_with_lua(response, &script.script)
+    } else if is_rhai {
+        common::process_with_rhai(response, &script.script)
+    } else {
+        Err(AppError::InvalidArgument(
+            "script".to_string(),
+            Some(script.script_type.clone()),
+        ))
+    }
 }
 
 fn extract_actions(input: &str) -> Vec<SubAction> {

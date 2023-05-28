@@ -28,6 +28,7 @@ pub enum AppError {
     ParseError(String),
     EmailConfigError(String),
     Suppressed(String),
+    ScriptError(String),
 }
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
@@ -85,6 +86,7 @@ impl Display for AppError {
                 name
             ),
             AppError::Suppressed(err) => write!(f, "Explicitly suppressed error {}", err),
+            AppError::ScriptError(err) => write!(f, "Error during script execution {}", err),
         }
     }
 }

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::common::ArgDef;
+use super::common::{ArgDef, Script};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Data {
@@ -23,6 +23,8 @@ pub struct Data {
     pub command: String,
     #[serde(default)]
     pub args: Vec<ArgDef>,
+    #[serde(default)]
+    pub post_process: Option<Script>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq)]

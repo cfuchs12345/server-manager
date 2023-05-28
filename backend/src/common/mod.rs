@@ -24,6 +24,8 @@ pub use http_functions::execute_socket_request;
 
 pub use script_languages::match_with_lua;
 pub use script_languages::match_with_rhai;
+pub use script_languages::process_with_lua;
+pub use script_languages::process_with_rhai;
 
 pub use mail::is_smtp_config_valid;
 pub use mail::send_email;
