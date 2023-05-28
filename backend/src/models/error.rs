@@ -1,6 +1,7 @@
 use actix_web::{HttpResponse, ResponseError};
 use http::{header, StatusCode};
 use serde::{Deserialize, Serialize};
+use std::fmt::write;
 use std::str::ParseBoolError;
 use std::{fmt::Display, net::AddrParseError, num::ParseIntError};
 use surge_ping::SurgeError;
@@ -26,6 +27,7 @@ pub enum AppError {
     UnAuthorized,
     DecryptionError,
     ParseError(String),
+    EmailConfigError(String),
 }
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
@@ -77,6 +79,11 @@ impl Display for AppError {
             AppError::UnAuthorized => write!(f, "User is not authorized"),
             AppError::DecryptionError => write!(f, "Data could not be decrypted"),
             AppError::ParseError(err) => write!(f, "Could not parse given data {}", err),
+            AppError::EmailConfigError(name) => write!(
+                f,
+                "the email config in the env file is invalid for property: {}",
+                name
+            ),
         }
     }
 }

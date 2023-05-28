@@ -1,15 +1,14 @@
 use crate::models::{
-    plugin::{action::Action, data::Data, Plugin},
-    server::Feature,
+    plugin::{common::ArgDef, ParamDef},
+    server::Param,
 };
 
 use super::CommandArg;
 
 pub mod replace;
 
-pub fn data_args_to_command_args(data: &Data) -> Vec<CommandArg> {
-    data.args
-        .iter()
+pub fn args_to_command_args(vec: &[ArgDef]) -> Vec<CommandArg> {
+    vec.iter()
         .map(|a| CommandArg {
             name: a.arg_type.clone(),
             value: a.value.clone(),
@@ -17,21 +16,8 @@ pub fn data_args_to_command_args(data: &Data) -> Vec<CommandArg> {
         .collect()
 }
 
-pub fn action_args_to_command_args(action: &Action) -> Vec<CommandArg> {
-    action
-        .args
-        .iter()
-        .map(|a| CommandArg {
-            name: a.arg_type.clone(),
-            value: a.value.clone(),
-        })
-        .collect()
-}
-
-pub fn plugin_default_params_to_command_args(plugin: &Plugin) -> Vec<CommandArg> {
-    plugin
-        .params
-        .iter()
+pub fn param_def_to_command_args(vec: &[ParamDef]) -> Vec<CommandArg> {
+    vec.iter()
         .map(|p| CommandArg {
             name: p.name.clone(),
             value: p.default_value.clone(),
@@ -39,10 +25,8 @@ pub fn plugin_default_params_to_command_args(plugin: &Plugin) -> Vec<CommandArg>
         .collect()
 }
 
-pub fn feature_params_to_command_args(feature: &Feature) -> Vec<CommandArg> {
-    feature
-        .params
-        .iter()
+pub fn params_to_command_args(vec: &[Param]) -> Vec<CommandArg> {
+    vec.iter()
         .map(|p| CommandArg {
             name: p.name.clone(),
             value: p.value.clone(),
@@ -50,7 +34,7 @@ pub fn feature_params_to_command_args(feature: &Feature) -> Vec<CommandArg> {
         .collect()
 }
 
-pub fn action_params_to_command_args(action_params: Option<&str>) -> Vec<CommandArg> {
+pub fn string_params_to_command_args(action_params: Option<&str>) -> Vec<CommandArg> {
     let mut list = Vec::new();
 
     if let Some(action_params) = action_params {

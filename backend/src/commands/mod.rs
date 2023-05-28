@@ -20,6 +20,7 @@ lazy_static! {
 fn get_command_list() -> Vec<Box<dyn Command + Sync + Send>> {
     let list: Vec<Box<dyn Command + Sync + Send>> = vec![
         Box::new(http::HttpCommand::new()),
+        Box::new(socket::SocketCommand::new()),
         Box::new(wol::WoLCommand::new()),
         Box::new(ping::PingCommand::new()),
     ];

@@ -3,7 +3,7 @@
     "name": "Universal PnP",
     "description": "Triggers discovery of UPnP devices in your network",
     "server_icon": "",
-    "detection": {       
+    "detection": {
         "detection_possible": true
     },
     "credentials": [],
@@ -12,14 +12,14 @@
             "name": "location",
             "param_type": "string",
             "default_value": ""
-        }   
+        }
     ],
     "data": [
         {
             "id": "derviceinfo",
             "description": "Get the Basic UPnP Device Information",
-            "template" : "upnp/data_deviceinfo",
-            "result_format": "XML",         
+            "template": "upnp/data_deviceinfo",
+            "result_format": "XML",
             "command": "http",
             "args": [
                 {
@@ -33,6 +33,5 @@
             ]
         }
     ],
-    "actions": [        
-    ]
+    "actions": []
 }

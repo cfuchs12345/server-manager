@@ -180,7 +180,7 @@ pub async fn parse_device_info_from_location(
                         );
 
                         match common::execute_http_request(
-                            location_param.value.clone(),
+                            location_param.value.as_str(),
                             common::GET,
                             None,
                             None,

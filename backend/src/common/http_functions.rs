@@ -1,4 +1,4 @@
-
+use std::path::Path;
 use std::time::Duration;
 
 use http::StatusCode;
@@ -6,13 +6,10 @@ use http::StatusCode;
 use crate::datastore;
 use crate::models::error::AppError;
 
-#[cfg(all(target_os="linux"))]
-use std::os::unix::net::UnixStream;
-#[cfg(all(target_os="linux"))]
+#[cfg(all(target_os = "linux"))]
 use std::io::prelude::*;
-#[cfg(all(target_os="linux"))]
-use std::path::Path;
-
+#[cfg(all(target_os = "linux"))]
+use std::os::unix::net::UnixStream;
 
 pub const GET: &str = "get";
 pub const POST: &str = "post";
@@ -20,86 +17,45 @@ pub const PUT: &str = "put";
 
 #[allow(dead_code)]
 pub const DELETE: &str = "delete";
-#[allow(dead_code)]
+
 const SOCKET_HTTP_POSTFIX: &str = " HTTP/1.1\r\nHost:localhost\r\n\r\n";
 
-
-
-
-#[cfg(all(target_os="linux"))]
+#[cfg(all(target_os = "linux"))]
 pub async fn execute_socket_request(
-    path: String,
+    socket: &str,
     url: &str,
     method: &str,
     headers: Option<Vec<(String, String)>>,
-    body: Option<String>
-)  -> Result<String, reqwest::Error> {
-    
-    //#[cfg(all(target_os="linux"))]
-    //http_functions::execute_socket_request( "/var/run/docker.sock".to_string(), "/containers/json", http_functions::GET, None, None).await.unwrap();
-    
-    let mut request_str = String::new();
+    body: Option<String>,
+) -> Result<String, AppError> {
+    let header_map: http::HeaderMap = headers_to_map(headers);
 
-    match method {
+    log::debug!("executing http request {} on {}", method, url);
+
+    let socket_path = Path::new(socket);
+
+    let mut unix_stream = UnixStream::connect(socket_path).expect("Could not create stream");
+
+    let request_str = match method {
         GET | POST | DELETE | PUT => {
-            request_str.push_str(method.to_uppercase().as_str());
-            request_str.push_str(" ");
-            request_str.push_str( url);
-            request_str.push_str(SOCKET_HTTP_POSTFIX);
-        },
-        y => { // default is also GET
-            request_str.push_str("GET");
-            request_str.push_str(" ");
-            request_str.push_str( url);
-            request_str.push_str(SOCKET_HTTP_POSTFIX);            
+            format!("{} {} {}", method.to_uppercase(), url, SOCKET_HTTP_POSTFIX)
         }
-    }
+        _ => format!("{} {} {}", GET.to_uppercase(), url, SOCKET_HTTP_POSTFIX), // default is also GET
+    };
 
-    let socket_path = Path::new(path.as_str());
-    
-    let mut unix_stream =
-    UnixStream::connect(&socket_path).expect("Could not create stream");
-   
-    write_request_and_shutdown(&mut unix_stream, request_str);
-    Ok(read_from_stream(&mut unix_stream))
+    write_request_and_shutdown(&mut unix_stream, request_str, header_map, body)?;
+    read_from_stream(&mut unix_stream)
 }
-
-#[cfg(all(target_os="linux"))]
-fn write_request_and_shutdown(unix_stream: &mut UnixStream, message: String) {
-    log::debug!("sending message {}", message);
-
-    unix_stream
-        .write_all(message.as_bytes())
-        .expect("Failed at writing onto the unix stream");
-
-    unix_stream
-        .shutdown(std::net::Shutdown::Write)
-        .expect("Could not shutdown writing on the stream");
-}
-
-#[cfg(all(target_os="linux"))]
-fn read_from_stream(unix_stream: &mut UnixStream) -> String {
-    let mut response = String::new();
-    unix_stream
-        .read_to_string(&mut response)
-        .expect("Failed at reading the unix stream");
-
-        log::debug!("We received this response: {}", response);
-    response
-}
-
-
-
 
 /// Executes an http request on the given url using the given method.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `url` the url including protocol, port and so on
 /// * `method` the http method to use (currently 'get', 'post' or 'put' are allowed)
 /// * `header` optional of a vector of tuples with tuple (header_name, header_value)
 /// * `body` and optional body to send for 'post' and 'put' requests
-/// 
+///
 /// # Panics
 /// never
 /// * `
@@ -108,43 +64,60 @@ fn read_from_stream(unix_stream: &mut UnixStream) -> String {
 /// * ` AppError`if the given metho is invalid
 ///
 pub async fn execute_http_request(
-    url: String,
+    url: &str,
     method: &str,
     headers: Option<Vec<(String, String)>>,
-    body: Option<String>
+    body: Option<String>,
 ) -> Result<String, AppError> {
-    
     let client = create_http_client();
 
     let header_map: http::HeaderMap = headers_to_map(headers);
-    
+
     log::debug!("executing http request {} on {}", method, url);
 
     let response = match method {
-        POST => client.post(url).headers(header_map).body(body.unwrap_or("".to_string())).send().await,
-        PUT => client.put(url).headers(header_map).body(body.unwrap_or("".to_string())).send().await,
+        POST => {
+            client
+                .post(url)
+                .headers(header_map)
+                .body(body.unwrap_or("".to_string()))
+                .send()
+                .await
+        }
+        PUT => {
+            client
+                .put(url)
+                .headers(header_map)
+                .body(body.unwrap_or("".to_string()))
+                .send()
+                .await
+        }
         GET => client.get(url).headers(header_map).send().await,
         _ => client.get(url).headers(header_map).send().await, // default is also a get
     };
 
     match response {
-        Ok(res) => {
-        match res.status() {
+        Ok(res) => match res.status() {
             StatusCode::ACCEPTED => Ok(res.text().await.unwrap_or("".to_string())),
             StatusCode::OK => Ok(res.text().await.unwrap_or("".to_string())),
-            y => Ok(format!("Returned StatusCode was not ACCEPTED or OK but {:?}", y))
-        }
-    },
-    Err(err)=> Err(AppError::from(err))
+            y => Ok(format!(
+                "Returned StatusCode was not ACCEPTED or OK but {:?}",
+                y
+            )),
+        },
+        Err(err) => Err(AppError::from(err)),
     }
 }
 
-
-pub fn create_http_client() -> reqwest::Client {
+fn create_http_client() -> reqwest::Client {
     let config = datastore::get_config();
-    let accept_self_signed_certificates = config.get_bool("accept_self_signed_certificates").unwrap();
+    let accept_self_signed_certificates =
+        config.get_bool("accept_self_signed_certificates").unwrap();
 
-    log::debug!("accept self-signed certificates setting is {}", accept_self_signed_certificates);
+    log::debug!(
+        "accept self-signed certificates setting is {}",
+        accept_self_signed_certificates
+    );
 
     reqwest::Client::builder()
         .danger_accept_invalid_certs(accept_self_signed_certificates)
@@ -153,7 +126,44 @@ pub fn create_http_client() -> reqwest::Client {
         .unwrap()
 }
 
+#[cfg(all(target_os = "linux"))]
+fn write_request_and_shutdown(
+    unix_stream: &mut UnixStream,
+    request: String,
+    header_map: http::HeaderMap,
+    body: Option<String>,
+) -> Result<(), AppError> {
+    let mut message = request;
 
+    header_map.iter().for_each(|h| {
+        message.push_str(format!("{}:{}", h.0, h.1.to_str().unwrap_or_default()).as_str())
+    });
+
+    if let Some(body) = body {
+        message.push('\n');
+        message.push_str(body.as_str());
+    }
+
+    log::debug!("sending message {}", message);
+
+    unix_stream.write_all(message.as_bytes())?;
+
+    unix_stream.shutdown(std::net::Shutdown::Write)?;
+
+    Ok(())
+}
+
+#[cfg(all(target_os = "linux"))]
+fn read_from_stream(unix_stream: &mut UnixStream) -> Result<String, AppError> {
+    let mut response = String::new();
+    unix_stream.read_to_string(&mut response)?;
+
+    log::debug!(
+        "We received this response from the unix stream: {}",
+        response
+    );
+    Ok(response)
+}
 
 fn headers_to_map(headers: Option<Vec<(String, String)>>) -> http::HeaderMap {
     if headers.is_none() {
@@ -193,4 +203,3 @@ fn headers_to_map(headers: Option<Vec<(String, String)>>) -> http::HeaderMap {
 
     header_map
 }
-

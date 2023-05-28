@@ -4,18 +4,54 @@
     "description": "Control for Tasmota based devices like switchable power outlets",
     "server_icon": "<svg  width=\"25px\" height=\"25px\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><title>Tasmota</title><path d=\"M12 0L0 12l1.371 1.372L12 2.743l10.629 10.629L24 12 12 0zm0 8.463a7.41 7.41 0 0 0-2.64 14.334v-2.133a5.464 5.464 0 0 1 1.671-10.17V24h1.94V10.494a5.464 5.464 0 0 1 1.669 10.171v2.133A7.41 7.41 0 0 0 12 8.463z\"/></svg>",
     "detection": {
-        "list":  [
+        "list": [
             {
-                "defaultports": [
-                    80
+                "params": [
+                    {
+                        "name": "port",
+                        "param_type": "number",
+                        "default_value": "80"
+                    },
+                    {
+                        "name": "protocol",
+                        "param_type": "string",
+                        "default_value": "http"
+                    }
                 ],
-                "url": "http://${IP}:${PORT}"
+                "args": [
+                    {
+                        "arg_type": "method",
+                        "value": "get"
+                    },
+                    {
+                        "arg_type": "url",
+                        "value": "${params.protocol}://${IP}:${params.port}"
+                    }
+                ]
             },
             {
-                "defaultports": [
-                    443
+                "params": [
+                    {
+                        "name": "port",
+                        "param_type": "number",
+                        "default_value": "443"
+                    },
+                    {
+                        "name": "protocol",
+                        "param_type": "string",
+                        "default_value": "https"
+                    }
                 ],
-                "url": "https://${IP}:${PORT}"
+                "args": [
+                    {
+                        "arg_type": "method",
+                        "value": "get"
+                    },
+                    {
+                        "arg_type": "url",
+                        "value": "${params.protocol}://${IP}:${params.port}"
+                    }
+                ]
             }
         ],
         "script": {
@@ -76,12 +112,12 @@
     "actions": [
         {
             "id": "on",
-            "name": "Switch On",            
+            "name": "Switch On",
             "needs_confirmation": true,
-            "available_for_state" : "Active",
+            "available_for_state": "Active",
             "depends": [
                 {
-                    "data_id": "power_state",                
+                    "data_id": "power_state",
                     "script_type": "lua",
                     "script": "string.find(input, 'OFF', 1, true)"
                 }
@@ -104,7 +140,7 @@
             "id": "off",
             "name": "Switch Off",
             "needs_confirmation": true,
-            "available_for_state" : "Active",
+            "available_for_state": "Active",
             "depends": [
                 {
                     "data_id": "power_state",

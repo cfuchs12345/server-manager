@@ -52,7 +52,8 @@ impl Command for WoLCommand {
     }
 }
 
-struct WolCommandResult {}
+#[derive(Clone)]
+pub struct WolCommandResult {}
 
 impl CommandResult for WolCommandResult {}
 
@@ -60,12 +61,16 @@ impl WolCommandResult {
     fn new() -> Self {
         WolCommandResult {}
     }
+
+    pub fn get_result(&self) -> bool {
+        true
+    }
 }
 
 pub fn make_input(feature: &Feature) -> CommandInput {
     let params = super::Parameters::new(
         Vec::new(),
-        common::feature_params_to_command_args(feature),
+        common::params_to_command_args(&feature.params),
         Vec::new(),
     );
 

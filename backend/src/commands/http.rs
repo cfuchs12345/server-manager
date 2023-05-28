@@ -1,4 +1,4 @@
-use std::any::Any;
+use std::{any::Any, net::IpAddr};
 
 use super::{
     common::{self, replace},
@@ -6,7 +6,7 @@ use super::{
 };
 use crate::models::{
     error::AppError,
-    plugin::{action::Action, data::Data, Plugin},
+    plugin::{action::Action, data::Data, detection::DetectionEntry, Plugin},
     server::{Feature, Server},
 };
 use async_trait::async_trait;
@@ -96,7 +96,7 @@ impl Command for HttpCommand {
         );
 
         let response_string = crate::common::execute_http_request(
-            normal_and_masked_url.0,
+            normal_and_masked_url.0.as_str(),
             method,
             Some(normal_and_replaced_headers),
             Some(normal_and_masked_body.0),
@@ -134,16 +134,16 @@ pub fn make_command_input_from_subaction(
     plugin: &Plugin,
 ) -> Result<CommandInput, AppError> {
     let params = Parameters::new(
-        common::action_params_to_command_args(action_params),
-        common::feature_params_to_command_args(feature),
-        common::plugin_default_params_to_command_args(plugin),
+        common::string_params_to_command_args(action_params),
+        common::params_to_command_args(&feature.params),
+        common::param_def_to_command_args(&plugin.params),
     );
 
     Ok(CommandInput::new(
         HTTP,
         Some(crypto_key),
         Some(server.ipaddress),
-        common::action_args_to_command_args(action),
+        common::args_to_command_args(&action.args),
         params,
         feature.credentials.clone(),
     ))
@@ -158,17 +158,37 @@ pub fn make_command_input_from_data(
     plugin: &Plugin,
 ) -> Result<CommandInput, AppError> {
     let params = Parameters::new(
-        common::action_params_to_command_args(action_params),
-        common::feature_params_to_command_args(feature),
-        common::plugin_default_params_to_command_args(plugin),
+        common::string_params_to_command_args(action_params),
+        common::params_to_command_args(&feature.params),
+        common::param_def_to_command_args(&plugin.params),
     );
 
     Ok(CommandInput::new(
         HTTP,
         Some(crypto_key),
         Some(server.ipaddress),
-        common::data_args_to_command_args(data),
+        common::args_to_command_args(&data.args),
         params,
         feature.credentials.clone(),
+    ))
+}
+
+pub fn make_command_input_from_detection(
+    ipaddress: &IpAddr,
+    detection_entry: &DetectionEntry,
+) -> Result<CommandInput, AppError> {
+    let params = Parameters::new(
+        Vec::new(),
+        Vec::new(),
+        common::param_def_to_command_args(&detection_entry.params),
+    );
+
+    Ok(CommandInput::new(
+        HTTP,
+        None,
+        Some(ipaddress.to_owned()),
+        common::args_to_command_args(&detection_entry.args),
+        params,
+        Vec::new(),
     ))
 }

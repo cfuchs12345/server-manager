@@ -185,12 +185,9 @@ mod tests {
 
     #[test]
     fn test_regex_strip_of_marker() {
+        assert_eq!(Placeholder::Param.strip_of_marker("${params.test}"), "test");
         assert_eq!(
-            Placeholder::Param.strip_of_marker(&"${params.test}".to_string()),
-            "test"
-        );
-        assert_eq!(
-            Placeholder::Base64.strip_of_marker(&"${encode_base64(USERNAME)}".to_string()),
+            Placeholder::Base64.strip_of_marker("${encode_base64(USERNAME)}"),
             "USERNAME"
         );
     }

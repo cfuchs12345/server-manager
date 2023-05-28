@@ -2,7 +2,7 @@ use dnsclient::{r#async::DNSClient, UpstreamServer};
 use futures::future::join_all;
 use ipnet::Ipv4Net;
 use lazy_static::lazy_static;
-use log::{error, warn};
+use log::error;
 
 use std::{
     net::{IpAddr, SocketAddr},
@@ -11,13 +11,15 @@ use std::{
 use tokio::sync::Semaphore;
 
 use crate::{
-    commands::{self, ping::PingCommandResult},
+    commands::{
+        self, http::HttpCommandResult, ping::PingCommandResult, socket::SocketCommandResult,
+    },
     common,
     models::{
         config::dns_server::DNSServer, error::AppError, response::host_information::HostInformation,
     },
     models::{
-        plugin::{detection::DetectionEntry, Plugin},
+        plugin::Plugin,
         server::{Feature, FeaturesOfServer, Server},
     },
     other_functions::upnp,
@@ -103,8 +105,6 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
         features: vec![],
     };
 
-    let client = common::create_http_client();
-
     let plugins = crate::datastore::get_all_plugins();
 
     for plugin in plugins {
@@ -114,44 +114,47 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
         }
 
         'outer: for detection_entry in &plugin.detection.list {
-            log::debug!("current entry {}", detection_entry.url);
+            let url = detection_entry.args.iter().find(|a| a.arg_type == "url");
 
-            for url in get_urls_for_check(detection_entry, ipaddress) {
-                log::debug!("checking url {} for plugin {}", &url, &plugin.name);
+            log::debug!("current entry {:?}", url);
 
-                match client.get(&url).send().await {
-                    Ok(body) => {
-                        match body.text().await {
-                            Ok(text) => {
-                                if check_plugin_match(&text, &plugin).await {
-                                    log::debug!(
-                                        "Plugin {:?} matched for server {}",
-                                        &plugin.id,
-                                        ipaddress
-                                    );
+            log::debug!("checking url {:?} for plugin {}", &url, &plugin.name);
 
-                                    features_of_server
-                                        .features
-                                        .push(create_feature_from_plugin(&plugin));
+            let response = match plugin.detection.command.as_str() {
+                commands::socket::SOCKET => {
+                    let input = commands::socket::make_command_input_from_detection(
+                        &ipaddress,
+                        detection_entry,
+                    )?;
+                    let result: SocketCommandResult = commands::execute(input).await?;
 
-                                    break 'outer; // early exit of both loops if we found a match
-                                } else {
-                                    log::debug!("Connect successful but content\n {:?}\n did not match with script {:?}", text, plugin.detection.script.script);
-                                }
-                            }
-                            Err(err) => {
-                                error!(
-                                    "Unexpected error while checking result of url {} {:?}",
-                                    url, err
-                                );
-                            }
-                        }
-                    }
-                    Err(err) => {
-                        warn!("{:?}", err);
-                        continue;
-                    }
-                };
+                    result.get_response()
+                }
+                _ => {
+                    let input = commands::http::make_command_input_from_detection(
+                        &ipaddress,
+                        detection_entry,
+                    )?;
+                    let result: HttpCommandResult = commands::execute(input).await?;
+
+                    result.get_response()
+                }
+            };
+
+            if check_plugin_match(&response, &plugin).await {
+                log::debug!("Plugin {:?} matched for server {}", &plugin.id, ipaddress);
+
+                features_of_server
+                    .features
+                    .push(create_feature_from_plugin(&plugin));
+
+                break 'outer; // early exit of both loops if we found a match
+            } else {
+                log::debug!(
+                    "Connect successful but content\n {:?}\n did not match with script {:?}",
+                    response,
+                    plugin.detection.script.script
+                );
             }
         }
     }
@@ -281,20 +284,6 @@ async fn lookup_hostname(addr: IpAddr, upsstream_server: Vec<UpstreamServer>) ->
     result.unwrap()
 }
 
-fn get_urls_for_check(detection_entry: &DetectionEntry, ipaddress: IpAddr) -> Vec<String> {
-    detection_entry
-        .defaultports
-        .iter()
-        .map(|port| {
-            let url = detection_entry
-                .url
-                .replace("${IP}", format!("{}", ipaddress).as_str())
-                .replace("${PORT}", port.to_string().as_str());
-            url
-        })
-        .collect()
-}
-
 fn create_feature_from_plugin(plugin: &Plugin) -> Feature {
     Feature {
         id: plugin.id.clone(),
@@ -367,7 +356,7 @@ mod tests {
 
         let result = plugin_detect_match(&plugin.unwrap(), input);
 
-        assert_eq!(true, result.unwrap());
+        assert!(result.unwrap());
     }
 
     #[test]

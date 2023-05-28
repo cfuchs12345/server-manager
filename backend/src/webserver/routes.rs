@@ -451,11 +451,23 @@ async fn save_user_common(data: web::Data<AppData>, query: web::Json<User>) -> H
         if common::is_smtp_config_valid() {
             let from_address = datastore::get_config().get_string("email_from").unwrap();
 
-            common::send_email(from_address.as_str(),
+            match common::send_email(from_address.as_str(),
                     &user.get_email(),
                     "Your initial password for the Server-Manager",
-                    format!("Hello {},\n\nyour user id is '{}' and the initial password is: '{}'.\n\nRegards,\nyour Server-Manager", user.get_full_name(), user.get_user_id(), initial_password).as_str()).await;
-            HttpResponse::Ok().finish()
+                    format!("Hello {},\n\nyour user id is '{}' and the initial password is: '{}'.\n\nRegards,\nyour Server-Manager", user.get_full_name(), user.get_user_id(), initial_password).as_str()).await {
+                        Ok(res) => {
+                            if res {
+                                HttpResponse::Ok().finish() // mail send successfully - no need to display the initual password
+                            }
+                            else {
+                                HttpResponse::Ok().json(initial_password)
+                            }
+                        },
+                        Err(err) => {
+                            log::error!("An error occurred while trying to send the initial password mail: {}", err);
+                            HttpResponse::Ok().json(initial_password)
+                        }
+                    }
         } else {
             HttpResponse::Ok().json(initial_password)
         }

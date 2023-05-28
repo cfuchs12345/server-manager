@@ -3,7 +3,10 @@ mod conditions;
 use futures::future::join_all;
 
 use crate::{
-    commands::{self, http::HttpCommandResult},
+    commands::{
+        self, http::HttpCommandResult, ping::PingCommandResult, socket::SocketCommandResult,
+        wol::WolCommandResult,
+    },
     datastore,
     models::response::data_result::ConditionCheckResult,
     models::{
@@ -42,30 +45,53 @@ pub async fn execute_action(
     let plugin = plugin_res.unwrap();
 
     match plugin.find_action(action_id) {
-        Some(plugin_action) => {
-            let input = match plugin_action.command.as_str() {
-                commands::http::HTTP => commands::http::make_command_input_from_subaction(
+        Some(plugin_action) => match plugin_action.command.as_str() {
+            commands::http::HTTP => {
+                let input = commands::http::make_command_input_from_subaction(
                     server,
                     &crypto_key,
                     plugin_action,
                     action_params,
                     feature,
                     &plugin,
-                )?,
-                commands::wol::WOL => commands::wol::make_input(feature),
-                commands::ping::PING => commands::ping::make_input(server.ipaddress),
-                y => {
-                    log::error!("Unknown command {}", y);
-                    return Err(AppError::InvalidArgument(
-                        "command".to_owned(),
-                        Some(y.to_owned()),
-                    ));
-                }
-            };
-            let res: HttpCommandResult = commands::execute(input).await?;
+                )?;
 
-            Ok(!res.get_response().is_empty())
-        }
+                let res: HttpCommandResult = commands::execute(input).await?;
+
+                Ok(!res.get_response().is_empty())
+            }
+            commands::socket::SOCKET => {
+                let input = commands::socket::make_command_input_from_subaction(
+                    server,
+                    &crypto_key,
+                    plugin_action,
+                    action_params,
+                    feature,
+                    &plugin,
+                )?;
+                let res: SocketCommandResult = commands::execute(input).await?;
+
+                Ok(!res.get_response().is_empty())
+            }
+            commands::wol::WOL => {
+                let input = commands::wol::make_input(feature);
+
+                let res: WolCommandResult = commands::execute(input).await?;
+
+                Ok(res.get_result())
+            }
+            commands::ping::PING => {
+                let input = commands::ping::make_input(server.ipaddress);
+
+                let res: PingCommandResult = commands::execute(input).await?;
+
+                Ok(res.get_result())
+            }
+            y => {
+                log::error!("Unknown command {}", y);
+                Err(AppError::CommandNotFound(y.to_string()))
+            }
+        },
         None => {
             let error = format!("{} is not a action of plugin {}", action_id, feature.id);
             log::error!("{}", error);

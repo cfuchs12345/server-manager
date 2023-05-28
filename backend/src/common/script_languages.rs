@@ -1,4 +1,4 @@
-use rhai::{Scope, Engine};
+use rhai::{Engine, Scope};
 use rlua::Lua;
 
 const INPUT: &str = "input";
@@ -18,7 +18,7 @@ pub fn match_with_lua(input: &str, script: &str) -> bool {
 
     lua.context(|lua_ctx| {
         let globals = lua_ctx.globals();
-        globals        
+        globals
             .set(INPUT, wrap_in_brackets(input))
             .expect("Could not set global value");
 
@@ -41,15 +41,14 @@ mod tests {
         let input = "dies ist ein test";
         let script = "string.find(input, 'test', 1, true)";
 
-        assert_eq!(true, match_with_lua(input, script));
+        assert!(match_with_lua(input, script));
     }
-
 
     #[test]
     fn test_with_rhai() {
         let input = "dies ist ein test";
         let script = "input.contains(\"test\")";
 
-        assert_eq!(true, match_with_rhai(input, script));
+        assert!(match_with_rhai(input, script));
     }
 }
