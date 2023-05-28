@@ -1,7 +1,6 @@
 use actix_web::{HttpResponse, ResponseError};
 use http::{header, StatusCode};
 use serde::{Deserialize, Serialize};
-use std::fmt::write;
 use std::str::ParseBoolError;
 use std::{fmt::Display, net::AddrParseError, num::ParseIntError};
 use surge_ping::SurgeError;

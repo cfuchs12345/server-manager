@@ -128,14 +128,7 @@ async fn execute(
     request_headers: Option<Vec<(String, String)>>,
     body: Option<String>,
 ) -> Result<String, AppError> {
-    crate::common::execute_socket_request(
-        socket,
-        normal_and_masked_url.0.as_str(),
-        method,
-        Some(normal_and_replaced_headers),
-        Some(normal_and_masked_body.0),
-    )
-    .await?
+    crate::common::execute_socket_request(socket, url, method, request_headers, body).await
 }
 
 #[cfg(not(target_os = "linux"))]
