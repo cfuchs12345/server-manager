@@ -232,8 +232,12 @@ pub async fn post_servers_by_ipaddress_action(
             .await
             {
                 Ok(results) => HttpResponse::Ok().json(results),
-                Err(err) => HttpResponse::InternalServerError()
-                    .body(format!("Unexpected error occurred: {:?}", err)),
+                Err(err) => {
+                    log::error!("Error during data query: {}", err);
+
+                    HttpResponse::InternalServerError()
+                        .body(format!("Unexpected error occurred: {:?}", err))
+                }
             }
         }
     }

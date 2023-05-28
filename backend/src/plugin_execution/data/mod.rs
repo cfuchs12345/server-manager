@@ -141,7 +141,9 @@ pub async fn execute_specific_data_query(
     };
 
     if let Some(script) = &data.post_process {
+        log::info!("before post process: {}", response);
         response = post_process(response.as_str(), script)?;
+        log::info!("after post process: {}", response);
     }
 
     Ok(Some(response))
