@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
@@ -34,6 +36,7 @@ pub async fn send_email(from: &str, to: &str, subject: &str, body: &str) -> Resu
 
     let mailer = SmtpTransport::relay(smtp_host.unwrap().as_str())
         .unwrap()
+        .timeout(Some(Duration::from_secs(5)))
         .credentials(creds)
         .build();
 
