@@ -7,7 +7,7 @@ use super::{
 use crate::models::{
     error::AppError,
     plugin::{action::Action, data::Data, detection::DetectionEntry, Plugin},
-    server::{Feature, Server},
+    server::Feature,
 };
 use async_trait::async_trait;
 
