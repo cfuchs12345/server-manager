@@ -126,7 +126,7 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
                         let input =
                             commands::socket::make_command_input_from_detection(detection_entry)?;
 
-                        match commands::execute::<SocketCommandResult>(input).await {
+                        match commands::execute::<SocketCommandResult>(input, true).await {
                             Ok(result) => result.get_response(),
                             Err(err) => {
                                 log::info!("Error during discoverty call: {}", err);
@@ -144,7 +144,7 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
                         detection_entry,
                     )?;
 
-                    match commands::execute::<HttpCommandResult>(input).await {
+                    match commands::execute::<HttpCommandResult>(input, true).await {
                         Ok(result) => result.get_response(),
                         Err(err) => {
                             log::info!("Error during discoverty call: {}", err);
@@ -275,7 +275,7 @@ async fn discover_host(
     upsstream_server: Vec<UpstreamServer>,
 ) -> Result<HostInformation, AppError> {
     let input = commands::ping::make_input(addr);
-    let ping_response_fut = commands::execute::<PingCommandResult>(input);
+    let ping_response_fut = commands::execute::<PingCommandResult>(input, true);
 
     let lookup_hostname_fut = match lookup_names {
         true => Some(lookup_hostname(addr, upsstream_server)),

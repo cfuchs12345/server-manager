@@ -11,7 +11,7 @@ LABEL version ${VERSION}
 
 RUN apt-get update \
 && apt-get upgrade -y \
-&& apt-get install libssl-dev ca-certificates -y \
+&& apt-get install ca-certificates openssl -y \
 && apt-get clean
 
 ADD inet.dll ./

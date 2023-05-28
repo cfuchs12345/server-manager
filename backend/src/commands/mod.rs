@@ -27,7 +27,7 @@ fn get_command_list() -> Vec<Box<dyn Command + Sync + Send>> {
     list
 }
 
-pub async fn execute<'a, R>(input: CommandInput) -> Result<R, AppError>
+pub async fn execute<'a, R>(input: CommandInput, silent: bool) -> Result<R, AppError>
 where
     R: CommandResult + Clone + 'a + 'static,
 {
@@ -42,8 +42,16 @@ where
                 Ok(res.as_ref().clone())
             }
             Err(err) => {
-                log::error!("Error: {}", err);
-                Err(err)
+                if silent {
+                    log::debug!(
+                        "Error occured while executing command in silent mode: {}",
+                        err
+                    );
+                    Err(AppError::Suppressed(format!("{}", err)))
+                } else {
+                    log::error!("Error: {}", err);
+                    Err(err)
+                }
             }
         },
         None => {

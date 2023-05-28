@@ -27,7 +27,9 @@ pub async fn status_check_all() -> Result<(), AppError> {
 
         let input = commands::ping::make_input(address);
 
-        tasks.push(tokio::spawn(commands::execute::<PingCommandResult>(input)));
+        tasks.push(tokio::spawn(commands::execute::<PingCommandResult>(
+            input, true,
+        )));
     }
 
     // wait for all tasks to finish
