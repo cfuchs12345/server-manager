@@ -1,3 +1,4 @@
+#[cfg(all(target_os = "linux"))]
 use std::path::Path;
 use std::time::Duration;
 
