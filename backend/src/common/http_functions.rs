@@ -18,6 +18,7 @@ pub const PUT: &str = "put";
 #[allow(dead_code)]
 pub const DELETE: &str = "delete";
 
+#[cfg(all(target_os = "linux"))]
 const SOCKET_HTTP_POSTFIX: &str = " HTTP/1.1\r\nHost:localhost\r\n\r\n";
 
 #[cfg(all(target_os = "linux"))]
@@ -100,10 +101,10 @@ pub async fn execute_http_request(
         Ok(res) => match res.status() {
             StatusCode::ACCEPTED => Ok(res.text().await.unwrap_or("".to_string())),
             StatusCode::OK => Ok(res.text().await.unwrap_or("".to_string())),
-            y => Ok(format!(
-                "Returned StatusCode was not ACCEPTED or OK but {:?}",
-                y
-            )),
+            y => {
+                log::info!("Returned StatusCode was not ACCEPTED or OK but {:?}", y);
+                Ok("".to_string())
+            }
         },
         Err(err) => Err(AppError::from(err)),
     }

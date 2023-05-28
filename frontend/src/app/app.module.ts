@@ -68,6 +68,7 @@ import { LoginComponent } from './login/login.component';
 import { RegisterComponent } from './register/register.component';
 import { TokenInterceptor } from './auth/token.interceptor';
 import { ErrorInterceptor } from './auth/error.interceptor';
+import { NgApexchartsModule } from 'ng-apexcharts';
 
 @NgModule({
   declarations: [
@@ -139,6 +140,7 @@ import { ErrorInterceptor } from './auth/error.interceptor';
     ReactiveFormsModule,
     LayoutModule,
     MatSelectModule,
+    NgApexchartsModule
   ],
   providers: [
     ErrorService,

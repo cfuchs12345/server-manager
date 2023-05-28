@@ -19,6 +19,7 @@ pub use crypt::hash_password;
 pub use crypt::make_aes_secrect;
 pub use crypt::verify_password;
 pub use http_functions::execute_http_request;
+#[cfg(all(target_os = "linux"))]
 pub use http_functions::execute_socket_request;
 
 pub use script_languages::match_with_lua;

@@ -126,23 +126,37 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
                         &ipaddress,
                         detection_entry,
                     )?;
-                    let result: SocketCommandResult = commands::execute(input).await?;
-
-                    result.get_response()
+                    match commands::execute::<SocketCommandResult>(input).await {
+                        Ok(result) => result.get_response(),
+                        Err(err) => {
+                            log::info!("Error during discoverty call: {}", err);
+                            "".to_string()
+                        }
+                    }
                 }
                 _ => {
                     let input = commands::http::make_command_input_from_detection(
                         &ipaddress,
                         detection_entry,
                     )?;
-                    let result: HttpCommandResult = commands::execute(input).await?;
 
-                    result.get_response()
+                    match commands::execute::<HttpCommandResult>(input).await {
+                        Ok(result) => result.get_response(),
+                        Err(err) => {
+                            log::info!("Error during discoverty call: {}", err);
+                            "".to_string()
+                        }
+                    }
                 }
             };
 
             if check_plugin_match(&response, &plugin).await {
-                log::debug!("Plugin {:?} matched for server {}", &plugin.id, ipaddress);
+                log::debug!(
+                    "Plugin {:?} matched for server {} for response {}",
+                    &plugin.id,
+                    ipaddress,
+                    response
+                );
 
                 features_of_server
                     .features

@@ -21,7 +21,6 @@ impl SocketCommand {
     }
 }
 
-#[cfg(all(target_os = "linux"))]
 #[async_trait]
 impl Command for SocketCommand {
     fn get_name(&self) -> &str {
@@ -97,17 +96,55 @@ impl Command for SocketCommand {
             normal_and_masked_body.0
         );
 
-        let response_string = crate::common::execute_socket_request(
+        #[cfg(all(target_os = "linux"))]
+        let response_string = execute_windows_dummy(
             socket,
             normal_and_masked_url.0.as_str(),
             method,
             Some(normal_and_replaced_headers),
             Some(normal_and_masked_body.0),
-        )
-        .await?;
+        );
+
+        #[cfg(all(target_os = "windows"))]
+        let response_string = execute_windows_dummy(
+            socket,
+            normal_and_masked_url.0.as_str(),
+            method,
+            Some(normal_and_replaced_headers),
+            Some(normal_and_masked_body.0),
+        );
 
         Ok(Box::new(SocketCommandResult::new(response_string.as_str())))
     }
+}
+
+#[cfg(all(target_os = "linux"))]
+fn execute_linux(
+    socket: &str,
+    url: &str,
+    method: &str,
+    request_headers: Option<Vec<(String, String)>>,
+    body: Option<String>,
+) -> Response<String, AppError> {
+    crate::common::execute_socket_request(
+        socket,
+        normal_and_masked_url.0.as_str(),
+        method,
+        Some(normal_and_replaced_headers),
+        Some(normal_and_masked_body.0),
+    )
+    .await?
+}
+
+#[cfg(all(target_os = "windows"))]
+fn execute_windows_dummy(
+    _socket: &str,
+    _url: &str,
+    _method: &str,
+    _request_headers: Option<Vec<(String, String)>>,
+    _body: Option<String>,
+) -> String {
+    "".to_string()
 }
 
 #[derive(Clone)]

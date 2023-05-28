@@ -21,7 +21,7 @@
         ],
         "script": {
             "script_type": "lua",
-            "script": "string.len(input) > 0"
+            "script": "string.len(input) > 4"
         },
         "detection_possible": true
     },
