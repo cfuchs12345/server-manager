@@ -122,16 +122,21 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
 
             let response = match plugin.detection.command.as_str() {
                 commands::socket::SOCKET => {
-                    let input = commands::socket::make_command_input_from_detection(
-                        &ipaddress,
-                        detection_entry,
-                    )?;
-                    match commands::execute::<SocketCommandResult>(input).await {
-                        Ok(result) => result.get_response(),
-                        Err(err) => {
-                            log::info!("Error during discoverty call: {}", err);
-                            "".to_string()
+                    if ipaddress.is_loopback() {
+                        let input = commands::socket::make_command_input_from_detection(
+                            &ipaddress,
+                            detection_entry,
+                        )?;
+                        match commands::execute::<SocketCommandResult>(input).await {
+                            Ok(result) => result.get_response(),
+                            Err(err) => {
+                                log::info!("Error during discoverty call: {}", err);
+                                "".to_string()
+                            }
                         }
+                    } else {
+                        log::debug!("Socket connection only available for loopback ip address");
+                        "".to_string()
                     }
                 }
                 _ => {
