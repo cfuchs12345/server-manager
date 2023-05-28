@@ -127,7 +127,7 @@ async fn execute(
     method: &str,
     request_headers: Option<Vec<(String, String)>>,
     body: Option<String>,
-) -> Response<String, AppError> {
+) -> Result<String, AppError> {
     crate::common::execute_socket_request(
         socket,
         normal_and_masked_url.0.as_str(),
@@ -145,8 +145,8 @@ async fn execute(
     _method: &str,
     _request_headers: Option<Vec<(String, String)>>,
     _body: Option<String>,
-) -> String {
-    "".to_string()
+) -> Result<String, AppError> {
+    Ok("".to_string())
 }
 
 #[derive(Clone)]
