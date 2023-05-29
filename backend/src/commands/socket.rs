@@ -118,6 +118,8 @@ impl Command for SocketCommand {
         )
         .await?;
 
+        log::info!("Response from socket: {}", response_string);
+
         Ok(Box::new(SocketCommandResult::new(response_string.as_str())))
     }
 }

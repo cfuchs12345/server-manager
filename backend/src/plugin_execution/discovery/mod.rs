@@ -123,6 +123,15 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
 
             log::debug!("checking url {:?} for plugin {}", &url, &plugin.name);
 
+            log::debug!(
+                "Socket Check - not valid for Socket Connection. IP {} is loopback: {} is local IP: {}",
+                ipaddress,
+                ipaddress.is_loopback(),
+                LOCAL_IP_ADDRESSES
+                    .iter()
+                    .any(|a| a.cmp(&ipaddress) == Ordering::Equal)
+            );
+
             let response = match plugin.detection.command.as_str() {
                 commands::socket::SOCKET => {
                     // Socket makes only sense for the server where the manager itself is runnin
@@ -131,6 +140,12 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
                             .iter()
                             .any(|a| a.cmp(&ipaddress) == Ordering::Equal)
                     {
+                        log::info!(
+                            "Trying to discover via socket for server {} {:?}",
+                            ipaddress,
+                            plugin
+                        );
+
                         let input =
                             commands::socket::make_command_input_from_detection(detection_entry)?;
 
@@ -142,15 +157,6 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
                             }
                         }
                     } else {
-                        log::info!(
-                            "Socket Check - not valid for Socket Connection. IP {} is loopback: {} is local IP: {}",
-                            ipaddress,
-                            ipaddress.is_loopback(),
-                            LOCAL_IP_ADDRESSES
-                                .iter()
-                                .any(|a| a.cmp(&ipaddress) == Ordering::Equal)
-                        );
-
                         log::debug!(
                             "Socket connection only available for loopback or local ip address"
                         );
@@ -172,6 +178,13 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
                     }
                 }
             };
+
+            log::info!(
+                "Response from detection: {} {:?} {}",
+                response,
+                plugin,
+                ipaddress
+            );
 
             if check_plugin_match(&response, &plugin).await {
                 log::debug!(
