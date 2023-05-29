@@ -142,12 +142,9 @@ pipeline {
     }
     post{
         always{
-            def jobName = currentBuild.fullDisplayName
-            def jobStatus = currentBuild.currentResult
-
-            emailext body: 'Build executed',
+            emailext body: "Build '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
             recipientProviders: [developers(), requestor()],
-            subject: 'jenkins build ${jobName}: ${jobStatus}',
+            subject: "jenkins build:${currentBuild.currentResult}: ${env.JOB_NAME}",
             to: 'christopher@christopherfuchs.de'
         }
     }

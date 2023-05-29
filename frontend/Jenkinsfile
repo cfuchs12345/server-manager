@@ -77,14 +77,12 @@ pipeline {
 
     post {
         always {
-      archiveArtifacts artifacts: 'target/server-manager-frontent.zip', fingerprint: true
-      def jobName = currentBuild.fullDisplayName
-      def jobStatus = currentBuild.currentResult
+          archiveArtifacts artifacts: 'target/server-manager-frontent.zip', fingerprint: true
 
-      emailext body: 'Build executed',
-            recipientProviders: [developers(), requestor()],
-            subject: 'jenkins build ${jobName}: ${jobStatus}',
-            to: 'christopher@christopherfuchs.de'
+          emailext body: "Build '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
+          recipientProviders: [developers(), requestor()],
+          subject: "jenkins build:${currentBuild.currentResult}: ${env.JOB_NAME}",
+          to: 'christopher@christopherfuchs.de'
         }
     }
 }
