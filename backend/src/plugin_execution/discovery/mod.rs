@@ -28,6 +28,7 @@ use crate::{
 
 lazy_static! {
     static ref SEMAPHORE_AUTO_DISCOVERY: Semaphore = Semaphore::new(1);
+    static ref LOCAL_IP_ADDRESSES: Vec<IpAddr> = get_local_addresses();
 }
 
 pub async fn auto_discover_servers_in_network(
@@ -107,7 +108,6 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
     };
 
     let plugins = crate::datastore::get_all_plugins();
-    let local_ip_addresses = get_local_addresses();
 
     for plugin in plugins {
         if !plugin.detection.detection_possible {
@@ -125,7 +125,7 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
             let response = match plugin.detection.command.as_str() {
                 commands::socket::SOCKET => {
                     // Socket makes only sense for the server where the manager itself is running
-                    if ipaddress.is_loopback() || local_ip_addresses.iter().any(|a| a == &ipaddress)
+                    if ipaddress.is_loopback() || LOCAL_IP_ADDRESSES.iter().any(|a| a == &ipaddress)
                     {
                         let input =
                             commands::socket::make_command_input_from_detection(detection_entry)?;
