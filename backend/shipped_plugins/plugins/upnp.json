@@ -23,11 +23,11 @@
             "command": "http",
             "args": [
                 {
-                    "arg_type": "method",
+                    "name": "method",
                     "value": "get"
                 },
                 {
-                    "arg_type": "url",
+                    "name": "url",
                     "value": "${params.location}"
                 }
             ]

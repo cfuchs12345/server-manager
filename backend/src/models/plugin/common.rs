@@ -2,13 +2,13 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq)]
 pub struct ArgDef {
-    pub arg_type: String,
+    pub name: String,
     pub value: String,
 }
 
 impl PartialEq for ArgDef {
     fn eq(&self, other: &Self) -> bool {
-        self.arg_type == other.arg_type
+        self.name == other.name
     }
 }
 

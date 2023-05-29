@@ -117,7 +117,7 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
         }
 
         'outer: for detection_entry in &plugin.detection.list {
-            let url = detection_entry.args.iter().find(|a| a.arg_type == "url");
+            let url = detection_entry.args.iter().find(|a| a.name == "url");
 
             log::debug!("current entry {:?}", url);
 

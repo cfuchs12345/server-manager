@@ -9,15 +9,15 @@
                 "params": [],
                 "args": [
                     {
-                        "arg_type": "method",
+                        "name": "method",
                         "value": "get"
                     },
                     {
-                        "arg_type": "url",
+                        "name": "url",
                         "value": "/version"
                     },
                     {
-                        "arg_type": "socket",
+                        "name": "socket",
                         "value": "/var/run/docker.sock" 
                     }
                 ]
@@ -43,11 +43,11 @@
             },            
             "args": [
                 {
-                    "arg_type": "method",
+                    "name": "method",
                     "value": "get"
                 },
                 {
-                    "arg_type": "url",
+                    "name": "url",
                     "value": "/containers/json"
                 }
             ]

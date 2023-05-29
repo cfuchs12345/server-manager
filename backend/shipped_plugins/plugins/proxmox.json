@@ -20,11 +20,11 @@
                 ],
                 "args": [
                     {
-                        "arg_type": "method",
+                        "name": "method",
                         "value": "get"
                     },
                     {
-                        "arg_type": "url",
+                        "name": "url",
                         "value": "${params.protocol}://${IP}:${params.port}"
                     }
                 ]
@@ -93,15 +93,15 @@
             "command": "http",
             "args": [
                 {
-                    "arg_type": "method",
+                    "name": "method",
                     "value": "get"
                 },
                 {
-                    "arg_type": "url",
+                    "name": "url",
                     "value": "${params.protocol}://${IP}:${params.port}/api2/json/version"
                 },
                 {
-                    "arg_type": "header",
+                    "name": "header",
                     "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
                 }
             ]
@@ -114,15 +114,15 @@
             "command": "http",
             "args": [
                 {
-                    "arg_type": "method",
+                    "name": "method",
                     "value": "get"
                 },
                 {
-                    "arg_type": "url",
+                    "name": "url",
                     "value": "${params.protocol}://${IP}:${params.port}/api2/json/nodes/"
                 },
                 {
-                    "arg_type": "header",
+                    "name": "header",
                     "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
                 }
             ]
@@ -135,15 +135,15 @@
             "command": "http",
             "args": [
                 {
-                    "arg_type": "method",
+                    "name": "method",
                     "value": "get"
                 },
                 {
-                    "arg_type": "url",
+                    "name": "url",
                     "value": "${params.protocol}://${IP}:${params.port}/api2/json/nodes/${params.nodename}/lxc"
                 },
                 {
-                    "arg_type": "header",
+                    "name": "header",
                     "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
                 }
             ]
@@ -156,15 +156,15 @@
             "command": "http",
             "args": [
                 {
-                    "arg_type": "method",
+                    "name": "method",
                     "value": "get"
                 },
                 {
-                    "arg_type": "url",
+                    "name": "url",
                     "value": "${params.protocol}://${IP}:${params.port}/api2/json/nodes/${params.nodename}/qemu"
                 },
                 {
-                    "arg_type": "header",
+                    "name": "header",
                     "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
                 }
             ]
@@ -176,15 +176,15 @@
             "output": false,
             "args": [
                 {
-                    "arg_type": "method",
+                    "name": "method",
                     "value": "get"
                 },
                 {
-                    "arg_type": "url",
+                    "name": "url",
                     "value": "${params.protocol}://${IP}:${params.port}/api2/json/nodes/${params.nodename}/qemu/${params.vmid}/status/current"
                 },
                 {
-                    "arg_type": "header",
+                    "name": "header",
                     "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
                 }
             ]
@@ -196,15 +196,15 @@
             "output": false,
             "args": [
                 {
-                    "arg_type": "method",
+                    "name": "method",
                     "value": "get"
                 },
                 {
-                    "arg_type": "url",
+                    "name": "url",
                     "value": "${params.protocol}://${IP}:${params.port}/api2/json/nodes/${params.nodename}/lxc/${params.vmid}/status/current"
                 },
                 {
-                    "arg_type": "header",
+                    "name": "header",
                     "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
                 }
             ]
@@ -228,15 +228,15 @@
             "command": "http",
             "args": [
                 {
-                    "arg_type": "method",
+                    "name": "method",
                     "value": "post"
                 },
                 {
-                    "arg_type": "url",
+                    "name": "url",
                     "value": "${params.protocol}://${IP}:${params.port}/api2/json/nodes/${params.nodename}/qemu/${params.vmid}/status/stop"
                 },
                 {
-                    "arg_type": "header",
+                    "name": "header",
                     "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
                 }
             ]
@@ -258,15 +258,15 @@
             "command": "http",
             "args": [
                 {
-                    "arg_type": "method",
+                    "name": "method",
                     "value": "post"
                 },
                 {
-                    "arg_type": "url",
+                    "name": "url",
                     "value": "${params.protocol}://${IP}:${params.port}/api2/json/nodes/${params.nodename}/qemu/${params.vmid}/status/start"
                 },
                 {
-                    "arg_type": "header",
+                    "name": "header",
                     "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
                 }
             ]
@@ -288,15 +288,15 @@
             "command": "http",
             "args": [
                 {
-                    "arg_type": "method",
+                    "name": "method",
                     "value": "post"
                 },
                 {
-                    "arg_type": "url",
+                    "name": "url",
                     "value": "${params.protocol}://${IP}:${params.port}/api2/json/nodes/${params.nodename}/qemu/${params.vmid}/status/reboot"
                 },
                 {
-                    "arg_type": "header",
+                    "name": "header",
                     "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
                 }
             ]
@@ -318,15 +318,15 @@
             "command": "http",
             "args": [
                 {
-                    "arg_type": "method",
+                    "name": "method",
                     "value": "post"
                 },
                 {
-                    "arg_type": "url",
+                    "name": "url",
                     "value": "${params.protocol}://${IP}:${params.port}/api2/json/nodes/${params.nodename}/lxc/${params.vmid}/status/stop"
                 },
                 {
-                    "arg_type": "header",
+                    "name": "header",
                     "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
                 }
             ]
@@ -348,15 +348,15 @@
             "command": "http",
             "args": [
                 {
-                    "arg_type": "method",
+                    "name": "method",
                     "value": "post"
                 },
                 {
-                    "arg_type": "url",
+                    "name": "url",
                     "value": "${params.protocol}://${IP}:${params.port}/api2/json/nodes/${params.nodename}/lxc/${params.vmid}/status/start"
                 },
                 {
-                    "arg_type": "header",
+                    "name": "header",
                     "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
                 }
             ]
@@ -378,15 +378,15 @@
             "command": "http",
             "args": [
                 {
-                    "arg_type": "method",
+                    "name": "method",
                     "value": "post"
                 },
                 {
-                    "arg_type": "url",
+                    "name": "url",
                     "value": "${params.protocol}://${IP}:${params.port}/api2/json/nodes/${params.nodename}/lxc/${params.vmid}/status/reboot"
                 },
                 {
-                    "arg_type": "header",
+                    "name": "header",
                     "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
                 }
             ]

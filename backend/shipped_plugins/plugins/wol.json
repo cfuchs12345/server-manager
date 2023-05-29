@@ -24,7 +24,7 @@
             "command": "wol",
             "args": [
                 {
-                    "arg_type": "mac_address",
+                    "name": "mac_address",
                     "value": "${params.mac_address}"
                 }
             ]

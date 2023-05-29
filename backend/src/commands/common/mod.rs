@@ -10,7 +10,7 @@ pub mod replace;
 pub fn args_to_command_args(vec: &[ArgDef]) -> Vec<CommandArg> {
     vec.iter()
         .map(|a| CommandArg {
-            name: a.arg_type.clone(),
+            name: a.name.clone(),
             value: a.value.clone(),
         })
         .collect()

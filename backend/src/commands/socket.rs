@@ -28,6 +28,8 @@ impl Command for SocketCommand {
     }
 
     async fn execute(&self, input: &CommandInput) -> Result<Box<dyn Any + Sync + Send>, AppError> {
+        log::debug!("input for socket command is {:?}", input);
+
         let url = input.find_single_arg("url")?;
         let method = input.find_single_arg("method")?;
         let headers = input.find_all_args("header")?;

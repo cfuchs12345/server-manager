@@ -2,6 +2,7 @@ use std::{any::Any, net::IpAddr};
 
 use async_trait::async_trait;
 use lazy_static::lazy_static;
+use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
 use crate::models::{error::AppError, server::Credential};
@@ -72,11 +73,13 @@ pub trait Command {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CommandArg {
     name: String,
     value: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Parameters {
     override_params: Vec<CommandArg>,
     params: Vec<CommandArg>,
@@ -105,6 +108,7 @@ impl Parameters {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CommandInput {
     name: String,
     crypto_key: Option<String>,

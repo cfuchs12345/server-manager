@@ -20,11 +20,11 @@
                 ],
                 "args": [
                     {
-                        "arg_type": "method",
+                        "name": "method",
                         "value": "get"
                     },
                     {
-                        "arg_type": "url",
+                        "name": "url",
                         "value": "${params.protocol}://${IP}:${params.port}"
                     }
                 ]
@@ -44,11 +44,11 @@
                 ],
                 "args": [
                     {
-                        "arg_type": "method",
+                        "name": "method",
                         "value": "get"
                     },
                     {
-                        "arg_type": "url",
+                        "name": "url",
                         "value": "${params.protocol}://${IP}:${params.port}"
                     }
                 ]

@@ -20,11 +20,11 @@
                 ],
                 "args": [
                     {
-                        "arg_type": "method",
+                        "name": "method",
                         "value": "get"
                     },
                     {
-                        "arg_type": "url",
+                        "name": "url",
                         "value": "${params.protocol}://${IP}:${params.port}"
                     }
                 ]
@@ -44,11 +44,11 @@
                 ],
                 "args": [
                     {
-                        "arg_type": "method",
+                        "name": "method",
                         "value": "get"
                     },
                     {
-                        "arg_type": "url",
+                        "name": "url",
                         "value": "${params.protocol}://${IP}:${params.port}"
                     }
                 ]
@@ -83,15 +83,15 @@
             "command": "http",
             "args": [
                 {
-                    "arg_type": "method",
+                    "name": "method",
                     "value": "get"
                 },
                 {
-                    "arg_type": "url",
+                    "name": "url",
                     "value": "${params.protocol}://${IP}:${params.port}/api/core/firmware/running"
                 },
                 {
-                    "arg_type": "header",
+                    "name": "header",
                     "value": "Authorization=Basic ${encode_base64(${credentials.key}:${credentials.secret})}"
                 }
             ]
@@ -104,15 +104,15 @@
             "command": "http",
             "args": [
                 {
-                    "arg_type": "method",
+                    "name": "method",
                     "value": "get"
                 },
                 {
-                    "arg_type": "url",
+                    "name": "url",
                     "value": "${params.protocol}://${IP}:${params.port}/api/core/firmware/status"
                 },
                 {
-                    "arg_type": "header",
+                    "name": "header",
                     "value": "Authorization=Basic ${encode_base64(${credentials.key}:${credentials.secret})}"
                 }
             ]
@@ -125,15 +125,15 @@
             "command": "http",
             "args": [
                 {
-                    "arg_type": "method",
+                    "name": "method",
                     "value": "get"
                 },
                 {
-                    "arg_type": "url",
+                    "name": "url",
                     "value": "${params.protocol}://${IP}:${params.port}/api/diagnostics/systemhealth/getInterfaces"
                 },
                 {
-                    "arg_type": "header",
+                    "name": "header",
                     "value": "Authorization=Basic ${encode_base64(${credentials.key}:${credentials.secret})}"
                 }
             ]
