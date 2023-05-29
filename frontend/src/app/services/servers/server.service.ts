@@ -78,15 +78,11 @@ export class ServerService {
         })
         .subscribe({
           next: (res) => {
-            this.dataStore.servers.push(server);
           },
           error: (err: any) => {
             this.errorService.newError("Server-Service", server.ipaddress, err.message);
           },
           complete: () => {
-            if ( i === servers.length -1) {
-              setTimeout(this.publishServers, 0);
-            }
           },
         });
     }

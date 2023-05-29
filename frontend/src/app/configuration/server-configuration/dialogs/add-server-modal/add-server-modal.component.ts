@@ -81,7 +81,7 @@ export class AddServerModalComponent implements OnInit {
   saveServer = () => {
     if (this.ipaddress.value && this.name.value) {
       this.serverService.saveServers([
-        new Server(this.ipaddress.value, this.name.value),
+        new Server(this.ipaddress.value, this.name.value)
       ]);
       this.serverService.listServers(); // this refreshes also the server list on the main screen
     }
