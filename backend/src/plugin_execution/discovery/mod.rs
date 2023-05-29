@@ -4,6 +4,7 @@ use ipnet::Ipv4Net;
 use lazy_static::lazy_static;
 use log::error;
 
+use local_ip_address::list_afinet_netifas;
 use std::{
     net::{IpAddr, SocketAddr},
     vec,
@@ -122,7 +123,8 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
 
             let response = match plugin.detection.command.as_str() {
                 commands::socket::SOCKET => {
-                    if ipaddress.is_loopback() {
+                    // Socket makes only sense for the server where the manager itself is running
+                    if ipaddress.is_loopback() || is_local_address(&ipaddress) {
                         let input =
                             commands::socket::make_command_input_from_detection(detection_entry)?;
 
@@ -134,7 +136,9 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
                             }
                         }
                     } else {
-                        log::debug!("Socket connection only available for loopback ip address");
+                        log::debug!(
+                            "Socket connection only available for loopback or local ip address"
+                        );
                         "".to_string()
                     }
                 }
@@ -178,6 +182,23 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
     }
 
     Ok(features_of_server)
+}
+
+fn is_local_address(ipaddress: &IpAddr) -> bool {
+    let network_interfaces = list_afinet_netifas();
+
+    if let Ok(network_interfaces) = network_interfaces {
+        for (name, ip) in network_interfaces.iter() {
+            log::info!("Checking local ip address {} {}", name, ip);
+            if ip == ipaddress {
+                log::info!("Got match for local ip address {}", ip);
+                return true;
+            }
+        }
+    } else {
+        log::error!("Error getting network interfaces: {:?}", network_interfaces);
+    }
+    false
 }
 
 async fn auto_discover_servers(

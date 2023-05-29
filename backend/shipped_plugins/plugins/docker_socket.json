@@ -39,7 +39,7 @@
             "command": "socket",
             "post_process": {
                 "script_type": "lua",
-                "script": "'\"data\": ' .. string.gsub(string.sub(input,string.find(input, '%[')-1, string.find(input, '%][^%]]*$')+1 ), '%s+', '')"
+                "script": "'{\"data\": ' .. string.sub(input,string.find(input, '%['), string.find(input, '%][^%]]*$') ) .. '}'"
             },            
             "args": [
                 {
