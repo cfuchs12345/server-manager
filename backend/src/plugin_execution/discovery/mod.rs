@@ -107,6 +107,7 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
     };
 
     let plugins = crate::datastore::get_all_plugins();
+    let local_ip_addresses = get_local_addresses();
 
     for plugin in plugins {
         if !plugin.detection.detection_possible {
@@ -124,7 +125,8 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
             let response = match plugin.detection.command.as_str() {
                 commands::socket::SOCKET => {
                     // Socket makes only sense for the server where the manager itself is running
-                    if ipaddress.is_loopback() || is_local_address(&ipaddress) {
+                    if ipaddress.is_loopback() || local_ip_addresses.iter().any(|a| a == &ipaddress)
+                    {
                         let input =
                             commands::socket::make_command_input_from_detection(detection_entry)?;
 
@@ -184,21 +186,17 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
     Ok(features_of_server)
 }
 
-fn is_local_address(ipaddress: &IpAddr) -> bool {
+fn get_local_addresses() -> Vec<IpAddr> {
     let network_interfaces = list_afinet_netifas();
+    let mut vec = Vec::new();
 
     if let Ok(network_interfaces) = network_interfaces {
-        for (name, ip) in network_interfaces.iter() {
-            log::info!("Checking local ip address {} {}", name, ip);
-            if ip == ipaddress {
-                log::info!("Got match for local ip address {}", ip);
-                return true;
-            }
+        for (_name, ip) in network_interfaces.iter() {
+            vec.push(ip.to_owned());
         }
-    } else {
-        log::error!("Error getting network interfaces: {:?}", network_interfaces);
     }
-    false
+    log::info!("Local Ip addreses: {:?}", vec);
+    vec
 }
 
 async fn auto_discover_servers(
