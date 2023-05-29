@@ -32,7 +32,10 @@ fn create_data_input_structure(data: &Data, input: String) -> Result<Value, AppE
                 data: input
             }))
         }
-        ResultFormat::JSON => serde_json::from_str(input.as_str()).map_err(AppError::from),
+        ResultFormat::JSON => serde_json::from_str(input.as_str()).map_err(|e| {
+            log::error!("Error while parsing JSON {}: {}", input, e);
+            AppError::from(e)
+        }),
     }
 }
 
@@ -42,6 +45,7 @@ fn format_data_with_template_engine(
     template: &str,
 ) -> Result<String, AppError> {
     if data_value.is_array() && data_value.as_array().unwrap().is_empty() {
+        log::warn!("{:?} is an array, but it is empty", data_value);
         return Ok("".to_string()); // no data input - return empty string
     }
     log::debug!("Putting data into context: {:?}", data_value);
