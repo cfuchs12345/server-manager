@@ -6,6 +6,7 @@ use log::error;
 
 use local_ip_address::list_afinet_netifas;
 use std::{
+    cmp::Ordering,
     net::{IpAddr, SocketAddr},
     vec,
 };
@@ -124,8 +125,11 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
 
             let response = match plugin.detection.command.as_str() {
                 commands::socket::SOCKET => {
-                    // Socket makes only sense for the server where the manager itself is running
-                    if ipaddress.is_loopback() || LOCAL_IP_ADDRESSES.iter().any(|a| a == &ipaddress)
+                    // Socket makes only sense for the server where the manager itself is runnin
+                    if ipaddress.is_loopback()
+                        || LOCAL_IP_ADDRESSES
+                            .iter()
+                            .any(|a| a.cmp(&ipaddress) == Ordering::Equal)
                     {
                         let input =
                             commands::socket::make_command_input_from_detection(detection_entry)?;
@@ -138,6 +142,15 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
                             }
                         }
                     } else {
+                        log::info!(
+                            "Socket Check - not valid for Socket Connection. IP {} is loopback: {} is local IP: {}",
+                            ipaddress,
+                            ipaddress.is_loopback(),
+                            LOCAL_IP_ADDRESSES
+                                .iter()
+                                .any(|a| a.cmp(&ipaddress) == Ordering::Equal)
+                        );
+
                         log::debug!(
                             "Socket connection only available for loopback or local ip address"
                         );
