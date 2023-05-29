@@ -59,20 +59,30 @@ async fn load_all() -> Result<Vec<Plugin>, AppError> {
 
     let plugin_file_names = get_all_plugin_filenames(plugin_base_path.as_str())?;
 
-    let plugins: Vec<Plugin> = join_all(plugin_file_names.iter().map(|plugin_file_name| async {
-        let plugin = load_plugin(plugin_base_path.as_str(), plugin_file_name)
-            .await
-            .unwrap();
+    let plugins: Vec<Option<Plugin>> =
+        join_all(plugin_file_names.iter().map(|plugin_file_name| async {
+            match load_plugin(plugin_base_path.as_str(), plugin_file_name).await {
+                Ok(plugin) => {
+                    PLUGIN_NAME_TO_FILENAME
+                        .lock()
+                        .await
+                        .insert(plugin.id.clone(), plugin_file_name.to_owned());
 
-        PLUGIN_NAME_TO_FILENAME
-            .lock()
-            .await
-            .insert(plugin.id.clone(), plugin_file_name.to_owned());
-        plugin
-    }))
-    .await;
+                    Some(plugin)
+                }
+                Err(err) => {
+                    log::error!(
+                        "Could not load plugin from file {}. Error was: {}",
+                        plugin_file_name.clone(),
+                        err
+                    );
+                    None
+                }
+            }
+        }))
+        .await;
 
-    Ok(plugins)
+    Ok(plugins.iter().flat_map(|p| p.to_owned()).collect())
 }
 
 pub async fn load_plugin(
