@@ -133,7 +133,7 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
                         match commands::execute::<SocketCommandResult>(input, true).await {
                             Ok(result) => result.get_response(),
                             Err(err) => {
-                                log::info!("Error during discoverty call: {}", err);
+                                err.log();
                                 "".to_string()
                             }
                         }
@@ -153,14 +153,7 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
                     match commands::execute::<HttpCommandResult>(input, true).await {
                         Ok(result) => result.get_response(),
                         Err(err) => {
-                            match err {
-                                AppError::Suppressed(err) => {
-                                    log::debug!("Error during discoverty call: {}", err);
-                                }
-                                y => {
-                                    log::info!("Error during discoverty call: {}", y);
-                                }
-                            }
+                            err.log();
                             "".to_string()
                         }
                     }

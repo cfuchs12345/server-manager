@@ -5,6 +5,15 @@ use std::str::ParseBoolError;
 use std::{fmt::Display, net::AddrParseError, num::ParseIntError};
 use surge_ping::SurgeError;
 
+#[allow(dead_code)]
+enum Level {
+    Debug,
+    Info,
+    Warn,
+    Error,
+}
+
+#[allow(dead_code)]
 #[derive(Debug)]
 pub enum AppError {
     ServerNotFound(String),
@@ -15,7 +24,6 @@ pub enum AppError {
     CommandNotFound(String),
     UnknownPlugin(String),
     UnknownPluginAction(String, String),
-    #[allow(dead_code)]
     UnknownPluginData(String, String),
     Unknown(String),
     DataNotFound(String),
@@ -87,6 +95,24 @@ impl Display for AppError {
             ),
             AppError::Suppressed(err) => write!(f, "Explicitly suppressed error {}", err),
             AppError::ScriptError(err) => write!(f, "Error during script execution {}", err),
+        }
+    }
+}
+
+impl AppError {
+    fn get_level(&self) -> Level {
+        match self {
+            AppError::Suppressed(_err) => Level::Debug,
+            _ => Level::Error,
+        }
+    }
+
+    pub fn log(&self) {
+        match self.get_level() {
+            Level::Debug => log::debug!("{}", &self),
+            Level::Info => log::info!("{}", &self),
+            Level::Warn => log::warn!("{}", &self),
+            Level::Error => log::error!("{}", &self),
         }
     }
 }
