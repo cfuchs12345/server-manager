@@ -144,7 +144,7 @@ pipeline {
         always{
             emailext body: 'Build executed',
             recipientProviders: [developers(), requestor()],
-            subject: 'jenkins build ${JOB_DESCRIPTION}: ${BUILD_STATUS}',
+            subject: 'jenkins build ${env.JOB_NAME}: ${BUILD_STATUS}',
             to: 'christopher@christopherfuchs.de'
         }
     }
