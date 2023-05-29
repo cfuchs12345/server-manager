@@ -195,7 +195,7 @@ fn get_local_addresses() -> Vec<IpAddr> {
             vec.push(ip.to_owned());
         }
     }
-    log::info!("Local Ip addreses: {:?}", vec);
+    log::info!("Local IP addresses: {:?}", vec);
     vec
 }
 
