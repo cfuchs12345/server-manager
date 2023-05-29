@@ -88,7 +88,7 @@ impl Command for HttpCommand {
         );
             return Err(AppError::InvalidArgument("url".to_string(), None));
         }
-        log::info!(
+        log::debug!(
             "{} {} {}",
             normal_and_masked_url.0,
             method,
