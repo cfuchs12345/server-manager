@@ -33,9 +33,13 @@ impl Command for SocketCommand {
         let url = input.find_single_arg("url")?;
         let method = input.find_single_arg("method")?;
         let headers = input.find_all_args("header")?;
-        let socket = input
-            .find_single_arg("socket")
-            .unwrap_or(input.find_param("socket")?);
+        let socket = match input.find_single_arg(SOCKET) {
+            Ok(arg) => arg,
+            Err(_err) => {
+                log::warn!("no arg \"socket\" found. Trying param \"socket\" now");
+                input.find_param(SOCKET)?
+            }
+        };
 
         let body: &str = match method {
             "post" => input.find_single_arg("body").unwrap_or({
