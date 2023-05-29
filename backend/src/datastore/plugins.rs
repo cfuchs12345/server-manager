@@ -26,8 +26,12 @@ pub fn get_all_plugin_filenames(plugin_base_path: &str) -> Result<Vec<String>, A
 
     for path in paths {
         let os_string = path?.file_name();
-        let file_name = os_string.to_str().unwrap();
-        plugin_file_names.push(file_name.to_string());
+
+        if let Some(file_name) = os_string.to_str() {
+            if file_name.ends_with(".json") {
+                plugin_file_names.push(file_name.to_string());
+            }
+        }
     }
     Ok(plugin_file_names)
 }
@@ -55,7 +59,7 @@ async fn load_all() -> Result<Vec<Plugin>, AppError> {
     datastore::clean_plugin_cache();
     let plugin_base_path = datastore::get_config()
         .get_string("plugin_base_path")
-        .unwrap();
+        .map_err(|err| AppError::Unknown(format!("{}", err)))?;
 
     let plugin_file_names = get_all_plugin_filenames(plugin_base_path.as_str())?;
 
