@@ -1,4 +1,4 @@
-use std::net::IpAddr;
+use std::{net::IpAddr, time::SystemTime};
 
 use futures::future::join_all;
 use lazy_static::lazy_static;
@@ -6,7 +6,7 @@ use tokio::sync::Semaphore;
 
 use crate::{
     commands::{self, ping::PingCommandResult},
-    datastore,
+    datastore::{self, TimeSeriesData, TimeSeriesPersistence, Timestamp, Value},
     models::{error::AppError, response::status::Status},
 };
 
@@ -44,10 +44,40 @@ pub async fn status_check_all() -> Result<(), AppError> {
 
     log::debug!("inserting {} status into cache", results_from_query.len());
 
-    datastore::cache_status(results_from_query);
+    datastore::cache_status(&results_from_query);
+
+    let data = time_series_data_collection(results_from_query);
+
+    datastore::save_timeseries_data(
+        &mut TimeSeriesPersistence::new().await,
+        "server_status",
+        data,
+    )
+    .await?;
 
     drop(permit);
     Ok(())
+}
+
+fn time_series_data_collection(status: Vec<Status>) -> Vec<TimeSeriesData> {
+    let now = SystemTime::now();
+
+    status
+        .iter()
+        .map(|s| TimeSeriesData {
+            timestamp: Timestamp::SysTime(now),
+            identifier: Value::Symbol("IP".to_owned(), format!("{}", s.ipaddress)),
+            sub_identifier: None,
+            value: Value::Int("running".to_owned(), bool_to_int(s.is_running)),
+        })
+        .collect()
+}
+
+fn bool_to_int(val: bool) -> i64 {
+    match val {
+        true => 1,
+        false => 0,
+    }
 }
 
 pub async fn status_check(

@@ -4,11 +4,11 @@ use lazy_static::lazy_static;
 use regex::Regex;
 
 use crate::{
-    commands::{self, http::HttpCommandResult, socket::SocketCommandResult},
-    common, datastore,
+    commands::{self, http::HttpCommandResult, replace, socket::SocketCommandResult},
+    datastore::{self},
     models::{
         error::AppError,
-        plugin::{common::Script, data::Data, sub_action::SubAction, Plugin},
+        plugin::{data::Data, sub_action::SubAction, Plugin},
         response::data_result::DataResult,
         server::{Feature, Server},
     },
@@ -52,6 +52,7 @@ pub async fn execute_data_query(
                 );
                 continue;
             }
+
             let data_response = execute_specific_data_query(
                 server,
                 &plugin,
@@ -63,30 +64,27 @@ pub async fn execute_data_query(
             .await?;
 
             if let Some(response) = data_response {
-                let result = if !data.template.is_empty() {
-                    // convert the output with the template
-                    conversion::convert_result_string_to_html(
-                        data.template.as_str(),
-                        response,
-                        template_engine,
-                        data,
-                    )?
-                } else {
-                    // no template - just append
-                    response
-                };
+                let input = commands::http::make_command_input_from_data(
+                    server,
+                    crypto_key.as_str(),
+                    data,
+                    None,
+                    feature,
+                    &plugin,
+                )?;
+                let enriched_result =
+                    process_result_for_display(data, &response, template_engine, feature)?;
 
-                let enriched_result = inject_meta_data_for_actions(result, feature, data);
+                let replaced = replace(enriched_result.as_str(), &input)?.1; // use second part of tuple - we don't want show passwords in the ouput if someone adds credentials placeholders in the template
 
-                let actions = extract_actions(&enriched_result);
-
+                let actions = extract_actions(&replaced);
                 let check_results =
                     actions::check_action_conditions(server.clone(), actions, crypto_key.clone())
                         .await;
 
                 results.push(DataResult {
                     ipaddress: server.ipaddress,
-                    result: enriched_result,
+                    result: replaced,
                     check_results,
                 });
             }
@@ -94,6 +92,28 @@ pub async fn execute_data_query(
     }
 
     Ok(results)
+}
+
+fn process_result_for_display(
+    data: &Data,
+    response: &str,
+    template_engine: &handlebars::Handlebars<'static>,
+    feature: &Feature,
+) -> Result<String, AppError> {
+    let result = if !data.template.is_empty() {
+        // convert the output with the template
+        conversion::convert_result_string_to_html(
+            data.template.as_str(),
+            response.to_owned(),
+            template_engine,
+            data,
+        )?
+    } else {
+        // no template - just append
+        response.to_owned()
+    };
+    let enriched_result = inject_meta_data_for_actions(result, feature, data);
+    Ok(enriched_result)
 }
 
 /// Executes a specific data query on the given server for a given data point config of a plugin
@@ -141,28 +161,12 @@ pub async fn execute_specific_data_query(
     };
 
     if let Some(script) = &data.post_process {
-        log::info!("before post process: {}", response);
-        response = post_process(response.as_str(), script)?;
-        log::info!("after post process: {}", response);
+        log::trace!("before post process: {}", response);
+        response = super::pre_or_post_process(response.as_str(), script)?;
+        log::trace!("after post process: {}", response);
     }
 
     Ok(Some(response))
-}
-
-fn post_process(response: &str, script: &Script) -> Result<String, AppError> {
-    let is_lua = matches!(script.script_type.as_str(), "lua");
-    let is_rhai = matches!(script.script_type.as_str(), "rhai");
-
-    if is_lua {
-        common::process_with_lua(response, &script.script)
-    } else if is_rhai {
-        common::process_with_rhai(response, &script.script)
-    } else {
-        Err(AppError::InvalidArgument(
-            "script".to_string(),
-            Some(script.script_type.clone()),
-        ))
-    }
 }
 
 fn extract_actions(input: &str) -> Vec<SubAction> {

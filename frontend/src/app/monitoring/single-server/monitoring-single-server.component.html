@@ -1,0 +1,12 @@
+
+<div class="container">
+  <div *ngFor="let series_id of series_id_list">
+    <div class="chartwrapper" *ngIf="isLineChart(series_id)">
+      <app-line-chart [chartDataList]="chartDataList" [series_id]="series_id"/>
+    </div>
+    <div class="chartwrapper" *ngIf="isBarChart(series_id)">
+      <app-bar-chart [chartDataList]="chartDataList" [series_id]="series_id"/>
+    </div>
+  </div>
+</div>
+

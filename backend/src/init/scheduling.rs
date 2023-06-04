@@ -10,6 +10,7 @@ pub async fn start_scheduled_jobs() {
     schedule_condition_checks(&scheduler).await;
     schedule_token_cleanup(&scheduler).await;
     schedule_one_time_crypt_key_cleanup(&scheduler).await;
+    schedule_monitoring(&scheduler).await;
 
     match scheduler.start().await {
         Ok(_res) => log::debug!("Schedulder started"),
@@ -39,6 +40,22 @@ async fn schedule_status_check(scheduler: &JobScheduler) {
                     other_functions::statuscheck::status_check_all()
                         .await
                         .expect("Error during scheduled status check");
+                })
+            })
+            .unwrap(),
+        )
+        .await
+        .unwrap();
+}
+
+async fn schedule_monitoring(scheduler: &JobScheduler) {
+    scheduler
+        .add(
+            Job::new_async("1/5 * * * * *", |_uuid, _l| {
+                Box::pin(async {
+                    crate::plugin_execution::monitor_all()
+                        .await
+                        .expect("Error during scheduled monitoring");
                 })
             })
             .unwrap(),

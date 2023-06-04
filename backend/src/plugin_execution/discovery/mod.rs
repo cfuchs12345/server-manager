@@ -140,7 +140,7 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
                             .iter()
                             .any(|a| a.cmp(&ipaddress) == Ordering::Equal)
                     {
-                        log::info!(
+                        log::debug!(
                             "Trying to discover via socket for server {} {:?}",
                             ipaddress,
                             plugin
@@ -179,7 +179,7 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
                 }
             };
 
-            log::info!(
+            log::debug!(
                 "Response from detection: {} {:?} {}",
                 response,
                 plugin,
@@ -221,7 +221,7 @@ fn get_local_addresses() -> Vec<IpAddr> {
             vec.push(ip.to_owned());
         }
     }
-    log::info!("Local IP addresses: {:?}", vec);
+    log::debug!("Local IP addresses: {:?}", vec);
     vec
 }
 

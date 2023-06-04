@@ -37,6 +37,7 @@ pub enum AppError {
     EmailConfigError(String),
     Suppressed(String),
     ScriptError(String),
+    NokOKResponse(StatusCode, String),
 }
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
@@ -95,6 +96,11 @@ impl Display for AppError {
             ),
             AppError::Suppressed(err) => write!(f, "Explicitly suppressed error {}", err),
             AppError::ScriptError(err) => write!(f, "Error during script execution {}", err),
+            AppError::NokOKResponse(statuscode, response) => write!(
+                f,
+                "Response was no OK or ACCEPTED but {} and response {}",
+                statuscode, response
+            ),
         }
     }
 }

@@ -1,56 +1,66 @@
-mod persistence;
 mod config;
 mod inmemory;
-mod servers;
-mod plugins;
-mod users;
 mod model;
+mod persistence;
+mod plugins;
+mod servers;
+mod timeseries_persistence;
+mod users;
 
-pub use persistence::Persistence;
-pub use model::Entry;
 pub use model::migration::Migration;
+pub use model::Entry;
+pub use persistence::Persistence;
+pub use timeseries_persistence::TimeSeriesPersistence;
 
-pub use crate::datastore::config::load_all_dnsservers;
-pub use crate::datastore::config::insert_dnsserver;
-pub use crate::datastore::config::delete_dnsserver;
-pub use crate::datastore::config::insert_new_encryption_key;
+pub use self::config::delete_dnsserver;
+pub use self::config::insert_dnsserver;
+pub use self::config::insert_new_encryption_key;
+pub use self::config::load_all_dnsservers;
 
-pub use crate::datastore::plugins::is_plugin_disabled;
-pub use crate::datastore::plugins::get_disabled_plugins;
-pub use crate::datastore::plugins::disable_plugins;
-pub use crate::datastore::plugins::load_plugin;
+pub use self::plugins::disable_plugins;
+pub use self::plugins::get_disabled_plugins;
+pub use self::plugins::is_plugin_disabled;
+pub use self::plugins::load_plugin;
 
-pub use crate::datastore::servers::load_all_servers;
-pub use crate::datastore::servers::get_server;
-pub use crate::datastore::servers::insert_server;
-pub use crate::datastore::servers::delete_server;
-pub use crate::datastore::servers::update_server;
+pub use self::servers::delete_server;
+pub use self::servers::get_server;
+pub use self::servers::insert_server;
+pub use self::servers::load_all_servers;
+pub use self::servers::update_server;
 
-pub use crate::datastore::users::insert_user;
-pub use crate::datastore::users::update_user;
-pub use crate::datastore::users::delete_user;
-pub use crate::datastore::users::load_all_users;
-pub use crate::datastore::users::get_user;
+pub use self::users::delete_user;
+pub use self::users::get_user;
+pub use self::users::insert_user;
+pub use self::users::load_all_users;
+pub use self::users::update_user;
 
-pub use crate::datastore::inmemory::is_valid_token;
-pub use crate::datastore::inmemory::insert_token;
-pub use crate::datastore::inmemory::delete_expired_tokens;
+pub use self::inmemory::delete_expired_tokens;
+pub use self::inmemory::insert_token;
+pub use self::inmemory::is_valid_token;
 
-pub use crate::datastore::inmemory::get_all_plugins;
-pub use crate::datastore::inmemory::get_all_servers;
-pub use crate::datastore::inmemory::get_all_condition_results;
-pub use crate::datastore::inmemory::insert_condition_result;
-pub use crate::datastore::inmemory::cache_status;
-pub use crate::datastore::inmemory::cache_plugins;
-pub use crate::datastore::inmemory::cache_servers;
-pub use crate::datastore::inmemory::get_config;
-pub use crate::datastore::inmemory::get_plugin;
-pub use crate::datastore::inmemory::set_config;
-pub use crate::datastore::inmemory::get_crypto_key;
-pub use crate::datastore::inmemory::set_crypto_key;
-pub use crate::datastore::inmemory::get_all_plugins_map;
-pub use crate::datastore::inmemory::get_status;
-pub use crate::datastore::inmemory::clean_plugin_cache;
+pub use self::inmemory::cache_plugins;
+pub use self::inmemory::cache_servers;
+pub use self::inmemory::cache_status;
+pub use self::inmemory::clean_plugin_cache;
+pub use self::inmemory::get_all_condition_results;
+pub use self::inmemory::get_all_plugins;
+pub use self::inmemory::get_all_plugins_map;
+pub use self::inmemory::get_all_servers;
+pub use self::inmemory::get_config;
+pub use self::inmemory::get_crypto_key;
+pub use self::inmemory::get_monitoring_config_for_series;
+pub use self::inmemory::get_plugin;
+pub use self::inmemory::get_status;
+pub use self::inmemory::insert_condition_result;
+pub use self::inmemory::set_config;
+pub use self::inmemory::set_crypto_key;
+
+use crate::models::error::AppError;
+
+pub use self::timeseries_persistence::QuestDBConfig;
+pub use self::timeseries_persistence::TimeSeriesData;
+pub use self::timeseries_persistence::Timestamp;
+pub use self::timeseries_persistence::Value;
 
 pub fn init_cache() {
     if let Ok(number) = plugins::init_cache() {
@@ -62,4 +72,10 @@ pub fn update_cache() {
     plugins::init_cache_silent();
 }
 
-
+pub async fn save_timeseries_data(
+    timeseries_persistence: &mut TimeSeriesPersistence,
+    series_id: &str,
+    data_vec: Vec<TimeSeriesData>,
+) -> Result<(), AppError> {
+    timeseries_persistence.save(series_id, data_vec).await
+}

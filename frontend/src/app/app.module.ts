@@ -49,10 +49,12 @@ import { ConfigureDNSDialog } from './configuration/general-configuration/dialog
 import { ConfigureUsersDialog } from './configuration/general-configuration/dialogs/dialog-configure-users';
 import { ChangePasswordDialog } from './configuration/general-configuration/dialogs/dialog-change-password'
 import { ConfigureFeaturesDialog } from './configuration/server-configuration/dialogs/dialog-configure-features';
-import { ConfirmDialogComponent } from './ui/confirm-dialog/confirm-dialog.component';
 import { ConfigureFeaturesModalComponent } from './configuration/server-configuration/dialogs/configure-features-modal/configure-features-modal.component';
 import { ChangePasswordModalComponent } from './configuration/general-configuration/dialogs/change-password-modal/change-password-modal.component';
+import { ConfirmDialogComponent } from './ui/confirm-dialog/confirm-dialog.component';
 import { MessageDialogComponent } from './ui/message_dialog/message-dialog.component';
+import { LineChartComponent } from './ui/line-chart/line-chart.component';
+import { BarChartComponent } from './ui/bar-chart/bar-chart.component';
 import { DeleteServerModalComponent } from './configuration/server-configuration/dialogs/delete-server-modal/delete-server-modal.component';
 import { ErrorsListComponent } from './errors/errors-list/errors-list.component';
 import { ErrorComponent } from './errors/error/error.component';
@@ -69,6 +71,7 @@ import { RegisterComponent } from './register/register.component';
 import { TokenInterceptor } from './auth/token.interceptor';
 import { ErrorInterceptor } from './auth/error.interceptor';
 import { NgApexchartsModule } from 'ng-apexcharts';
+import { MonitoringSingleServerComponent } from './monitoring/single-server/monitoring-single-server.component'
 
 @NgModule({
   declarations: [
@@ -120,6 +123,9 @@ import { NgApexchartsModule } from 'ng-apexcharts';
     MainComponent,
     LoginComponent,
     RegisterComponent,
+    LineChartComponent,
+    BarChartComponent,
+    MonitoringSingleServerComponent
   ],
   imports: [
     AppRoutingModule,

@@ -1,4 +1,5 @@
 use std::net::IpAddr;
+use std::vec;
 
 use crate::common::OneTimeKey;
 use crate::models::config::dns_server::DNSServer;
@@ -611,6 +612,70 @@ pub async fn authenticate(data: web::Data<AppData>, req: HttpRequest) -> HttpRes
         }
     }
     HttpResponse::Unauthorized().finish()
+}
+
+#[get("monitoring/ids")]
+async fn get_monitoring_ids(
+    data: web::Data<AppData>,
+    query: web::Query<std::collections::HashMap<String, String>>,
+) -> HttpResponse {
+    let Some(ipaddress_param) = query.get("ipaddress") else {
+        return HttpResponse::InternalServerError().finish();
+    };
+    let Ok(ipaddress) = ipaddress_param.parse::<IpAddr>() else {
+        return HttpResponse::InternalServerError().finish();
+    };
+    let Ok(server) = datastore::get_server(&data.app_data_persistence, &ipaddress).await else {
+        return HttpResponse::InternalServerError().finish();
+    };
+
+    let mut names: Vec<String> = Vec::new();
+
+    for feature in &server.features {
+        if let Some(plugin) = datastore::get_plugin(feature.id.as_str()) {
+            let mut plugin_monitoring_ids: Vec<String> = plugin
+                .data
+                .iter()
+                .flat_map(|d| d.monitoring.to_owned())
+                .map(|m| m.id)
+                .collect();
+
+            names.append(&mut plugin_monitoring_ids);
+        }
+    }
+
+    names.push("server_status".to_owned());
+
+    HttpResponse::Ok().json(names)
+}
+
+#[get("monitoring/data")]
+async fn get_monitoring_data(
+    _data: web::Data<AppData>,
+    query: web::Query<std::collections::HashMap<String, String>>,
+) -> HttpResponse {
+    //nm=true
+    //query=SELECT timestamp, tempF FROM weather LIMIT 2;
+
+    let Some(ipaddress_param) = query.get("ipaddress") else {
+        return HttpResponse::InternalServerError().finish();
+    };
+
+    let Some(series_id) = query.get("series_id") else {
+        return HttpResponse::InternalServerError().finish();
+    };
+
+    let Ok(ipaddress) = ipaddress_param.parse::<IpAddr>() else {
+        return HttpResponse::InternalServerError().finish();
+    };
+
+    match plugin_execution::get_monitoring_data(series_id, ipaddress).await {
+        Ok(data_response) => HttpResponse::Ok().json(data_response),
+        Err(err) => {
+            log::error!("Error while getting monitoring data: {}", err);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
 }
 
 fn get_existing_otk(header_value: &HeaderValue) -> Result<(NaiveDateTime, String), AppError> {

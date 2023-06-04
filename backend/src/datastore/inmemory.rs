@@ -1,20 +1,28 @@
 use config::Config;
 use lazy_static::lazy_static;
-use std::{collections::HashMap, sync::RwLock, net::IpAddr};
+use std::{collections::HashMap, net::IpAddr, sync::RwLock};
 
-use crate::{models::{plugin::Plugin, server::Server}, models::response::{status::Status, data_result::ConditionCheckResult}};
+use crate::{
+    models::response::{data_result::ConditionCheckResult, status::Status},
+    models::{
+        plugin::{data::Monitioring, Plugin},
+        server::Server,
+    },
+};
 
 use crate::models::token::TokenInfo;
 
-
 struct ConfigHolder {
     config: Option<Config>,
-    crypto_key: Option<String>
+    crypto_key: Option<String>,
 }
 
 impl ConfigHolder {
     pub fn new() -> ConfigHolder {
-        ConfigHolder { config: None, crypto_key: None }
+        ConfigHolder {
+            config: None,
+            crypto_key: None,
+        }
     }
 }
 
@@ -24,7 +32,10 @@ lazy_static! {
     static ref PLUGIN_CACHE: RwLock<HashMap<String, Plugin>> = RwLock::new(HashMap::new());
     static ref SERVER_CACHE: RwLock<HashMap<IpAddr, Server>> = RwLock::new(HashMap::new());
     static ref SERVER_STATUS_CACHE: RwLock<HashMap<IpAddr, Status>> = RwLock::new(HashMap::new());
-    static ref SERVER_ACTION_CONDITION_RESULTS: RwLock<HashMap<String, ConditionCheckResult>> = RwLock::new(HashMap::new());
+    static ref SERVER_ACTION_CONDITION_RESULTS: RwLock<HashMap<String, ConditionCheckResult>> =
+        RwLock::new(HashMap::new());
+    static ref SERIES_TO_MONITORING: RwLock<HashMap<String, Monitioring>> =
+        RwLock::new(HashMap::new());
 }
 
 pub fn set_config(config: Config) {
@@ -52,23 +63,29 @@ pub fn get_config() -> Config {
 
 pub fn cache_plugins(plugins: Vec<Plugin>) {
     let mut cache_rw = PLUGIN_CACHE.try_write().unwrap();
+    let mut series_to_mon_cache_rw = SERIES_TO_MONITORING.try_write().unwrap();
+
     let mut to_remove: Vec<String> = Vec::new();
-    
+
     for plugin_in_cache in cache_rw.values() {
         if !plugins.iter().any(|p| p.id == plugin_in_cache.id) {
-        to_remove.push(plugin_in_cache.id.clone());
+            to_remove.push(plugin_in_cache.id.clone());
         }
     }
-        
+
     for plugin in &plugins {
         cache_rw.insert(plugin.id.clone(), plugin.clone());
+
+        plugin.data.iter().for_each(|d| {
+            d.monitoring.iter().for_each(|m| {
+                series_to_mon_cache_rw.insert(m.id.to_owned(), m.clone());
+            })
+        })
     }
     for id_to_remove in to_remove {
         cache_rw.remove(id_to_remove.as_str());
     }
 }
-
-
 
 pub fn get_all_plugins() -> Vec<Plugin> {
     let cache = PLUGIN_CACHE.try_read().unwrap();
@@ -103,7 +120,7 @@ pub fn cache_servers(servers: Vec<Server>) {
     }
 }
 
-pub fn remove_server(ipaddress:  &IpAddr) {
+pub fn remove_server(ipaddress: &IpAddr) {
     let mut cache = SERVER_CACHE.try_write().unwrap();
     let mut status_cache = SERVER_STATUS_CACHE.try_write().unwrap();
     cache.remove(ipaddress);
@@ -116,10 +133,10 @@ pub fn add_server(server: &Server) {
     cache.insert(server.ipaddress, server.clone());
 }
 
-pub fn cache_status(status: Vec<Status>) {
+pub fn cache_status(status: &[Status]) {
     let mut cache = SERVER_STATUS_CACHE.try_write().unwrap();
     for s in status {
-        cache.insert(s.ipaddress, s);
+        cache.insert(s.ipaddress, s.to_owned());
     }
 }
 
@@ -137,10 +154,9 @@ pub fn get_all_condition_results() -> Vec<ConditionCheckResult> {
 
 pub fn insert_condition_result(to_add: ConditionCheckResult) {
     let mut cache = SERVER_ACTION_CONDITION_RESULTS.try_write().unwrap();
-    
+
     cache.insert(to_add.clone().get_key(), to_add);
 }
-
 
 pub fn insert_token(token: &str) {
     let mut store = TOKENS.try_write().unwrap();
@@ -150,10 +166,15 @@ pub fn insert_token(token: &str) {
 
 pub fn delete_expired_tokens() {
     let mut store = TOKENS.try_write().unwrap();
-    log::debug!("Number of tokens before cleanup of expired tokens {}", store.len());
+    log::debug!(
+        "Number of tokens before cleanup of expired tokens {}",
+        store.len()
+    );
     store.retain(|_k, v| !v.is_expired());
-    log::debug!("Number of tokens after cleanup of expired tokens {}", store.len());
-    
+    log::debug!(
+        "Number of tokens after cleanup of expired tokens {}",
+        store.len()
+    );
 }
 
 pub fn is_valid_token(token: &str) -> bool {
@@ -161,8 +182,12 @@ pub fn is_valid_token(token: &str) -> bool {
 
     match store.get(token) {
         Some(found) => !found.is_expired(),
-        None => {
-            false
-        }
+        None => false,
     }
+}
+
+pub fn get_monitoring_config_for_series(series_id: &str) -> Option<Monitioring> {
+    let cache = SERIES_TO_MONITORING.try_read().unwrap();
+
+    cache.get(series_id).cloned()
 }

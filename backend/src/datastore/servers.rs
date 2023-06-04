@@ -1,10 +1,8 @@
-
 use std::net::IpAddr;
 
-use crate::models::{server::Server, error::AppError};
+use crate::models::{error::AppError, server::Server};
 
-use super::{persistence::{Persistence}, inmemory, Entry};
-
+use super::{inmemory, persistence::Persistence, Entry};
 
 const TABLE: &str = "servers";
 
@@ -13,16 +11,17 @@ fn json_to_server(json: &str) -> Server {
 }
 
 fn entries_to_servers(jsons: Vec<Entry>) -> Vec<Server> {
-    jsons.iter().map( |entry| 
-        json_to_server(&entry.value)
-    ).collect()
+    jsons
+        .iter()
+        .map(|entry| json_to_server(&entry.value))
+        .collect()
 }
 
 fn server_to_entry(server: &Server) -> Entry {
     Entry {
         key: format!("{}", server.ipaddress),
-        value: serde_json::to_string(server).unwrap()
-    }    
+        value: serde_json::to_string(server).unwrap(),
+    }
 }
 
 pub async fn insert_server(persistence: &Persistence, server: &Server) -> Result<bool, AppError> {
@@ -39,34 +38,39 @@ pub async fn update_server(persistence: &Persistence, server: &Server) -> Result
     Ok(result > 0)
 }
 
-pub async fn delete_server(persistence: &Persistence, ipaddress: &IpAddr) -> Result<bool, AppError> {
+pub async fn delete_server(
+    persistence: &Persistence,
+    ipaddress: &IpAddr,
+) -> Result<bool, AppError> {
     inmemory::remove_server(ipaddress);
-    let result = persistence.delete(TABLE, format!("{}", ipaddress).as_str()).await?;
+    let result = persistence
+        .delete(TABLE, format!("{}", ipaddress).as_str())
+        .await?;
 
     Ok(result > 0)
 }
 
-
-
-pub async fn load_all_servers(persistence: &Persistence, use_cache: bool) -> Result<Vec<Server>, AppError> {
+pub async fn load_all_servers(
+    persistence: &Persistence,
+    use_cache: bool,
+) -> Result<Vec<Server>, AppError> {
     if use_cache {
         Ok(inmemory::get_all_servers())
-    }
-    else {
-        let server_entries = persistence.get_all(TABLE, Some("inet_aton(key) asc")).await?;
+    } else {
+        let server_entries = persistence
+            .get_all(TABLE, Some("inet_aton(key) asc"))
+            .await?;
 
         Ok(entries_to_servers(server_entries))
     }
 }
 
-pub async fn get_server(persistence: &Persistence, ipaddress: &IpAddr)  -> Result<Server, AppError> {
-    let opt = persistence.get(TABLE, format!("{}", ipaddress).as_str()).await?;
+pub async fn get_server(persistence: &Persistence, ipaddress: &IpAddr) -> Result<Server, AppError> {
+    let opt = persistence
+        .get(TABLE, format!("{}", ipaddress).as_str())
+        .await?;
     match opt {
-        Some(entry) => {
-            Ok(json_to_server(&entry.value))
-        },
-        None => {
-            Err(AppError::ServerNotFound(format!("{}", ipaddress)))
-        }
+        Some(entry) => Ok(json_to_server(&entry.value)),
+        None => Err(AppError::ServerNotFound(format!("{}", ipaddress))),
     }
 }

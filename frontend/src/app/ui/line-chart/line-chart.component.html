@@ -1,0 +1,25 @@
+<div
+  *ngIf="
+    chartOptions.series !== undefined &&
+    chartOptions.chart !== undefined &&
+    chartOptions.xaxis !== undefined &&
+    chartOptions.dataLabels !== undefined &&
+    chartOptions.grid !== undefined &&
+    chartOptions.stroke !== undefined &&
+    chartOptions.title !== undefined &&
+    chartOptions.tooltip !== undefined
+  "
+>
+  <apx-chart
+    #chart
+    class="chart"
+    [series]="chartOptions.series"
+    [chart]="chartOptions.chart"
+    [xaxis]="chartOptions.xaxis"
+    [dataLabels]="chartOptions.dataLabels"
+    [grid]="chartOptions.grid"
+    [stroke]="chartOptions.stroke"
+    [title]="chartOptions.title"
+    [tooltip]="chartOptions.tooltip"
+  ></apx-chart>
+</div>

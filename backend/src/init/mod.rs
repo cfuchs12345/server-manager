@@ -5,8 +5,8 @@ mod template_engine;
 use config::Config;
 use std::path::Path;
 
-use crate::datastore;
 use crate::datastore::Persistence;
+use crate::datastore::{self, TimeSeriesPersistence};
 use crate::migrations;
 use crate::models::error::AppError;
 use crate::webserver;
@@ -49,10 +49,12 @@ async fn init_server_list(persistence: &Persistence) {
 
 fn create_common_app_data() -> AppData {
     let persistence = futures::executor::block_on(create_persistence());
+    let timeseries_persistence = futures::executor::block_on(create_timeseries_persistence());
     let template_engine = template_engine::create_templateengine();
 
     AppData {
         app_data_persistence: persistence,
+        app_data_timeseries_persistence: timeseries_persistence,
         app_data_template_engine: template_engine,
     }
 }
@@ -60,6 +62,10 @@ fn create_common_app_data() -> AppData {
 async fn create_persistence() -> Persistence {
     let db_url = format!("sqlite:{}?mode=rwc", DB_FILENAME);
     Persistence::new(&db_url).await
+}
+
+async fn create_timeseries_persistence() -> TimeSeriesPersistence {
+    TimeSeriesPersistence::new().await
 }
 
 fn one_time_init() -> Result<(), AppError> {

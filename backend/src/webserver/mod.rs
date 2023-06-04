@@ -127,6 +127,9 @@ fn init_token_secured_api(cfg: &mut web::ServiceConfig) {
     cfg.service(routes::post_user);
     cfg.service(routes::delete_user);
     cfg.service(routes::put_user_changepassword);
+
+    cfg.service(routes::get_monitoring_data);
+    cfg.service(routes::get_monitoring_ids);
 }
 
 fn init_static(cfg: &mut web::ServiceConfig) {

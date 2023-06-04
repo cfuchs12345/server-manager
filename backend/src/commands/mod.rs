@@ -18,6 +18,8 @@ lazy_static! {
         RwLock::new(get_command_list());
 }
 
+pub use common::replace::replace;
+
 fn get_command_list() -> Vec<Box<dyn Command + Sync + Send>> {
     let list: Vec<Box<dyn Command + Sync + Send>> = vec![
         Box::new(http::HttpCommand::new()),

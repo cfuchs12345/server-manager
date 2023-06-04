@@ -77,12 +77,15 @@ pub async fn execute_http_request(
 
     log::debug!("executing http request {} on {}", method, url);
 
+    let timeout = Duration::new(10, 0);
+
     let response = match method {
         POST => {
             client
                 .post(url)
                 .headers(header_map)
                 .body(body.unwrap_or("".to_string()))
+                .timeout(timeout)
                 .send()
                 .await
         }
@@ -91,12 +94,29 @@ pub async fn execute_http_request(
                 .put(url)
                 .headers(header_map)
                 .body(body.unwrap_or("".to_string()))
+                .timeout(timeout)
                 .send()
                 .await
         }
-        GET => client.get(url).headers(header_map).send().await,
-        _ => client.get(url).headers(header_map).send().await, // default is also a get
+        GET => {
+            client
+                .get(url)
+                .headers(header_map)
+                .timeout(timeout)
+                .send()
+                .await
+        }
+        _ => {
+            client
+                .get(url)
+                .headers(header_map)
+                .timeout(timeout)
+                .send()
+                .await
+        } // default is also a get
     };
+
+    log::debug!("response: {:?}", response);
 
     match response {
         Ok(res) => match res.status() {
@@ -104,7 +124,10 @@ pub async fn execute_http_request(
             StatusCode::OK => Ok(res.text().await.unwrap_or("".to_string())),
             y => {
                 log::info!("Returned StatusCode was not ACCEPTED or OK but {:?}", y);
-                Ok("".to_string())
+                Err(AppError::NokOKResponse(
+                    y,
+                    res.text().await.unwrap_or_default(),
+                ))
             }
         },
         Err(err) => Err(AppError::from(err)),
