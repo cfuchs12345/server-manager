@@ -6,7 +6,7 @@ services:
     network_mode: host
     # should only be accessible for the host itself, so we bind it to localhost
     environment:
-      - QDB_HTTP_BIND_TO=127.0.0.1
+      - QDB_HTTP_BIND_TO=127.0.0.1:9000
 
   server:
     image: afoxdocker/server-manager:latest
