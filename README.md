@@ -41,7 +41,7 @@ Currently working Plugins/Features:
 - Databases: SQLite for config and QuestDB for timeseries data
 - For Plugins: Definition in JSON and scripts in LUA/RHAI
   
-### Docker Config
+## Docker Config / Startup
 
 The server manager can be executed as a docker container by using this docker-compose.yml (it also starts a [QuestDB](https://questdb.io) - for timeseries data persistence):
 
@@ -112,7 +112,7 @@ Some notes:
 - Passwords are not sent cleartext - even if the web server is running only via HTTP, since there is an internal AES-GCM encryption for sensitive data with a one-time encryption key that always changes  <em>**(ToDo: Also encrypt credentials between frontend and backend)**</em>
 - User Passwords for the application itself are not stored as cleartext but using bcrypt hashes
 
-#### My ToDo list (not ordered by priority)
+## My ToDo list (not ordered by priority)
 
 - [x] Docker plugin for Socket based installation on the same host (done)
 - [ ] Docker plugin for port based connection for supporting remote docker installations
@@ -123,27 +123,29 @@ Some notes:
 - [ ] maybe build an agent that can be installed on remote machines to get information from the OS or installations like Wireguard, that offer no direct API
 - [ ] encrypt other passwords/credentials between frontend and backend
 
-## How the main screen looks like and the output from the Proxmox plugin
+## Screenshots
+
+### How the main screen looks like and the output from the Proxmox plugin
 
 ![The main screen](main_screen.png)
 
 
-## Docker containers gathered by local socket connection on the same host
+### Docker containers gathered by local socket connection on the same host
 
 ![Local Docker by Socket](docker_local_socket.png)
 
-## Pi-Hole
+### Pi-Hole
 ![Pi-hole](pihole.png)
 
-## This is how the switch and information of a Tasmota device looks like
+### This is how the switch and information of a Tasmota device looks like
 
 ![The Tasmota screen](tasmota_switch.png)
 
-## This is how a UPnP device is showing it's data
+### This is how a UPnP device is showing it's data
 
 ![The Synology UPnP screen](synology_upnp.png)
 
-## Monitoring / Charts
+### Monitoring / Charts
 
 ![Chart 1](monitoring_charts_1.png)
 ![Chart 2](monitoring_charts_2.png)
