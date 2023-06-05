@@ -92,13 +92,13 @@ Some notes:
 
 #### My ToDo list (not ordered by priority)
 
-[x] Docker plugin for Socket based installation on the same host (done)
-[ ] Docker plugin for port based connection for supporting remote docker installations
-[ ] Extract more data for existing plugins
-[ ] Control UPnP devices with their exposed actions
-[x] Store received information as time series and build graphs (done - it uses [Apex](https://apexcharts.com/) charts for display and [Quest DB](https://questdb.io/) as database)
-[ ] more Plugins (nearly everything that offers a REST, SOAP API is possible) CrowdSec, PfSense and many more is possible...
-[ ] maybe build an agent that can be installed on remote machines to get information from the OS or installations like Wireguard, that offer no direct API
+- [x] Docker plugin for Socket based installation on the same host (done)
+- [ ] Docker plugin for port based connection for supporting remote docker installations
+- [ ] Extract more data for existing plugins
+- [ ] Control UPnP devices with their exposed actions
+- [x] Store received information as time series and build graphs (done - it uses [Apex](https://apexcharts.com/) charts for display and [Quest DB](https://questdb.io/) as database)
+- [ ] more Plugins (nearly everything that offers a REST, SOAP API is possible) CrowdSec, PfSense and many more is possible...
+- [ ] maybe build an agent that can be installed on remote machines to get information from the OS or installations like Wireguard, that offer no direct API
 
 ## How the main screen looks like
 
