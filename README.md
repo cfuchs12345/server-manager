@@ -90,15 +90,15 @@ Some notes:
 - User passwords are not sent cleartext - even if the web server is running only via HTTP, since there is an internal AES-GCM encryption for sensitive data with one-time encryption key that always change
 - Passwords are not stored as cleartext but using bcrypt hashes
 
-My ToDo list:
+#### My ToDo list (not ordered by priority)
 
-- Docker plugin for Socket based installation on the same host
-- Docker plugin for port based connection for supporting remote docker installations
-- Extract more data for existing plugins
-- Control UPnP devices with their exposed actions
-- Store received information as time series and build graphs (Grafana-like)
-- more Plugins (nearly everything that offers a REST, SOAP API is possible) CrowdSec, PfSense and many more is possible...
-- maybe build an agent that can be installed on remote machines to get information from the OS or installations like Wireguard, that offer no direct API
+[x] Docker plugin for Socket based installation on the same host
+[ ] Docker plugin for port based connection for supporting remote docker installations
+[ ] Extract more data for existing plugins
+[ ] Control UPnP devices with their exposed actions
+[x] Store received information as time series and build graphs (Grafana-like)
+[ ] more Plugins (nearly everything that offers a REST, SOAP API is possible) CrowdSec, PfSense and many more is possible...
+[ ] maybe build an agent that can be installed on remote machines to get information from the OS or installations like Wireguard, that offer no direct API
 
 ## How the main screen looks like
 
