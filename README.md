@@ -101,14 +101,10 @@ Some notes:
 - [ ] maybe build an agent that can be installed on remote machines to get information from the OS or installations like Wireguard, that offer no direct API
 - [ ] encrypt other passwords/credentials between frontend and backend
 
-## How the main screen looks like
+## How the main screen looks like and the output from the Proxmox plugin
 
 ![The main screen](main_screen.png)
 
-
-## This is how a UPnP device is showing it's data
-
-![The Synology UPnP screen](synology_upnp.png)
 
 ## Docker containers gathered by local socket connection on the same host
 
@@ -117,3 +113,7 @@ Some notes:
 ## This is how the switch and information of a Tasmota device looks like
 
 ![The Tasmota screen](tasmota_switch.png)
+
+## This is how a UPnP device is showing it's data
+
+![The Synology UPnP screen](synology_upnp.png)
