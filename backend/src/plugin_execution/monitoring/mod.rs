@@ -33,7 +33,7 @@ pub async fn get_monitoring_data(series_id: &str, ipaddress: IpAddr) -> Result<S
     let query = vec![("nm", "true"), ("query", select.as_str())];
 
     let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(3))
+        .timeout(Duration::from_secs(1))
         .build()
         .unwrap();
 

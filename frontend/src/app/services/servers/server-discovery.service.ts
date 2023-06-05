@@ -72,14 +72,15 @@ export class ServerDiscoveryService {
           );
 
           this.dataStore.discoveredServers = relevant_servers;
-          this.publishDiscoveredServers();
         },
         error: (err: any) => {
           this.errorService.newError("Discovery-Service", undefined, err.message);
 
           this.resetDiscoveredServers();
         },
-        complete: () => {},
+        complete: () => {
+          this.publishDiscoveredServers();
+        },
       });
   };
 
@@ -100,12 +101,13 @@ export class ServerDiscoveryService {
             this.dataStore.discoveredServerFeatures.length
           );
           this.dataStore.discoveredServerFeatures.push(...serverFeatures);
-          this.publishDiscoveredServerFeatures();
         },
         error: (err: any) => {
           this.errorService.newError("Discovery-Service", undefined, err.message);
         },
-        complete: () => {},
+        complete: () => {
+            this.publishDiscoveredServerFeatures();
+        },
       });
   };
 

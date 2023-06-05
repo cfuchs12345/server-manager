@@ -32,11 +32,10 @@ export class FeatureScanModalComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.subscriptionDiscoveredServersFeatures = this.discoveryService.discoveredServerFeatures.subscribe(
       (serverFeatures) => {
+        this.isWorking = false;
         this.preSelectAllFeatures(serverFeatures);
 
         this.discoveredServerFeatures = serverFeatures;
-
-        this.isWorking = false;
       }
     );
   }

@@ -173,9 +173,8 @@ pub async fn post_servers_by_ipaddress_action(
     match query.action_type {
         ServerActionType::FeatureScan => {
             match plugin_execution::discover_features(ipaddress).await {
-                Ok(list) => HttpResponse::Ok().json(list),
-                Err(err) => HttpResponse::InternalServerError()
-                    .body(format!("Unexpected error occurred: {:?}", err)),
+                Some(list) => HttpResponse::Ok().json(list),
+                None => HttpResponse::InternalServerError().body("Unexpected error occurred"),
             }
         }
         ServerActionType::Status => {

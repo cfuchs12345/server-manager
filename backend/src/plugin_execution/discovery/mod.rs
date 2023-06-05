@@ -85,8 +85,7 @@ pub async fn discover_features_of_all_servers(
 
     let features_from_plugin_discovery: Vec<FeaturesOfServer> = result
         .iter()
-        .map(|f| f.as_ref().unwrap())
-        .map(|f| f.as_ref().unwrap())
+        .flat_map(|f| f.as_ref().unwrap())
         .map(|f| f.to_owned())
         .collect();
 
@@ -102,7 +101,7 @@ pub async fn discover_features_of_all_servers(
     ))
 }
 
-pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, AppError> {
+pub async fn discover_features(ipaddress: IpAddr) -> Option<FeaturesOfServer> {
     let mut features_of_server = FeaturesOfServer {
         ipaddress,
         features: vec![],
@@ -146,8 +145,11 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
                             plugin
                         );
 
-                        let input =
-                            commands::socket::make_command_input_from_detection(detection_entry)?;
+                        let Ok(input) =
+                            commands::socket::make_command_input_from_detection(detection_entry) else {
+                                log::error!("Could not create command input for {:?}", detection_entry);
+                                return None;
+                            };
 
                         match commands::execute::<SocketCommandResult>(input, true).await {
                             Ok(result) => result.get_response(),
@@ -164,10 +166,13 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
                     }
                 }
                 _ => {
-                    let input = commands::http::make_command_input_from_detection(
+                    let Ok(input) = commands::http::make_command_input_from_detection(
                         &ipaddress,
                         detection_entry,
-                    )?;
+                    ) else {
+                        log::error!("Could not create command input for {:?}", detection_entry);
+                        return None;
+                    };
 
                     match commands::execute::<HttpCommandResult>(input, true).await {
                         Ok(result) => result.get_response(),
@@ -209,7 +214,7 @@ pub async fn discover_features(ipaddress: IpAddr) -> Result<FeaturesOfServer, Ap
         }
     }
 
-    Ok(features_of_server)
+    Some(features_of_server)
 }
 
 fn get_local_addresses() -> Vec<IpAddr> {
