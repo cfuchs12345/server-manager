@@ -30,11 +30,14 @@ The server manager can be executed as a docker container by using this docker-co
     services:
       timeseriesdb:
         image: questdb/questdb:latest
-        # network also has to be host here - cannot combine bridge and host network. And the server has to stay in network mode host due to Wake On Lan - see comment for server container
-        network_mode: host
+        container_name: server-manager-questdb
+        restart: always
         # should only be accessible for the host itself, so we bind it to localhost
         environment:
           - QDB_HTTP_BIND_TO=127.0.0.1:9000
+        # network also has to be host here - cannot combine bridge and host network. And the server has to stay in network mode host due to Wake On Lan - see comment for server container
+        network_mode: host       
+        
         
       server:
         image: docker.registry.lan:5000/afoxdocker/docker-server-manager
