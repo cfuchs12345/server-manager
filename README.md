@@ -120,3 +120,8 @@ Some notes:
 ## This is how a UPnP device is showing it's data
 
 ![The Synology UPnP screen](synology_upnp.png)
+
+## Monitoring / Charts
+
+![Chart 1](monitoring_charts_1.png)
+![Chart 2](monitoring_charts_2.png)
