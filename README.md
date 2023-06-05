@@ -2,20 +2,21 @@
 
 ## Description
 
-The aim of this project is to give users a consolidated view about their servers and devices in their homelab.
+The aim of this project is to give users a consolidated view on their servers and devices in their homelab.
 In addition to monitoring functionality, it should be also possible to perform actions on these servers/devices like starting with Wak-on-Lan or restarting VMs of a Hypervisor.
 
 All this should be extesible by simple plugins, which are currently defined as JSON files that include all necessary links and parameter definitions.
-There can be also conditions defined when a action is possible to execute and which data is relevant for the condition. The conditions can be changed in script languges (currently LUA and RHAI).
-In addition to these definitions, there can be templates linked which convert XML/JSON output into nice looking HTML output.
+There can be also conditions defined when a action is possible to execute and which data is relevant for the condition. The conditions can be checked with simple scripts in a script languge (currently LUA and RHAI are supported).
+In addition to these definitions, there can be templates linked which convert XML/JSON output into nice looking HTML output for display.
 
-And since I'm lazy, I tried to automate everything as much as possible. For example, the servers, devices and their features can be auto-discovered by using ping, DNS queries, UPnP decvice discovery.
+And since I'm lazy, I tried to automate everything as much as possible. For example, the servers, devices and their features can be auto-discovered by using ping, DNS queries, UPnP decvice discovery. Also local running Docker containers can be discovered by using the Docker Socket API.
 In addition to that, each plugin can give the manager the information how and where a feature can be detected (ie. by grabbing information from a status page).
 
 Currently working Plugins/Features:
 
 - OpnSense Firewall query
 - Proxmox Hypervisor data query and VM/LXC control
+- Local Docker (by using the local Docker Socket connection)
 - Wake-on-Lan
 - Sleep-on-Lan
 - UPnP device information query
