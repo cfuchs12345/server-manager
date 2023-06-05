@@ -32,13 +32,13 @@ export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
   dataResults: DataResult[] | undefined = undefined;
   dataResultSubscription: Subscription | undefined = undefined;
 
-  data: SafeHtml;
+  innerHtml: SafeHtml;
 
   constructor(
     private sanitizer: DomSanitizer,
     private serverDataService: ServerDataService
   ) {
-    this.data = sanitizer.bypassSecurityTrustHtml('');
+    this.innerHtml = sanitizer.bypassSecurityTrustHtml('');
   }
 
   ngOnInit(): void {
@@ -61,9 +61,10 @@ export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
       if (changes.hasOwnProperty(propName)) {
         switch (propName) {
           case 'showDetail': {
-            if (this.server && this.showDetail) {
+            if (this.server && this.showDetail && !this.turnDetail) {
               this.serverDataService.queryData(this.server);
             }
+            break;
           }
         }
       }
@@ -84,7 +85,7 @@ export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
     if (this.dataResults) {
       var concatString = this.dataResults.map( (d) => d.result).join('');
       concatString = this.replaceSubActions(concatString);
-      this.data = this.sanitizer.bypassSecurityTrustHtml(concatString);
+      this.innerHtml = this.sanitizer.bypassSecurityTrustHtml(concatString);
     }
   };
 

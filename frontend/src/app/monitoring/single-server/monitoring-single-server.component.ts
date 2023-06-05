@@ -75,9 +75,13 @@ export class MonitoringSingleServerComponent
       if (changes.hasOwnProperty(propName)) {
         switch (propName) {
           case 'server':
-            if (this.server !== undefined) {
-              this.monitoringService.getMonitoringNames(this.server);
-            }
+            this.series_id_list = undefined;
+
+            setTimeout( () => {
+              if (this.server !== undefined) {
+                this.monitoringService.getMonitoringNames(this.server);
+              }
+            },500);
             break;
         }
       }

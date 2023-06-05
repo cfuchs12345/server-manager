@@ -93,7 +93,7 @@
         class="element-detail"
         [@detailExpand]="rowData == expandedElement ? 'expanded' : 'collapsed'"
       >
-        <app-server-detail [server]="rowData.server" [showDetail]="rowData.show_details" [turnDetail]="turnDetail"/>
+        <app-server-detail [server]="rowData.server" [showDetail]="rowData == expandedElement" [turnDetail]="turnDetail"/>
       </div>
     </td>
   </ng-container>

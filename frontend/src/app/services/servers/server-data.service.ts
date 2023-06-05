@@ -48,13 +48,13 @@ export class ServerDataService {
         next: (results) => {
           this.dataStore.dataResults.splice(0, this.dataStore.dataResults.length);
           this.dataStore.dataResults.push(...results);
-
-          this.publishDataResult();
         },
         error: (err: HttpErrorResponse) => {
           this.errorService.newError("Data-Service", server.ipaddress, err.error);
         },
-        complete: () => {},
+        complete: () => {
+          this.publishDataResult();
+        },
       });
   }
 
