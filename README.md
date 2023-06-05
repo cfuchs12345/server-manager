@@ -23,6 +23,24 @@ Currently working Plugins/Features:
 - Tasmota (query data, power switch of power outlets)
 - PiHole data query
 
+## The technology stack
+
+### Frontend
+
+- Typescript
+- Angular with RxJS
+- Angular Material
+- Apex Charts with Angular integration
+
+### Backend
+
+- REST API Server (most parts secured by API token)
+- Written in Rust
+- Using SqlX, Actix-Web, Tokio, lettre, rlua, rhai and many more crates
+- Handlebars template engine for JSON/XML to HTML conversion
+- Databases: SQLite for config and QuestDB for timeseries data
+- For Plugins: Definition in JSON and scripts in LUA/RHAI
+  
 ### Docker Config
 
 The server manager can be executed as a docker container by using this docker-compose.yml (it also starts a [QuestDB](https://questdb.io) - for timeseries data persistence):
