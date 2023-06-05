@@ -114,6 +114,9 @@ Some notes:
 
 ![Local Docker by Socket](docker_local_socket.png)
 
+## Pi-Hole
+![Pi-hole](pihole.png)
+
 ## This is how the switch and information of a Tasmota device looks like
 
 ![The Tasmota screen](tasmota_switch.png)
