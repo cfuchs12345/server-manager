@@ -87,8 +87,8 @@ After the first startup, the following folder hierarchy is created which contain
 Some notes:
 
 - Passwords/credentials can be marked in the plugin so that they are automatically encrypted
-- User passwords are not sent cleartext - even if the web server is running only via HTTP, since there is an internal AES-GCM encryption for sensitive data with one-time encryption key that always change
-- Passwords are not stored as cleartext but using bcrypt hashes
+- Passwords are not sent cleartext - even if the web server is running only via HTTP, since there is an internal AES-GCM encryption for sensitive data with a one-time encryption key that always changes  <em>**(ToDo: Also encrypt credentials between frontend and backend)**</em>
+- User Passwords for the application itself are not stored as cleartext but using bcrypt hashes
 
 #### My ToDo list (not ordered by priority)
 
@@ -99,6 +99,7 @@ Some notes:
 - [x] Store received information as time series and build graphs (done - it uses [Apex](https://apexcharts.com/) charts for display and [Quest DB](https://questdb.io/) as database)
 - [ ] more Plugins (nearly everything that offers a REST, SOAP API is possible) CrowdSec, PfSense and many more is possible...
 - [ ] maybe build an agent that can be installed on remote machines to get information from the OS or installations like Wireguard, that offer no direct API
+- [ ] encrypt other passwords/credentials between frontend and backend
 
 ## How the main screen looks like
 
