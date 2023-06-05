@@ -77,15 +77,12 @@ pub async fn execute_http_request(
 
     log::debug!("executing http request {} on {}", method, url);
 
-    let timeout = Duration::new(10, 0);
-
     let response = match method {
         POST => {
             client
                 .post(url)
                 .headers(header_map)
                 .body(body.unwrap_or("".to_string()))
-                .timeout(timeout)
                 .send()
                 .await
         }
@@ -94,26 +91,11 @@ pub async fn execute_http_request(
                 .put(url)
                 .headers(header_map)
                 .body(body.unwrap_or("".to_string()))
-                .timeout(timeout)
                 .send()
                 .await
         }
-        GET => {
-            client
-                .get(url)
-                .headers(header_map)
-                .timeout(timeout)
-                .send()
-                .await
-        }
-        _ => {
-            client
-                .get(url)
-                .headers(header_map)
-                .timeout(timeout)
-                .send()
-                .await
-        } // default is also a get
+        GET => client.get(url).headers(header_map).send().await,
+        _ => client.get(url).headers(header_map).send().await, // default is also a get
     };
 
     log::debug!("response: {:?}", response);
