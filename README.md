@@ -110,6 +110,10 @@ Some notes:
 
 ![The Synology UPnP screen](synology_upnp.png)
 
+## Docker containers gathered by local socket connection on the same host
+
+![Local Docker by Socket](docker_local_socket.png)
+
 ## This is how the switch and information of a Tasmota device looks like
 
 ![The Tasmota screen](tasmota_switch.png)
