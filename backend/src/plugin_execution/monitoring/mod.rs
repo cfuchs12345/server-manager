@@ -58,7 +58,11 @@ fn create_data_select(monitoring: &Monitioring, series_id: &str, identifier: &st
     if let Some(sub_identifier) = &monitoring.sub_identifier {
         cols.push(sub_identifier.name.clone());
     }
-    cols.push(format!("last({})", monitoring.value.name.clone()));
+
+    monitoring.values.iter().for_each(|val| {
+        cols.push(format!("last({})", val.name.clone()));
+    });
+
     cols.push("timestamp".to_owned()); // always the last column
 
     let where_stmnt = "timestamp > sysdate() - 36000000000L";
@@ -89,11 +93,11 @@ fn get_monitoring_config_for_series(series_id: &str) -> Option<Monitioring> {
                 value: "".to_owned(),
             },
             sub_identifier: None,
-            value: KeyValue {
+            values: vec![KeyValue {
                 name: "running".to_owned(),
                 value_type: "integer".to_owned(),
                 value: "".to_owned(),
-            },
+            }],
         })
     } else {
         datastore::get_monitoring_config_for_series(series_id)
@@ -108,6 +112,12 @@ fn enrich_response(
 ) -> Result<serde_json::Value, AppError> {
     let value: serde_json::Value = match json {
         serde_json::Value::Object(mut map) => {
+            let values: Vec<String> = monitoring
+                .values
+                .iter()
+                .map(|val| val.name.clone())
+                .collect();
+
             map.insert(
                 "ipaddress".to_owned(),
                 serde_json::Value::String(format!("{}", ipaddress)),
@@ -143,8 +153,8 @@ fn enrich_response(
                 );
             }
             map.insert(
-                "value".to_owned(),
-                serde_json::Value::String(monitoring.value.name.clone()),
+                "values".to_owned(),
+                serde_json::Value::String(values.join(",")),
             );
             serde_json::Value::Object(map)
         }
@@ -234,10 +244,11 @@ fn extract_monitoring_data(
     };
 
     match serde_json::from_str::<serde_json::Value>(response.as_str()) {
-        Ok(value) => {
-            let identifiers = get_values(Some(monitoring.identifier.clone()), &value, server);
-            let sub_identifiers = get_values(monitoring.sub_identifier.clone(), &value, server);
-            let values = get_values(Some(monitoring.value.clone()), &value, server);
+        Ok(json) => {
+            let identifiers = get_values(&[monitoring.identifier.clone()], &json, server);
+            let sub_identifiers =
+                get_values(&monitoring.get_sub_identifiers_as_vec(), &json, server);
+            let values = get_values(&monitoring.values, &json, server);
 
             for i in 0..values.len() {
                 let identifiers_for_index = get_val_at_index_or_single_value(i, &identifiers);
@@ -268,60 +279,58 @@ fn extract_monitoring_data(
     Ok(vec)
 }
 
-fn get_values(field: Option<KeyValue>, value: &serde_json::Value, server: &Server) -> Vec<Value> {
+fn get_values(fields: &[KeyValue], json: &serde_json::Value, server: &Server) -> Vec<Value> {
     let mut vec = Vec::new();
 
-    if field.is_none() {
+    if fields.is_empty() {
         return vec;
     }
 
-    let field = field.unwrap();
-
-    match field.value.as_str() {
-        "${IP}" => {
-            if let Some(value) = make_value(&field, format!("{}", server.ipaddress).as_str()) {
-                vec.push(value);
-            }
-        }
-        y => {
-            if y.starts_with('$') {
-                match value.clone().path(y) {
-                    Ok(res) => {
-                        log::debug!("Json path query result for {} is {}", y, res);
-
-                        let list = match res.is_array() {
-                            true => res
-                                .as_array()
-                                .unwrap()
-                                .iter()
-                                .flat_map(convert_value_to_str)
-                                .collect(),
-                            false => vec![convert_value_to_str(&res).unwrap_or_default()],
-                        };
-
-                        log::debug!("Processing values {:?} for {}", list, field.name);
-
-                        let mut key_values: Vec<Value> = list
-                            .iter()
-                            .flat_map(|str| make_value(&field, str))
-                            .collect();
-
-                        vec.append(&mut key_values);
-                    }
-                    Err(err) => {
-                        log::error!("error during json path query: {}", err);
-                    }
+    for field in fields {
+        match field.value.as_str() {
+            "${IP}" => {
+                if let Some(value) = make_value(field, format!("{}", server.ipaddress).as_str()) {
+                    vec.push(value);
                 }
-            } else if let Some(value) = make_value(&field, y) {
-                log::warn!(
-                    "value {} doesn't start with $. Trating it as a constant value",
-                    y
-                );
-
-                vec.push(value);
             }
-        }
-    };
+            y => {
+                if y.starts_with('$') {
+                    match json.clone().path(y) {
+                        Ok(res) => {
+                            log::debug!("Json path query result for {} is {}", y, res);
+
+                            let list = match res.is_array() {
+                                true => res
+                                    .as_array()
+                                    .unwrap()
+                                    .iter()
+                                    .flat_map(convert_value_to_str)
+                                    .collect(),
+                                false => vec![convert_value_to_str(&res).unwrap_or_default()],
+                            };
+
+                            log::debug!("Processing values {:?} for {}", list, field.name);
+
+                            let mut key_values: Vec<Value> =
+                                list.iter().flat_map(|str| make_value(field, str)).collect();
+
+                            vec.append(&mut key_values);
+                        }
+                        Err(err) => {
+                            log::error!("error during json path query: {}", err);
+                        }
+                    }
+                } else if let Some(value) = make_value(field, y) {
+                    log::warn!(
+                        "value {} doesn't start with $. Trating it as a constant value",
+                        y
+                    );
+
+                    vec.push(value);
+                }
+            }
+        };
+    }
 
     vec
 }

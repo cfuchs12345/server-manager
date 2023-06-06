@@ -1,6 +1,6 @@
 
-<div class="container">
-  <div *ngFor="let series_id of series_id_list">
+<div class="container" *ngIf="seriesData !== undefined">
+  <div *ngFor="let series_id of seriesData.seriesIds">
     <div class="chartwrapper" *ngIf="isLineChart(series_id)">
       <app-line-chart [chartDataList]="chartDataList" [series_id]="series_id"/>
     </div>

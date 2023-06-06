@@ -3,25 +3,26 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
 import { ErrorService } from '../errors/error.service';
 import { Server } from '../servers/types';
+import { MonitoringData, MonitoringSeriesData } from './types';
 
 @Injectable({
   providedIn: 'root',
 })
 export class MonitoringService {
-  private _data = new BehaviorSubject<any | undefined>(
+  private _data = new BehaviorSubject<MonitoringData | undefined>(
     undefined
   );
-  private _monitoringIds = new BehaviorSubject<string[] | undefined>(
+  private _monitoringSeriesData = new BehaviorSubject<MonitoringSeriesData | undefined>(
     undefined
   );
 
   readonly data = this._data.asObservable();
-  readonly monitoringIds = this._monitoringIds.asObservable();
+  readonly monitoringIds = this._monitoringSeriesData.asObservable();
 
   constructor(private http: HttpClient, private errorService: ErrorService) {}
 
 
-  getMonitoringNames = (server: Server) => {
+  getMonitoringIds = (server: Server) => {
     const options =
     server !== undefined
       ? { params: new HttpParams().set('ipaddress', server.ipaddress) }
@@ -31,7 +32,7 @@ export class MonitoringService {
       .get<string[]>('/backend/monitoring/ids', options)
       .subscribe({
         next: (ids) => {
-          this.publishIds(ids);
+          this.publishMonitoringSeriesData(new MonitoringSeriesData(server.ipaddress, ids));
         },
         error: (err: any) => {
           this.errorService.newError(
@@ -55,7 +56,7 @@ export class MonitoringService {
       .get<string>('/backend/monitoring/data', options)
       .subscribe({
         next: (response) => {
-          setTimeout( () => {this.publishData(response)}, 10);
+          setTimeout( () => {this.publisMonitoringhData(new MonitoringData(server.ipaddress, response))}, 10);
         },
         error: (err: any) => {
           this.errorService.newError(
@@ -69,15 +70,15 @@ export class MonitoringService {
       });
   };
 
-  private publishData = (response: string | undefined) => {
-    if( response !== undefined ){
-      this._data.next( JSON.parse(response));
+  private publisMonitoringhData = (data: MonitoringData) => {
+    if( data !== undefined ){
+      this._data.next( data );
     }
   };
 
-  private publishIds = ( ids: string[]) => {
-      if( ids !== undefined ) {
-       this._monitoringIds.next( ids);
+  private publishMonitoringSeriesData = ( data: MonitoringSeriesData) => {
+      if( data !== undefined ) {
+       this._monitoringSeriesData.next( data);
       }
 
   }

@@ -51,7 +51,13 @@ pub struct Monitioring {
     pub chart_type: ChartyType,
     pub identifier: KeyValue,
     pub sub_identifier: Option<KeyValue>,
-    pub value: KeyValue,
+    pub values: Vec<KeyValue>,
+}
+
+impl Monitioring {
+    pub fn get_sub_identifiers_as_vec(&self) -> Vec<KeyValue> {
+        self.sub_identifier.iter().cloned().collect()
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
