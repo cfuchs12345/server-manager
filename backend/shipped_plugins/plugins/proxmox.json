@@ -147,57 +147,61 @@
           "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
         }
       ],
-      "monitoring": [        
-          {
-            "pre_process": {
-              "script_type": "lua",
-              "script": "input:gsub('running', '1'):gsub('stopped','0')"
-            },
-            "id": "lxc_status",
-            "name": "LXC Status",
-            "series_type": "datetime",
-            "chart_type": "line",
-            "identifier": {
-              "name": "IP",
-              "value_type": "symbol",
-              "value": "${IP}"
-            },
-            "sub_identifier": {
-              "name": "VM",
-              "value_type": "integer",
-              "value": "$.data[*].vmid"
-            },
-            "value": {
+      "monitoring": [
+        {
+          "pre_process": {
+            "script_type": "lua",
+            "script": "input:gsub('running', '1'):gsub('stopped','0')"
+          },
+          "id": "lxc_status",
+          "name": "LXC Status",
+          "series_type": "datetime",
+          "chart_type": "line",
+          "identifier": {
+            "name": "IP",
+            "value_type": "symbol",
+            "value": "${IP}"
+          },
+          "sub_identifier": {
+            "name": "VM",
+            "value_type": "integer",
+            "value": "$.data[*].vmid"
+          },
+          "values": [
+            {
               "name": "STATUS",
               "value_type": "integer",
               "value": "$.data[*].status"
             }
+          ]
+        },
+        {
+          "pre_process": {
+            "script_type": "lua",
+            "script": "input:gsub('running', '1'):gsub('stopped','0')"
           },
-          {
-            "pre_process": {
-              "script_type": "lua",
-              "script": "input:gsub('running', '1'):gsub('stopped','0')"
-            },
-            "id": "lxc_maxmem",
-            "name": "LXC MaxMem",
-            "series_type": "datetime",
-            "chart_type": "line",
-            "identifier": {
-              "name": "IP",
-              "value_type": "symbol",
-              "value": "${IP}"
-            },
-            "sub_identifier": {
-              "name": "VM",
-              "value_type": "integer",
-              "value": "$.data[*].vmid"
-            },
-            "value": {
+          "id": "lxc_maxmem",
+          "name": "LXC MaxMem",
+          "series_type": "datetime",
+          "chart_type": "line",
+          "identifier": {
+            "name": "IP",
+            "value_type": "symbol",
+            "value": "${IP}"
+          },
+          "sub_identifier": {
+            "name": "VM",
+            "value_type": "integer",
+            "value": "$.data[*].vmid"
+          },
+          "values": [
+            {
               "name": "MAXMEM",
               "value_type": "integer",
               "value": "$.data[*].maxmem"
             }
-          }
+          ]
+        }
       ]
     },
     {
@@ -221,57 +225,61 @@
         }
       ],
       "monitoring": [
-          {
-            "pre_process": {
-              "script_type": "lua",
-              "script": "input:gsub('running', '1'):gsub('stopped','0')"
-            },
-            "id": "qemu_status",
-            "name": "VM Status",
-            "series_type": "datetime",
-            "chart_type": "line",
-            "identifier": {
-              "name": "IP",
-              "value_type": "symbol",
-              "value": "${IP}"
-            },
-            "sub_identifier": {
-              "name": "VM",
-              "value_type": "integer",
-              "value": "$.data[*].vmid"
-            },
-            "value": {
+        {
+          "pre_process": {
+            "script_type": "lua",
+            "script": "input:gsub('running', '1'):gsub('stopped','0')"
+          },
+          "id": "qemu_status",
+          "name": "VM Status",
+          "series_type": "datetime",
+          "chart_type": "line",
+          "identifier": {
+            "name": "IP",
+            "value_type": "symbol",
+            "value": "${IP}"
+          },
+          "sub_identifier": {
+            "name": "VM",
+            "value_type": "integer",
+            "value": "$.data[*].vmid"
+          },
+          "values": [
+            {
               "name": "STATUS",
               "value_type": "integer",
               "value": "$.data[*].status"
             }
+          ]
+        },
+        {
+          "pre_process": {
+            "script_type": "lua",
+            "script": "input:gsub('running', '1'):gsub('stopped','0')"
           },
-          {
-            "pre_process": {
-              "script_type": "lua",
-              "script": "input:gsub('running', '1'):gsub('stopped','0')"
-            },
-            "id": "qemu_maxmem",
-            "name": "VM MaxMem",
-            "series_type": "datetime",
-            "chart_type": "line",
-            "identifier": {
-              "name": "IP",
-              "value_type": "symbol",
-              "value": "${IP}"
-            },
-            "sub_identifier": {
-              "name": "VM",
-              "value_type": "integer",
-              "value": "$.data[*].vmid"
-            },
-            "value": {
+          "id": "qemu_maxmem",
+          "name": "VM MaxMem",
+          "series_type": "datetime",
+          "chart_type": "line",
+          "identifier": {
+            "name": "IP",
+            "value_type": "symbol",
+            "value": "${IP}"
+          },
+          "sub_identifier": {
+            "name": "VM",
+            "value_type": "integer",
+            "value": "$.data[*].vmid"
+          },
+          "values": [
+            {
               "name": "MAXMEM",
               "value_type": "integer",
               "value": "$.data[*].maxmem"
             }
-          }
-        ]      
+          ]
+        }
+      ]
     },
     {
       "id": "vmstatus",
