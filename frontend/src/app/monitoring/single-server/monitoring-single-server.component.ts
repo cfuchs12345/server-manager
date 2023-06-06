@@ -59,6 +59,10 @@ export class MonitoringSingleServerComponent
           }
         }, 0);
       });
+
+      if (this.server !== undefined) {
+        this.monitoringService.getMonitoringNames(this.server);
+      }
   }
 
   ngOnDestroy(): void {
