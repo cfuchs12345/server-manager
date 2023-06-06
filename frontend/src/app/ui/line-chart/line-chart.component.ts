@@ -61,6 +61,11 @@ export class LineChartComponent implements OnInit, OnChanges {
       xaxis: {
         type: 'datetime'
       },
+      yaxis: {
+        labels: {
+          maxWidth: 250
+       }
+      },
       grid: {
         row: {
           colors: ['#f3f3f3', 'transparent'], // takes an array which will be repeated on columns
