@@ -109,13 +109,13 @@ After the first startup, the following folder hierarchy is created which contain
 Some notes:
 
 - Passwords/credentials can be marked in the plugin so that they are automatically encrypted
-- Passwords are not sent cleartext - even if the web server is running only via HTTP, since there is an internal AES-GCM encryption for sensitive data with a one-time encryption key that always changes  <em>**(ToDo: Also encrypt credentials between frontend and backend)**</em>
+- Passwords are not sent cleartext - even if the web server is running only via HTTP, since there is an internal AES-GCM encryption for sensitive data with a one-time encryption key that always changes  **(ToDo: Also encrypt credentials between frontend and backend)**
 - User Passwords for the application itself are not stored as cleartext but using bcrypt hashes
 
 ## My ToDo list (not ordered by priority)
 
 - [x] Docker plugin for Socket based installation on the same host (done)
-- [ ] Docker plugin for port based connection for supporting remote docker installations
+- [x] Docker plugin for port based connection for supporting remote docker installations (ToDo: Add support for client cert validation when using SSL. Currently only **unsecured** http possible)
 - [ ] Extract more data for existing plugins
 - [ ] Control UPnP devices with their exposed actions
 - [x] Store received information as time series and build graphs (done - it uses [Apex](https://apexcharts.com/) charts for display and [Quest DB](https://questdb.io/) as database)
