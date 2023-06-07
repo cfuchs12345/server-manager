@@ -32,7 +32,7 @@ export class MonitoringService {
       .get<string[]>('/backend/monitoring/ids', options)
       .subscribe({
         next: (ids) => {
-          this.publishMonitoringSeriesData(new MonitoringSeriesData(server.ipaddress, ids));
+          setTimeout( () => {this.publishMonitoringSeriesData(new MonitoringSeriesData(server.ipaddress, ids))}, 100);
         },
         error: (err: any) => {
           this.errorService.newError(
@@ -56,7 +56,7 @@ export class MonitoringService {
       .get<string>('/backend/monitoring/data', options)
       .subscribe({
         next: (response) => {
-          setTimeout( () => {this.publisMonitoringhData(new MonitoringData(server.ipaddress, response))}, 10);
+          setTimeout( () => {this.publisMonitoringhData(new MonitoringData(server.ipaddress, response))}, 100);
         },
         error: (err: any) => {
           this.errorService.newError(

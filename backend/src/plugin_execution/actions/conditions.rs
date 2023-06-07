@@ -99,21 +99,23 @@ pub async fn check_condition_for_action_met(
             for depends in &action.as_ref().unwrap().depends {
                 match find_data_for_action_condition(depends, &plugin) {
                     Some(data) => {
-                        let response = data::execute_specific_data_query(
+                        let responses = data::execute_specific_data_query(
                             &server,
                             &plugin,
                             feature.as_ref().unwrap(),
                             data,
-                            action_params.as_deref(),
+                            action_params.clone(),
                             crypto_key.as_str(),
                         )
                         .await
                         .unwrap_or_default();
 
-                        result &=
-                            response_data_match(depends, response.clone()).unwrap_or_default();
+                        for response in &responses {
+                            result &= response_data_match(depends, Some(response.1.clone()))
+                                .unwrap_or_default();
+                        }
                         if !result {
-                            log::debug!("Depencies for data {} of plugin {} for server {} not met .Reasponse was {:?}", data.id, feature.as_ref().unwrap().id, server.ipaddress, response);
+                            log::debug!("Dependencies for data {} of plugin {} for server {} not met. Responses were {:?}", data.id, feature.as_ref().unwrap().id, server.ipaddress, responses);
                             break;
                         }
                     }

@@ -23,6 +23,15 @@ impl Server {
     pub fn find_feature(&self, feature_id: &str) -> Option<Feature> {
         self.features.iter().find(|f| f.id == feature_id).cloned()
     }
+
+    pub fn new_only_ip(ipaddress: IpAddr) -> Self {
+        Server {
+            ipaddress,
+            name: "".to_owned(),
+            dnsname: "".to_owned(),
+            features: Vec::new(),
+        }
+    }
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize, Eq)]

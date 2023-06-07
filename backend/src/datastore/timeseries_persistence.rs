@@ -44,9 +44,9 @@ impl QuestDBConfig {
 
 #[derive(Clone, Debug)]
 pub struct TimeSeriesData {
-    pub identifier: Value,
-    pub sub_identifier: Option<Value>,
-    pub value: Value,
+    pub identifier: TimeSeriesValue,
+    pub sub_identifiers: Vec<TimeSeriesValue>,
+    pub value: TimeSeriesValue,
     pub timestamp: Timestamp,
 }
 
@@ -68,7 +68,7 @@ impl Clone for TimeSeriesPersistence {
 }
 
 #[derive(Clone, Debug)]
-pub enum Value {
+pub enum TimeSeriesValue {
     Bool(String, bool),
     Int(String, i64),
     Float(String, f64),
@@ -76,22 +76,22 @@ pub enum Value {
     Symbol(String, String),
 }
 
-impl Value {
+impl TimeSeriesValue {
     fn apply(&self, buffer: &mut Buffer) -> Result<(), AppError> {
         match self {
-            Value::Bool(name, value) => buffer
+            TimeSeriesValue::Bool(name, value) => buffer
                 .column_bool(name.as_str(), value.to_owned())
                 .map_err(|err| AppError::DatabaseError(format!("{}", err)))?,
-            Value::Float(name, value) => buffer
+            TimeSeriesValue::Float(name, value) => buffer
                 .column_f64(name.as_str(), value.to_owned())
                 .map_err(|err| AppError::DatabaseError(format!("{}", err)))?,
-            Value::Int(name, value) => buffer
+            TimeSeriesValue::Int(name, value) => buffer
                 .column_i64(name.as_str(), value.to_owned())
                 .map_err(|err| AppError::DatabaseError(format!("{}", err)))?,
-            Value::String(name, value) => buffer
+            TimeSeriesValue::String(name, value) => buffer
                 .column_str(name.as_str(), value)
                 .map_err(|err| AppError::DatabaseError(format!("{}", err)))?,
-            Value::Symbol(name, value) => buffer
+            TimeSeriesValue::Symbol(name, value) => buffer
                 .symbol(name.as_str(), value.as_str())
                 .map_err(|err| AppError::DatabaseError(format!("{}", err)))?,
         };
@@ -99,7 +99,7 @@ impl Value {
     }
 
     fn is_symbol(&self) -> bool {
-        matches!(self, Value::Symbol(_, _))
+        matches!(self, TimeSeriesValue::Symbol(_, _))
     }
 }
 
@@ -152,11 +152,13 @@ impl TimeSeriesPersistence {
                     .table(series_id)
                     .map_err(|err| AppError::DatabaseError(format!("{}", err)))?;
 
-                let mut all_columns: Vec<Value> = Vec::new();
+                let mut all_columns: Vec<TimeSeriesValue> = Vec::new();
                 all_columns.push(data.identifier);
-                if let Some(subid) = data.sub_identifier {
-                    all_columns.push(subid);
+
+                for sub_id in data.sub_identifiers {
+                    all_columns.push(sub_id);
                 }
+
                 all_columns.push(data.value);
 
                 // first add all symbols

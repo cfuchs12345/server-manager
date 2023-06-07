@@ -1,4 +1,4 @@
-use std::any::Any;
+use std::{any::Any, net::IpAddr};
 
 use super::{
     common::{self, replace},
@@ -7,8 +7,9 @@ use super::{
 use crate::models::{
     error::AppError,
     plugin::{action::Action, data::Data, detection::DetectionEntry, Plugin},
-    server::Feature,
+    server::{Feature, Server},
 };
+use async_recursion::async_recursion;
 use async_trait::async_trait;
 
 pub const SOCKET: &str = "socket";
@@ -170,68 +171,99 @@ impl SocketCommandResult {
 
 impl CommandResult for SocketCommandResult {}
 
-pub fn make_command_input_from_subaction(
+pub async fn make_command_input_from_subaction(
+    server: &Server,
     crypto_key: &str,
     action: &Action,
-    action_params: Option<&str>,
+    action_params: Option<String>,
     feature: &Feature,
     plugin: &Plugin,
-) -> Result<CommandInput, AppError> {
+) -> Result<Vec<CommandInput>, AppError> {
     let params = Parameters::new(
         common::string_params_to_command_args(action_params),
         common::params_to_command_args(&feature.params),
         common::param_def_to_command_args(&plugin.params),
     );
 
-    Ok(CommandInput::new(
-        SOCKET,
-        Some(crypto_key),
-        None,
-        common::args_to_command_args(&action.args),
-        params,
-        feature.credentials.clone(),
-    ))
+    let mut vec = Vec::new();
+
+    let list_of_args_list =
+        common::args_to_command_args(&action.args, server, plugin, crypto_key).await?;
+
+    for args_list in list_of_args_list {
+        vec.push(CommandInput::new(
+            SOCKET,
+            Some(crypto_key),
+            None,
+            args_list,
+            params.clone(),
+            feature.credentials.clone(),
+        ));
+    }
+    Ok(vec)
 }
 
-#[allow(dead_code)]
-pub fn make_command_input_from_data(
+#[async_recursion]
+pub async fn make_command_input_from_data(
+    server: &Server,
     crypto_key: &str,
     data: &Data,
-    action_params: Option<&str>,
+    action_params: Option<String>,
     feature: &Feature,
     plugin: &Plugin,
-) -> Result<CommandInput, AppError> {
+) -> Result<Vec<CommandInput>, AppError> {
     let params = Parameters::new(
         common::string_params_to_command_args(action_params),
         common::params_to_command_args(&feature.params),
         common::param_def_to_command_args(&plugin.params),
     );
 
-    Ok(CommandInput::new(
-        SOCKET,
-        Some(crypto_key),
-        None,
-        common::args_to_command_args(&data.args),
-        params,
-        feature.credentials.clone(),
-    ))
+    let mut vec = Vec::new();
+
+    let list_of_args_list =
+        common::args_to_command_args(&data.args, server, plugin, crypto_key).await?;
+
+    for args_list in list_of_args_list {
+        vec.push(CommandInput::new(
+            SOCKET,
+            Some(crypto_key),
+            None,
+            args_list,
+            params.clone(),
+            feature.credentials.clone(),
+        ));
+    }
+    Ok(vec)
 }
 
-pub fn make_command_input_from_detection(
+pub async fn make_command_input_from_detection(
+    ipaddress: IpAddr,
+    crypto_key: &str,
+    plugin: &Plugin,
     detection_entry: &DetectionEntry,
-) -> Result<CommandInput, AppError> {
+) -> Result<Vec<CommandInput>, AppError> {
     let params = Parameters::new(
         Vec::new(),
         Vec::new(),
         common::param_def_to_command_args(&detection_entry.params),
     );
 
-    Ok(CommandInput::new(
-        SOCKET,
-        None,
-        None,
-        common::args_to_command_args(&detection_entry.args),
-        params,
-        Vec::new(),
-    ))
+    let mut vec = Vec::new();
+
+    let server = Server::new_only_ip(ipaddress);
+
+    let list_of_args_list =
+        common::args_to_command_args(&detection_entry.args, &server, plugin, crypto_key).await?;
+
+    for args_list in list_of_args_list {
+        vec.push(CommandInput::new(
+            SOCKET,
+            None,
+            None,
+            args_list,
+            params.clone(),
+            Vec::new(),
+        ));
+    }
+    Ok(vec)
 }

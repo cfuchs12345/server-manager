@@ -1,19 +1,99 @@
-use crate::models::{
-    plugin::{common::ArgDef, ParamDef},
-    server::Param,
+use jsonpath_rust::JsonPathQuery;
+
+use crate::{
+    common::{self},
+    models::{
+        error::AppError,
+        plugin::{
+            common::{ArgDef, ArgType},
+            ParamDef, Plugin,
+        },
+        server::{Param, Server},
+    },
+    plugin_execution,
 };
 
 use super::CommandArg;
 
 pub mod replace;
 
-pub fn args_to_command_args(vec: &[ArgDef]) -> Vec<CommandArg> {
-    vec.iter()
+pub async fn args_to_command_args(
+    vec: &[ArgDef],
+    server: &Server,
+    plugin: &Plugin,
+    crypto_key: &str,
+) -> Result<Vec<Vec<CommandArg>>, AppError> {
+    let list_from_data_args = vec.iter().find(|a| a.arg_type == ArgType::ListFromData);
+    let normal_args = vec.iter().filter(|a| a.arg_type != ArgType::ListFromData);
+
+    let mut vec_outer = Vec::new();
+
+    let non_list_command_args = normal_args
         .map(|a| CommandArg {
             name: a.name.clone(),
             value: a.value.clone(),
         })
-        .collect()
+        .collect();
+
+    if list_from_data_args.is_none() {
+        vec_outer.push(non_list_command_args);
+
+        return Ok(vec_outer);
+    }
+
+    if let Some(arg) = list_from_data_args {
+        let value = &arg.value;
+
+        if let Some(feature) = server.find_feature(&plugin.id) {
+            if let Some(source_data_id) = &arg.data_id {
+                if let Some(data) = plugin.data.iter().find(|d| *d.id == *source_data_id) {
+                    let responses = plugin_execution::execute_specific_data_query(
+                        server, plugin, &feature, data, None, crypto_key,
+                    )
+                    .await?;
+
+                    for response in responses {
+                        let json = serde_json::from_str::<serde_json::Value>(response.1.as_str())?;
+
+                        if value.starts_with('$') {
+                            if let Ok(extracted_values) = json.clone().path(value) {
+                                let list: Vec<String> = if extracted_values.is_array() {
+                                    extracted_values
+                                        .as_array()
+                                        .unwrap()
+                                        .iter()
+                                        .flat_map(common::convert_value_to_str)
+                                        .collect()
+                                } else if let Some(str) =
+                                    common::convert_value_to_str(&extracted_values)
+                                {
+                                    vec![str]
+                                } else {
+                                    Vec::new()
+                                };
+
+                                let list_arg_data_values: Vec<CommandArg> = list
+                                    .iter()
+                                    .map(|s| CommandArg {
+                                        name: arg.name.clone(),
+                                        value: s.to_owned(),
+                                    })
+                                    .collect();
+
+                                for arg in list_arg_data_values {
+                                    let mut inner_list_clone = non_list_command_args.clone();
+                                    inner_list_clone.push(arg);
+
+                                    vec_outer.push(inner_list_clone);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    Ok(vec_outer)
 }
 
 pub fn param_def_to_command_args(vec: &[ParamDef]) -> Vec<CommandArg> {
@@ -34,7 +114,7 @@ pub fn params_to_command_args(vec: &[Param]) -> Vec<CommandArg> {
         .collect()
 }
 
-pub fn string_params_to_command_args(action_params: Option<&str>) -> Vec<CommandArg> {
+pub fn string_params_to_command_args(action_params: Option<String>) -> Vec<CommandArg> {
     let mut list = Vec::new();
 
     if let Some(action_params) = action_params {

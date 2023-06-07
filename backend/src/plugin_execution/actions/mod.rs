@@ -34,7 +34,7 @@ pub async fn execute_action(
     server: &Server,
     feature: &Feature,
     action_id: &str,
-    action_params: Option<&str>,
+    action_params: Option<String>,
     crypto_key: String,
 ) -> Result<bool, AppError> {
     let plugin_res = datastore::get_plugin(feature.id.as_str());
@@ -47,30 +47,39 @@ pub async fn execute_action(
     match plugin.find_action(action_id) {
         Some(plugin_action) => match plugin_action.command.as_str() {
             commands::http::HTTP => {
-                let input = commands::http::make_command_input_from_subaction(
+                let inputs = commands::http::make_command_input_from_subaction(
                     server,
                     &crypto_key,
                     plugin_action,
                     action_params,
                     feature,
                     &plugin,
-                )?;
+                )
+                .await?;
 
-                let res: HttpCommandResult = commands::execute(input, false).await?;
+                let mut res: Option<HttpCommandResult> = None;
+                for input in inputs {
+                    res = Some(commands::execute(input, false).await?);
+                }
 
-                Ok(!res.get_response().is_empty())
+                Ok(res.is_some() && !res.unwrap().get_response().is_empty())
             }
             commands::socket::SOCKET => {
-                let input = commands::socket::make_command_input_from_subaction(
+                let inputs = commands::socket::make_command_input_from_subaction(
+                    server,
                     &crypto_key,
                     plugin_action,
                     action_params,
                     feature,
                     &plugin,
-                )?;
-                let res: SocketCommandResult = commands::execute(input, false).await?;
+                )
+                .await?;
+                let mut res: Option<SocketCommandResult> = None;
+                for input in inputs {
+                    res = Some(commands::execute(input, false).await?);
+                }
 
-                Ok(!res.get_response().is_empty())
+                Ok(res.is_some() && !res.unwrap().get_response().is_empty())
             }
             commands::wol::WOL => {
                 let input = commands::wol::make_input(feature);

@@ -118,54 +118,43 @@ export class MonitoringSingleServerComponent
       let json = data.getJson();
 
       if (
+        json.hasOwnProperty('dataset') &&
+        json.hasOwnProperty('columns') &&
         json.hasOwnProperty('series_id') &&
         json.hasOwnProperty('name') &&
         json.hasOwnProperty('series_type') &&
-        json.hasOwnProperty('dataset') &&
-        json.hasOwnProperty('identifier') &&
-        json.hasOwnProperty('values') &&
         json.hasOwnProperty('chart_type')
       ) {
         const dataset = json.dataset as [];
+        const columns = json.columns as [];
         const series_id = json.series_id as string;
         const chart_name = json.name;
-        const identifier_name = json.identifier as string;
-        const sub_identifier_name = json.hasOwnProperty('sub_identifier')
-          ? (json.sub_identifier as string)
-          : '';
-        const values = json.values as string;
-        const value_names = values.split(',');
-
         const series_type = json.series_type as string;
         const chart_type = json.chart_type as ChartType;
+
 
         let chartDataListNew = new ChartDataList();
 
         let series_values: Map<string, number[][]> = new Map();
 
-        let has_sub_identifier = sub_identifier_name.length > 0;
+        const has_sub_identifier = columns.find( (e: any) => e.name !== undefined && e.name === 'Sub_Identifier') !==  undefined;
+        const has_sub_identifier2 = columns.find( (e: any) => e.name !== undefined && e.name === 'Sub_Identifier2') !==  undefined;
 
         this.chartTypes.set(series_id, chart_type);
 
         for (let rowCount = 0; rowCount < dataset.length; rowCount++) {
           const row = dataset[rowCount] as any[];
 
-          const identifier = row[0];
           const sub_identifier = has_sub_identifier ? row[1] : undefined;
+          const sub_identifier2 = has_sub_identifier2 ? row[2] : undefined;
+
           const timestamp = new Date(row[row.length - 1]).getTime();
 
-          const valueStart = has_sub_identifier ? 2 : 1;
+          const valueStart = has_sub_identifier ? (has_sub_identifier2 ? 3 : 2) : 1;
 
-          for (
-            let valCount = 0;
-            valCount < row.length - valueStart - 1;
-            valCount++
-          ) {
-            const value = this.getValue(row, valueStart + valCount);
+            const value = this.getValue(row, valueStart);
 
-            let key = has_sub_identifier
-              ? sub_identifier + '-' + value_names[valCount]
-              : value_names[valCount];
+            let key = this.getKey(has_sub_identifier, has_sub_identifier2, sub_identifier, sub_identifier2);
 
             let series_array = series_values.get(key);
             if (series_array === undefined) {
@@ -174,7 +163,6 @@ export class MonitoringSingleServerComponent
             }
 
             series_array.push([timestamp, value]);
-          }
         }
 
         let chartData = new ChartData(
@@ -233,4 +221,18 @@ export class MonitoringSingleServerComponent
   isLineChart = (series_id: string): boolean => {
     return this.chartTypes.get(series_id) === 'line';
   };
+
+  private getKey = (has_sub_identifier: boolean, has_sub_identifier2: boolean, sub_identifier: string,  sub_identifier2: string): string => {
+
+    let key: string = "";
+
+    if( has_sub_identifier ) {
+      key += sub_identifier;
+    }
+    if( has_sub_identifier2 ) {
+      key += ("-" + sub_identifier2);
+    }
+
+    return key;
+  }
 }

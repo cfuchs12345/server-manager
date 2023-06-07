@@ -35,7 +35,7 @@ async fn schedule_condition_checks(scheduler: &JobScheduler) {
 async fn schedule_status_check(scheduler: &JobScheduler) {
     scheduler
         .add(
-            Job::new_async("1/5 * * * * *", |_uuid, _l| {
+            Job::new_async("1/20 * * * * *", |_uuid, _l| {
                 Box::pin(async {
                     other_functions::statuscheck::status_check_all()
                         .await
@@ -51,7 +51,7 @@ async fn schedule_status_check(scheduler: &JobScheduler) {
 async fn schedule_monitoring(scheduler: &JobScheduler) {
     scheduler
         .add(
-            Job::new_async("1/5 * * * * *", |_uuid, _l| {
+            Job::new_async("1/20 * * * * *", |_uuid, _l| {
                 Box::pin(async {
                     crate::plugin_execution::monitor_all()
                         .await
@@ -67,7 +67,7 @@ async fn schedule_monitoring(scheduler: &JobScheduler) {
 async fn schedule_cache_update(scheduler: &JobScheduler) {
     scheduler
         .add(
-            Job::new("1/10 * * * * *", |_uuid, _l| {
+            Job::new("1/30 * * * * *", |_uuid, _l| {
                 datastore::update_cache();
             })
             .unwrap(),
@@ -91,7 +91,7 @@ async fn schedule_token_cleanup(scheduler: &JobScheduler) {
 async fn schedule_one_time_crypt_key_cleanup(scheduler: &JobScheduler) {
     scheduler
         .add(
-            Job::new("1/20 * * * * *", |_uuid, _l| {
+            Job::new("0 * * * * *", |_uuid, _l| {
                 common::invalidate_expired_one_time_keys();
             })
             .unwrap(),

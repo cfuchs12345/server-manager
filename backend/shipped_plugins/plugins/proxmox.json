@@ -174,14 +174,47 @@
               "value": "$.data[*].status"
             }
           ]
+        }
+      ]
+    },
+    {
+      "id": "lxc-mon",
+      "description": "Monitoring data of LXC Containers",
+      "output": false,
+      "icon": "",
+      "command": "http",
+      "args": [
+        {
+          "name": "method",
+          "value": "get"
         },
+        {
+          "name": "timeframe",
+          "value": "hour"
+        },
+        {
+          "name": "vmid",
+          "arg_type": "ListFromData",
+          "data_id": "lxc-list",
+          "value": "$.data[*].vmid"
+        },
+        {
+          "name": "url",
+          "value": "${params.protocol}://${IP}:${params.port}/api2/json/nodes/${params.nodename}/lxc/${args.vmid}/rrddata?timeframe=${args.timeframe}"
+        },
+        {
+          "name": "header",
+          "value": "Authorization=PVEAPIToken=${credentials.username}@${credentials.realm}!${credentials.tokenid}=${credentials.token}"
+        }
+      ],
+      "monitoring": [
         {
           "pre_process": {
             "script_type": "lua",
             "script": "input:gsub('running', '1'):gsub('stopped','0')"
           },
-          "id": "lxc_maxmem",
-          "name": "LXC MaxMem",
+          "id": "lxc_data",
+          "name": "LXC Data",
           "series_type": "datetime",
           "chart_type": "line",
           "identifier": {
@@ -192,13 +225,38 @@
           "sub_identifier": {
             "name": "VM",
             "value_type": "integer",
-            "value": "$.data[*].vmid"
+            "value": "${args.vmid}"
           },
           "values": [
             {
-              "name": "MAXMEM",
-              "value_type": "integer",
-              "value": "$.data[*].maxmem"
+              "name": "netin",
+              "value_type": "float",
+              "value": "$.data[-1:].netin"
+            },
+            {
+              "name": "netout",
+              "value_type": "float",
+              "value": "$.data[-1:].netin"
+            },
+            {
+              "name": "mem",
+              "value_type": "float",
+              "value": "$.data[-1:].mem"
+            },
+            {
+              "name": "maxmem",
+              "value_type": "float",
+              "value": "$.data[-1:].maxmem"
+            },
+            {
+              "name": "diskread",
+              "value_type": "float",
+              "value": "$.data[-1:].diskread"
+            },
+            {
+              "name": "diskwrite",
+              "value_type": "float",
+              "value": "$.data[-1:].diskwrite"
             }
           ]
         }
@@ -249,33 +307,6 @@
               "name": "STATUS",
               "value_type": "integer",
               "value": "$.data[*].status"
-            }
-          ]
-        },
-        {
-          "pre_process": {
-            "script_type": "lua",
-            "script": "input:gsub('running', '1'):gsub('stopped','0')"
-          },
-          "id": "qemu_maxmem",
-          "name": "VM MaxMem",
-          "series_type": "datetime",
-          "chart_type": "line",
-          "identifier": {
-            "name": "IP",
-            "value_type": "symbol",
-            "value": "${IP}"
-          },
-          "sub_identifier": {
-            "name": "VM",
-            "value_type": "integer",
-            "value": "$.data[*].vmid"
-          },
-          "values": [
-            {
-              "name": "MAXMEM",
-              "value_type": "integer",
-              "value": "$.data[*].maxmem"
             }
           ]
         }

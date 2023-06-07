@@ -182,6 +182,12 @@ impl From<SurgeError> for AppError {
     }
 }
 
+impl From<String> for AppError {
+    fn from(err: String) -> Self {
+        AppError::Unknown(err)
+    }
+}
+
 impl ResponseError for AppError {
     fn status_code(&self) -> StatusCode {
         match self {

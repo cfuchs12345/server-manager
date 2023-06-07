@@ -16,7 +16,7 @@ use crate::{
     commands::{
         self, http::HttpCommandResult, ping::PingCommandResult, socket::SocketCommandResult,
     },
-    common,
+    common, datastore,
     models::{
         config::dns_server::DNSServer, error::AppError, response::host_information::HostInformation,
     },
@@ -71,12 +71,16 @@ pub async fn discover_features_of_all_servers(
     let wait_time_for_upnp = 15; // in seconds
 
     let upnp_future = upnp::upnp_discover(wait_time_for_upnp, upnp_activated);
+    let crypto_key = datastore::get_crypto_key();
 
     // list of async tasks executed by tokio
     let mut tasks = Vec::new();
     for server in servers {
-        tasks.push(tokio::spawn(async move {
-            discover_features(server.ipaddress).await
+        let crypto_key = crypto_key.clone();
+
+        tasks.push(tokio::spawn(async {
+            let server = server;
+            discover_features(server.ipaddress, crypto_key).await
         }));
     }
 
@@ -101,7 +105,7 @@ pub async fn discover_features_of_all_servers(
     ))
 }
 
-pub async fn discover_features(ipaddress: IpAddr) -> Option<FeaturesOfServer> {
+pub async fn discover_features(ipaddress: IpAddr, crypto_key: String) -> Option<FeaturesOfServer> {
     let mut features_of_server = FeaturesOfServer {
         ipaddress,
         features: vec![],
@@ -145,47 +149,60 @@ pub async fn discover_features(ipaddress: IpAddr) -> Option<FeaturesOfServer> {
                             plugin
                         );
 
-                        let Ok(input) =
-                            commands::socket::make_command_input_from_detection(detection_entry) else {
+                        let Ok(inputs) =
+                            commands::socket::make_command_input_from_detection(ipaddress, crypto_key.as_str(), &plugin, detection_entry).await else {
                                 log::error!("Could not create command input for {:?}", detection_entry);
                                 return None;
                             };
 
-                        match commands::execute::<SocketCommandResult>(input, true).await {
-                            Ok(result) => result.get_response(),
-                            Err(err) => {
-                                err.log();
-                                "".to_string()
-                            }
+                        let mut response: Option<String> = None;
+
+                        for input in inputs {
+                            response =
+                                match commands::execute::<SocketCommandResult>(input, true).await {
+                                    Ok(result) => Some(result.get_response()),
+                                    Err(err) => {
+                                        err.log();
+                                        continue;
+                                    }
+                                }
                         }
+                        response
                     } else {
                         log::debug!(
                             "Socket connection only available for loopback or local ip address"
                         );
-                        "".to_string()
+                        None
                     }
                 }
                 _ => {
-                    let Ok(input) = commands::http::make_command_input_from_detection(
+                    let Ok(inputs) = commands::http::make_command_input_from_detection(
                         &ipaddress,
+                        crypto_key.as_str(),
+                        &plugin,
                         detection_entry,
-                    ) else {
+                    ).await else {
                         log::error!("Could not create command input for {:?}", detection_entry);
                         return None;
                     };
 
-                    match commands::execute::<HttpCommandResult>(input, true).await {
-                        Ok(result) => result.get_response(),
-                        Err(err) => {
-                            err.log();
-                            "".to_string()
+                    let mut response: Option<String> = None;
+
+                    for input in inputs {
+                        response = match commands::execute::<HttpCommandResult>(input, true).await {
+                            Ok(result) => Some(result.get_response()),
+                            Err(err) => {
+                                err.log();
+                                continue;
+                            }
                         }
                     }
+                    response
                 }
             };
 
             log::debug!(
-                "Response from detection: {} {:?} {}",
+                "Response from detection: {:?} {:?} {}",
                 response,
                 plugin,
                 ipaddress
@@ -193,7 +210,7 @@ pub async fn discover_features(ipaddress: IpAddr) -> Option<FeaturesOfServer> {
 
             if check_plugin_match(&response, &plugin).await {
                 log::debug!(
-                    "Plugin {:?} matched for server {} for response {}",
+                    "Plugin {:?} matched for server {} for response {:?}",
                     &plugin.id,
                     ipaddress,
                     response
@@ -361,8 +378,12 @@ fn create_feature_from_plugin(plugin: &Plugin) -> Feature {
     }
 }
 
-async fn check_plugin_match(input: &str, plugin: &Plugin) -> bool {
-    match plugin_detect_match(plugin, input) {
+async fn check_plugin_match(input: &Option<String>, plugin: &Plugin) -> bool {
+    let Some(input_to_check) = input else {
+        return false;
+    };
+
+    match plugin_detect_match(plugin, input_to_check.as_str()) {
         Ok(res) => res,
         Err(err) => {
             error!("{:?}", err);

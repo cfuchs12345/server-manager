@@ -11,6 +11,7 @@ pub use actions::check_main_action_conditions;
 pub use actions::execute_action;
 
 pub use data::execute_data_query;
+pub use data::execute_specific_data_query;
 pub use monitoring::monitor_all;
 
 pub use monitoring::get_monitoring_data;

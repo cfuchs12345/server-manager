@@ -1,21 +1,18 @@
-use jsonpath_rust::JsonPathQuery;
-use std::{
-    collections::HashMap,
-    net::IpAddr,
-    time::{Duration, SystemTime},
-};
+use std::{collections::HashMap, net::IpAddr, time::Duration};
 
 use crate::{
-    datastore::{self, TimeSeriesData, TimeSeriesPersistence, Value},
+    common,
+    datastore::{self, TimeSeriesData, TimeSeriesPersistence},
     models::{
         error::AppError,
         plugin::{
             data::{KeyValue, Monitioring, SeriesType},
             Plugin,
         },
-        server::Server,
     },
 };
+
+mod response_parser;
 
 pub async fn get_monitoring_data(series_id: &str, ipaddress: IpAddr) -> Result<String, AppError> {
     let monitoring = get_monitoring_config_for_series(series_id).ok_or(AppError::Unknown(
@@ -30,7 +27,7 @@ pub async fn get_monitoring_data(series_id: &str, ipaddress: IpAddr) -> Result<S
 
     let select = create_data_select(&monitoring, series_id, format!("{}", ipaddress).as_str());
 
-    let query = vec![("nm", "true"), ("query", select.as_str())];
+    let query = vec![("query", select.as_str())];
 
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(1))
@@ -43,7 +40,7 @@ pub async fn get_monitoring_data(series_id: &str, ipaddress: IpAddr) -> Result<S
 
     let text = result.text().await?;
 
-    log::info!("response from db: {}", text);
+    log::trace!("response from db: {}", text);
 
     let value = serde_json::from_str::<serde_json::Value>(&text)?;
 
@@ -54,28 +51,32 @@ pub async fn get_monitoring_data(series_id: &str, ipaddress: IpAddr) -> Result<S
 
 fn create_data_select(monitoring: &Monitioring, series_id: &str, identifier: &str) -> String {
     let mut cols: Vec<String> = Vec::new();
-    cols.push(monitoring.identifier.name.clone());
-    if let Some(sub_identifier) = &monitoring.sub_identifier {
-        cols.push(sub_identifier.name.clone());
+    cols.push(common::IDENTIFIER.to_owned());
+
+    if monitoring.sub_identifier.is_some() {
+        cols.push(common::SUB_IDENTIFIER.to_owned());
     }
 
-    monitoring.values.iter().for_each(|val| {
-        cols.push(format!("last({})", val.name.clone()));
-    });
+    if monitoring.values.len() > 1 {
+        cols.push(common::SUB_IDENTIFIER_2.to_owned());
+    }
 
-    cols.push("timestamp".to_owned()); // always the last column
+    cols.push(format!("last({})", common::VALUE.to_owned()));
 
-    let where_stmnt = "timestamp > sysdate() - 36000000000L";
-    let sample_by = "SAMPLE BY 1m FILL(0)";
+    cols.push(common::TIMESTAMP.to_owned()); // always the last column
+
+    let where_stmnt = format!("{} > sysdate() - 36000000000L", common::TIMESTAMP);
+    let sample_by = "SAMPLE BY 1m FILL(NONE)";
 
     format!(
-        "select {} from {} where {} AND {} = '{}' {} ORDER BY timestamp asc",
+        "select {} from {} where {} AND {} = '{}' {} ORDER BY {} asc",
         cols.join(","),
         series_id,
         where_stmnt,
-        monitoring.identifier.name,
+        common::IDENTIFIER,
         identifier,
-        sample_by
+        sample_by,
+        common::TIMESTAMP
     )
 }
 
@@ -112,12 +113,6 @@ fn enrich_response(
 ) -> Result<serde_json::Value, AppError> {
     let value: serde_json::Value = match json {
         serde_json::Value::Object(mut map) => {
-            let values: Vec<String> = monitoring
-                .values
-                .iter()
-                .map(|val| val.name.clone())
-                .collect();
-
             map.insert(
                 "ipaddress".to_owned(),
                 serde_json::Value::String(format!("{}", ipaddress)),
@@ -141,20 +136,6 @@ fn enrich_response(
             map.insert(
                 "chart_type".to_owned(),
                 serde_json::Value::String(format!("{:?}", monitoring.chart_type)),
-            );
-            map.insert(
-                "identifier".to_owned(),
-                serde_json::Value::String(monitoring.identifier.name.clone()),
-            );
-            if let Some(sub_identifier) = &monitoring.sub_identifier {
-                map.insert(
-                    "sub_identifier".to_owned(),
-                    serde_json::Value::String(sub_identifier.name.clone()),
-                );
-            }
-            map.insert(
-                "values".to_owned(),
-                serde_json::Value::String(values.join(",")),
             );
             serde_json::Value::Object(map)
         }
@@ -186,7 +167,11 @@ pub async fn monitor_all() -> Result<(), AppError> {
                 log::trace!("Server {:?} has relevant feature {:?}", server, feature);
 
                 for data in &plugin.data {
-                    let result = super::data::execute_specific_data_query(
+                    if data.monitoring.is_empty() {
+                        continue;
+                    }
+
+                    let input_response_tuples_result = super::data::execute_specific_data_query(
                         &server,
                         plugin,
                         &feature,
@@ -196,17 +181,15 @@ pub async fn monitor_all() -> Result<(), AppError> {
                     )
                     .await;
 
-                    log::trace!("result from monitoring is {:?}", result);
+                    if let Ok(input_response_tuples) = input_response_tuples_result {
+                        let parser = response_parser::MonitoringDataExtractor::new(
+                            input_response_tuples,
+                            data,
+                        );
 
-                    if let Ok(Some(str)) = result {
-                        for monitoring in &data.monitoring {
-                            let mut extracted_data =
-                                extract_monitoring_data(&str, &server, monitoring)?;
+                        let parsed_data = parser.parse()?;
 
-                            map.entry(monitoring.id.clone())
-                                .or_insert_with(Vec::new)
-                                .append(&mut extracted_data);
-                        }
+                        map.extend(parsed_data);
                     }
                 }
             } else {
@@ -229,164 +212,4 @@ pub async fn monitor_all() -> Result<(), AppError> {
     }
 
     Ok(())
-}
-
-fn extract_monitoring_data(
-    response: &str,
-    server: &Server,
-    monitoring: &Monitioring,
-) -> Result<Vec<TimeSeriesData>, AppError> {
-    let mut vec = Vec::new();
-
-    let response = match &monitoring.pre_process {
-        Some(script) => super::pre_or_post_process(response, script)?,
-        None => response.to_owned(),
-    };
-
-    match serde_json::from_str::<serde_json::Value>(response.as_str()) {
-        Ok(json) => {
-            let identifiers = get_values(&[monitoring.identifier.clone()], &json, server);
-            let sub_identifiers =
-                get_values(&monitoring.get_sub_identifiers_as_vec(), &json, server);
-            let values = get_values(&monitoring.values, &json, server);
-
-            for i in 0..values.len() {
-                let identifiers_for_index = get_val_at_index_or_single_value(i, &identifiers);
-                let sub_identifiers_for_index =
-                    get_val_at_index_or_single_value(i, &sub_identifiers);
-                let values_for_index = get_val_at_index_or_single_value(i, &values);
-
-                if identifiers_for_index.is_none() || values_for_index.is_none() {
-                    continue;
-                }
-
-                vec.push(TimeSeriesData {
-                    identifier: identifiers_for_index.unwrap(),
-                    sub_identifier: sub_identifiers_for_index,
-                    value: values_for_index.unwrap(),
-                    timestamp: datastore::Timestamp::SysTime(SystemTime::now()),
-                });
-            }
-        }
-        Err(err) => {
-            return Err(AppError::ParseError(format!(
-                "Could not parse response as JSON. Error: {}",
-                err
-            )))
-        }
-    }
-
-    Ok(vec)
-}
-
-fn get_values(fields: &[KeyValue], json: &serde_json::Value, server: &Server) -> Vec<Value> {
-    let mut vec = Vec::new();
-
-    if fields.is_empty() {
-        return vec;
-    }
-
-    for field in fields {
-        match field.value.as_str() {
-            "${IP}" => {
-                if let Some(value) = make_value(field, format!("{}", server.ipaddress).as_str()) {
-                    vec.push(value);
-                }
-            }
-            y => {
-                if y.starts_with('$') {
-                    match json.clone().path(y) {
-                        Ok(res) => {
-                            log::debug!("Json path query result for {} is {}", y, res);
-
-                            let list = match res.is_array() {
-                                true => res
-                                    .as_array()
-                                    .unwrap()
-                                    .iter()
-                                    .flat_map(convert_value_to_str)
-                                    .collect(),
-                                false => vec![convert_value_to_str(&res).unwrap_or_default()],
-                            };
-
-                            log::debug!("Processing values {:?} for {}", list, field.name);
-
-                            let mut key_values: Vec<Value> =
-                                list.iter().flat_map(|str| make_value(field, str)).collect();
-
-                            vec.append(&mut key_values);
-                        }
-                        Err(err) => {
-                            log::error!("error during json path query: {}", err);
-                        }
-                    }
-                } else if let Some(value) = make_value(field, y) {
-                    log::warn!(
-                        "value {} doesn't start with $. Trating it as a constant value",
-                        y
-                    );
-
-                    vec.push(value);
-                }
-            }
-        };
-    }
-
-    vec
-}
-
-fn convert_value_to_str(value: &serde_json::Value) -> Option<String> {
-    if value.is_f64() {
-        value.as_f64().map(|n| n.to_string())
-    } else if value.is_i64() {
-        value.as_i64().map(|n| n.to_string())
-    } else if value.is_u64() {
-        value.as_u64().map(|n| n.to_string())
-    } else if value.is_boolean() {
-        value.as_bool().map(|b| b.to_string())
-    } else if value.is_string() {
-        value.as_str().map(|s| s.to_owned())
-    } else {
-        log::warn!("Unhandled json type for value {:?}", value);
-        None
-    }
-}
-
-fn make_value(field: &KeyValue, value: &str) -> Option<Value> {
-    match field.value_type.as_str() {
-        "symbol" => Some(Value::Symbol(field.name.to_owned(), value.to_owned())),
-        "boolean" => match value {
-            "1" => Some(Value::Bool(field.name.to_owned(), true)), // 1 is also traeted as true
-            "0" => Some(Value::Bool(field.name.to_owned(), false)), // 0 is traeted as false
-            y => Some(Value::Bool(
-                field.name.to_owned(),
-                y.to_lowercase().parse().unwrap_or_default(),
-            )),
-        },
-        "integer" => Some(Value::Int(
-            field.name.to_owned(),
-            value.parse().unwrap_or_default(),
-        )),
-        "float" => Some(Value::Float(
-            field.name.to_owned(),
-            value.parse().unwrap_or_default(),
-        )),
-        "string" => Some(Value::String(field.name.to_owned(), value.to_owned())),
-        y => {
-            log::error!("unknown field type {} found", y);
-            None
-        }
-    }
-}
-
-fn get_val_at_index_or_single_value(index: usize, values: &[Value]) -> Option<Value> {
-    let val_at_index = values.get(index);
-
-    if val_at_index.is_some() {
-        val_at_index.map(|v| v.to_owned())
-    } else if values.len() == 1 {
-        values.get(0).map(|v| v.to_owned())
-    } else {
-        None
-    }
 }

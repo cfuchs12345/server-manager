@@ -12,12 +12,14 @@ use crate::{
 /// * strip of the markers and returning the actual name of the placeholder
 enum Placeholder {
     Param,
+    Args,
     Credential,
     Base64,
 }
 
 lazy_static! {
     static ref PARAM_REGEX: Regex = Regex::new(Placeholder::Param.get_pattern()).unwrap();
+    static ref ARGS_REGEX: Regex = Regex::new(Placeholder::Args.get_pattern()).unwrap();
     static ref CREDENTIAL_REGEX: Regex = Regex::new(Placeholder::Credential.get_pattern()).unwrap();
     static ref BASE64_REGEX: Regex = Regex::new(Placeholder::Base64.get_pattern()).unwrap();
 }
@@ -26,6 +28,7 @@ impl Placeholder {
     fn get_pattern(&self) -> &str {
         match self {
             Placeholder::Param => r"(\$\{params\..*?\})",
+            Placeholder::Args => r"(\$\{args\..*?\})",
             Placeholder::Credential => r"(\$\{credentials\..*?\})",
             Placeholder::Base64 => r"(\$\{encode_base64\(.*?\)\})",
         }
@@ -34,6 +37,7 @@ impl Placeholder {
     pub fn extract_placeholders(&self, input: String) -> Vec<String> {
         let matches = match self {
             Placeholder::Param => PARAM_REGEX.find_iter(input.as_str()),
+            Placeholder::Args => ARGS_REGEX.find_iter(input.as_str()),
             Placeholder::Credential => CREDENTIAL_REGEX.find_iter(input.as_str()),
             Placeholder::Base64 => BASE64_REGEX.find_iter(input.as_str()),
         };
@@ -44,6 +48,7 @@ impl Placeholder {
     pub fn strip_of_marker(&self, value: &str) -> String {
         match self {
             Placeholder::Param => value.replace("${params.", "").replace('}', ""),
+            Placeholder::Args => value.replace("${args.", "").replace('}', ""),
             Placeholder::Credential => value.replace("${credentials.", "").replace('}', ""),
             Placeholder::Base64 => value.replace("${encode_base64(", "").replace(")}", ""),
         }
@@ -72,6 +77,7 @@ pub fn replace(input_string: &str, input: &CommandInput) -> Result<(String, Stri
     }
 
     result = replace_param(result, input)?;
+    result = replace_args(result, input)?;
     let both: (String, String) = replace_credentials(result, input)?; // we now have two string - the unmasked and the masked which can be logged for example
     result = both.0;
     masked = both.1;
@@ -79,6 +85,19 @@ pub fn replace(input_string: &str, input: &CommandInput) -> Result<(String, Stri
     masked = replace_base64_encoded(masked); // actually the base 64 encoded masked version outputs an incorrect encoded value
 
     Ok((result, masked))
+}
+
+fn replace_args(input_string: String, input: &CommandInput) -> Result<String, AppError> {
+    let mut result = input_string.clone();
+
+    for placeholder in Placeholder::Args.extract_placeholders(input_string) {
+        let name = Placeholder::Args.strip_of_marker(&placeholder);
+
+        let replacement = input.find_single_arg(name.as_str())?;
+
+        result = result.replace(placeholder.as_str(), replacement);
+    }
+    Ok(result)
 }
 
 fn replace_param(input_string: String, input: &CommandInput) -> Result<String, AppError> {

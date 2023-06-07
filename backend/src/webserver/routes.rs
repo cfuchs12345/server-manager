@@ -170,9 +170,11 @@ pub async fn post_servers_by_ipaddress_action(
     }
     let server = server_res.unwrap();
 
+    let crypto_key = datastore::get_crypto_key();
+
     match query.action_type {
         ServerActionType::FeatureScan => {
-            match plugin_execution::discover_features(ipaddress).await {
+            match plugin_execution::discover_features(ipaddress, crypto_key).await {
                 Some(list) => HttpResponse::Ok().json(list),
                 None => HttpResponse::InternalServerError().body("Unexpected error occurred"),
             }
@@ -205,13 +207,12 @@ pub async fn post_servers_by_ipaddress_action(
                 return HttpResponse::InternalServerError()
                     .body(format!("Feature with id {} not known", feature_id));
             }
-            let crypto_key = datastore::get_crypto_key();
 
             match plugin_execution::execute_action(
                 &server,
                 &feature_res.unwrap(),
                 action_id,
-                action_params,
+                action_params.map(|v| v.to_owned()),
                 crypto_key,
             )
             .await
@@ -222,8 +223,6 @@ pub async fn post_servers_by_ipaddress_action(
             }
         }
         ServerActionType::QueryData => {
-            let crypto_key = datastore::get_crypto_key();
-
             match plugin_execution::execute_data_query(
                 &server,
                 &data.app_data_template_engine,

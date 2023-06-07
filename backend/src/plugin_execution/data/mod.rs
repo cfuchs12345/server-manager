@@ -1,10 +1,11 @@
 mod conversion;
 
+use async_recursion::async_recursion;
 use lazy_static::lazy_static;
 use regex::Regex;
 
 use crate::{
-    commands::{self, http::HttpCommandResult, replace, socket::SocketCommandResult},
+    commands::{self, http::HttpCommandResult, replace, socket::SocketCommandResult, CommandInput},
     datastore::{self},
     models::{
         error::AppError,
@@ -53,7 +54,7 @@ pub async fn execute_data_query(
                 continue;
             }
 
-            let data_response = execute_specific_data_query(
+            let data_responses = execute_specific_data_query(
                 server,
                 &plugin,
                 feature,
@@ -63,30 +64,31 @@ pub async fn execute_data_query(
             )
             .await?;
 
-            if let Some(response) = data_response {
-                let input = commands::http::make_command_input_from_data(
-                    server,
-                    crypto_key.as_str(),
-                    data,
-                    None,
-                    feature,
-                    &plugin,
-                )?;
+            for data_response in data_responses {
+                let inputs =
+                    get_command_inputs(data, crypto_key.as_str(), None, feature, &plugin, server)
+                        .await?;
+
                 let enriched_result =
-                    process_result_for_display(data, &response, template_engine, feature)?;
+                    process_result_for_display(data, &data_response.1, template_engine, feature)?;
 
-                let replaced = replace(enriched_result.as_str(), &input)?.1; // use second part of tuple - we don't want show passwords in the ouput if someone adds credentials placeholders in the template
+                for input in inputs {
+                    let replaced = replace(enriched_result.as_str(), &input)?.1; // use second part of tuple - we don't want show passwords in the ouput if someone adds credentials placeholders in the template
 
-                let actions = extract_actions(&replaced);
-                let check_results =
-                    actions::check_action_conditions(server.clone(), actions, crypto_key.clone())
-                        .await;
+                    let actions = extract_actions(&replaced);
+                    let check_results = actions::check_action_conditions(
+                        server.clone(),
+                        actions,
+                        crypto_key.clone(),
+                    )
+                    .await;
 
-                results.push(DataResult {
-                    ipaddress: server.ipaddress,
-                    result: replaced,
-                    check_results,
-                });
+                    results.push(DataResult {
+                        ipaddress: server.ipaddress,
+                        result: replaced,
+                        check_results,
+                    });
+                }
             }
         }
     }
@@ -129,44 +131,79 @@ pub async fn execute_specific_data_query(
     plugin: &Plugin,
     feature: &Feature,
     data: &Data,
-    action_params: Option<&str>,
+    action_params: Option<String>,
     crypto_key: &str,
-) -> Result<Option<String>, AppError> {
-    let mut response = match data.command.as_str() {
-        commands::socket::SOCKET => {
-            let input = commands::socket::make_command_input_from_data(
-                crypto_key,
-                data,
-                action_params,
-                feature,
-                plugin,
-            )?;
+) -> Result<Vec<(CommandInput, String)>, AppError> {
+    let inputs =
+        get_command_inputs(data, crypto_key, action_params, feature, plugin, server).await?;
 
+    let mut responses = Vec::new();
+
+    for input in inputs {
+        let response = execute_command(input.clone()).await?;
+
+        if let Some(script) = &data.post_process {
+            log::trace!("before post process: {}", response);
+            let response = super::pre_or_post_process(response.as_str(), script)?;
+            log::trace!("after post process: {}", response);
+
+            responses.push((input, response));
+        } else {
+            responses.push((input, response));
+        }
+    }
+
+    Ok(responses)
+}
+
+async fn execute_command(input: CommandInput) -> Result<String, AppError> {
+    let response = match input.get_name() {
+        commands::socket::SOCKET => {
             let result: SocketCommandResult = commands::execute(input, false).await?;
             result.get_response()
         }
         _ => {
-            let input = commands::http::make_command_input_from_data(
+            let result: HttpCommandResult = commands::execute(input, false).await?;
+            result.get_response()
+        }
+    };
+    Ok(response)
+}
+
+#[async_recursion]
+async fn get_command_inputs(
+    data: &Data,
+    crypto_key: &str,
+    action_params: Option<String>,
+    feature: &Feature,
+    plugin: &Plugin,
+    server: &Server,
+) -> Result<Vec<CommandInput>, AppError> {
+    let inputs = match data.command.as_str() {
+        commands::socket::SOCKET => {
+            commands::socket::make_command_input_from_data(
                 server,
                 crypto_key,
                 data,
                 action_params,
                 feature,
                 plugin,
-            )?;
-
-            let result: HttpCommandResult = commands::execute(input, false).await?;
-            result.get_response()
+            )
+            .await?
+        }
+        _ => {
+            commands::http::make_command_input_from_data(
+                server,
+                crypto_key,
+                data,
+                action_params,
+                feature,
+                plugin,
+            )
+            .await?
         }
     };
-
-    if let Some(script) = &data.post_process {
-        log::trace!("before post process: {}", response);
-        response = super::pre_or_post_process(response.as_str(), script)?;
-        log::trace!("after post process: {}", response);
-    }
-
-    Ok(Some(response))
+    Ok(inputs)
 }
 
 fn extract_actions(input: &str) -> Vec<SubAction> {

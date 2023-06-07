@@ -138,7 +138,7 @@ impl CommandInput {
             credentials,
         }
     }
-    fn get_name(&self) -> &str {
+    pub fn get_name(&self) -> &str {
         self.name.as_str()
     }
     fn get_ipaddress(&self) -> Option<IpAddr> {

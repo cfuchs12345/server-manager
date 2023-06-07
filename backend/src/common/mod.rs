@@ -36,6 +36,12 @@ pub use onetimekey::OneTimeKey;
 const URLSAFE_WITH_PAD: engine::GeneralPurpose =
     engine::GeneralPurpose::new(&alphabet::URL_SAFE, general_purpose::PAD);
 
+pub const IDENTIFIER: &str = "Identifier";
+pub const SUB_IDENTIFIER: &str = "Sub_Identifier";
+pub const SUB_IDENTIFIER_2: &str = "Sub_Identifier2";
+pub const VALUE: &str = "Value";
+pub const TIMESTAMP: &str = "timestamp";
+
 pub fn generate_long_random_string() -> String {
     let key: String = {
         let mut buff = [0_u8; 128];
@@ -60,6 +66,23 @@ pub fn encode_base64(str: &str) -> String {
 
 pub fn decode_base64_urlsafe_with_pad(str: &str) -> String {
     String::from_utf8(URLSAFE_WITH_PAD.decode(str).unwrap()).unwrap()
+}
+
+pub fn convert_value_to_str(value: &serde_json::Value) -> Option<String> {
+    if value.is_f64() {
+        value.as_f64().map(|n| n.to_string())
+    } else if value.is_i64() {
+        value.as_i64().map(|n| n.to_string())
+    } else if value.is_u64() {
+        value.as_u64().map(|n| n.to_string())
+    } else if value.is_boolean() {
+        value.as_bool().map(|b| b.to_string())
+    } else if value.is_string() {
+        value.as_str().map(|s| s.to_owned())
+    } else {
+        log::trace!("Unhandled json type for value {:?}", value);
+        None
+    }
 }
 
 #[cfg(test)]

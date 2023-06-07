@@ -177,7 +177,7 @@ mod tests {
     use super::*;
     use crate::models::plugin::{
         action::{Action, State},
-        common::{ArgDef, Script},
+        common::{ArgDef, ArgType, Script},
         detection::{Detection, DetectionEntry},
         ParamDef,
     };
@@ -201,11 +201,15 @@ mod tests {
                     args: vec![
                         ArgDef {
                             name: "method".to_string(),
+                            arg_type: ArgType::String,
                             value: "get".to_string(),
+                            data_id: None,
                         },
                         ArgDef {
                             name: "url".to_string(),
+                            arg_type: ArgType::String,
                             value: "url".to_string(),
+                            data_id: None,
                         },
                     ],
                 }],
@@ -232,17 +236,21 @@ mod tests {
                 args: vec![
                     ArgDef {
                         name: "method".to_string(),
+                        arg_type: ArgType::String,
                         value: "get".to_string(),
+                        data_id: None,
                     },
                     ArgDef {
                         name: "url".to_string(),
+                        arg_type: ArgType::String,
                         value: "url".to_string(),
+                        data_id: None,
                     },
                 ],
             }],
         };
 
-        let expected = "{\"id\":\"test\",\"name\":\"Test\",\"description\":\"\",\"server_icon\":\"\",\"detection\":{\"list\":[{\"params\":[{\"name\":\"port\",\"param_type\":\"string\",\"default_value\":\"80\",\"mandatory\":true}],\"args\":[{\"name\":\"method\",\"value\":\"get\"},{\"name\":\"url\",\"value\":\"url\"}]}],\"script\":{\"script_type\":\"lua\",\"script\":\"Dummy script\"},\"detection_possible\":false,\"command\":\"http\"},\"credentials\":[],\"params\":[],\"data\":[],\"actions\":[{\"id\":\"\",\"name\":\"\",\"show_on_main\":false,\"depends\":[],\"available_for_state\":\"Any\",\"needs_confirmation\":false,\"description\":\"\",\"icon\":\"\",\"command\":\"http\",\"args\":[{\"name\":\"method\",\"value\":\"get\"},{\"name\":\"url\",\"value\":\"url\"}]}]}";
+        let expected = "{\"id\":\"test\",\"name\":\"Test\",\"description\":\"\",\"server_icon\":\"\",\"detection\":{\"list\":[{\"params\":[{\"name\":\"port\",\"param_type\":\"string\",\"default_value\":\"80\",\"mandatory\":true}],\"args\":[{\"name\":\"method\",\"arg_type\":\"String\",\"value\":\"get\"},{\"name\":\"url\",\"arg_type\":\"String\",\"value\":\"url\"}]}],\"script\":{\"script_type\":\"lua\",\"script\":\"Dummy script\"},\"detection_possible\":false,\"command\":\"http\"},\"credentials\":[],\"params\":[],\"data\":[],\"actions\":[{\"id\":\"\",\"name\":\"\",\"show_on_main\":false,\"depends\":[],\"available_for_state\":\"Any\",\"needs_confirmation\":false,\"description\":\"\",\"icon\":\"\",\"command\":\"http\",\"args\":[{\"name\":\"method\",\"arg_type\":\"String\",\"value\":\"get\"},{\"name\":\"url\",\"arg_type\":\"String\",\"value\":\"url\"}]}]}";
 
         let result = serde_json::to_string(&testee).unwrap();
         assert_eq!(expected, result);
@@ -266,11 +274,15 @@ mod tests {
                     args: vec![
                         ArgDef {
                             name: "method".to_string(),
+                            arg_type: ArgType::String,
                             value: "get".to_string(),
+                            data_id: None,
                         },
                         ArgDef {
                             name: "url".to_string(),
+                            arg_type: ArgType::String,
                             value: "url".to_string(),
+                            data_id: None,
                         },
                     ],
                 }],
@@ -297,11 +309,15 @@ mod tests {
                 args: vec![
                     ArgDef {
                         name: "method".to_string(),
+                        arg_type: ArgType::String,
                         value: "get".to_string(),
+                        data_id: None,
                     },
                     ArgDef {
                         name: "url".to_string(),
+                        arg_type: ArgType::String,
                         value: "url".to_string(),
+                        data_id: None,
                     },
                 ],
             }],

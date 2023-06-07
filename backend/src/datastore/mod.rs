@@ -59,8 +59,8 @@ use crate::models::error::AppError;
 
 pub use self::timeseries_persistence::QuestDBConfig;
 pub use self::timeseries_persistence::TimeSeriesData;
+pub use self::timeseries_persistence::TimeSeriesValue;
 pub use self::timeseries_persistence::Timestamp;
-pub use self::timeseries_persistence::Value;
 
 pub fn init_cache() {
     if let Ok(number) = plugins::init_cache() {

@@ -6,7 +6,8 @@ use tokio::sync::Semaphore;
 
 use crate::{
     commands::{self, ping::PingCommandResult},
-    datastore::{self, TimeSeriesData, TimeSeriesPersistence, Timestamp, Value},
+    common,
+    datastore::{self, TimeSeriesData, TimeSeriesPersistence, TimeSeriesValue, Timestamp},
     models::{error::AppError, response::status::Status},
 };
 
@@ -66,9 +67,12 @@ fn time_series_data_collection(status: Vec<Status>) -> Vec<TimeSeriesData> {
         .iter()
         .map(|s| TimeSeriesData {
             timestamp: Timestamp::SysTime(now),
-            identifier: Value::Symbol("IP".to_owned(), format!("{}", s.ipaddress)),
-            sub_identifier: None,
-            value: Value::Int("running".to_owned(), bool_to_int(s.is_running)),
+            identifier: TimeSeriesValue::Symbol(
+                common::IDENTIFIER.to_owned(),
+                format!("{}", s.ipaddress),
+            ),
+            sub_identifiers: Vec::new(),
+            value: TimeSeriesValue::Int(common::VALUE.to_owned(), bool_to_int(s.is_running)),
         })
         .collect()
 }
