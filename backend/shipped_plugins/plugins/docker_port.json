@@ -61,7 +61,39 @@
         "detection_possible": true
     },
     "credentials": [],
-    "data": [],
-    "params": [],
+    "data": [
+        {
+            "id": "listcontainers",
+            "description": "List all containers",
+            "template": "docker/data_container-list",
+            "command": "http",
+            "post_process": {
+                "script_type": "lua",
+                "script": "'{\"data\": ' .. string.sub(input,string.find(input, '%['), string.find(input, '%][^%]]*$') ) .. '}'"
+            },      
+            "args": [
+                {
+                    "name": "method",
+                    "value": "get"
+                },
+                {
+                    "name": "url",
+                    "value": "${params.protocol}://${IP}:${params.port}/containers/json"
+                }
+            ]
+        }
+    ],
+    "params": [
+        {
+          "name": "port",
+          "param_type": "number",
+          "default_value": "2375"
+        },
+        {
+          "name": "protocol",
+          "param_type": "string",
+          "default_value": "http"
+        }
+    ],
     "actions": []
 }
