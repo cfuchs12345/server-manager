@@ -7,7 +7,6 @@ import {
   SimpleChanges,
   ChangeDetectorRef,
 } from '@angular/core';
-import { time } from 'console';
 import { ChartType } from 'ng-apexcharts';
 import { Subscription, filter, take } from 'rxjs';
 import { MonitoringService } from 'src/app/services/monitoring/monitoring.service';
@@ -74,7 +73,7 @@ export class MonitoringSingleServerComponent
 
         setTimeout(() => {
           if (this.server !== undefined && this.seriesData !== undefined) {
-            for (let seriesId of this.seriesData.seriesIds) {
+            for (const seriesId of this.seriesData.seriesIds) {
               this.monitoringService.loadMonitoringData(this.server, seriesId);
             }
           }
@@ -97,7 +96,7 @@ export class MonitoringSingleServerComponent
 
   ngOnChanges(changes: SimpleChanges): void {
     for (const propName in changes) {
-      if (changes.hasOwnProperty(propName)) {
+      if (Object.prototype.hasOwnProperty.call(changes,propName)) {
         switch (propName) {
           case 'server':
             this.seriesData = undefined;
@@ -115,15 +114,15 @@ export class MonitoringSingleServerComponent
 
   updateDataMap = (data: MonitoringData) => {
     if (data !== undefined) {
-      let json = data.getJson();
+      const json = data.getJson();
 
       if (
-        json.hasOwnProperty('dataset') &&
-        json.hasOwnProperty('columns') &&
-        json.hasOwnProperty('series_id') &&
-        json.hasOwnProperty('name') &&
-        json.hasOwnProperty('series_type') &&
-        json.hasOwnProperty('chart_type')
+        Object.prototype.hasOwnProperty.call(json,'dataset') &&
+        Object.prototype.hasOwnProperty.call(json,'columns') &&
+        Object.prototype.hasOwnProperty.call(json,'series_id') &&
+        Object.prototype.hasOwnProperty.call(json,'name') &&
+        Object.prototype.hasOwnProperty.call(json,'series_type') &&
+        Object.prototype.hasOwnProperty.call(json,'chart_type')
       ) {
         const dataset = json.dataset as [];
         const columns = json.columns as [];
@@ -133,9 +132,9 @@ export class MonitoringSingleServerComponent
         const chart_type = json.chart_type as ChartType;
 
 
-        let chartDataListNew = new ChartDataList();
+        const chartDataListNew = new ChartDataList();
 
-        let series_values: Map<string, number[][]> = new Map();
+        const series_values: Map<string, number[][]> = new Map();
 
         const has_sub_identifier = columns.find( (e: any) => e.name !== undefined && e.name === 'Sub_Identifier') !==  undefined;
         const has_sub_identifier2 = columns.find( (e: any) => e.name !== undefined && e.name === 'Sub_Identifier2') !==  undefined;
@@ -154,7 +153,7 @@ export class MonitoringSingleServerComponent
 
             const value = this.getValue(row, valueStart);
 
-            let key = this.getKey(has_sub_identifier, has_sub_identifier2, sub_identifier, sub_identifier2);
+            const key = this.getKey(has_sub_identifier, has_sub_identifier2, sub_identifier, sub_identifier2);
 
             let series_array = series_values.get(key);
             if (series_array === undefined) {
@@ -165,14 +164,14 @@ export class MonitoringSingleServerComponent
             series_array.push([timestamp, value]);
         }
 
-        let chartData = new ChartData(
+        const chartData = new ChartData(
           series_id,
           chart_name,
           series_type,
           chart_type,
           []
         );
-        for (let [key, value] of series_values) {
+        for (const [key, value] of series_values) {
           chartData.series.push({
             name: key,
             data: value,
@@ -180,11 +179,11 @@ export class MonitoringSingleServerComponent
         }
 
         chartDataListNew.list = this.chartDataList.list.slice();
-        let existing = chartDataListNew.list.find(
+        const existing = chartDataListNew.list.find(
           (cd) => cd.name === chartData.name
         );
         if (existing) {
-          let index = chartDataListNew.list.indexOf(existing);
+          const index = chartDataListNew.list.indexOf(existing);
           chartDataListNew.list.splice(index);
         }
 
@@ -223,8 +222,7 @@ export class MonitoringSingleServerComponent
   };
 
   private getKey = (has_sub_identifier: boolean, has_sub_identifier2: boolean, sub_identifier: string,  sub_identifier2: string): string => {
-
-    let key: string = "";
+    let key = "";
 
     if( has_sub_identifier ) {
       key += sub_identifier;

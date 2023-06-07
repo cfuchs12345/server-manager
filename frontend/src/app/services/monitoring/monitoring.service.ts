@@ -41,8 +41,6 @@ export class MonitoringService {
             err.message
           );
         },
-        complete: () => {
-        },
       });
   }
 
@@ -64,8 +62,6 @@ export class MonitoringService {
             undefined,
             err.message
           );
-        },
-        complete: () => {
         },
       });
   };
