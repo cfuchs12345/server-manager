@@ -114,8 +114,8 @@ Some notes:
 
 ## My ToDo list (not ordered by priority)
 
-- [x] Docker plugin for Socket based installation on the same host (done)
-- [x] Docker plugin for port based connection for supporting remote docker installations (ToDo: Add support for client cert validation when using SSL. Currently only **unsecured** http possible)
+- [x] Docker plugin for Socket-based connection to a docker installation on the same host
+- [x] Docker plugin for port-based connection to a remote docker installation (ToDo: Add support for client cert validation when using SSL. Currently only **unsecured** http possible)
 - [ ] Extract more data for existing plugins
 - [ ] Control UPnP devices with their exposed actions
 - [x] Store received information as time series and build graphs (done - it uses [Apex](https://apexcharts.com/) charts for display and [Quest DB](https://questdb.io/) as database)
