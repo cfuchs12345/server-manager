@@ -668,7 +668,7 @@ async fn get_monitoring_data(
     };
 
     match plugin_execution::get_monitoring_data(series_id, ipaddress).await {
-        Ok(data_response) => HttpResponse::Ok().json(data_response),
+        Ok(response) => HttpResponse::Ok().json(response),
         Err(err) => {
             log::error!("Error while getting monitoring data: {}", err);
             HttpResponse::InternalServerError().finish()

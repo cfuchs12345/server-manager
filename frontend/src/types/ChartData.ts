@@ -1,7 +1,7 @@
 import { ApexAxisChartSeries, ApexChart, ApexDataLabels, ApexGrid, ApexStroke, ApexTitleSubtitle, ApexTooltip, ApexXAxis, ApexYAxis, ChartType } from "ng-apexcharts";
 
 export class ChartData {
-  constructor(public series_id: string, public name: string, public series_type: string, public chart_type: ChartType, public series: {name: string, data: number[][]}[]) {}
+  constructor(public series_id: string, public name: string, public series_type: string, public chart_type: ChartType, public series: {name: string, data: number[][]}[] ) {}
 }
 
 export class ChartDataList {

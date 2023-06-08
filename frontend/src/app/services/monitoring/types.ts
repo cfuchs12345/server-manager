@@ -1,22 +1,49 @@
-import { Server } from "../servers/types";
+import { Server } from '../servers/types';
 
-export class QueryMonitoringData {
-  constructor(public servers: Server[], public period_from : Number,  public period_from_unit : string,  public period_to: Number,  public period_to_unit: string){}
+export const SUB_IDENTIFIER = 'Sub_Identifier';
+export const SUB_IDENTIFIER2 = 'Sub_Identifier2';
+
+export class TimeSeriesQuery {
+  constructor(
+    public servers: Server[],
+    public period_from: Number,
+    public period_from_unit: string,
+    public period_to: Number,
+    public period_to_unit: string
+  ) {}
 }
 
-
-export class MonitoringSeriesData {
+export class TimeSeriesIds {
   constructor(public ipaddress: string, public seriesIds: string[]) {}
 }
 
-export class MonitoringData {
-  private json: any;
+export class TimeSeriesResponse {
+  constructor(
+    public meta_data: TimeSeriesResponseMetaData,
+    public data: TimeSeriesResponseData
+  ) {}
+}
 
-  constructor(public ipaddress: string, private data: string) {
-    this.json = JSON.parse(data);
-  }
+export class TimeSeriesResponseMetaData {
+  constructor(
+    public ipaddress: string,
+    public series: string,
+    public name: string,
+    public series_id: string,
+    public series_type: 'category' | 'datetime',
+    public chart_type: 'bar' | 'line'
+  ) {}
+}
 
-  getJson() {
-    return this.json;
-  }
+export class TimeSeriesResponseData {
+  constructor(
+    public query: string,
+    public columns: TimeSeriesResponseColumnMetaData[],
+    public dataset: any[][],
+    public count: number
+  ) {}
+}
+
+export class TimeSeriesResponseColumnMetaData {
+  constructor(public name: string, public type: string) {}
 }

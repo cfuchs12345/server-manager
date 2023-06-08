@@ -1,19 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use super::common::{ArgDef, Script};
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-#[allow(non_camel_case_types)]
-pub enum SeriesType {
-    datetime,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-#[allow(non_camel_case_types)]
-pub enum ChartyType {
-    bar,
-    line,
-}
+use super::{
+    common::{ArgDef, Script},
+    monitoring::Monitioring,
+};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Data {
@@ -40,31 +30,6 @@ pub struct Data {
     pub post_process: Option<Script>,
     #[serde(default)]
     pub monitoring: Vec<Monitioring>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-pub struct Monitioring {
-    pub pre_process: Option<Script>,
-    pub id: String,
-    pub name: String,
-    pub series_type: SeriesType,
-    pub chart_type: ChartyType,
-    pub identifier: KeyValue,
-    pub sub_identifier: Option<KeyValue>,
-    pub values: Vec<KeyValue>,
-}
-
-impl Monitioring {
-    pub fn get_sub_identifiers_as_vec(&self) -> Vec<KeyValue> {
-        self.sub_identifier.iter().cloned().collect()
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-pub struct KeyValue {
-    pub name: String,
-    pub value_type: String,
-    pub value: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq)]

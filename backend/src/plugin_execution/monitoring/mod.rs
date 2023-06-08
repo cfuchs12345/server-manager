@@ -6,7 +6,10 @@ use crate::{
     models::{
         error::AppError,
         plugin::{
-            data::{KeyValue, Monitioring, SeriesType},
+            monitoring::{
+                ChartyType, KeyValue, Monitioring, SeriesType, TimeSeriesResponse,
+                TimeSeriesResponseData, TimeSeriesResponseMetaData,
+            },
             Plugin,
         },
     },
@@ -14,7 +17,10 @@ use crate::{
 
 mod response_parser;
 
-pub async fn get_monitoring_data(series_id: &str, ipaddress: IpAddr) -> Result<String, AppError> {
+pub async fn get_monitoring_data(
+    series_id: &str,
+    ipaddress: IpAddr,
+) -> Result<TimeSeriesResponse, AppError> {
     let monitoring = get_monitoring_config_for_series(series_id).ok_or(AppError::Unknown(
         format!("Could not find monitoring config for series {}", series_id),
     ))?;
@@ -22,8 +28,6 @@ pub async fn get_monitoring_data(series_id: &str, ipaddress: IpAddr) -> Result<S
     log::trace!("querying monitoring data for {}", series_id);
 
     let config = datastore::QuestDBConfig::new();
-    let host = config.get_host();
-    let port = config.get_http_port();
 
     let select = create_data_select(&monitoring, series_id, format!("{}", ipaddress).as_str());
 
@@ -34,19 +38,23 @@ pub async fn get_monitoring_data(series_id: &str, ipaddress: IpAddr) -> Result<S
         .build()
         .unwrap();
 
-    let url = format!("http://{}:{}/exec", host, port);
+    let result = client
+        .get(format!(
+            "http://{}:{}/exec",
+            config.get_host(),
+            config.get_http_port()
+        ))
+        .query(&query)
+        .send()
+        .await?
+        .text()
+        .await?;
 
-    let result = client.get(url).query(&query).send().await?;
+    log::trace!("response from db: {}", result);
 
-    let text = result.text().await?;
+    let value = serde_json::from_str::<TimeSeriesResponseData>(&result)?;
 
-    log::trace!("response from db: {}", text);
-
-    let value = serde_json::from_str::<serde_json::Value>(&text)?;
-
-    let enriched = enrich_response(value, ipaddress, series_id, &monitoring)?;
-
-    serde_json::to_string(&enriched).map_err(AppError::from)
+    enrich_response(value, ipaddress, series_id, &monitoring)
 }
 
 fn create_data_select(monitoring: &Monitioring, series_id: &str, identifier: &str) -> String {
@@ -86,8 +94,8 @@ fn get_monitoring_config_for_series(series_id: &str) -> Option<Monitioring> {
             pre_process: None,
             id: "server_status".to_owned(),
             name: "Server Status".to_owned(),
-            chart_type: crate::models::plugin::data::ChartyType::line,
-            series_type: SeriesType::datetime,
+            chart_type: ChartyType::Line,
+            series_type: SeriesType::Datetime,
             identifier: KeyValue {
                 name: "IP".to_owned(),
                 value_type: "symbol".to_owned(),
@@ -106,42 +114,21 @@ fn get_monitoring_config_for_series(series_id: &str) -> Option<Monitioring> {
 }
 
 fn enrich_response(
-    json: serde_json::Value,
+    data: TimeSeriesResponseData,
     ipaddress: IpAddr,
     series: &str,
     monitoring: &Monitioring,
-) -> Result<serde_json::Value, AppError> {
-    let value: serde_json::Value = match json {
-        serde_json::Value::Object(mut map) => {
-            map.insert(
-                "ipaddress".to_owned(),
-                serde_json::Value::String(format!("{}", ipaddress)),
-            );
-            map.insert(
-                "series".to_owned(),
-                serde_json::Value::String(series.to_owned()),
-            );
-            map.insert(
-                "name".to_owned(),
-                serde_json::Value::String(monitoring.name.clone()),
-            );
-            map.insert(
-                "series_id".to_owned(),
-                serde_json::Value::String(monitoring.id.clone()),
-            );
-            map.insert(
-                "series_type".to_owned(),
-                serde_json::Value::String(format!("{:?}", monitoring.series_type)),
-            );
-            map.insert(
-                "chart_type".to_owned(),
-                serde_json::Value::String(format!("{:?}", monitoring.chart_type)),
-            );
-            serde_json::Value::Object(map)
-        }
-        y => y,
+) -> Result<TimeSeriesResponse, AppError> {
+    let meta_data = TimeSeriesResponseMetaData {
+        ipaddress: format!("{}", ipaddress),
+        series: series.to_owned(),
+        series_id: monitoring.id.clone(),
+        name: monitoring.name.to_owned(),
+        series_type: monitoring.series_type.for_json(),
+        chart_type: monitoring.chart_type.for_json(),
     };
-    Ok(value)
+
+    Ok(data.to_response(meta_data))
 }
 
 pub async fn monitor_all() -> Result<(), AppError> {

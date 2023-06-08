@@ -10,7 +10,8 @@ use crate::{
     datastore::{self, TimeSeriesData, TimeSeriesValue},
     models::{
         error::AppError,
-        plugin::data::{Data, KeyValue, Monitioring},
+        plugin::data::Data,
+        plugin::monitoring::{KeyValue, Monitioring},
     },
     plugin_execution,
 };

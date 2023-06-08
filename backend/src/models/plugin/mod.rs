@@ -2,6 +2,7 @@ pub mod action;
 pub mod common;
 pub mod data;
 pub mod detection;
+pub mod monitoring;
 pub mod sub_action;
 
 use serde::{Deserialize, Serialize};

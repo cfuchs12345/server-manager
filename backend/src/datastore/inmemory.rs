@@ -5,7 +5,7 @@ use std::{collections::HashMap, net::IpAddr, sync::RwLock};
 use crate::{
     models::response::{data_result::ConditionCheckResult, status::Status},
     models::{
-        plugin::{data::Monitioring, Plugin},
+        plugin::{monitoring::Monitioring, Plugin},
         server::Server,
     },
 };
