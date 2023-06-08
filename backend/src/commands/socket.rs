@@ -98,7 +98,7 @@ impl Command for SocketCommand {
         );
             return Err(AppError::InvalidArgument("url".to_string(), None));
         }
-        log::info!(
+        log::debug!(
             "{} {} {}",
             normal_and_masked_url.0,
             method,
@@ -125,7 +125,7 @@ impl Command for SocketCommand {
         )
         .await?;
 
-        log::info!("Response from socket: {}", response_string);
+        log::debug!("Response from socket: {}", response_string);
 
         Ok(Box::new(SocketCommandResult::new(response_string.as_str())))
     }

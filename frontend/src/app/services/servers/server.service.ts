@@ -40,7 +40,7 @@ export class ServerService {
         .subscribe({
           next: (res) => {
             const indexToDelete = this.dataStore.servers.findIndex(s => s.ipaddress === server.ipaddress);
-            this.dataStore.servers.splice(indexToDelete, 1);
+            this.dataStore.servers.splice(indexToDelete);
           },
           error: (err: any) => {
             this.errorService.newError("Server-Service", server.ipaddress, err.message);

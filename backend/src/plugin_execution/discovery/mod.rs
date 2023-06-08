@@ -94,7 +94,7 @@ pub async fn discover_features_of_all_servers(
         .collect();
 
     let features_from_upnp_discovery = upnp_future.await?;
-    log::info!(
+    log::debug!(
         "features_from_upnp_discovery {:?}",
         features_from_upnp_discovery
     );
