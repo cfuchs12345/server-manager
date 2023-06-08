@@ -47,7 +47,7 @@ export class ServerStatusService {
             this.errorService.newError(
               'Status-Service',
               undefined,
-              err.message
+              err
             );
           }
         },

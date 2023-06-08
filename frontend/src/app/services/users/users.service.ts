@@ -27,7 +27,7 @@ export class UserService {
           this.dataStore.users = loadedUsers;
         },
         error: (err: any) => {
-          this.errorService.newError('User-Service', undefined, err.message);
+          this.errorService.newError('User-Service', undefined, err);
         },
         complete: () => {
           this.publishUsers();
@@ -51,7 +51,7 @@ export class UserService {
           this._initialPassword.next(new UserInitialPassword(user.user_id, response));
         },
         error: (err: any) => {
-          this.errorService.newError("User-Service", user.user_id, err.message);
+          this.errorService.newError("User-Service", user.user_id, err);
         },
         complete: () => {
           setTimeout(this.publishUsers, 500);
@@ -72,7 +72,7 @@ export class UserService {
               this.dataStore.users.splice(indexToDelete, 1);
             },
             error: (err: any) => {
-              this.errorService.newError("User-Service", user.user_id, err.message);
+              this.errorService.newError("User-Service", user.user_id, err);
             },
             complete: () => {
               if (usersToDelete[usersToDelete.length -1].user_id === user.user_id) {
@@ -104,7 +104,7 @@ export class UserService {
 
         },
         error: (err: any) => {
-          this.errorService.newError("User-Service", userId, err.message);
+          this.errorService.newError("User-Service", userId, err);
         },
         complete: () => {
 

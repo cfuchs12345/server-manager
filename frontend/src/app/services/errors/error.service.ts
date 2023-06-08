@@ -1,10 +1,10 @@
-import { Injectable } from "@angular/core";
-import { BehaviorSubject } from "rxjs";
-import { Error } from "./types";
+import { Injectable } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
+import { Error } from './types';
 
 @Injectable()
 export class ErrorService {
-  private _errors = new BehaviorSubject<Map<string, Error>>( new Map());
+  private _errors = new BehaviorSubject<Map<string, Error>>(new Map());
   readonly errors = this._errors.asObservable();
 
   private dataStore: {
@@ -13,28 +13,41 @@ export class ErrorService {
     errors: new Map(),
   };
 
+  constructor() {}
 
-  constructor() { }
+  newError(
+    sourceName: string,
+    ipaddress: string | undefined = undefined,
+    error: any
+  ) {
+    let text: string;
+    if (Object.hasOwn(error, 'error')) {
+      text = error.error;
+    } else if (Object.hasOwn(error, 'message')) {
+      text = error.message;
+    } else {
+      text = JSON.stringify(error);
+    }
 
-  newError(sourceName: string, ipaddress: string | undefined = undefined, errorMessage: string){
-    this.publishError( new Date(), sourceName, ipaddress, errorMessage);
+    this.publishError(new Date(), sourceName, ipaddress, text);
   }
 
-
-  private publishError = (date: Date, sourceName: string, ipaddress: string | undefined, errorMessage: string) => {
-    const key = sourceName + "|" + errorMessage;
+  private publishError = (
+    date: Date,
+    sourceName: string,
+    ipaddress: string | undefined,
+    errorMessage: string
+  ) => {
+    const key = sourceName + '|' + errorMessage;
 
     var error = this.dataStore.errors.get(key);
-    if( !error) {
+    if (!error) {
       error = new Error(sourceName, ipaddress, errorMessage, date, 1);
       this.dataStore.errors.set(key, error);
-    }
-    else {
+    } else {
       error.increment();
       error.setLastOccurrance(date);
     }
     this._errors.next(this.dataStore.errors);
   };
-
-
 }

@@ -16,7 +16,10 @@ enum Level {
 #[allow(dead_code)]
 #[derive(Debug)]
 pub enum AppError {
+    InvalidPassword(),
+    DNSServersNotConfigured(),
     ServerNotFound(String),
+    FeatureNotFound(String, String),
     UserNotFound(String),
     InvalidArgument(String, Option<String>),
     ArgumentNotFound(String),
@@ -30,6 +33,8 @@ pub enum AppError {
     DatabaseError(String),
     HttpError(String),
     MissingArgument(String),
+    MissingURLParameter(String),
+    UnsupportedURLParameter(String, Option<String>),
     CouldNotRenderData(String),
     UnAuthorized,
     DecryptionError,
@@ -48,57 +53,88 @@ pub struct AppErrorResponse {
 impl Display for AppError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            AppError::InvalidPassword() => {
+                write!(f, "The password was invalid")
+            }
+            AppError::DNSServersNotConfigured() => {
+                write!(
+                    f,
+                    "There is no DNS Server configured but DNS lookup is activated. Cannot continue."
+                )
+            }
             AppError::ServerNotFound(ipaddress) => {
-                write!(f, "A server with address {} could not be found", ipaddress)
+                write!(
+                    f,
+                    "A server with address '{}' could not be found",
+                    ipaddress
+                )
+            }
+            AppError::FeatureNotFound(ipaddress, feature) => {
+                write!(
+                    f,
+                    "A server with address '{}' doesn't have a feature with id '{}'",
+                    ipaddress, feature
+                )
             }
             AppError::UserNotFound(user_id) => {
-                write!(f, "A user with id {} could not be found", user_id)
+                write!(f, "A user with id '{}' could not be found", user_id)
             }
             AppError::InvalidArgument(name, opt_value) => match opt_value {
                 Some(value) => write!(f, "Invalid Argument {} with value {}", name, value),
-                None => write!(f, "Invalid Argument {}", name),
+                None => write!(f, "Invalid Argument '{}'", name),
             },
             AppError::ArgumentNotFound(name) => {
-                write!(f, "Argument with name {} could not be found", name)
+                write!(f, "Argument with name '{}' could not be found", name)
             }
             AppError::CredentialNotFound(name) => {
-                write!(f, "Credential with name {} could not be found", name)
+                write!(f, "Credential with name '{}' could not be found", name)
             }
             AppError::CommandNotFound(name) => {
-                write!(f, "Command with name {} could not be found", name)
+                write!(f, "Command with name '{}' could not be found", name)
             }
-            AppError::UnknownPlugin(name) => write!(f, "A plugin with id {} is not known", name),
+            AppError::UnknownPlugin(name) => write!(f, "A plugin with id '{}' is not known", name),
             AppError::UnknownPluginAction(plugin_name, name) => write!(
                 f,
-                "A plugin action with id {} is not know for a plugin with id {}",
+                "A plugin action with id '{}' is not know for a plugin with id '{}'",
                 name, plugin_name
             ),
             AppError::UnknownPluginData(plugin_name, name) => write!(
                 f,
-                "A plugin data query with id {} is not know for a plugin with id {}",
+                "A plugin data query with id '{}' is not know for a plugin with id '{}'",
                 name, plugin_name
             ),
             AppError::Unknown(err) => write!(f, "An unknown error occurred {}", err),
-            AppError::DataNotFound(name) => write!(f, "data {} not found", name),
+            AppError::DataNotFound(name) => write!(f, "data '{}' not found", name),
             AppError::DatabaseError(err) => write!(f, "A database error occurred {}", err),
             AppError::HttpError(err) => write!(f, "A http request error occurred {}", err),
             AppError::MissingArgument(name) => {
-                write!(f, "Argument with name {} is missing or not set", name)
+                write!(f, "Argument with name '{}' is missing or not set", name)
             }
-            AppError::CouldNotRenderData(data) => write!(f, "Could not render data {}", data),
+            AppError::MissingURLParameter(name) => {
+                write!(f, "URL Paramter with name '{}' was not set", name)
+            }
+            AppError::UnsupportedURLParameter(name, value) => match value {
+                Some(value) => write!(
+                    f,
+                    "URL Parameter '{}' with with value '{}' is not supported",
+                    name, value
+                ),
+                None => write!(f, "URL Parameter '{}' is not supported", name),
+            },
+            AppError::CouldNotRenderData(data) => write!(f, "Could not render data '{}'", data),
             AppError::UnAuthorized => write!(f, "User is not authorized"),
             AppError::DecryptionError => write!(f, "Data could not be decrypted"),
-            AppError::ParseError(err) => write!(f, "Could not parse given data {}", err),
+            AppError::ParseError(err) => write!(f, "Could not parse given data '{}'", err),
             AppError::EmailConfigError(name) => write!(
                 f,
-                "the email config in the env file is invalid for property: {}",
+                "the email config in the env file is invalid for property: '{}'",
                 name
             ),
-            AppError::Suppressed(err) => write!(f, "Explicitly suppressed error {}", err),
-            AppError::ScriptError(err) => write!(f, "Error during script execution {}", err),
+            AppError::Suppressed(err) => write!(f, "Explicitly suppressed error '{}'", err),
+            AppError::ScriptError(err) => write!(f, "Error during script execution '{}'", err),
             AppError::NokOKResponse(statuscode, response) => write!(
                 f,
-                "Response was no OK or ACCEPTED but {} and response {}",
+                "Response was no OK or ACCEPTED but {} and response '{}'",
                 statuscode, response
             ),
         }
@@ -198,9 +234,9 @@ impl ResponseError for AppError {
 
     fn error_response(&self) -> HttpResponse {
         HttpResponse::build(self.status_code()).json(AppErrorResponse {
-            error: format!("{:?}", self),
+            error: format!("{}", self),
         })
     }
 }
 
-impl std::error::Error for AppError {}
+//impl std::error::Error for AppError {}

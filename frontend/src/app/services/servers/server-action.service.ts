@@ -46,7 +46,7 @@ export class ServerActionService {
           this.publishActionCheckResult();
         },
         error: (err: any) => {
-          this.errorService.newError('Action-Service', undefined, err.message);
+          this.errorService.newError('Action-Service', undefined, err !== undefined ? err: err);
         },
         complete: () => {},
       });
@@ -74,7 +74,7 @@ export class ServerActionService {
       .subscribe({
         next: (result) => {},
         error: (err: any) => {
-          this.errorService.newError('Action-Service', ipaddress, err.message);
+          this.errorService.newError('Action-Service', ipaddress, err);
         },
         complete: () => {},
       });

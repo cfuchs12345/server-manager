@@ -28,7 +28,7 @@ use sqlx::types::chrono::NaiveDateTime;
 pub async fn post_networks_action(
     data: web::Data<AppData>,
     query: web::Json<NetworksAction>,
-) -> HttpResponse {
+) -> Result<HttpResponse, AppError> {
     let params_map = QueryParamsAsMap::from(query.params.clone());
 
     let dns_server_result = datastore::load_all_dnsservers(&data.app_data_persistence).await;
@@ -38,70 +38,49 @@ pub async fn post_networks_action(
             let network = params_map.get("network").unwrap();
             let lookup_names: bool = params_map.get("lookup_names").unwrap().parse().unwrap();
 
-            if lookup_names && dns_server_result.is_err() {
-                HttpResponse::InternalServerError().finish()
+            if lookup_names
+                && (dns_server_result.is_err() || dns_server_result.as_ref().unwrap().is_empty())
+            {
+                Err(AppError::DNSServersNotConfigured())
             } else {
-                let mut dns_servers_found = false;
-                let mut dns_servers_query_had_error = false;
+                let dns_servers = dns_server_result?;
 
-                let dns_servers = match dns_server_result {
-                    Ok(res) => {
-                        dns_servers_found = !res.is_empty();
-                        res
-                    }
-                    Err(err) => {
-                        log::error!("Error during DNS server query: {}", err);
-                        dns_servers_query_had_error = true;
-                        vec![]
-                    }
-                };
+                let list = plugin_execution::auto_discover_servers_in_network(
+                    network,
+                    lookup_names,
+                    dns_servers,
+                    &true,
+                )
+                .await?;
 
-                if dns_servers_query_had_error {
-                    HttpResponse::InternalServerError().finish()
-                } else if !dns_servers_found && lookup_names {
-                    HttpResponse::BadRequest().body("No DNS Servers configured. Please configure DNS Servers first before doing a auto discovery with DNS lookup")
-                } else {
-                    match plugin_execution::auto_discover_servers_in_network(
-                        network,
-                        lookup_names,
-                        dns_servers,
-                        &true,
-                    )
-                    .await
-                    {
-                        Ok(list) => HttpResponse::Ok().json(list),
-                        Err(_err) => HttpResponse::InternalServerError().finish(),
-                    }
-                }
+                Ok(HttpResponse::Ok().json(list))
             }
         }
     }
 }
 
 #[get("/servers")]
-pub async fn get_servers(data: web::Data<AppData>) -> HttpResponse {
-    match datastore::load_all_servers(&data.app_data_persistence, true).await {
-        Ok(result) => HttpResponse::Ok().json(result),
-        Err(err) => HttpResponse::InternalServerError().body(format!("{:?}", err)),
-    }
+pub async fn get_servers(data: web::Data<AppData>) -> Result<HttpResponse, AppError> {
+    let result = datastore::load_all_servers(&data.app_data_persistence, true).await?;
+
+    Ok(HttpResponse::Ok().json(result))
 }
 
 #[post("/servers")]
-pub async fn post_servers(data: web::Data<AppData>, query: web::Json<Server>) -> HttpResponse {
-    match datastore::insert_server(&data.app_data_persistence, &query.0).await {
-        Ok(result) => match result {
-            true => HttpResponse::Ok().finish(),
-            _ => HttpResponse::InternalServerError().body("Database could not be updated"),
-        },
-        Err(err) => HttpResponse::InternalServerError().body(format!("{:?}", err)),
-    }
+pub async fn post_servers(
+    data: web::Data<AppData>,
+    query: web::Json<Server>,
+) -> Result<HttpResponse, AppError> {
+    datastore::insert_server(&data.app_data_persistence, &query.0).await?;
+
+    Ok(HttpResponse::Ok().finish())
 }
 
 #[post("/servers/actions")]
 pub async fn post_servers_actions(
     data: web::Data<AppData>,
     query: web::Json<ServersAction>,
-) -> HttpResponse {
+) -> Result<HttpResponse, AppError> {
     let params_map = QueryParamsAsMap::from(query.params.clone());
 
     match query.action_type {
@@ -119,37 +98,25 @@ pub async fn post_servers_actions(
                 None => Vec::new(),
             };
 
-            let list = other_functions::statuscheck::status_check(ips_to_check, true)
-                .await
-                .unwrap();
-            HttpResponse::Ok().json(list)
+            let list = other_functions::statuscheck::status_check(ips_to_check, true).await?;
+
+            Ok(HttpResponse::Ok().json(list))
         }
         ServersActionType::FeatureScan => {
-            match datastore::load_all_servers(&data.app_data_persistence, true).await {
-                Ok(servers) => {
-                    let upnp_activated =
-                        !datastore::is_plugin_disabled("upnp", &data.app_data_persistence)
-                            .await
-                            .unwrap_or(true);
+            let servers = datastore::load_all_servers(&data.app_data_persistence, true).await?;
 
-                    let list = plugin_execution::discover_features_of_all_servers(
-                        servers,
-                        upnp_activated,
-                        &true,
-                    )
-                    .await
-                    .unwrap();
+            let upnp_activated = !datastore::is_plugin_disabled("upnp", &data.app_data_persistence)
+                .await
+                .unwrap_or(true);
 
-                    HttpResponse::Ok().json(list)
-                }
-                Err(err) => {
-                    log::error!("Error while loading servers from database: {:?}", err);
-                    HttpResponse::InternalServerError().body("Could not load servers from database")
-                }
-            }
+            let list =
+                plugin_execution::discover_features_of_all_servers(servers, upnp_activated, &true)
+                    .await?;
+
+            Ok(HttpResponse::Ok().json(list))
         }
         ServersActionType::ActionConditionCheck => {
-            HttpResponse::Ok().json(datastore::get_all_condition_results().to_vec())
+            Ok(HttpResponse::Ok().json(datastore::get_all_condition_results().to_vec()))
         }
     }
 }
@@ -159,86 +126,71 @@ pub async fn post_servers_by_ipaddress_action(
     data: web::Data<AppData>,
     query: web::Json<ServerAction>,
     path: web::Path<String>,
-) -> HttpResponse {
+) -> Result<HttpResponse, AppError> {
     let Ok(ipaddress): Result<IpAddr,_> = path.into_inner().parse() else {
-        return HttpResponse::InternalServerError().body("IP Address is incorrect");
+        return Err(AppError::InvalidArgument("ipaddress".to_owned(), None));
     };
 
-    let server_res = datastore::get_server(&data.app_data_persistence, &ipaddress).await;
-
-    if server_res.is_err() {
-        return HttpResponse::InternalServerError()
-            .body(format!("Server with ip {} not found", &ipaddress));
-    }
-    let server = server_res.unwrap();
+    let server = datastore::get_server(&data.app_data_persistence, &ipaddress).await?;
 
     let crypto_key = datastore::get_crypto_key();
 
     match query.action_type {
         ServerActionType::FeatureScan => {
-            match plugin_execution::discover_features(ipaddress, crypto_key, &true).await {
-                Ok(list) => HttpResponse::Ok().json(list),
-                Err(err) => HttpResponse::InternalServerError().body(format!("{:?}", err)),
-            }
+            let list = plugin_execution::discover_features(ipaddress, crypto_key, &true).await?;
+
+            Ok(HttpResponse::Ok().json(list))
         }
         ServerActionType::Status => {
-            match other_functions::statuscheck::status_check(vec![ipaddress], false).await {
-                Ok(list) => HttpResponse::Ok().json(list.first().unwrap_or(&Status {
-                    ipaddress,
-                    is_running: false,
-                })),
-                Err(err) => HttpResponse::InternalServerError().body(format!("{:?}", err)),
-            }
+            let list = other_functions::statuscheck::status_check(vec![ipaddress], false).await?;
+
+            Ok(HttpResponse::Ok().json(list.first().unwrap_or(&Status {
+                ipaddress,
+                is_running: false,
+            })))
         }
         ServerActionType::ExecuteFeatureAction => {
             let params_map = QueryParamsAsMap::from(query.params.clone());
 
-            let feature_id = params_map.get("feature_id").unwrap();
-            let action_id: &String = params_map.get("action_id").unwrap();
-            let action_params = params_map.get_as_str("action_params");
+            let feature_id = params_map
+                .get("feature_id")
+                .ok_or(AppError::ArgumentNotFound("feature_id".to_owned()))?;
 
-            let feature_res = server.find_feature(feature_id);
+            let action_id = params_map
+                .get("action_id")
+                .ok_or(AppError::ArgumentNotFound("action_id".to_owned()))?;
 
-            if feature_res.is_none() {
-                log::error!(
-                    "Feature id {} not found for server {:?}",
-                    feature_id,
-                    server
-                );
-                return HttpResponse::InternalServerError()
-                    .body(format!("Feature with id {} not known", feature_id));
-            }
+            let action_params = params_map.get_as_str("action_params").map(|v| v.to_owned()); // keep as option
 
-            match plugin_execution::execute_action(
+            let feature = server
+                .find_feature(feature_id)
+                .ok_or(AppError::FeatureNotFound(
+                    format!("{}", ipaddress),
+                    feature_id.clone(),
+                ))?;
+
+            let result = plugin_execution::execute_action(
                 &server,
-                &feature_res.unwrap(),
+                &feature,
                 action_id,
-                action_params.map(|v| v.to_owned()),
+                action_params,
                 crypto_key,
                 &false,
             )
-            .await
-            {
-                Ok(result) => HttpResponse::Ok().json(result),
-                Err(err) => HttpResponse::InternalServerError().body(format!("{:?}", err)),
-            }
+            .await?;
+
+            Ok(HttpResponse::Ok().json(result))
         }
         ServerActionType::QueryData => {
-            match plugin_execution::execute_data_query(
+            let results = plugin_execution::execute_data_query(
                 &server,
                 &data.app_data_template_engine,
                 crypto_key,
                 &false,
             )
-            .await
-            {
-                Ok(results) => HttpResponse::Ok().json(results),
-                Err(err) => {
-                    log::error!("Error during data query: {}", err);
+            .await?;
 
-                    HttpResponse::InternalServerError().body(format!("{:?}", err))
-                }
-            }
+            Ok(HttpResponse::Ok().json(results))
         }
     }
 }
@@ -247,67 +199,55 @@ pub async fn post_servers_by_ipaddress_action(
 pub async fn put_servers_by_ipaddress(
     data: web::Data<AppData>,
     query: web::Json<Server>,
-) -> HttpResponse {
-    match datastore::update_server(&data.app_data_persistence, &query.0).await {
-        Ok(result) => match result {
-            true => HttpResponse::Ok().finish(),
-            false => HttpResponse::InternalServerError().body("Database could not be updated"),
-        },
-        Err(err) => HttpResponse::InternalServerError().body(format!("{:?}", err)),
-    }
+) -> Result<HttpResponse, AppError> {
+    datastore::update_server(&data.app_data_persistence, &query.0).await?;
+
+    Ok(HttpResponse::Ok().finish())
 }
 
 #[delete("/servers/{ipaddress}")]
 pub async fn delete_servers_by_ipaddress(
     data: web::Data<AppData>,
     path: web::Path<String>,
-) -> HttpResponse {
-    let Ok(ipaddress) = path.into_inner().parse() else {
-        return HttpResponse::InternalServerError().body("IP Address is incorrect");
-    };
+) -> Result<HttpResponse, AppError> {
+    let ipaddress = path.into_inner().parse()?;
 
-    match datastore::delete_server(&data.app_data_persistence, &ipaddress).await {
-        Ok(result) => match result {
-            true => HttpResponse::Ok().finish(),
-            false => HttpResponse::InternalServerError().body("Database could not be updated"),
-        },
-        Err(err) => HttpResponse::InternalServerError().body(format!("{:?}", err)),
-    }
+    datastore::delete_server(&data.app_data_persistence, &ipaddress).await?;
+
+    Ok(HttpResponse::Ok().finish())
 }
 
 #[get("/plugins")]
-pub async fn get_plugins(_data: web::Data<AppData>, _req: HttpRequest) -> HttpResponse {
-    HttpResponse::Ok().json(datastore::get_all_plugins())
+pub async fn get_plugins(
+    _data: web::Data<AppData>,
+    _req: HttpRequest,
+) -> Result<HttpResponse, AppError> {
+    Ok(HttpResponse::Ok().json(datastore::get_all_plugins()))
 }
 
 #[get("/plugins/actions")]
 pub async fn get_plugins_actions(
     data: web::Data<AppData>,
     query: web::Query<std::collections::HashMap<String, String>>,
-) -> HttpResponse {
+) -> Result<HttpResponse, AppError> {
     let params = query.into_inner();
 
-    match params.get("query") {
-        Some(query_value) => match query_value.as_str() {
-            "disabled" => {
-                let persistence = &data.app_data_persistence;
+    let query_value = params
+        .get("query")
+        .ok_or(AppError::MissingURLParameter("query".to_owned()))?;
 
-                match datastore::get_disabled_plugins(persistence).await {
-                    Ok(list) => HttpResponse::Ok().json(list),
-                    Err(_err) => {
-                        HttpResponse::InternalServerError().body("Cannot load disabled plugins")
-                    }
-                }
-            }
-            y => {
-                log::error!("Query param value {} not known", y);
-                HttpResponse::BadRequest().finish()
-            }
-        },
-        None => {
-            log::error!("No query parameter found. Request is invalid");
-            HttpResponse::BadRequest().finish()
+    match query_value.as_str() {
+        "disabled" => {
+            let persistence = &data.app_data_persistence;
+
+            let list = datastore::get_disabled_plugins(persistence).await?;
+
+            Ok(HttpResponse::Ok().json(list))
         }
+        y => Err(AppError::UnsupportedURLParameter(
+            "query".to_owned(),
+            Some(y.to_owned()),
+        )),
     }
 }
 
@@ -315,24 +255,26 @@ pub async fn get_plugins_actions(
 pub async fn put_plugins_actions(
     data: web::Data<AppData>,
     query: web::Json<PluginsAction>,
-) -> HttpResponse {
+) -> Result<HttpResponse, AppError> {
     let action = query.into_inner();
     let params_map = QueryParamsAsMap::from(action.params);
 
     let persistence = &data.app_data_persistence;
 
-    match datastore::disable_plugins(persistence, params_map.get_split_by("ids", ",").unwrap())
-        .await
-    {
-        Ok(res) => match res {
-            true => HttpResponse::Ok().finish(),
-            false => HttpResponse::InternalServerError().body("Cannot disable plugins"),
-        },
-        Err(err) => {
-            log::error!("Error {:?}", err);
-            HttpResponse::InternalServerError()
-                .body("Unknown error while trying to disable plugins")
-        }
+    let res = datastore::disable_plugins(
+        persistence,
+        params_map
+            .get_split_by("ids", ",")
+            .ok_or(AppError::UnsupportedURLParameter(
+                "ids".to_owned(),
+                params_map.get("ids").map(|v| v.to_owned()),
+            ))?,
+    )
+    .await?;
+
+    match res {
+        true => Ok(HttpResponse::Ok().finish()),
+        false => Err(AppError::Unknown("Could not disable plugin".to_owned())),
     }
 }
 
@@ -340,111 +282,103 @@ pub async fn put_plugins_actions(
 pub async fn post_dnsservers(
     data: web::Data<AppData>,
     query: web::Json<DNSServer>,
-) -> HttpResponse {
+) -> Result<HttpResponse, AppError> {
     let persistence = &data.app_data_persistence;
 
     let server = query.into_inner();
 
-    match datastore::insert_dnsserver(persistence, &server).await {
-        Ok(_res) => HttpResponse::Ok().finish(),
-        Err(_err) => HttpResponse::InternalServerError().body("Cannot save DNS server"),
-    }
+    datastore::insert_dnsserver(persistence, &server).await?;
+    Ok(HttpResponse::Ok().finish())
 }
 
 #[get("/systeminformation/dnsservers")]
-pub async fn get_system_dnsservers(_data: web::Data<AppData>) -> HttpResponse {
-    HttpResponse::Ok().json(systeminfo::get_systenms_dns_servers())
+pub async fn get_system_dnsservers(_data: web::Data<AppData>) -> Result<HttpResponse, AppError> {
+    Ok(HttpResponse::Ok().json(systeminfo::get_systenms_dns_servers()))
 }
 
 #[get("/configurations/dnsservers")]
-pub async fn get_dnsservers(data: web::Data<AppData>) -> HttpResponse {
+pub async fn get_dnsservers(data: web::Data<AppData>) -> Result<HttpResponse, AppError> {
     let persistence = &data.app_data_persistence;
 
-    match datastore::load_all_dnsservers(persistence).await {
-        Ok(list) => HttpResponse::Ok().json(list),
-        Err(_err) => HttpResponse::InternalServerError().body("Cannot load DNS servers"),
-    }
+    let list = datastore::load_all_dnsservers(persistence).await?;
+    Ok(HttpResponse::Ok().json(list))
 }
 
 #[delete("/configurations/dnsservers/{ipaddress}")]
-pub async fn delete_dnsservers(data: web::Data<AppData>, path: web::Path<String>) -> HttpResponse {
+pub async fn delete_dnsservers(
+    data: web::Data<AppData>,
+    path: web::Path<String>,
+) -> Result<HttpResponse, AppError> {
     let persistence = &data.app_data_persistence;
 
-    let Ok(ipaddress): Result<IpAddr,_> = path.into_inner().parse() else {
-        return HttpResponse::InternalServerError().body("IP Address is incorrect");
-    };
+    let ipaddress = path.into_inner().parse()?;
 
-    match datastore::delete_dnsserver(persistence, &ipaddress).await {
-        Ok(_res) => HttpResponse::Ok().finish(),
-        Err(_err) => HttpResponse::InternalServerError().body("Cannot save DNS server"),
-    }
+    datastore::delete_dnsserver(persistence, &ipaddress).await?;
+    Ok(HttpResponse::Ok().finish())
 }
 
 #[get("/system/information")]
-pub async fn get_system_information() -> HttpResponse {
-    HttpResponse::Ok().json(SystemInformation {
+pub async fn get_system_information() -> Result<HttpResponse, AppError> {
+    Ok(HttpResponse::Ok().json(SystemInformation {
         load_average: systeminfo::get_load_info(),
         memory_stats: systeminfo::get_memory_stats(),
         memory_usage: systeminfo::get_memory_usage(),
-    })
+    }))
 }
 
 #[get("/system/smtpconfigvalid")]
-pub async fn get_smtp_config_valid() -> HttpResponse {
-    HttpResponse::Ok().json(common::is_smtp_config_valid())
+pub async fn get_smtp_config_valid() -> Result<HttpResponse, AppError> {
+    Ok(HttpResponse::Ok().json(common::is_smtp_config_valid()))
 }
 
 #[get("/users")]
-pub async fn get_users(data: web::Data<AppData>) -> HttpResponse {
-    match datastore::load_all_users(&data.app_data_persistence).await {
-        Ok(result) => HttpResponse::Ok().json(result),
-        Err(err) => HttpResponse::InternalServerError().body(format!("{:?}", err)),
-    }
+pub async fn get_users(data: web::Data<AppData>) -> Result<HttpResponse, AppError> {
+    let result = datastore::load_all_users(&data.app_data_persistence).await?;
+
+    Ok(HttpResponse::Ok().json(result))
 }
 
 #[get("/users/exist")]
-pub async fn get_users_exist(data: web::Data<AppData>) -> HttpResponse {
-    match datastore::load_all_users(&data.app_data_persistence).await {
-        Ok(result) => HttpResponse::Ok().json(!result.is_empty()),
-        Err(err) => HttpResponse::InternalServerError().body(format!("{:?}", err)),
-    }
+pub async fn get_users_exist(data: web::Data<AppData>) -> Result<HttpResponse, AppError> {
+    let result = datastore::load_all_users(&data.app_data_persistence).await?;
+
+    Ok(HttpResponse::Ok().json(!result.is_empty()))
 }
 
 #[post("/users")]
-pub async fn post_user(data: web::Data<AppData>, query: web::Json<User>) -> HttpResponse {
+pub async fn post_user(
+    data: web::Data<AppData>,
+    query: web::Json<User>,
+) -> Result<HttpResponse, AppError> {
     save_user_common(data, query).await
 }
 
 #[post("/users_first")]
-pub async fn post_first_user(data: web::Data<AppData>, query: web::Json<User>) -> HttpResponse {
-    match datastore::load_all_users(&data.app_data_persistence).await {
-        Ok(result) => {
-            if !result.is_empty() {
-                log::error!("Called function that is used for initial user save that allows and update without authorization. However, there are already users. So this is not the initial user creation.");
-                HttpResponse::Unauthorized().finish()
-            } else {
-                save_user_common(data, query).await
-            }
-        }
-        Err(err) => HttpResponse::InternalServerError().body(format!("{:?}", err)),
+pub async fn post_first_user(
+    data: web::Data<AppData>,
+    query: web::Json<User>,
+) -> Result<HttpResponse, AppError> {
+    let result = datastore::load_all_users(&data.app_data_persistence).await?;
+
+    if !result.is_empty() {
+        log::error!("Called function that is used for initial user save that allows and update without authorization. However, there are already users. So this is not the initial user creation.");
+        Ok(HttpResponse::Unauthorized().finish())
+    } else {
+        save_user_common(data, query).await
     }
 }
 
-async fn save_user_common(data: web::Data<AppData>, query: web::Json<User>) -> HttpResponse {
+async fn save_user_common(
+    data: web::Data<AppData>,
+    query: web::Json<User>,
+) -> Result<HttpResponse, AppError> {
     let initial_password = common::generate_short_random_string();
-
-    let Ok(password_hash) = common::hash_password(initial_password.as_str()) else {
-        log::error!("Could not generate password hash");
-        return HttpResponse::InternalServerError().finish();
-    };
+    let password_hash = common::hash_password(common::generate_short_random_string().as_str())?;
 
     let mut user = query.0;
     user.update_password_hash(password_hash);
 
-    let Ok(update_result) = datastore::insert_user(&data.app_data_persistence, &user).await else {
-        log::error!("Could not save user {:?}", &user);
-        return HttpResponse::InternalServerError().finish();
-    };
+    let update_result = datastore::insert_user(&data.app_data_persistence, &user).await?;
 
     if update_result {
         if common::is_smtp_config_valid() {
@@ -456,36 +390,38 @@ async fn save_user_common(data: web::Data<AppData>, query: web::Json<User>) -> H
                     format!("Hello {},\n\nyour user id is '{}' and the initial password is: '{}'.\n\nRegards,\nyour Server-Manager", user.get_full_name(), user.get_user_id(), initial_password).as_str()).await {
                         Ok(res) => {
                             if res {
-                                HttpResponse::Ok().finish() // mail send successfully - no need to display the initual password
+                                Ok(HttpResponse::Ok().finish()) // mail send successfully - no need to display the initual password
                             }
                             else {
-                                HttpResponse::Ok().json(initial_password)
+                                Ok(HttpResponse::Ok().json(initial_password))
                             }
                         },
                         Err(err) => {
                             log::error!("An error occurred while trying to send the initial password mail: {}", err);
-                            HttpResponse::Ok().json(initial_password)
+                            Ok(HttpResponse::Ok().json(initial_password))
                         }
                     }
         } else {
-            HttpResponse::Ok().json(initial_password)
+            Ok(HttpResponse::Ok().json(initial_password))
         }
     } else {
-        HttpResponse::InternalServerError().finish()
+        Err(AppError::DatabaseError(format!(
+            "Could not update user '{:?}'",
+            user
+        )))
     }
 }
 
 #[delete("/users/{user_id}")]
-pub async fn delete_user(data: web::Data<AppData>, path: web::Path<String>) -> HttpResponse {
+pub async fn delete_user(
+    data: web::Data<AppData>,
+    path: web::Path<String>,
+) -> Result<HttpResponse, AppError> {
     let user_id = path.into_inner();
 
-    match datastore::delete_user(&data.app_data_persistence, &user_id).await {
-        Ok(result) => match result {
-            true => HttpResponse::Ok().finish(),
-            false => HttpResponse::InternalServerError().body("Database could not be updated"),
-        },
-        Err(err) => HttpResponse::InternalServerError().body(format!("{:?}", err)),
-    }
+    datastore::delete_user(&data.app_data_persistence, &user_id).await?;
+
+    Ok(HttpResponse::Ok().finish())
 }
 
 #[put("/user/{user_id}/changepassword")]
@@ -493,49 +429,28 @@ pub async fn put_user_changepassword(
     data: web::Data<AppData>,
     req: HttpRequest,
     query: web::Json<PasswordChange>,
-) -> HttpResponse {
+) -> Result<HttpResponse, AppError> {
     let headers = req.headers();
-    let custom_header = headers.get(HeaderName::from_static("x-custom"));
+    let custom_header = headers
+        .get(HeaderName::from_static("x-custom"))
+        .ok_or(AppError::Unknown("Missing header".to_owned()))?;
 
-    let Some(custom_header) = custom_header else {
-            log::error!("Could not get Custom HeaderValue X-custom ");
-            return HttpResponse::Unauthorized().finish();
-        };
-
-    let Ok(otk_tuple) = get_existing_otk(custom_header) else {
-            log::error!("Could not get OneTimeToken with id {:?}", custom_header);
-            return HttpResponse::Unauthorized().finish();
-        };
+    let otk_tuple = get_existing_otk(custom_header)?;
 
     let secret = common::make_aes_secrect(query.user_id.as_str(), otk_tuple.1.as_str());
 
-    let Ok(decrypted_old) = common::aes_decrypt(&query.old_password, secret.as_str()) else {
-            log::error!("Could not decrypt old password");
-            return HttpResponse::Unauthorized().finish();
-        };
+    let decrypted_old = common::aes_decrypt(&query.old_password, secret.as_str())?;
 
-    let Ok(mut user) = datastore::get_user(&data.app_data_persistence, query.user_id.as_str()).await else {
-            log::error!("Could not find user {}", query.user_id);
-            return HttpResponse::Unauthorized().finish();
-        };
+    let mut user = datastore::get_user(&data.app_data_persistence, query.user_id.as_str()).await?;
 
-    let Ok(password_check_result) = user.check_password(&decrypted_old) else {
-            log::error!("Could not check old password of user {}", query.user_id);
-            return HttpResponse::Unauthorized().finish();
-        };
+    let password_check_result = user.check_password(&decrypted_old)?;
 
     if password_check_result {
-        let Ok(decrypted_new) = common::aes_decrypt(&query.new_password, secret.as_str()) else {
-                log::error!("Could not decrypt new password");
-                return HttpResponse::Unauthorized().finish();
-            };
+        let decrypted_new = common::aes_decrypt(&query.new_password, secret.as_str())?;
 
         user.update_password_hash(common::hash_password(decrypted_new.as_str()).unwrap());
 
-        let Ok(user_updated) = datastore::update_user(&data.app_data_persistence, &user).await else {
-                log::error!("User was not updated");
-                return HttpResponse::Unauthorized().finish();
-            };
+        let user_updated = datastore::update_user(&data.app_data_persistence, &user).await?;
 
         if user_updated {
             HttpResponse::Ok().finish();
@@ -544,83 +459,65 @@ pub async fn put_user_changepassword(
         log::error!("Password check of old password failed");
     }
 
-    HttpResponse::Unauthorized().finish()
+    Ok(HttpResponse::Unauthorized().finish())
 }
 
 #[get("users/authenticate/otk")]
-pub async fn get_one_time_key() -> HttpResponse {
+pub async fn get_one_time_key() -> Result<HttpResponse, AppError> {
     let otk = OneTimeKey::generate();
 
-    HttpResponse::Ok().json(otk)
+    Ok(HttpResponse::Ok().json(otk))
 }
 
 #[post("users/authenticate")]
-pub async fn authenticate(data: web::Data<AppData>, req: HttpRequest) -> HttpResponse {
+pub async fn authenticate(
+    data: web::Data<AppData>,
+    req: HttpRequest,
+) -> Result<HttpResponse, AppError> {
     let headers = req.headers();
-    let auth_header = headers.get(header::AUTHORIZATION);
-    let custom_header = headers.get(HeaderName::from_static("x-custom"));
+    let auth_header = headers
+        .get(header::AUTHORIZATION)
+        .ok_or(AppError::Unknown("Missing header value".to_owned()))?;
+    let custom_header = headers
+        .get(HeaderName::from_static("x-custom"))
+        .ok_or(AppError::Unknown("Missing header value".to_owned()))?;
 
-    if custom_header.is_some() && auth_header.is_some() {
-        let Ok(otk_tuple) = get_existing_otk(custom_header.unwrap()) else {
-            log::error!("Could not get OneTimeToken with id {:?}", custom_header);
-            return HttpResponse::Unauthorized().finish();
-        };
+    let otk_tuple = get_existing_otk(custom_header)?;
 
-        let Ok(auth_values_opt) = get_auth_data_split(auth_header.unwrap()) else {
-            log::error!("Could not get authorization header");
-            return HttpResponse::Unauthorized().finish();
-        };
+    let auth_values = get_auth_data_split(auth_header)?
+        .ok_or(AppError::Unknown("Could not split header".to_owned()))?;
 
-        let Some(auth_values) = auth_values_opt else {
-            log::error!("Could not get authorization header");
-            return HttpResponse::Unauthorized().finish();
-        };
+    let user_id = auth_values.0;
+    let secret = common::make_aes_secrect(user_id.as_str(), otk_tuple.1.as_str());
 
-        let user_id = auth_values.0;
-        let secret = common::make_aes_secrect(user_id.as_str(), otk_tuple.1.as_str());
+    let decrypted = common::aes_decrypt(&auth_values.1, secret.as_str())?;
 
-        let Ok(decrypted) = common::aes_decrypt(&auth_values.1, secret.as_str()) else {
-            log::error!("Could not decrypt password");
-            return HttpResponse::Unauthorized().finish();
-        };
+    let user = datastore::get_user(&data.app_data_persistence, user_id.as_str()).await?;
 
-        let Ok( user) = datastore::get_user(&data.app_data_persistence, user_id.as_str()).await else {
-            log::error!("Could not find user {}",user_id );
-            return HttpResponse::Unauthorized().finish();
-        };
+    let password_check_result = user.check_password(&decrypted)?;
 
-        let Ok(password_check_result) = user.check_password(&decrypted) else {
-            log::error!("Could not check password of user {}", user_id);
-            return HttpResponse::Unauthorized().finish();
-        };
+    if password_check_result {
+        let token = common::generate_long_random_string();
 
-        if password_check_result {
-            let token = common::generate_long_random_string();
+        datastore::insert_token(&token);
 
-            datastore::insert_token(&token);
-
-            return HttpResponse::Ok().json(UserToken { user_id, token });
-        } else {
-            return HttpResponse::Unauthorized().body("The given password was invalid");
-        }
+        Ok(HttpResponse::Ok().json(UserToken { user_id, token }))
+    } else {
+        Err(AppError::InvalidPassword())
     }
-    HttpResponse::Unauthorized().finish()
 }
 
 #[get("monitoring/ids")]
 async fn get_monitoring_ids(
     data: web::Data<AppData>,
     query: web::Query<std::collections::HashMap<String, String>>,
-) -> HttpResponse {
-    let Some(ipaddress_param) = query.get("ipaddress") else {
-        return HttpResponse::InternalServerError().finish();
-    };
-    let Ok(ipaddress) = ipaddress_param.parse::<IpAddr>() else {
-        return HttpResponse::InternalServerError().finish();
-    };
-    let Ok(server) = datastore::get_server(&data.app_data_persistence, &ipaddress).await else {
-        return HttpResponse::InternalServerError().finish();
-    };
+) -> Result<HttpResponse, AppError> {
+    let ipaddress_param = query
+        .get("ipaddress")
+        .ok_or(AppError::MissingURLParameter("ipaddress".to_owned()))?;
+
+    let ipaddress = ipaddress_param.parse::<IpAddr>()?;
+    let server = datastore::get_server(&data.app_data_persistence, &ipaddress).await?;
 
     let mut names: Vec<String> = Vec::new();
 
@@ -639,36 +536,29 @@ async fn get_monitoring_ids(
 
     names.push("server_status".to_owned());
 
-    HttpResponse::Ok().json(names)
+    Ok(HttpResponse::Ok().json(names))
 }
 
 #[get("monitoring/data")]
 async fn get_monitoring_data(
     _data: web::Data<AppData>,
     query: web::Query<std::collections::HashMap<String, String>>,
-) -> HttpResponse {
+) -> Result<HttpResponse, AppError> {
     //nm=true
     //query=SELECT timestamp, tempF FROM weather LIMIT 2;
 
-    let Some(ipaddress_param) = query.get("ipaddress") else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    let ipaddress_param = query
+        .get("ipaddress")
+        .ok_or(AppError::MissingURLParameter("ipaddress".to_owned()))?;
 
-    let Some(series_id) = query.get("series_id") else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    let series_id = query
+        .get("series_id")
+        .ok_or(AppError::MissingURLParameter("series_id".to_owned()))?;
 
-    let Ok(ipaddress) = ipaddress_param.parse::<IpAddr>() else {
-        return HttpResponse::InternalServerError().finish();
-    };
+    let ipaddress = ipaddress_param.parse::<IpAddr>()?;
 
-    match plugin_execution::get_monitoring_data(series_id, ipaddress).await {
-        Ok(response) => HttpResponse::Ok().json(response),
-        Err(err) => {
-            log::error!("Error while getting monitoring data: {}", err);
-            HttpResponse::InternalServerError().finish()
-        }
-    }
+    let response = plugin_execution::get_monitoring_data(series_id, ipaddress).await?;
+    Ok(HttpResponse::Ok().json(response))
 }
 
 fn get_existing_otk(header_value: &HeaderValue) -> Result<(NaiveDateTime, String), AppError> {

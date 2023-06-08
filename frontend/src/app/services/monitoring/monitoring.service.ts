@@ -39,7 +39,7 @@ export class MonitoringService {
         this.errorService.newError(
           'Monitoring-Service',
           undefined,
-          err.message
+          err
         );
       },
     });
@@ -67,7 +67,7 @@ export class MonitoringService {
           this.errorService.newError(
             'Monitoring-Service',
             undefined,
-            err.message
+            err
           );
         },
       });

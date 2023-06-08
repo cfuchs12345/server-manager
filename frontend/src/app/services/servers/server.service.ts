@@ -43,7 +43,7 @@ export class ServerService {
             this.dataStore.servers.splice(indexToDelete);
           },
           error: (err: any) => {
-            this.errorService.newError("Server-Service", server.ipaddress, err.message);
+            this.errorService.newError("Server-Service", server.ipaddress, err);
           },
           complete: () => {
             if (servers[servers.length -1].ipaddress === server.ipaddress) {
@@ -60,7 +60,7 @@ export class ServerService {
         this.dataStore.servers = servers;
       },
       error: (err: any) => {
-        this.errorService.newError("Server-Service", undefined, err.message);
+        this.errorService.newError("Server-Service", undefined, err);
       },
       complete: () => {
         setTimeout(this.publishServers, 500);
@@ -80,7 +80,7 @@ export class ServerService {
           next: (res) => {
           },
           error: (err: any) => {
-            this.errorService.newError("Server-Service", server.ipaddress, err.message);
+            this.errorService.newError("Server-Service", server.ipaddress, err);
           },
           complete: () => {
           },
@@ -133,7 +133,7 @@ export class ServerService {
           next: (res) => {
           },
           error: (err: any) => {
-            this.errorService.newError("Server-Service", server.ipaddress, err.message);
+            this.errorService.newError("Server-Service", server.ipaddress, err);
           },
           complete: () => {
             setTimeout(this.publishServers, 500);

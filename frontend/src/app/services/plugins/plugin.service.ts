@@ -27,7 +27,7 @@ export class PluginService {
         this.dataStore.plugins = loadedPlugins;
       },
       error: (err: any) => {
-        this.errorService.newError('Plugin-Service', undefined, err.message);
+        this.errorService.newError('Plugin-Service', undefined, err);
       },
       complete: () => {
         this.publishPlugins();
@@ -43,7 +43,7 @@ export class PluginService {
           this.dataStore.disabledPlugins = idList;
         },
         error: (err: any) => {
-          this.errorService.newError('Plugin-Service', undefined, err.message);
+          this.errorService.newError('Plugin-Service', undefined, err);
         },
         complete: () => {
           this.publishDisabledPlugins();
@@ -65,7 +65,7 @@ export class PluginService {
         next: (result) => {
         },
         error: (err: any) => {
-          this.errorService.newError('Plugin-Service', undefined, err.message);
+          this.errorService.newError('Plugin-Service', undefined, err);
         },
         complete: () => {
           this.loadDisabledPlugins();

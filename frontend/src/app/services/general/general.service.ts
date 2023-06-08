@@ -38,7 +38,7 @@ export class GeneralService {
       next: (res) => {
       },
       error: (err: any) => {
-        this.errorService.newError("General-Service", undefined, err.message);
+        this.errorService.newError("General-Service", undefined, err);
       },
       complete: () => {
         setTimeout(this.listDNSServers, 200);
@@ -56,7 +56,7 @@ export class GeneralService {
           next: (res) => {
           },
           error: (err: any) => {
-            this.errorService.newError("General-Service",undefined, err.message);
+            this.errorService.newError("General-Service",undefined, err);
           },
           complete: () => {
             if( i === servers.length ) {
@@ -74,7 +74,7 @@ export class GeneralService {
         this._dnsServers.next(this.dataStore.dnsServers.slice());
       },
       error: (err: any) => {
-        this.errorService.newError("General-Service", undefined, err.message);
+        this.errorService.newError("General-Service", undefined, err);
       },
       complete: () => {},
     });
@@ -88,7 +88,7 @@ export class GeneralService {
         this._systemDNSServers.next(this.dataStore.systemDNSServers.slice());
       },
       error: (err: any) => {
-        this.errorService.newError("General-Service", undefined, err.message);
+        this.errorService.newError("General-Service", undefined, err);
       },
       complete: () => {},
     });
@@ -102,7 +102,7 @@ export class GeneralService {
         this._systemInformation.next(this.dataStore.systemInformation);
       },
       error: (err: any) => {
-        this.errorService.newError("General-Service", undefined, err.message);
+        this.errorService.newError("General-Service", undefined, err);
       },
       complete: () => {},
     });
