@@ -9,9 +9,10 @@ import { Subscription } from 'rxjs';
 })
 export class ErrorsListComponent  implements OnInit, OnDestroy  {
   errorCount: number = 0;
+  classes: string[] = [];
+
 
   private subscriptionErrors: Subscription | undefined = undefined;
-
 
   constructor(private errorService: ErrorService) {}
 
@@ -22,6 +23,9 @@ export class ErrorsListComponent  implements OnInit, OnDestroy  {
         var count = 0;
         for( let [i, error] of errors.entries()) {
           count += error.count;
+        }
+        if( this.errorCount < count  ) {
+          setTimeout(this.flashErrorList, 0);
         }
         this.errorCount = count;
       } else {
@@ -37,5 +41,11 @@ export class ErrorsListComponent  implements OnInit, OnDestroy  {
     }
   }
 
+  flashErrorList = () => {
+    this.classes.push("flash");
+    setTimeout( () => {
+      this.classes.splice(0, this.classes.length);
+    }, 500);
+  }
 
 }

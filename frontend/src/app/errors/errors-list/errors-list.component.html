@@ -1,5 +1,5 @@
 <app-configuration-group>
   <div title>Errors</div>
-  <div description>Shows a list of errors that occurred. <b>Error count: <span class="count">{{errorCount}}</span></b></div>
+  <div description>Shows a list of errors that occurred. <span [ngClass]="classes"><b>Error count: <span class="count">{{errorCount}}</span></b></span></div>
   <app-error></app-error>
 </app-configuration-group>
