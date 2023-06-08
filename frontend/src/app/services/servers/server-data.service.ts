@@ -50,8 +50,6 @@ export class ServerDataService {
           this.dataStore.dataResults.push(...results);
         },
         error: (err: any) => {
-          console.log( err);
-          console.log( JSON.stringify(err));
           this.errorService.newError("Data-Service", server.ipaddress, err.error);
         },
         complete: () => {
