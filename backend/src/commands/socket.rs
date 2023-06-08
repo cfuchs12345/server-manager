@@ -178,6 +178,7 @@ pub async fn make_command_input_from_subaction(
     action_params: Option<String>,
     feature: &Feature,
     plugin: &Plugin,
+    silent: &bool,
 ) -> Result<Vec<CommandInput>, AppError> {
     let params = Parameters::new(
         common::string_params_to_command_args(action_params),
@@ -188,7 +189,7 @@ pub async fn make_command_input_from_subaction(
     let mut vec = Vec::new();
 
     let list_of_args_list =
-        common::args_to_command_args(&action.args, server, plugin, crypto_key).await?;
+        common::args_to_command_args(&action.args, server, plugin, crypto_key, silent).await?;
 
     for args_list in list_of_args_list {
         vec.push(CommandInput::new(
@@ -211,6 +212,7 @@ pub async fn make_command_input_from_data(
     action_params: Option<String>,
     feature: &Feature,
     plugin: &Plugin,
+    silent: &bool,
 ) -> Result<Vec<CommandInput>, AppError> {
     let params = Parameters::new(
         common::string_params_to_command_args(action_params),
@@ -221,7 +223,7 @@ pub async fn make_command_input_from_data(
     let mut vec = Vec::new();
 
     let list_of_args_list =
-        common::args_to_command_args(&data.args, server, plugin, crypto_key).await?;
+        common::args_to_command_args(&data.args, server, plugin, crypto_key, silent).await?;
 
     for args_list in list_of_args_list {
         vec.push(CommandInput::new(
@@ -241,6 +243,7 @@ pub async fn make_command_input_from_detection(
     crypto_key: &str,
     plugin: &Plugin,
     detection_entry: &DetectionEntry,
+    silent: &bool,
 ) -> Result<Vec<CommandInput>, AppError> {
     let params = Parameters::new(
         Vec::new(),
@@ -253,7 +256,8 @@ pub async fn make_command_input_from_detection(
     let server = Server::new_only_ip(ipaddress);
 
     let list_of_args_list =
-        common::args_to_command_args(&detection_entry.args, &server, plugin, crypto_key).await?;
+        common::args_to_command_args(&detection_entry.args, &server, plugin, crypto_key, silent)
+            .await?;
 
     for args_list in list_of_args_list {
         vec.push(CommandInput::new(

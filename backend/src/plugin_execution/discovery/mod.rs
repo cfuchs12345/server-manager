@@ -36,6 +36,7 @@ pub async fn auto_discover_servers_in_network(
     network_as_string: &String,
     lookup_names: bool,
     dns_servers: Vec<DNSServer>,
+    silent: &bool,
 ) -> Result<Vec<HostInformation>, AppError> {
     let permit = SEMAPHORE_AUTO_DISCOVERY.acquire().await.unwrap();
 
@@ -46,7 +47,7 @@ pub async fn auto_discover_servers_in_network(
 
     let result = match network_as_string.parse() {
         Ok(parsed_network) => {
-            auto_discover_servers(&parsed_network, lookup_names, dns_servers).await
+            auto_discover_servers(&parsed_network, lookup_names, dns_servers, silent).await
         }
         e => {
             error!(
@@ -67,6 +68,7 @@ pub async fn auto_discover_servers_in_network(
 pub async fn discover_features_of_all_servers(
     servers: Vec<Server>,
     upnp_activated: bool,
+    silent: &bool,
 ) -> Result<Vec<FeaturesOfServer>, AppError> {
     let wait_time_for_upnp = 15; // in seconds
 
@@ -77,10 +79,11 @@ pub async fn discover_features_of_all_servers(
     let mut tasks = Vec::new();
     for server in servers {
         let crypto_key = crypto_key.clone();
+        let silent = *silent;
 
-        tasks.push(tokio::spawn(async {
+        tasks.push(tokio::spawn(async move {
             let server = server;
-            discover_features(server.ipaddress, crypto_key).await
+            discover_features(server.ipaddress, crypto_key, &silent).await
         }));
     }
 
@@ -105,7 +108,11 @@ pub async fn discover_features_of_all_servers(
     ))
 }
 
-pub async fn discover_features(ipaddress: IpAddr, crypto_key: String) -> Option<FeaturesOfServer> {
+pub async fn discover_features(
+    ipaddress: IpAddr,
+    crypto_key: String,
+    silent: &bool,
+) -> Result<FeaturesOfServer, AppError> {
     let mut features_of_server = FeaturesOfServer {
         ipaddress,
         features: vec![],
@@ -150,22 +157,23 @@ pub async fn discover_features(ipaddress: IpAddr, crypto_key: String) -> Option<
                         );
 
                         let Ok(inputs) =
-                            commands::socket::make_command_input_from_detection(ipaddress, crypto_key.as_str(), &plugin, detection_entry).await else {
+                            commands::socket::make_command_input_from_detection(ipaddress, crypto_key.as_str(), &plugin, detection_entry, silent).await else {
                                 log::error!("Could not create command input for {:?}", detection_entry);
-                                return None;
+                                return Err(AppError::Unknown("Could not create command input".to_owned()));
                             };
 
                         let mut response: Option<String> = None;
 
                         for input in inputs {
-                            response =
-                                match commands::execute::<SocketCommandResult>(input, true).await {
-                                    Ok(result) => Some(result.get_response()),
-                                    Err(err) => {
-                                        err.log();
-                                        continue;
-                                    }
+                            response = match commands::execute::<SocketCommandResult>(input, silent)
+                                .await
+                            {
+                                Ok(result) => Some(result.get_response()),
+                                Err(err) => {
+                                    err.log();
+                                    continue;
                                 }
+                            }
                         }
                         response
                     } else {
@@ -181,15 +189,17 @@ pub async fn discover_features(ipaddress: IpAddr, crypto_key: String) -> Option<
                         crypto_key.as_str(),
                         &plugin,
                         detection_entry,
+                        silent
                     ).await else {
                         log::error!("Could not create command input for {:?}", detection_entry);
-                        return None;
+                        return Err(AppError::Unknown("Could not create command input".to_owned()));
                     };
 
                     let mut response: Option<String> = None;
 
                     for input in inputs {
-                        response = match commands::execute::<HttpCommandResult>(input, true).await {
+                        response = match commands::execute::<HttpCommandResult>(input, silent).await
+                        {
                             Ok(result) => Some(result.get_response()),
                             Err(err) => {
                                 err.log();
@@ -231,7 +241,7 @@ pub async fn discover_features(ipaddress: IpAddr, crypto_key: String) -> Option<
         }
     }
 
-    Some(features_of_server)
+    Ok(features_of_server)
 }
 
 fn get_local_addresses() -> Vec<IpAddr> {
@@ -251,6 +261,7 @@ async fn auto_discover_servers(
     network: &Ipv4Net,
     lookup_names: bool,
     dns_servers: Vec<DNSServer>,
+    silent: &bool,
 ) -> Result<Vec<HostInformation>, AppError> {
     let socket_addresses = parse_ip_and_port_into_socket_address(dns_servers);
 
@@ -274,11 +285,11 @@ async fn auto_discover_servers(
             .map(|socket_addr| UpstreamServer::new(*socket_addr))
             .collect();
 
-        tasks.push(tokio::spawn(discover_host(
-            addr,
-            lookup_names,
-            upstream_servers,
-        )));
+        let silent = *silent;
+
+        tasks.push(tokio::spawn(async move {
+            discover_host(addr, lookup_names, upstream_servers, &silent).await
+        }));
     }
     // wait for all tasks to finish
     let result = join_all(tasks).await;
@@ -340,9 +351,10 @@ async fn discover_host(
     addr: IpAddr,
     lookup_names: bool,
     upsstream_server: Vec<UpstreamServer>,
+    silent: &bool,
 ) -> Result<HostInformation, AppError> {
     let input = commands::ping::make_input(addr);
-    let ping_response_fut = commands::execute::<PingCommandResult>(input, true);
+    let ping_response_fut = commands::execute::<PingCommandResult>(input, silent);
 
     let lookup_hostname_fut = match lookup_names {
         true => Some(lookup_hostname(addr, upsstream_server)),

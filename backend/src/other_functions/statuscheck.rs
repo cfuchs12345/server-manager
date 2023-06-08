@@ -15,7 +15,7 @@ lazy_static! {
     static ref SEMAPHORE_AUTO_DISCOVERY: Semaphore = Semaphore::new(1);
 }
 
-pub async fn status_check_all() -> Result<(), AppError> {
+pub async fn status_check_all(silent: &bool) -> Result<(), AppError> {
     let servers = datastore::get_all_servers();
 
     let permit = SEMAPHORE_AUTO_DISCOVERY.acquire().await.unwrap();
@@ -27,10 +27,11 @@ pub async fn status_check_all() -> Result<(), AppError> {
         let address: IpAddr = server.ipaddress;
 
         let input = commands::ping::make_input(address);
+        let silent = *silent;
 
-        tasks.push(tokio::spawn(commands::execute::<PingCommandResult>(
-            input, true,
-        )));
+        tasks.push(tokio::spawn(async move {
+            commands::execute::<PingCommandResult>(input, &silent).await
+        }));
     }
 
     // wait for all tasks to finish

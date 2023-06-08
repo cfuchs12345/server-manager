@@ -1,7 +1,7 @@
 use handlebars::{
     handlebars_helper, Context, Handlebars, Helper, HelperResult, Output, RenderContext,
 };
-use serde_json::Value as Json;
+use serde_json::Value;
 use std::cmp::Ordering;
 
 use crate::other_functions::upnp;
@@ -29,6 +29,11 @@ fn sort_fct(
         let mut sorted_array = value.as_array().unwrap().to_owned();
 
         sorted_array.sort_by(|a, b| {
+            if a[property].is_null() &&  b[property].is_null() {
+                log::debug!("not sorting, since values are null");
+                return Ordering::Less;
+            }
+
             let a_opt = a[property].as_str();
             let b_opt = b[property].as_str();
 
@@ -54,10 +59,11 @@ fn sort_fct(
                     a.partial_cmp(&b).unwrap_or(Ordering::Less)
                 } else {
                     // neither a string, string containing number or number -> we don't know what to do and just sort it somehow
-                    log::warn!(
-                        "Properties with name {} has an unknown type that cannot be sorted",
-                        property
-                    );
+                        log::warn!(
+                            "Property with name {} has an unknown type that cannot be sorted. Values are {} and {}",
+                            property,  a[property], b[property]
+                        );
+                  
                     Ordering::Less
                 }
             }
@@ -99,12 +105,10 @@ fn parse_xml_input_as_upnp_device_fct(
         return Ok(())
     };
 
-
-    
     if value.is_string() {
         let xml = value.as_str().unwrap();
 
-        let device = upnp::parse_upnp_description(xml).unwrap_or( {
+        let device = upnp::parse_upnp_description(xml).unwrap_or({
             log::error!(
                 "Could not parse incoming string as UPnP root device. string was: {} ",
                 xml
@@ -130,7 +134,7 @@ fn parse_xml_input_as_upnp_device_fct(
     Ok(())
 }
 
-fn to_readable_mem(value: &Json) -> String {
+fn to_readable_mem(value: &Value) -> String {
     if value.is_i64() {
         match value.as_i64() {
             Some(val) => {
@@ -145,7 +149,7 @@ fn to_readable_mem(value: &Json) -> String {
     }
 }
 
-fn to_readable_time(value: &Json) -> String {
+fn to_readable_time(value: &Value) -> String {
     if value.is_i64() {
         match value.as_i64() {
             Some(val) => {

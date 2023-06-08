@@ -1,14 +1,10 @@
 import { Injectable } from '@angular/core';
-import {
-  HttpClient,
-} from '@angular/common/http';
-import {  BehaviorSubject } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
 import {
-  Param,
   Server,
   ServersAction,
-  getIpAddressesFromServers,
 } from './types';
 
 import { Status } from './types';
@@ -27,8 +23,7 @@ export class ServerStatusService {
     serversStatus: [],
   };
 
-  constructor(private http: HttpClient, private errorService: ErrorService) {
-  }
+  constructor(private http: HttpClient, private errorService: ErrorService) {}
 
   listServerStatus = (servers: Server[]) => {
     const action = new ServersAction('Status', []);
@@ -48,7 +43,13 @@ export class ServerStatusService {
           this.publishServerStatus();
         },
         error: (err: any) => {
-          this.errorService.newError("Status-Service", undefined, err.message);
+          if (err !== undefined) {
+            this.errorService.newError(
+              'Status-Service',
+              undefined,
+              err.message
+            );
+          }
         },
         complete: () => {},
       });

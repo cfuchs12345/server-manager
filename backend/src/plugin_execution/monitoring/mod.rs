@@ -131,7 +131,7 @@ fn enrich_response(
     Ok(data.to_response(meta_data))
 }
 
-pub async fn monitor_all() -> Result<(), AppError> {
+pub async fn monitor_all(silent: &bool) -> Result<(), AppError> {
     let servers = datastore::get_all_servers();
     let plugins = datastore::get_all_plugins();
     let crypto_key = datastore::get_crypto_key();
@@ -165,6 +165,7 @@ pub async fn monitor_all() -> Result<(), AppError> {
                         data,
                         None,
                         crypto_key.as_str(),
+                        silent, // silent - no error log
                     )
                     .await;
 

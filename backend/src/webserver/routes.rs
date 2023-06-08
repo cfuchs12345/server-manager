@@ -65,6 +65,7 @@ pub async fn post_networks_action(
                         network,
                         lookup_names,
                         dns_servers,
+                        &true,
                     )
                     .await
                     {
@@ -81,8 +82,7 @@ pub async fn post_networks_action(
 pub async fn get_servers(data: web::Data<AppData>) -> HttpResponse {
     match datastore::load_all_servers(&data.app_data_persistence, true).await {
         Ok(result) => HttpResponse::Ok().json(result),
-        Err(err) => HttpResponse::InternalServerError()
-            .body(format!("Unexpected error occurred: {:?}", err)),
+        Err(err) => HttpResponse::InternalServerError().body(format!("{:?}", err)),
     }
 }
 
@@ -93,8 +93,7 @@ pub async fn post_servers(data: web::Data<AppData>, query: web::Json<Server>) ->
             true => HttpResponse::Ok().finish(),
             _ => HttpResponse::InternalServerError().body("Database could not be updated"),
         },
-        Err(err) => HttpResponse::InternalServerError()
-            .body(format!("Unexpected error occurred: {:?}", err)),
+        Err(err) => HttpResponse::InternalServerError().body(format!("{:?}", err)),
     }
 }
 
@@ -133,10 +132,13 @@ pub async fn post_servers_actions(
                             .await
                             .unwrap_or(true);
 
-                    let list =
-                        plugin_execution::discover_features_of_all_servers(servers, upnp_activated)
-                            .await
-                            .unwrap();
+                    let list = plugin_execution::discover_features_of_all_servers(
+                        servers,
+                        upnp_activated,
+                        &true,
+                    )
+                    .await
+                    .unwrap();
 
                     HttpResponse::Ok().json(list)
                 }
@@ -174,9 +176,9 @@ pub async fn post_servers_by_ipaddress_action(
 
     match query.action_type {
         ServerActionType::FeatureScan => {
-            match plugin_execution::discover_features(ipaddress, crypto_key).await {
-                Some(list) => HttpResponse::Ok().json(list),
-                None => HttpResponse::InternalServerError().body("Unexpected error occurred"),
+            match plugin_execution::discover_features(ipaddress, crypto_key, &true).await {
+                Ok(list) => HttpResponse::Ok().json(list),
+                Err(err) => HttpResponse::InternalServerError().body(format!("{:?}", err)),
             }
         }
         ServerActionType::Status => {
@@ -185,8 +187,7 @@ pub async fn post_servers_by_ipaddress_action(
                     ipaddress,
                     is_running: false,
                 })),
-                Err(err) => HttpResponse::InternalServerError()
-                    .body(format!("Unexpected error occurred: {:?}", err)),
+                Err(err) => HttpResponse::InternalServerError().body(format!("{:?}", err)),
             }
         }
         ServerActionType::ExecuteFeatureAction => {
@@ -214,12 +215,12 @@ pub async fn post_servers_by_ipaddress_action(
                 action_id,
                 action_params.map(|v| v.to_owned()),
                 crypto_key,
+                &false,
             )
             .await
             {
                 Ok(result) => HttpResponse::Ok().json(result),
-                Err(err) => HttpResponse::InternalServerError()
-                    .body(format!("Unexpected error occurred: {:?}", err)),
+                Err(err) => HttpResponse::InternalServerError().body(format!("{:?}", err)),
             }
         }
         ServerActionType::QueryData => {
@@ -227,6 +228,7 @@ pub async fn post_servers_by_ipaddress_action(
                 &server,
                 &data.app_data_template_engine,
                 crypto_key,
+                &false,
             )
             .await
             {
@@ -234,8 +236,7 @@ pub async fn post_servers_by_ipaddress_action(
                 Err(err) => {
                     log::error!("Error during data query: {}", err);
 
-                    HttpResponse::InternalServerError()
-                        .body(format!("Unexpected error occurred: {:?}", err))
+                    HttpResponse::InternalServerError().body(format!("{:?}", err))
                 }
             }
         }
@@ -252,8 +253,7 @@ pub async fn put_servers_by_ipaddress(
             true => HttpResponse::Ok().finish(),
             false => HttpResponse::InternalServerError().body("Database could not be updated"),
         },
-        Err(err) => HttpResponse::InternalServerError()
-            .body(format!("Unexpected error occurred: {:?}", err)),
+        Err(err) => HttpResponse::InternalServerError().body(format!("{:?}", err)),
     }
 }
 
@@ -271,8 +271,7 @@ pub async fn delete_servers_by_ipaddress(
             true => HttpResponse::Ok().finish(),
             false => HttpResponse::InternalServerError().body("Database could not be updated"),
         },
-        Err(err) => HttpResponse::InternalServerError()
-            .body(format!("Unexpected error occurred: {:?}", err)),
+        Err(err) => HttpResponse::InternalServerError().body(format!("{:?}", err)),
     }
 }
 
@@ -399,8 +398,7 @@ pub async fn get_smtp_config_valid() -> HttpResponse {
 pub async fn get_users(data: web::Data<AppData>) -> HttpResponse {
     match datastore::load_all_users(&data.app_data_persistence).await {
         Ok(result) => HttpResponse::Ok().json(result),
-        Err(err) => HttpResponse::InternalServerError()
-            .body(format!("Unexpected error occurred: {:?}", err)),
+        Err(err) => HttpResponse::InternalServerError().body(format!("{:?}", err)),
     }
 }
 
@@ -408,8 +406,7 @@ pub async fn get_users(data: web::Data<AppData>) -> HttpResponse {
 pub async fn get_users_exist(data: web::Data<AppData>) -> HttpResponse {
     match datastore::load_all_users(&data.app_data_persistence).await {
         Ok(result) => HttpResponse::Ok().json(!result.is_empty()),
-        Err(err) => HttpResponse::InternalServerError()
-            .body(format!("Unexpected error occurred: {:?}", err)),
+        Err(err) => HttpResponse::InternalServerError().body(format!("{:?}", err)),
     }
 }
 
@@ -429,8 +426,7 @@ pub async fn post_first_user(data: web::Data<AppData>, query: web::Json<User>) -
                 save_user_common(data, query).await
             }
         }
-        Err(err) => HttpResponse::InternalServerError()
-            .body(format!("Unexpected error occurred: {:?}", err)),
+        Err(err) => HttpResponse::InternalServerError().body(format!("{:?}", err)),
     }
 }
 
@@ -488,8 +484,7 @@ pub async fn delete_user(data: web::Data<AppData>, path: web::Path<String>) -> H
             true => HttpResponse::Ok().finish(),
             false => HttpResponse::InternalServerError().body("Database could not be updated"),
         },
-        Err(err) => HttpResponse::InternalServerError()
-            .body(format!("Unexpected error occurred: {:?}", err)),
+        Err(err) => HttpResponse::InternalServerError().body(format!("{:?}", err)),
     }
 }
 

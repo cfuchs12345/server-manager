@@ -23,7 +23,7 @@ async fn schedule_condition_checks(scheduler: &JobScheduler) {
         .add(
             Job::new_async("1/10 * * * * *", |_uuid, _l| {
                 Box::pin(async {
-                    crate::plugin_execution::check_main_action_conditions().await;
+                    crate::plugin_execution::check_main_action_conditions(&true).await;
                 })
             })
             .unwrap(),
@@ -37,7 +37,7 @@ async fn schedule_status_check(scheduler: &JobScheduler) {
         .add(
             Job::new_async("1/20 * * * * *", |_uuid, _l| {
                 Box::pin(async {
-                    other_functions::statuscheck::status_check_all()
+                    other_functions::statuscheck::status_check_all(&true)
                         .await
                         .expect("Error during scheduled status check");
                 })
@@ -53,7 +53,7 @@ async fn schedule_monitoring(scheduler: &JobScheduler) {
         .add(
             Job::new_async("1/20 * * * * *", |_uuid, _l| {
                 Box::pin(async {
-                    crate::plugin_execution::monitor_all()
+                    crate::plugin_execution::monitor_all(&true)
                         .await
                         .expect("Error during scheduled monitoring");
                 })

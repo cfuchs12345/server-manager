@@ -36,6 +36,7 @@ pub async fn execute_action(
     action_id: &str,
     action_params: Option<String>,
     crypto_key: String,
+    silent: &bool,
 ) -> Result<bool, AppError> {
     let plugin_res = datastore::get_plugin(feature.id.as_str());
     if plugin_res.is_none() {
@@ -54,12 +55,13 @@ pub async fn execute_action(
                     action_params,
                     feature,
                     &plugin,
+                    silent,
                 )
                 .await?;
 
                 let mut res: Option<HttpCommandResult> = None;
                 for input in inputs {
-                    res = Some(commands::execute(input, false).await?);
+                    res = Some(commands::execute(input, silent).await?);
                 }
 
                 Ok(res.is_some() && !res.unwrap().get_response().is_empty())
@@ -72,11 +74,12 @@ pub async fn execute_action(
                     action_params,
                     feature,
                     &plugin,
+                    silent,
                 )
                 .await?;
                 let mut res: Option<SocketCommandResult> = None;
                 for input in inputs {
-                    res = Some(commands::execute(input, false).await?);
+                    res = Some(commands::execute(input, silent).await?);
                 }
 
                 Ok(res.is_some() && !res.unwrap().get_response().is_empty())
@@ -84,14 +87,14 @@ pub async fn execute_action(
             commands::wol::WOL => {
                 let input = commands::wol::make_input(feature);
 
-                let res: WolCommandResult = commands::execute(input, false).await?;
+                let res: WolCommandResult = commands::execute(input, silent).await?;
 
                 Ok(res.get_result())
             }
             commands::ping::PING => {
                 let input = commands::ping::make_input(server.ipaddress);
 
-                let res: PingCommandResult = commands::execute(input, false).await?;
+                let res: PingCommandResult = commands::execute(input, silent).await?;
 
                 Ok(res.get_result())
             }
@@ -115,6 +118,7 @@ pub async fn check_action_conditions(
     server: Server,
     sub_actions: Vec<SubAction>,
     crypto_key: String,
+    silent: &bool,
 ) -> Vec<ConditionCheckResult> {
     let mut tasks = Vec::new();
     for sub_action in &sub_actions {
@@ -128,17 +132,25 @@ pub async fn check_action_conditions(
         if plugin.is_none() {
             continue;
         }
+        let silent = silent.to_owned();
+        let crypto_key = crypto_key.clone();
+        let server = server.clone();
+        let sub_action = sub_action.clone();
 
-        tasks.push(tokio::spawn(conditions::check_condition_for_action_met(
-            server.clone(),
-            feature,
-            plugin
-                .unwrap()
-                .find_action(sub_action.action_id.as_ref().unwrap().as_str())
-                .map(|v| v.to_owned()),
-            sub_action.action_params.clone(),
-            crypto_key.clone(),
-        )));
+        tasks.push(tokio::spawn(async move {
+            conditions::check_condition_for_action_met(
+                server.clone(),
+                feature,
+                plugin
+                    .unwrap()
+                    .find_action(sub_action.action_id.as_ref().unwrap().as_str())
+                    .map(|v| v.to_owned()),
+                sub_action.action_params.clone(),
+                crypto_key.clone(),
+                &silent,
+            )
+            .await
+        }));
     }
     let results = join_all(tasks).await;
 
@@ -150,7 +162,7 @@ pub async fn check_action_conditions(
     vec
 }
 
-pub async fn check_main_action_conditions() {
+pub async fn check_main_action_conditions(silent: &bool) {
     let servers = datastore::get_all_servers();
     let crypto_key = datastore::get_crypto_key();
 
@@ -160,6 +172,7 @@ pub async fn check_main_action_conditions() {
             server,
             &crypto_key,
             CheckType::OnlyMainFeatures,
+            silent,
         )
         .await;
         vec.append(&mut res);

@@ -22,6 +22,7 @@ pub async fn args_to_command_args(
     server: &Server,
     plugin: &Plugin,
     crypto_key: &str,
+    silent: &bool,
 ) -> Result<Vec<Vec<CommandArg>>, AppError> {
     let list_from_data_args = vec.iter().find(|a| a.arg_type == ArgType::ListFromData);
     let normal_args = vec.iter().filter(|a| a.arg_type != ArgType::ListFromData);
@@ -48,7 +49,7 @@ pub async fn args_to_command_args(
             if let Some(source_data_id) = &arg.data_id {
                 if let Some(data) = plugin.data.iter().find(|d| *d.id == *source_data_id) {
                     let responses = plugin_execution::execute_specific_data_query(
-                        server, plugin, &feature, data, None, crypto_key,
+                        server, plugin, &feature, data, None, crypto_key, silent,
                     )
                     .await?;
 

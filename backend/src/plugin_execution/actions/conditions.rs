@@ -32,6 +32,7 @@ pub async fn check_condition_for_action_met(
     action: Option<Action>,
     action_params: Option<String>,
     crypto_key: String,
+    silent: &bool,
 ) -> ConditionCheckResult {
     if feature.is_none() || action.is_none() {
         return ConditionCheckResult {
@@ -106,6 +107,7 @@ pub async fn check_condition_for_action_met(
                             data,
                             action_params.clone(),
                             crypto_key.as_str(),
+                            silent, // silent check - no error log
                         )
                         .await
                         .unwrap_or_default();
@@ -149,6 +151,7 @@ pub async fn check_all_action_conditions<'l>(
     server: Server,
     crypto_key: &str,
     check_type: CheckType,
+    silent: &bool,
 ) -> Vec<ConditionCheckResult> {
     let mut tasks = Vec::new();
 
@@ -180,6 +183,8 @@ pub async fn check_all_action_conditions<'l>(
                 let action_clone = action.clone();
                 let crypto_key_clone = crypto_key.to_owned().clone();
 
+                let silent = silent.to_owned();
+
                 tasks.push(tokio::spawn(async move {
                     check_condition_for_action_met(
                         server_clone,
@@ -187,6 +192,7 @@ pub async fn check_all_action_conditions<'l>(
                         Some(action_clone),
                         None,
                         crypto_key_clone,
+                        &silent,
                     )
                     .await
                 }));

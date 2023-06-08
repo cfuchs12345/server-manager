@@ -30,6 +30,7 @@ pub async fn execute_data_query(
     server: &Server,
     template_engine: &handlebars::Handlebars<'static>,
     crypto_key: String,
+    silent: &bool,
 ) -> Result<Vec<DataResult>, AppError> {
     let mut results: Vec<DataResult> = vec![];
 
@@ -61,13 +62,21 @@ pub async fn execute_data_query(
                 data,
                 None,
                 crypto_key.as_str(),
+                silent,
             )
             .await?;
 
             for data_response in data_responses {
-                let inputs =
-                    get_command_inputs(data, crypto_key.as_str(), None, feature, &plugin, server)
-                        .await?;
+                let inputs = get_command_inputs(
+                    data,
+                    crypto_key.as_str(),
+                    None,
+                    feature,
+                    &plugin,
+                    server,
+                    silent,
+                )
+                .await?;
 
                 let enriched_result =
                     process_result_for_display(data, &data_response.1, template_engine, feature)?;
@@ -80,6 +89,7 @@ pub async fn execute_data_query(
                         server.clone(),
                         actions,
                         crypto_key.clone(),
+                        silent,
                     )
                     .await;
 
@@ -133,14 +143,23 @@ pub async fn execute_specific_data_query(
     data: &Data,
     action_params: Option<String>,
     crypto_key: &str,
+    silent: &bool,
 ) -> Result<Vec<(CommandInput, String)>, AppError> {
-    let inputs =
-        get_command_inputs(data, crypto_key, action_params, feature, plugin, server).await?;
+    let inputs = get_command_inputs(
+        data,
+        crypto_key,
+        action_params,
+        feature,
+        plugin,
+        server,
+        silent,
+    )
+    .await?;
 
     let mut responses = Vec::new();
 
     for input in inputs {
-        let response = execute_command(input.clone()).await?;
+        let response = execute_command(input.clone(), silent).await?;
 
         if let Some(script) = &data.post_process {
             log::trace!("before post process: {}", response);
@@ -156,14 +175,14 @@ pub async fn execute_specific_data_query(
     Ok(responses)
 }
 
-async fn execute_command(input: CommandInput) -> Result<String, AppError> {
+async fn execute_command(input: CommandInput, silent: &bool) -> Result<String, AppError> {
     let response = match input.get_name() {
         commands::socket::SOCKET => {
-            let result: SocketCommandResult = commands::execute(input, false).await?;
+            let result: SocketCommandResult = commands::execute(input, silent).await?;
             result.get_response()
         }
         _ => {
-            let result: HttpCommandResult = commands::execute(input, false).await?;
+            let result: HttpCommandResult = commands::execute(input, silent).await?;
             result.get_response()
         }
     };
@@ -178,6 +197,7 @@ async fn get_command_inputs(
     feature: &Feature,
     plugin: &Plugin,
     server: &Server,
+    silent: &bool,
 ) -> Result<Vec<CommandInput>, AppError> {
     let inputs = match data.command.as_str() {
         commands::socket::SOCKET => {
@@ -188,6 +208,7 @@ async fn get_command_inputs(
                 action_params,
                 feature,
                 plugin,
+                silent,
             )
             .await?
         }
@@ -199,6 +220,7 @@ async fn get_command_inputs(
                 action_params,
                 feature,
                 plugin,
+                silent,
             )
             .await?
         }
