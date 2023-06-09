@@ -198,9 +198,13 @@ fn extract_monitoring_data(
                     }
 
                     vec.push(TimeSeriesData {
-                        identifier: identifier.unwrap(),
+                        identifier: identifier.ok_or(AppError::Unknown(
+                            "Should acutally not happen since it is checked before".to_owned(),
+                        ))?,
                         sub_identifiers,
-                        value: value.unwrap(),
+                        value: value.ok_or(AppError::Unknown(
+                            "Should acutally not happen since it is checked before".to_owned(),
+                        ))?,
                         timestamp: datastore::Timestamp::SysTime(SystemTime::now()),
                     });
                 }
@@ -275,7 +279,10 @@ fn json_path_query(json: &Value, input: &str) -> Result<Vec<String>, AppError> {
         true => {
             let strings: Vec<String> = found_values
                 .as_array()
-                .unwrap()
+                .ok_or(AppError::Unknown(format!(
+                    "Could not get array from json value {}",
+                    found_values
+                )))?
                 .iter()
                 .flat_map(common::convert_value_to_str)
                 .collect();

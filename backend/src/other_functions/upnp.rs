@@ -86,16 +86,18 @@ pub async fn upnp_discover(
 
     let mut serverfeature_by_location: HashMap<String, FeaturesOfServer> = HashMap::new();
 
-    let Some(plugin) = datastore::get_plugin(UPNP) else {
+    let Some(plugin) = datastore::get_plugin(UPNP)? else {
         log::debug!("UPNP Plugin not found");
         return Ok(Vec::new());
     };
 
     let search_target = SearchTarget::RootDevice;
+    let secs =
+        u64::try_from(wait_time_for_upnp).map_err(|err| AppError::Unknown(format!("{}", err)))?;
 
     match ssdp_client::search(
         &search_target,
-        Duration::from_secs(u64::try_from(wait_time_for_upnp).unwrap()),
+        Duration::from_secs(secs),
         wait_time_for_upnp,
     )
     .await
@@ -116,8 +118,14 @@ pub async fn upnp_discover(
 
                         match Url::parse(location) {
                             Ok(url) => {
-                                let host_address: IpAddr =
-                                    url.host().unwrap().to_string().parse()?;
+                                let host_address: IpAddr = url
+                                    .host()
+                                    .ok_or(AppError::Unknown(format!(
+                                        "Url {} seems to be invalid",
+                                        url
+                                    )))?
+                                    .to_string()
+                                    .parse()?;
 
                                 serverfeature_by_location.insert(
                                     location.to_string(),
@@ -262,10 +270,10 @@ mod tests {
         </root>"#;
         let parsed = parse_upnp_description(text);
         assert!(parsed.is_some());
-        let unwrapped = parsed.unwrap();
+        let unwrapped = parsed.expect("should not happen");
 
         assert_eq!(
-            unwrapped.device.manufacturer.unwrap(),
+            unwrapped.device.manufacturer.expect("should not happen"),
             "ASUSTeK Computer Inc."
         );
         assert_eq!(unwrapped.device.service_list.service.len(), 1);
@@ -275,7 +283,7 @@ mod tests {
                 .service_list
                 .service
                 .first()
-                .unwrap()
+                .expect("should not happen")
                 .control_url,
             "wps_control"
         );

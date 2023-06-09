@@ -1,5 +1,5 @@
 use handlebars::{
-    handlebars_helper, Context, Handlebars, Helper, HelperResult, Output, RenderContext,
+    handlebars_helper, Context, Handlebars, Helper, HelperResult, Output, RenderContext, RenderError,
 };
 use serde_json::Value;
 use std::cmp::Ordering;
@@ -26,7 +26,7 @@ fn sort_fct(
     };
 
     if value.is_array() {
-        let mut sorted_array = value.as_array().unwrap().to_owned();
+        let mut sorted_array = value.as_array().map(|v|v.to_owned()).unwrap_or_default();
 
         sorted_array.sort_by(|a, b| {
             if a[property].is_null() &&  b[property].is_null() {
@@ -69,12 +69,12 @@ fn sort_fct(
             }
         });
 
-        let str = serde_json::to_string(&sorted_array).unwrap();
+        let str = serde_json::to_string(&sorted_array)?;
 
         let mut ctx = ctx.clone();
         match ctx.data_mut() {
             serde_json::value::Value::Object(m) => {
-                m.insert(name.to_owned(), serde_json::from_str(str.as_str()).unwrap())
+                m.insert(name.to_owned(), serde_json::from_str(str.as_str())?)
             }
             _ => None,
         };
@@ -106,7 +106,7 @@ fn parse_xml_input_as_upnp_device_fct(
     };
 
     if value.is_string() {
-        let xml = value.as_str().unwrap();
+        let xml = value.as_str().ok_or(RenderError::new("Could not get string from value"))?;
 
         let device = upnp::parse_upnp_description(xml).unwrap_or({
             log::error!(
@@ -121,7 +121,7 @@ fn parse_xml_input_as_upnp_device_fct(
         let mut ctx = ctx.clone();
         match ctx.data_mut() {
             serde_json::value::Value::Object(m) => {
-                m.insert(new_name.to_owned(), serde_json::to_value(device).unwrap())
+                m.insert(new_name.to_owned(), serde_json::to_value(device)?)
             }
             _ => None,
         };
@@ -142,10 +142,10 @@ fn to_readable_mem(value: &Value) -> String {
 
                 format!("{} MB", mb)
             }
-            None => value.as_str().unwrap().to_owned(),
+            None => value.as_str().map(|v| v.to_owned()).unwrap_or_default()
         }
     } else {
-        value.as_str().unwrap().to_owned()
+        value.as_str().map(|v| v.to_owned()).unwrap_or_default()
     }
 }
 
@@ -160,10 +160,10 @@ fn to_readable_time(value: &Value) -> String {
 
                 format!("{}d {:02}h {:02}m {:02}s", days, hours, minutes, seconds)
             }
-            None => value.as_str().unwrap().to_owned(),
+            None => value.as_str().map(|v| v.to_owned()).unwrap_or_default(),
         }
     } else {
-        value.as_str().unwrap().to_owned()
+        value.as_str().map(|v| v.to_owned()).unwrap_or_default()
     }
 }
 

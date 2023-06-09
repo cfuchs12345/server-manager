@@ -2,7 +2,10 @@ use std::{net::IpAddr, path::Path};
 
 use crate::{
     datastore,
-    models::{config::dns_server::DNSServer, response::system_information::SystemInformationEntry},
+    models::{
+        config::dns_server::DNSServer, error::AppError,
+        response::system_information::SystemInformationEntry,
+    },
 };
 use memory_stats::memory_stats;
 
@@ -53,7 +56,7 @@ pub fn get_load_info() -> Vec<SystemInformationEntry> {
     }
 }
 
-pub fn get_systenms_dns_servers() -> Vec<DNSServer> {
+pub fn get_systenms_dns_servers() -> Result<Vec<DNSServer>, AppError> {
     let mut list = Vec::new();
     let path = Path::new("/etc/resolv.conf"); // path for debian linux
 
@@ -69,13 +72,15 @@ pub fn get_systenms_dns_servers() -> Vec<DNSServer> {
             }
         }
     } else {
-        if let Ok(dev_server) = datastore::get_config().get("dev_dns_server1") {
+        let config = datastore::get_config()?;
+
+        if let Ok(dev_server) = config.get("dev_dns_server1") {
             list.push(DNSServer {
                 ipaddress: dev_server,
                 port: 53,
             })
         }
-        if let Ok(dev_server) = datastore::get_config().get("dev_dns_server2") {
+        if let Ok(dev_server) = config.get("dev_dns_server2") {
             list.push(DNSServer {
                 ipaddress: dev_server,
                 port: 53,
@@ -86,7 +91,7 @@ pub fn get_systenms_dns_servers() -> Vec<DNSServer> {
             log::warn!("No known location for DNS configuration. Cannot get system DNS servers automatically");
         }
     }
-    list
+    Ok(list)
 }
 
 fn get_private_dns_servers_from_config(config_file_content: String) -> Vec<DNSServer> {

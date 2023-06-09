@@ -9,16 +9,21 @@ use base64::{engine::general_purpose, Engine as _};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use magic_crypt::{new_magic_crypt, MagicCryptTrait};
 use pbkdf2::pbkdf2_hmac_array;
-use rand::{thread_rng, Error, RngCore};
+use rand::{thread_rng, RngCore};
 use sha2::Sha256;
 
 use crate::models::error::AppError;
 
 pub type Aes256Gcm16 = AesGcm<Aes256, U16>;
 
-pub fn get_random_key32() -> Result<String, Error> {
+pub fn get_random_key32() -> Result<String, AppError> {
     let mut arr = [0u8; 32];
-    thread_rng().try_fill_bytes(&mut arr[..])?;
+    thread_rng().try_fill_bytes(&mut arr[..]).map_err(|err| {
+        AppError::Unknown(format!(
+            "Could not generate random string. Error was  {}",
+            err
+        ))
+    })?;
     Ok(hex::encode(arr))
 }
 
@@ -27,10 +32,11 @@ pub fn default_encrypt(to_encrypt: &str, crypto_key: &str) -> String {
     mc.encrypt_str_to_base64(to_encrypt)
 }
 
-pub fn default_decrypt(to_decrypt: &str, crypto_key: &str) -> String {
+pub fn default_decrypt(to_decrypt: &str, crypto_key: &str) -> Result<String, AppError> {
     let mc = new_magic_crypt!(crypto_key, 256);
 
-    mc.decrypt_base64_to_string(to_decrypt).unwrap()
+    mc.decrypt_base64_to_string(to_decrypt)
+        .map_err(AppError::from)
 }
 
 pub fn aes_decrypt(to_decrypt: &str, secret: &str) -> Result<String, AppError> {
@@ -81,7 +87,7 @@ mod tests {
 
     #[test]
     fn test_get_random_key32() {
-        assert_eq!(get_random_key32().unwrap().len(), 64);
+        assert_eq!(get_random_key32().expect("should not happen").len(), 64);
     }
 
     #[test]
@@ -92,7 +98,7 @@ mod tests {
         let encrypted = default_encrypt(input, key);
         assert_ne!(encrypted, input);
 
-        let decrypted = default_decrypt(encrypted.as_str(), key);
+        let decrypted = default_decrypt(encrypted.as_str(), key).expect("should not happen");
         assert_eq!(&decrypted, input);
     }
 }

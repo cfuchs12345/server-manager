@@ -33,37 +33,42 @@ pub async fn check_condition_for_action_met(
     action_params: Option<String>,
     crypto_key: String,
     silent: &bool,
-) -> ConditionCheckResult {
+) -> Result<ConditionCheckResult, AppError> {
     if feature.is_none() || action.is_none() {
-        return ConditionCheckResult {
+        return Ok(ConditionCheckResult {
             ipaddress: server.ipaddress,
             result: false,
             action_id: "".to_string(),
             feature_id: "".to_string(),
             action_params: "".to_string(),
-        };
+        });
     }
 
-    let plugin_res = datastore::get_plugin(feature.as_ref().unwrap().id.as_str());
+    let plugin_res =
+        datastore::get_plugin(feature.as_ref().expect("Could not get ref").id.as_str())?;
 
     if plugin_res.is_none() {
-        return ConditionCheckResult {
-            action_id: action.unwrap().id,
+        return Ok(ConditionCheckResult {
+            action_id: action.expect("checked before").id,
             action_params: action_params.unwrap_or_default(),
-            feature_id: feature.unwrap().id,
+            feature_id: feature.expect("checked before").id,
             ipaddress: server.ipaddress,
             result: false,
-        };
+        });
     }
 
-    let plugin = plugin_res.unwrap();
+    let plugin = plugin_res.expect("checked before");
 
     let status: Vec<Status> =
         other_functions::statuscheck::status_check(vec![server.ipaddress], true)
             .await
             .unwrap_or(Vec::new());
 
-    let mut result = match action.as_ref().unwrap().available_for_state {
+    let mut result = match action
+        .as_ref()
+        .expect("Could not get ref")
+        .available_for_state
+    {
         State::Active => {
             match status.first() {
                 Some(status) => status.is_running,
@@ -84,26 +89,26 @@ pub async fn check_condition_for_action_met(
 
     if !result {
         // check if status dependency already failed - early exit
-        return ConditionCheckResult {
-            action_id: action.unwrap().id,
+        return Ok(ConditionCheckResult {
+            action_id: action.expect("checked before").id,
             action_params: action_params.unwrap_or_default(),
-            feature_id: feature.unwrap().id,
+            feature_id: feature.expect("checked before").id,
             ipaddress: server.ipaddress,
             result: false,
-        };
+        });
     }
 
     if let Some(status) = status.first() {
         if status.is_running {
             // if not running, no need to start any request
             // now check data dependencies one by one
-            for depends in &action.as_ref().unwrap().depends {
+            for depends in &action.as_ref().expect("Could not get ref").depends {
                 match find_data_for_action_condition(depends, &plugin) {
                     Some(data) => {
                         let responses = data::execute_specific_data_query(
                             &server,
                             &plugin,
-                            feature.as_ref().unwrap(),
+                            feature.as_ref().expect("Could not get ref"),
                             data,
                             action_params.clone(),
                             crypto_key.as_str(),
@@ -117,7 +122,7 @@ pub async fn check_condition_for_action_met(
                                 .unwrap_or_default();
                         }
                         if !result {
-                            log::debug!("Dependencies for data {} of plugin {} for server {} not met. Responses were {:?}", data.id, feature.as_ref().unwrap().id, server.ipaddress, responses);
+                            log::debug!("Dependencies for data {} of plugin {} for server {} not met. Responses were {:?}", data.id, feature.as_ref().expect("Could not get ref").id, server.ipaddress, responses);
                             break;
                         }
                     }
@@ -125,7 +130,7 @@ pub async fn check_condition_for_action_met(
                         let error = format!(
                             "dependent data with id  {} not found for action {}",
                             depends.data_id,
-                            action.as_ref().unwrap().id
+                            action.as_ref().expect("Could not get ref").id
                         );
                         log::error!("{}", error);
                         result = false;
@@ -133,18 +138,23 @@ pub async fn check_condition_for_action_met(
                     }
                 }
             }
-        } else if !action.as_ref().unwrap().depends.is_empty() {
+        } else if !action
+            .as_ref()
+            .expect("Could not get ref")
+            .depends
+            .is_empty()
+        {
             result = false;
         }
     };
 
-    ConditionCheckResult {
-        action_id: action.as_ref().unwrap().id.clone(),
+    Ok(ConditionCheckResult {
+        action_id: action.as_ref().expect("Could not get ref").id.clone(),
         action_params: action_params.unwrap_or_default(),
-        feature_id: feature.unwrap().id,
+        feature_id: feature.expect("checked before").id,
         ipaddress: server.ipaddress,
         result,
-    }
+    })
 }
 
 pub async fn check_all_action_conditions<'l>(
@@ -152,11 +162,11 @@ pub async fn check_all_action_conditions<'l>(
     crypto_key: &str,
     check_type: CheckType,
     silent: &bool,
-) -> Vec<ConditionCheckResult> {
+) -> Result<Vec<ConditionCheckResult>, AppError> {
     let mut tasks = Vec::new();
 
     for feature in server.clone().features {
-        let plugin_res = datastore::get_plugin(feature.id.as_str());
+        let plugin_res = datastore::get_plugin(feature.id.as_str())?;
         if plugin_res.is_none() {
             log::error!("plugin with id {} not found", feature.id);
             continue;
@@ -204,10 +214,11 @@ pub async fn check_all_action_conditions<'l>(
 
     let vec: Vec<ConditionCheckResult> = result
         .iter()
-        .map(move |r| r.as_ref().unwrap().to_owned())
+        .map(|r| r.as_ref().expect("Could not get ref"))
+        .map(move |r| r.as_ref().expect("Could not get ref").to_owned())
         .collect();
 
-    vec
+    Ok(vec)
 }
 
 fn response_data_match(dependency: &DependsDef, input: Option<String>) -> Result<bool, AppError> {
@@ -221,9 +232,9 @@ fn response_data_match(dependency: &DependsDef, input: Option<String>) -> Result
     let is_rhai = matches!(script_type.as_str(), "rhai");
 
     if is_lua {
-        Ok(common::match_with_lua(input.unwrap().as_str(), &script))
+        common::match_with_lua(input.unwrap_or_default().as_str(), &script)
     } else if is_rhai {
-        Ok(common::match_with_rhai(input.unwrap().as_str(), &script))
+        common::match_with_rhai(input.unwrap_or_default().as_str(), &script)
     } else {
         Err(AppError::InvalidArgument(
             "script".to_string(),

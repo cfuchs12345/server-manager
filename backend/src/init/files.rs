@@ -20,7 +20,7 @@ pub fn copy_files_into_external_folder() -> Result<(), AppError> {
     let env_file_path = Path::new(super::ENV_FILENAME);
 
     if !env_file_path.exists() {
-        let example = std::fs::read_to_string(Path::new(ENV_EXAMPLE_FILENAME)).unwrap();
+        let example = std::fs::read_to_string(Path::new(ENV_EXAMPLE_FILENAME))?;
 
         let replaced = example.replace(
             "SESSION_SECRET_KEY=TO_GENERATE",

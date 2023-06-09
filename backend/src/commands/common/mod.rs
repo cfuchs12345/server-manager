@@ -61,7 +61,7 @@ pub async fn args_to_command_args(
                                 let list: Vec<String> = if extracted_values.is_array() {
                                     extracted_values
                                         .as_array()
-                                        .unwrap()
+                                        .unwrap_or(&Vec::new())
                                         .iter()
                                         .flat_map(common::convert_value_to_str)
                                         .collect()
@@ -115,14 +115,19 @@ pub fn params_to_command_args(vec: &[Param]) -> Vec<CommandArg> {
         .collect()
 }
 
-pub fn string_params_to_command_args(action_params: Option<String>) -> Vec<CommandArg> {
+pub fn string_params_to_command_args(
+    action_params_opt: Option<String>,
+) -> Result<Vec<CommandArg>, AppError> {
     let mut list = Vec::new();
 
-    if let Some(action_params) = action_params {
+    if let Some(action_params) = &action_params_opt {
         let split = action_params.split(',');
 
         for str in split {
-            let single_param = str.split_at(str.find('=').unwrap());
+            let single_param = str.split_at(str.find('=').ok_or(AppError::InvalidArgument(
+                "Param".to_owned(),
+                action_params_opt.clone(),
+            ))?);
 
             list.push(CommandArg {
                 name: single_param.0.to_owned(),
@@ -130,5 +135,5 @@ pub fn string_params_to_command_args(action_params: Option<String>) -> Vec<Comma
             });
         }
     }
-    list
+    Ok(list)
 }

@@ -5,18 +5,25 @@ use crate::models::error::AppError;
 
 const INPUT: &str = "input";
 
-pub fn match_with_rhai(input: &str, script: &str) -> bool {
+pub fn match_with_rhai(input: &str, script: &str) -> Result<bool, AppError> {
     let mut scope = Scope::new();
 
     scope.push(INPUT, input.to_owned());
 
     let engine = Engine::new();
-    engine.eval_with_scope::<bool>(&mut scope, script).unwrap()
+    engine
+        .eval_with_scope::<bool>(&mut scope, script)
+        .map_err(|err| {
+            AppError::ScriptError(format!(
+                "Could not successfully execute rhai script {}. Error was {}",
+                script, err
+            ))
+        })
 }
 
-pub fn match_with_lua(input: &str, script: &str) -> bool {
+pub fn match_with_lua(input: &str, script: &str) -> Result<bool, AppError> {
     let lua = Lua::new();
-    let mut result = false;
+    let mut result = Ok(false);
 
     lua.context(|lua_ctx| {
         let globals = lua_ctx.globals();
@@ -24,7 +31,12 @@ pub fn match_with_lua(input: &str, script: &str) -> bool {
             .set(INPUT, wrap_in_brackets(input))
             .expect("Could not set global value");
 
-        result = lua_ctx.load(script).eval().unwrap();
+        result = lua_ctx.load(script).eval().map_err(|err| {
+            AppError::ScriptError(format!(
+                "Could not successfuly execute lua script {}. Error was {}",
+                script, err
+            ))
+        });
     });
 
     result
@@ -73,7 +85,7 @@ mod tests {
         let input = "dies ist ein test";
         let script = "string.find(input, 'test', 1, true)";
 
-        assert!(match_with_lua(input, script));
+        assert!(match_with_lua(input, script).expect("should not happen"));
     }
 
     #[test]
@@ -81,6 +93,6 @@ mod tests {
         let input = "dies ist ein test";
         let script = "input.contains(\"test\")";
 
-        assert!(match_with_rhai(input, script));
+        assert!(match_with_rhai(input, script).expect("should not happen"));
     }
 }

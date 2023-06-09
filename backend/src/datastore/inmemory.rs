@@ -5,6 +5,7 @@ use std::{collections::HashMap, net::IpAddr, sync::RwLock};
 use crate::{
     models::response::{data_result::ConditionCheckResult, status::Status},
     models::{
+        error::AppError,
         plugin::{monitoring::Monitioring, Plugin},
         server::Server,
     },
@@ -38,32 +39,55 @@ lazy_static! {
         RwLock::new(HashMap::new());
 }
 
-pub fn set_config(config: Config) {
-    let mut holder = CONFIG.try_write().unwrap();
+pub fn set_config(config: Config) -> Result<(), AppError> {
+    let mut holder = CONFIG
+        .write()
+        .map_err(|err| AppError::Unknown(format!("Could not get write lock. Error: {}", err)))?;
     holder.config = Some(config);
+    Ok(())
 }
 
-pub fn set_crypto_key(crypto_key: String) {
-    let mut holder = CONFIG.try_write().unwrap();
+pub fn set_crypto_key(crypto_key: String) -> Result<(), AppError> {
+    let mut holder = CONFIG
+        .write()
+        .map_err(|err| AppError::Unknown(format!("Could not get write lock. Error: {}", err)))?;
     holder.crypto_key = Some(crypto_key);
+    Ok(())
 }
 
-pub fn get_crypto_key() -> String {
-    let holder = CONFIG.try_read().unwrap();
-    holder.crypto_key.as_ref().unwrap().clone()
+pub fn get_crypto_key() -> Result<String, AppError> {
+    let holder = CONFIG
+        .read()
+        .map_err(|err| AppError::Unknown(format!("Could not get read lock. Error: {}", err)))?;
+    holder
+        .crypto_key
+        .as_ref()
+        .map(|v| v.to_owned())
+        .ok_or(AppError::Unknown(
+            "Could not get crypto key from config".to_owned(),
+        ))
 }
 
-pub fn get_config() -> Config {
-    let holder = CONFIG.try_read().unwrap();
+pub fn get_config() -> Result<Config, AppError> {
+    let holder = CONFIG
+        .read()
+        .map_err(|err| AppError::Unknown(format!("Could not get read lock. Error: {}", err)))?;
 
-    let res = holder.config.as_ref().unwrap();
+    let res = holder
+        .config
+        .as_ref()
+        .ok_or("could not get config".to_owned())?;
 
-    res.clone()
+    Ok(res.clone())
 }
 
-pub fn cache_plugins(plugins: Vec<Plugin>) {
-    let mut cache_rw = PLUGIN_CACHE.try_write().unwrap();
-    let mut series_to_mon_cache_rw = SERIES_TO_MONITORING.try_write().unwrap();
+pub fn cache_plugins(plugins: Vec<Plugin>) -> Result<usize, AppError> {
+    let mut cache_rw = PLUGIN_CACHE
+        .write()
+        .map_err(|err| AppError::Unknown(format!("Could not get write lock. Error: {}", err)))?;
+    let mut series_to_mon_cache_rw = SERIES_TO_MONITORING
+        .write()
+        .map_err(|err| AppError::Unknown(format!("Could not get write lock. Error: {}", err)))?;
 
     let mut to_remove: Vec<String> = Vec::new();
 
@@ -85,87 +109,129 @@ pub fn cache_plugins(plugins: Vec<Plugin>) {
     for id_to_remove in to_remove {
         cache_rw.remove(id_to_remove.as_str());
     }
+    Ok(plugins.len())
 }
 
-pub fn get_all_plugins() -> Vec<Plugin> {
-    let cache = PLUGIN_CACHE.try_read().unwrap();
+pub fn get_all_plugins() -> Result<Vec<Plugin>, AppError> {
+    let cache = PLUGIN_CACHE
+        .read()
+        .map_err(|err| AppError::Unknown(format!("Could not get read lock. Error: {}", err)))?;
 
-    cache.values().cloned().collect()
+    Ok(cache.values().cloned().collect())
 }
 
-pub fn get_all_plugins_map() -> HashMap<String, Plugin> {
-    PLUGIN_CACHE.try_read().unwrap().clone()
+pub fn get_all_plugins_map() -> Result<HashMap<String, Plugin>, AppError> {
+    Ok(PLUGIN_CACHE
+        .read()
+        .map_err(|err| AppError::Unknown(format!("Could not get read lock. Error: {}", err)))?
+        .clone())
 }
 
-pub fn get_plugin(id: &str) -> Option<Plugin> {
-    let cache = PLUGIN_CACHE.try_read().unwrap();
-    cache.get(id).cloned()
+pub fn get_plugin(id: &str) -> Result<Option<Plugin>, AppError> {
+    let cache = PLUGIN_CACHE
+        .read()
+        .map_err(|err| AppError::Unknown(format!("Could not get read lock. Error: {}", err)))?;
+    Ok(cache.get(id).cloned())
 }
 
-pub fn clean_plugin_cache() {
-    PLUGIN_CACHE.try_write().unwrap().clear();
+pub fn clean_plugin_cache() -> Result<(), AppError> {
+    PLUGIN_CACHE
+        .write()
+        .map_err(|err| AppError::Unknown(format!("Could not get write lock. Error: {}", err)))?
+        .clear();
+
+    Ok(())
 }
 
-pub fn get_all_servers() -> Vec<Server> {
-    let cache = SERVER_CACHE.try_read().unwrap().clone();
+pub fn get_all_servers() -> Result<Vec<Server>, AppError> {
+    let cache = SERVER_CACHE
+        .read()
+        .map_err(|err| AppError::Unknown(format!("Could not get read lock. Error: {}", err)))?;
 
-    cache.values().cloned().collect()
+    Ok(cache.values().cloned().collect())
 }
 
-pub fn cache_servers(servers: Vec<Server>) {
-    let mut cache = SERVER_CACHE.try_write().unwrap();
+pub fn cache_servers(servers: Vec<Server>) -> Result<(), AppError> {
+    let mut cache = SERVER_CACHE
+        .write()
+        .map_err(|err| AppError::Unknown(format!("Could not get write lock. Error: {}", err)))?;
 
     for server in servers {
         cache.insert(server.ipaddress, server);
     }
+    Ok(())
 }
 
-pub fn remove_server(ipaddress: &IpAddr) {
-    let mut cache = SERVER_CACHE.try_write().unwrap();
-    let mut status_cache = SERVER_STATUS_CACHE.try_write().unwrap();
+pub fn remove_server(ipaddress: &IpAddr) -> Result<(), AppError> {
+    let mut cache = SERVER_CACHE
+        .write()
+        .map_err(|err| AppError::Unknown(format!("Could not get write lock. Error: {}", err)))?;
+    let mut status_cache = SERVER_STATUS_CACHE
+        .write()
+        .map_err(|err| AppError::Unknown(format!("Could not get write lock. Error: {}", err)))?;
     cache.remove(ipaddress);
     status_cache.remove(ipaddress);
+    Ok(())
 }
 
-pub fn add_server(server: &Server) {
-    let mut cache = SERVER_CACHE.try_write().unwrap();
+pub fn add_server(server: &Server) -> Result<(), AppError> {
+    let mut cache = SERVER_CACHE
+        .write()
+        .map_err(|err| AppError::Unknown(format!("Could not get write lock. Error: {}", err)))?;
 
     cache.insert(server.ipaddress, server.clone());
+    Ok(())
 }
 
-pub fn cache_status(status: &[Status]) {
-    let mut cache = SERVER_STATUS_CACHE.try_write().unwrap();
+pub fn cache_status(status: &[Status]) -> Result<(), AppError> {
+    let mut cache = SERVER_STATUS_CACHE
+        .write()
+        .map_err(|err| AppError::Unknown(format!("Could not get write lock. Error: {}", err)))?;
     for s in status {
         cache.insert(s.ipaddress, s.to_owned());
     }
+    Ok(())
 }
 
-pub fn get_status(ipaddress: &IpAddr) -> Option<Status> {
-    let cache = SERVER_STATUS_CACHE.try_read().unwrap();
+pub fn get_status(ipaddress: &IpAddr) -> Result<Option<Status>, AppError> {
+    let cache = SERVER_STATUS_CACHE
+        .read()
+        .map_err(|err| AppError::Unknown(format!("Could not get read lock. Error: {}", err)))?;
 
-    cache.get(ipaddress).cloned()
+    Ok(cache.get(ipaddress).cloned())
 }
 
-pub fn get_all_condition_results() -> Vec<ConditionCheckResult> {
-    let cache = SERVER_ACTION_CONDITION_RESULTS.try_read().unwrap();
+pub fn get_all_condition_results() -> Result<Vec<ConditionCheckResult>, AppError> {
+    let cache = SERVER_ACTION_CONDITION_RESULTS
+        .read()
+        .map_err(|err| AppError::Unknown(format!("Could not get read lock. Error: {}", err)))?;
 
-    cache.values().cloned().collect()
+    Ok(cache.values().cloned().collect())
 }
 
-pub fn insert_condition_result(to_add: ConditionCheckResult) {
-    let mut cache = SERVER_ACTION_CONDITION_RESULTS.try_write().unwrap();
+pub fn insert_condition_result(to_add: ConditionCheckResult) -> Result<(), AppError> {
+    let mut cache = SERVER_ACTION_CONDITION_RESULTS
+        .write()
+        .map_err(|err| AppError::Unknown(format!("Could not get write lock. Error: {}", err)))?;
 
     cache.insert(to_add.clone().get_key(), to_add);
+    Ok(())
 }
 
-pub fn insert_token(token: &str) {
-    let mut store = TOKENS.try_write().unwrap();
+pub fn insert_token(token: &str) -> Result<(), AppError> {
+    let mut store = TOKENS
+        .write()
+        .map_err(|err| AppError::Unknown(format!("Could not get write lock. Error: {}", err)))?;
 
     store.insert(token.to_owned(), TokenInfo::new());
+
+    Ok(())
 }
 
-pub fn delete_expired_tokens() {
-    let mut store = TOKENS.try_write().unwrap();
+pub fn delete_expired_tokens() -> Result<(), AppError> {
+    let mut store = TOKENS
+        .write()
+        .map_err(|err| AppError::Unknown(format!("Could not get write lock. Error: {}", err)))?;
     log::debug!(
         "Number of tokens before cleanup of expired tokens {}",
         store.len()
@@ -175,19 +241,27 @@ pub fn delete_expired_tokens() {
         "Number of tokens after cleanup of expired tokens {}",
         store.len()
     );
+
+    Ok(())
 }
 
-pub fn is_valid_token(token: &str) -> bool {
-    let store = TOKENS.try_read().unwrap();
+pub fn is_valid_token(token: &str) -> Result<bool, AppError> {
+    let store = TOKENS
+        .read()
+        .map_err(|err| AppError::Unknown(format!("Could not get read lock. Error: {}", err)))?;
 
-    match store.get(token) {
+    let res = match store.get(token) {
         Some(found) => !found.is_expired(),
         None => false,
-    }
+    };
+
+    Ok(res)
 }
 
-pub fn get_monitoring_config_for_series(series_id: &str) -> Option<Monitioring> {
-    let cache = SERIES_TO_MONITORING.try_read().unwrap();
+pub fn get_monitoring_config_for_series(series_id: &str) -> Result<Option<Monitioring>, AppError> {
+    let cache = SERIES_TO_MONITORING
+        .read()
+        .map_err(|err| AppError::Unknown(format!("Could not get read lock. Error: {}", err)))?;
 
-    cache.get(series_id).cloned()
+    Ok(cache.get(series_id).cloned())
 }

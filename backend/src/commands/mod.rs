@@ -34,7 +34,7 @@ pub async fn execute<'a, R>(input: CommandInput, silent: &bool) -> Result<R, App
 where
     R: CommandResult + Clone + 'a + 'static,
 {
-    let commands = COMMANDS.try_read().unwrap();
+    let commands = COMMANDS.read().await;
 
     match commands.iter().find(|c| c.can_handle(&input)) {
         Some(cmd) => match cmd.execute(&input).await {

@@ -49,15 +49,13 @@ pub fn init_cache() -> Result<usize, AppError> {
     let plugins = futures::executor::block_on(load_all())?;
 
     debug!("Plugins loaded: {:?}", plugins);
-    let len = plugins.len();
 
-    datastore::cache_plugins(plugins);
-    Ok(len)
+    datastore::cache_plugins(plugins)
 }
 
 async fn load_all() -> Result<Vec<Plugin>, AppError> {
-    datastore::clean_plugin_cache();
-    let plugin_base_path = datastore::get_config()
+    datastore::clean_plugin_cache()?;
+    let plugin_base_path = datastore::get_config()?
         .get_string("plugin_base_path")
         .map_err(|err| AppError::Unknown(format!("{}", err)))?;
 
@@ -123,7 +121,7 @@ pub async fn get_disabled_plugins(persistence: &Persistence) -> Result<Vec<Strin
             Some(entry) => Ok(entry.value.split(',').map(|e| e.to_string()).collect()),
             None => Ok(Vec::new()),
         },
-        Err(err) => Err(AppError::from(err)),
+        Err(err) => Err(err),
     }
 }
 
@@ -147,10 +145,10 @@ pub async fn disable_plugins(
                 .await
             {
                 Ok(_res) => Ok(true),
-                Err(err) => Err(AppError::from(err)),
+                Err(err) => Err(err),
             }
         }
-        Err(err) => Err(AppError::from(err)),
+        Err(err) => Err(err),
     }
 }
 
@@ -168,7 +166,7 @@ pub async fn is_plugin_disabled(
                 None => Ok(false), // default is that it is activated
             }
         }
-        Err(err) => Err(AppError::from(err)),
+        Err(err) => Err(err),
     }
 }
 
@@ -252,7 +250,7 @@ mod tests {
 
         let expected = "{\"id\":\"test\",\"name\":\"Test\",\"description\":\"\",\"server_icon\":\"\",\"detection\":{\"list\":[{\"params\":[{\"name\":\"port\",\"param_type\":\"string\",\"default_value\":\"80\",\"mandatory\":true}],\"args\":[{\"name\":\"method\",\"arg_type\":\"String\",\"value\":\"get\",\"data_id\":null},{\"name\":\"url\",\"arg_type\":\"String\",\"value\":\"url\",\"data_id\":null}]}],\"script\":{\"script_type\":\"lua\",\"script\":\"Dummy script\"},\"detection_possible\":false,\"command\":\"http\"},\"credentials\":[],\"params\":[],\"data\":[],\"actions\":[{\"id\":\"\",\"name\":\"\",\"show_on_main\":false,\"depends\":[],\"available_for_state\":\"Any\",\"needs_confirmation\":false,\"description\":\"\",\"icon\":\"\",\"command\":\"http\",\"args\":[{\"name\":\"method\",\"arg_type\":\"String\",\"value\":\"get\",\"data_id\":null},{\"name\":\"url\",\"arg_type\":\"String\",\"value\":\"url\",\"data_id\":null}]}]}";
 
-        let result = serde_json::to_string(&testee).unwrap();
+        let result = serde_json::to_string(&testee).expect("should not happen");
         assert_eq!(expected, result);
     }
 
@@ -325,7 +323,7 @@ mod tests {
 
         let test_string: &str = "{\"id\":\"test\",\"name\":\"Test\",\"description\":\"\",\"server_icon\":\"\",\"detection\":{\"list\":[{\"params\":[{\"name\":\"port\",\"param_type\":\"string\",\"default_value\":\"80\",\"mandatory\":true}],\"args\":[{\"name\":\"method\",\"value\":\"get\"},{\"name\":\"url\",\"value\":\"url\"}]}],\"script\":{\"script_type\":\"lua\",\"script\":\"Dummy script\"},\"detection_possible\":false,\"command\":\"http\"},\"credentials\":[],\"params\":[],\"data\":[],\"actions\":[{\"id\":\"\",\"name\":\"\",\"show_on_main\":false,\"depends\":[],\"available_for_state\":\"Any\",\"needs_confirmation\":false,\"description\":\"\",\"icon\":\"\",\"command\":\"http\",\"args\":[{\"name\":\"method\",\"value\":\"get\"},{\"name\":\"url\",\"value\":\"url\"}]}]}";
 
-        let result: Plugin = serde_json::from_str(test_string).unwrap();
+        let result: Plugin = serde_json::from_str(test_string).expect("should not happen");
 
         assert_json_diff::assert_json_eq!(expected, result);
     }
@@ -334,10 +332,10 @@ mod tests {
     async fn test_get_all_plugins() {
         let config = Config::builder()
             .set_default("plugin_base_path", "./shipped_plugins/plugins")
-            .unwrap()
+            .expect("should not happen")
             .build()
-            .unwrap();
-        datastore::set_config(config);
+            .expect("should not happen");
+        datastore::set_config(config).expect("should not happen");
         let result = init_cache();
 
         assert!(result.is_ok());

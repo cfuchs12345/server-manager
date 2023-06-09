@@ -33,6 +33,8 @@ pub use mail::send_email;
 pub use onetimekey::invalidate_expired_one_time_keys;
 pub use onetimekey::OneTimeKey;
 
+use crate::models::error::AppError;
+
 const URLSAFE_WITH_PAD: engine::GeneralPurpose =
     engine::GeneralPurpose::new(&alphabet::URL_SAFE, general_purpose::PAD);
 
@@ -64,8 +66,8 @@ pub fn encode_base64(str: &str) -> String {
     general_purpose::STANDARD_NO_PAD.encode(str)
 }
 
-pub fn decode_base64_urlsafe_with_pad(str: &str) -> String {
-    String::from_utf8(URLSAFE_WITH_PAD.decode(str).unwrap()).unwrap()
+pub fn decode_base64_urlsafe_with_pad(str: &str) -> Result<String, AppError> {
+    String::from_utf8(URLSAFE_WITH_PAD.decode(str)?).map_err(AppError::from)
 }
 
 pub fn convert_value_to_str(value: &serde_json::Value) -> Option<String> {
@@ -103,7 +105,8 @@ mod tests {
         assert_eq!(
             decode_base64_urlsafe_with_pad(
                 "MTIzOlUyRnNkR1ZrWDErYyttb3IwL2N0Y09uM0s0L01VOXladjU2WnpTZnFkeHM9"
-            ),
+            )
+            .expect("should not happen"),
             "123:U2FsdGVkX1+c+mor0/ctcOn3K4/MU9yZv56ZzSfqdxs="
         );
     }

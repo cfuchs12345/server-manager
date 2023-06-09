@@ -17,7 +17,8 @@ use crate::{
 };
 
 lazy_static! {
-    static ref TEMPLATE_SUB_ACTION_REGEX: Regex = Regex::new(r"(\[\[Action .*?\]\])").unwrap();
+    static ref TEMPLATE_SUB_ACTION_REGEX: Regex =
+        Regex::new(r"(\[\[Action .*?\]\])").expect("Regex pattern is invalid");
 }
 
 /// Executes all data queries on the given server for all given plugins
@@ -35,13 +36,9 @@ pub async fn execute_data_query(
     let mut results: Vec<DataResult> = vec![];
 
     for feature in &server.features {
-        let plugin_opt = datastore::get_plugin(feature.id.as_str());
-
-        if plugin_opt.is_none() {
-            log::error!("plugin {} not found", feature.id);
-            continue;
-        }
-        let plugin = plugin_opt.unwrap();
+        let plugin = datastore::get_plugin(feature.id.as_str())?.ok_or(AppError::UnknownPlugin(
+            format!("Plugin {} not found", feature.id),
+        ))?;
 
         for data in &plugin.data {
             log::debug!("Plugin data execute {} {}", plugin.id, data.id);
@@ -84,14 +81,14 @@ pub async fn execute_data_query(
                 for input in inputs {
                     let replaced = replace(enriched_result.as_str(), &input)?.1; // use second part of tuple - we don't want show passwords in the ouput if someone adds credentials placeholders in the template
 
-                    let actions = extract_actions(&replaced);
+                    let actions = extract_actions(&replaced)?;
                     let check_results = actions::check_action_conditions(
                         server.clone(),
                         actions,
                         crypto_key.clone(),
                         silent,
                     )
-                    .await;
+                    .await?;
 
                     results.push(DataResult {
                         ipaddress: server.ipaddress,
@@ -228,17 +225,17 @@ async fn get_command_inputs(
     Ok(inputs)
 }
 
-fn extract_actions(input: &str) -> Vec<SubAction> {
+fn extract_actions(input: &str) -> Result<Vec<SubAction>, AppError> {
     let mut result = Vec::new();
     let groups: Vec<String> = TEMPLATE_SUB_ACTION_REGEX
         .find_iter(input)
         .map(|mat| mat.as_str().to_owned())
         .collect();
     for group in groups {
-        result.push(SubAction::from(group));
+        result.push(SubAction::try_from(group)?);
     }
 
-    result
+    Ok(result)
 }
 
 fn inject_meta_data_for_actions(input: String, feature: &Feature, data: &Data) -> String {

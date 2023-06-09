@@ -135,7 +135,7 @@ pub async fn make_command_input_from_subaction(
     silent: &bool,
 ) -> Result<Vec<CommandInput>, AppError> {
     let params = Parameters::new(
-        common::string_params_to_command_args(action_params),
+        common::string_params_to_command_args(action_params)?,
         common::params_to_command_args(&feature.params),
         common::param_def_to_command_args(&plugin.params),
     );
@@ -168,7 +168,7 @@ pub async fn make_command_input_from_data(
     silent: &bool,
 ) -> Result<Vec<CommandInput>, AppError> {
     let params = Parameters::new(
-        common::string_params_to_command_args(action_params),
+        common::string_params_to_command_args(action_params)?,
         common::params_to_command_args(&feature.params),
         common::param_def_to_command_args(&plugin.params),
     );

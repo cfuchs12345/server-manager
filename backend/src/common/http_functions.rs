@@ -71,9 +71,9 @@ pub async fn execute_http_request(
     headers: Option<Vec<(String, String)>>,
     body: Option<String>,
 ) -> Result<String, AppError> {
-    let client = create_http_client();
+    let client = create_http_client()?;
 
-    let header_map: http::HeaderMap = headers_to_map(headers);
+    let header_map: http::HeaderMap = headers_to_map(headers)?;
 
     log::debug!("executing http request {} on {}", method, url);
 
@@ -116,10 +116,11 @@ pub async fn execute_http_request(
     }
 }
 
-fn create_http_client() -> reqwest::Client {
-    let config = datastore::get_config();
-    let accept_self_signed_certificates =
-        config.get_bool("accept_self_signed_certificates").unwrap();
+fn create_http_client() -> Result<reqwest::Client, AppError> {
+    let config = datastore::get_config()?;
+    let accept_self_signed_certificates = config
+        .get_bool("accept_self_signed_certificates")
+        .unwrap_or(false);
 
     log::debug!(
         "accept self-signed certificates setting is {}",
@@ -130,7 +131,7 @@ fn create_http_client() -> reqwest::Client {
         .danger_accept_invalid_certs(accept_self_signed_certificates)
         .timeout(Duration::from_secs(1))
         .build()
-        .unwrap()
+        .map_err(AppError::from)
 }
 
 #[cfg(all(target_os = "linux"))]
@@ -170,41 +171,28 @@ fn read_from_stream(unix_stream: &mut UnixStream) -> Result<String, AppError> {
     Ok(response)
 }
 
-fn headers_to_map(headers: Option<Vec<(String, String)>>) -> http::HeaderMap {
-    if headers.is_none() {
-        return http::HeaderMap::new();
-    }
+fn headers_to_map(headers_opt: Option<Vec<(String, String)>>) -> Result<http::HeaderMap, AppError> {
+    let Some(headers) = headers_opt else {
+        return Ok(http::HeaderMap::new());
+    };
+
     let mut header_map: http::HeaderMap = http::HeaderMap::new();
 
-    for header in headers.unwrap() {
-        let res = header.0.split_once('=');
+    for header in headers {
+        let left_side_of_tuple = &header.0;
 
-        if res.is_none() {
-            log::error!(
-                "Header {} is invalid. Container no equals sign (=)",
-                header.1
-            );
-            continue;
-        }
-        let split = res.unwrap();
+        let res = left_side_of_tuple
+            .split_once('=')
+            .ok_or(AppError::InvalidArgument(
+                "header is invalid. Contains no equals sign".to_owned(),
+                Some(left_side_of_tuple.clone()),
+            ))?;
 
-        let name_res = http::header::HeaderName::from_lowercase(split.0.to_lowercase().as_bytes());
-        let value_res = http::header::HeaderValue::from_str(split.1);
+        let name = http::header::HeaderName::from_lowercase(res.0.to_lowercase().as_bytes())?;
+        let value = http::header::HeaderValue::from_str(res.1)?;
 
-        match name_res {
-            Ok(name) => match value_res {
-                Ok(value) => {
-                    header_map.insert(name, value);
-                }
-                Err(err) => {
-                    log::error!("Header {} is invalid {}", header.1, err);
-                }
-            },
-            Err(err) => {
-                log::error!("Header {} is invalid {}", header.1, err);
-            }
-        }
+        header_map.insert(name, value);
     }
 
-    header_map
+    Ok(header_map)
 }

@@ -16,9 +16,9 @@ lazy_static! {
 }
 
 pub async fn status_check_all(silent: &bool) -> Result<(), AppError> {
-    let servers = datastore::get_all_servers();
+    let servers = datastore::get_all_servers()?;
 
-    let permit = SEMAPHORE_AUTO_DISCOVERY.acquire().await.unwrap();
+    let permit = SEMAPHORE_AUTO_DISCOVERY.acquire().await?;
 
     // list of async tasks executed by tokio
     let mut tasks = Vec::new();
@@ -39,19 +39,19 @@ pub async fn status_check_all(silent: &bool) -> Result<(), AppError> {
 
     let results_from_query: Vec<Status> = task_results
         .iter()
-        .map(move |res| res.as_ref().unwrap().to_owned())
+        .map(move |res| res.as_ref().expect("Could not get ref").to_owned())
         .flat_map(|res| res.as_ref().ok())
         .map(|ping_result| Status::from(ping_result.to_owned()))
         .collect();
 
     log::debug!("inserting {} status into cache", results_from_query.len());
 
-    datastore::cache_status(&results_from_query);
+    datastore::cache_status(&results_from_query)?;
 
     let data = time_series_data_collection(results_from_query);
 
     datastore::save_timeseries_data(
-        &mut TimeSeriesPersistence::new().await,
+        &mut TimeSeriesPersistence::new().await?,
         "server_status",
         data,
     )
@@ -90,7 +90,7 @@ pub async fn status_check(
     use_cache: bool,
 ) -> Result<Vec<Status>, AppError> {
     let list_to_check = if ips_to_check.is_empty() {
-        datastore::get_all_servers()
+        datastore::get_all_servers()?
             .iter()
             .map(|s| s.ipaddress)
             .collect()
@@ -103,6 +103,7 @@ pub async fn status_check(
             .iter()
             .map(|ipaddress| {
                 datastore::get_status(ipaddress)
+                    .unwrap_or(Some(Status::new(ipaddress.to_owned())))
                     .unwrap_or_else(|| Status::new(ipaddress.to_owned()))
             })
             .collect()

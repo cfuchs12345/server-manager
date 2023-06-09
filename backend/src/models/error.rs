@@ -1,9 +1,17 @@
 use actix_web::{HttpResponse, ResponseError};
+use base64::DecodeError;
+use http::header::{InvalidHeaderName, InvalidHeaderValue};
 use http::{header, StatusCode};
+use lettre::address::AddressError;
+use magic_crypt::MagicCryptError;
 use serde::{Deserialize, Serialize};
 use std::str::ParseBoolError;
+use std::string::FromUtf8Error;
+use std::sync::TryLockError;
 use std::{fmt::Display, net::AddrParseError, num::ParseIntError};
 use surge_ping::SurgeError;
+use tokio::sync::AcquireError;
+use tokio_cron_scheduler::JobSchedulerError;
 
 #[allow(dead_code)]
 enum Level {
@@ -218,9 +226,93 @@ impl From<SurgeError> for AppError {
     }
 }
 
+impl<T> From<TryLockError<T>> for AppError {
+    fn from(err: TryLockError<T>) -> Self {
+        AppError::Unknown(format!("{}", err))
+    }
+}
+
+impl From<tokio::sync::TryLockError> for AppError {
+    fn from(err: tokio::sync::TryLockError) -> Self {
+        AppError::Unknown(format!("{}", err))
+    }
+}
+
+impl From<MagicCryptError> for AppError {
+    fn from(err: MagicCryptError) -> Self {
+        AppError::Unknown(format!("{}", err))
+    }
+}
+
 impl From<String> for AppError {
     fn from(err: String) -> Self {
         AppError::Unknown(err)
+    }
+}
+
+impl From<InvalidHeaderName> for AppError {
+    fn from(err: InvalidHeaderName) -> Self {
+        AppError::InvalidArgument(format!("Invalid headername {}", err), None)
+    }
+}
+
+impl From<InvalidHeaderValue> for AppError {
+    fn from(err: InvalidHeaderValue) -> Self {
+        AppError::InvalidArgument(format!("Invalid header value {}", err), None)
+    }
+}
+
+impl From<AddressError> for AppError {
+    fn from(err: AddressError) -> Self {
+        AppError::InvalidArgument(format!("Invalid email config {}", err), None)
+    }
+}
+
+impl From<lettre::error::Error> for AppError {
+    fn from(err: lettre::error::Error) -> Self {
+        AppError::InvalidArgument(format!("could not build email {}", err), None)
+    }
+}
+
+impl From<lettre::transport::smtp::Error> for AppError {
+    fn from(err: lettre::transport::smtp::Error) -> Self {
+        AppError::InvalidArgument(format!("could not send email {}", err), None)
+    }
+}
+
+impl From<config::ConfigError> for AppError {
+    fn from(err: config::ConfigError) -> Self {
+        AppError::InvalidArgument(format!("config is invalid {}", err), None)
+    }
+}
+
+impl From<DecodeError> for AppError {
+    fn from(err: DecodeError) -> Self {
+        AppError::Unknown(format!("{}", err))
+    }
+}
+
+impl From<FromUtf8Error> for AppError {
+    fn from(err: FromUtf8Error) -> Self {
+        AppError::Unknown(format!("{}", err))
+    }
+}
+
+impl From<AcquireError> for AppError {
+    fn from(err: AcquireError) -> Self {
+        AppError::Unknown(format!("{}", err))
+    }
+}
+
+impl From<JobSchedulerError> for AppError {
+    fn from(err: JobSchedulerError) -> Self {
+        AppError::Unknown(format!("{}", err))
+    }
+}
+
+impl From<actix_web::Error> for AppError {
+    fn from(err: actix_web::Error) -> Self {
+        AppError::Unknown(format!("{}", err))
     }
 }
 

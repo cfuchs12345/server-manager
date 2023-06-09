@@ -38,12 +38,8 @@ pub async fn execute_action(
     crypto_key: String,
     silent: &bool,
 ) -> Result<bool, AppError> {
-    let plugin_res = datastore::get_plugin(feature.id.as_str());
-    if plugin_res.is_none() {
-        return Err(AppError::UnknownPlugin(feature.id.clone()));
-    }
-
-    let plugin = plugin_res.unwrap();
+    let plugin = datastore::get_plugin(feature.id.as_str())?
+        .ok_or(AppError::UnknownPlugin(feature.id.clone()))?;
 
     match plugin.find_action(action_id) {
         Some(plugin_action) => match plugin_action.command.as_str() {
@@ -59,12 +55,12 @@ pub async fn execute_action(
                 )
                 .await?;
 
-                let mut res: Option<HttpCommandResult> = None;
+                let mut results: Vec<HttpCommandResult> = Vec::new();
                 for input in inputs {
-                    res = Some(commands::execute(input, silent).await?);
+                    results.push(commands::execute(input, silent).await?);
                 }
 
-                Ok(res.is_some() && !res.unwrap().get_response().is_empty())
+                Ok(results.iter().any(|r| !r.get_response().is_empty()))
             }
             commands::socket::SOCKET => {
                 let inputs = commands::socket::make_command_input_from_subaction(
@@ -77,12 +73,12 @@ pub async fn execute_action(
                     silent,
                 )
                 .await?;
-                let mut res: Option<SocketCommandResult> = None;
+                let mut results: Vec<SocketCommandResult> = Vec::new();
                 for input in inputs {
-                    res = Some(commands::execute(input, silent).await?);
+                    results.push(commands::execute(input, silent).await?);
                 }
 
-                Ok(res.is_some() && !res.unwrap().get_response().is_empty())
+                Ok(results.iter().any(|r| !r.get_response().is_empty()))
             }
             commands::wol::WOL => {
                 let input = commands::wol::make_input(feature);
@@ -119,15 +115,22 @@ pub async fn check_action_conditions(
     sub_actions: Vec<SubAction>,
     crypto_key: String,
     silent: &bool,
-) -> Vec<ConditionCheckResult> {
+) -> Result<Vec<ConditionCheckResult>, AppError> {
     let mut tasks = Vec::new();
     for sub_action in &sub_actions {
         if sub_action.feature_id.is_none() || sub_action.action_id.is_none() {
             continue;
         }
 
-        let feature = server.find_feature(sub_action.feature_id.as_ref().unwrap());
-        let plugin = datastore::get_plugin(sub_action.feature_id.as_ref().unwrap().as_str());
+        let feature =
+            server.find_feature(sub_action.feature_id.as_ref().expect("Could not get ref"));
+        let plugin = datastore::get_plugin(
+            sub_action
+                .feature_id
+                .as_ref()
+                .expect("Could not get ref")
+                .as_str(),
+        )?;
 
         if plugin.is_none() {
             continue;
@@ -142,8 +145,14 @@ pub async fn check_action_conditions(
                 server.clone(),
                 feature,
                 plugin
-                    .unwrap()
-                    .find_action(sub_action.action_id.as_ref().unwrap().as_str())
+                    .expect("should not happen - checked before")
+                    .find_action(
+                        sub_action
+                            .action_id
+                            .as_ref()
+                            .expect("Could not get ref")
+                            .as_str(),
+                    )
                     .map(|v| v.to_owned()),
                 sub_action.action_params.clone(),
                 crypto_key.clone(),
@@ -156,15 +165,16 @@ pub async fn check_action_conditions(
 
     let vec: Vec<ConditionCheckResult> = results
         .iter()
-        .map(|r| r.as_ref().unwrap().to_owned())
+        .map(|v| v.as_ref().expect("Could not get ref"))
+        .map(|r| r.as_ref().expect("Could not get ref").to_owned())
         .collect();
     log::debug!("number of results is {}", vec.len());
-    vec
+    Ok(vec)
 }
 
-pub async fn check_main_action_conditions(silent: &bool) {
-    let servers = datastore::get_all_servers();
-    let crypto_key = datastore::get_crypto_key();
+pub async fn check_main_action_conditions(silent: &bool) -> Result<(), AppError> {
+    let servers = datastore::get_all_servers()?;
+    let crypto_key = datastore::get_crypto_key()?;
 
     let mut vec: Vec<ConditionCheckResult> = Vec::new();
     for server in servers {
@@ -174,11 +184,12 @@ pub async fn check_main_action_conditions(silent: &bool) {
             CheckType::OnlyMainFeatures,
             silent,
         )
-        .await;
+        .await?;
         vec.append(&mut res);
     }
 
     for result in vec {
-        datastore::insert_condition_result(result);
+        datastore::insert_condition_result(result)?;
     }
+    Ok(())
 }

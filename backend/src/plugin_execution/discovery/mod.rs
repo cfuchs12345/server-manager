@@ -38,7 +38,7 @@ pub async fn auto_discover_servers_in_network(
     dns_servers: Vec<DNSServer>,
     silent: &bool,
 ) -> Result<Vec<HostInformation>, AppError> {
-    let permit = SEMAPHORE_AUTO_DISCOVERY.acquire().await.unwrap();
+    let permit = SEMAPHORE_AUTO_DISCOVERY.acquire().await?;
 
     log::debug!(
         "called auto discover with network param {:?}",
@@ -73,7 +73,7 @@ pub async fn discover_features_of_all_servers(
     let wait_time_for_upnp = 15; // in seconds
 
     let upnp_future = upnp::upnp_discover(wait_time_for_upnp, upnp_activated);
-    let crypto_key = datastore::get_crypto_key();
+    let crypto_key = datastore::get_crypto_key()?;
 
     // list of async tasks executed by tokio
     let mut tasks = Vec::new();
@@ -92,7 +92,7 @@ pub async fn discover_features_of_all_servers(
 
     let features_from_plugin_discovery: Vec<FeaturesOfServer> = result
         .iter()
-        .flat_map(|f| f.as_ref().unwrap())
+        .flat_map(|f| f.as_ref().expect("Could not get ref"))
         .map(|f| f.to_owned())
         .collect();
 
@@ -118,7 +118,7 @@ pub async fn discover_features(
         features: vec![],
     };
 
-    let plugins = crate::datastore::get_all_plugins();
+    let plugins = crate::datastore::get_all_plugins()?;
 
     for plugin in plugins {
         if !plugin.detection.detection_possible {
@@ -263,7 +263,7 @@ async fn auto_discover_servers(
     dns_servers: Vec<DNSServer>,
     silent: &bool,
 ) -> Result<Vec<HostInformation>, AppError> {
-    let socket_addresses = parse_ip_and_port_into_socket_address(dns_servers);
+    let socket_addresses = parse_ip_and_port_into_socket_address(dns_servers)?;
 
     let hosts = network.hosts();
 
@@ -333,14 +333,16 @@ fn merge_features(
     result
 }
 
-fn parse_ip_and_port_into_socket_address(dns_servers: Vec<DNSServer>) -> Vec<SocketAddr> {
-    dns_servers
-        .iter()
-        .map(|dns_server| {
-            let socket_addr: SocketAddr = concat_ip_and_port(dns_server).parse().unwrap();
-            socket_addr
-        })
-        .collect()
+fn parse_ip_and_port_into_socket_address(
+    dns_servers: Vec<DNSServer>,
+) -> Result<Vec<SocketAddr>, AppError> {
+    let mut list = Vec::new();
+    for dns_server in dns_servers {
+        let socket_addr: SocketAddr = concat_ip_and_port(&dns_server).parse()?;
+
+        list.push(socket_addr);
+    }
+    Ok(list)
 }
 
 fn concat_ip_and_port(dns_server: &DNSServer) -> String {
@@ -363,7 +365,7 @@ async fn discover_host(
 
     let result = ping_response_fut.await?;
     let dnsnames = match lookup_hostname_fut {
-        Some(servers) => servers.await,
+        Some(servers) => servers.await?,
         None => Vec::new(),
     };
 
@@ -374,11 +376,12 @@ async fn discover_host(
     })
 }
 
-async fn lookup_hostname(addr: IpAddr, upsstream_server: Vec<UpstreamServer>) -> Vec<String> {
+async fn lookup_hostname(
+    addr: IpAddr,
+    upsstream_server: Vec<UpstreamServer>,
+) -> Result<Vec<String>, AppError> {
     let client = DNSClient::new(upsstream_server);
-    let result = client.query_ptr(&addr).await;
-
-    result.unwrap()
+    Ok(client.query_ptr(&addr).await?)
 }
 
 fn create_feature_from_plugin(plugin: &Plugin) -> Feature {
@@ -412,9 +415,9 @@ pub fn plugin_detect_match(plugin: &Plugin, input: &str) -> Result<bool, AppErro
     let is_rhai = matches!(script_type.as_str(), "rhai");
 
     if is_lua {
-        Ok(common::match_with_lua(input, &script))
+        common::match_with_lua(input, &script)
     } else if is_rhai {
-        Ok(common::match_with_rhai(input, &script))
+        common::match_with_rhai(input, &script)
     } else {
         Err(AppError::InvalidArgument(
             "script".to_string(),
@@ -455,16 +458,16 @@ mod tests {
 
         let plugin = datastore::load_plugin("shipped_plugins/plugins", "sleep.json").await;
 
-        let result = plugin_detect_match(&plugin.unwrap(), input);
+        let result = plugin_detect_match(&plugin.expect("should not happen"), input);
 
-        assert!(result.unwrap());
+        assert!(result.expect("should not happen"));
     }
 
     #[test]
     fn test_merge_features() {
         let list1 = vec![
             FeaturesOfServer {
-                ipaddress: "192.168.178.1".parse().unwrap(),
+                ipaddress: "192.168.178.1".parse().expect("should not happen"),
                 features: vec![Feature {
                     id: "proxmox".to_string(),
                     name: "proxmox".to_string(),
@@ -473,7 +476,7 @@ mod tests {
                 }],
             },
             FeaturesOfServer {
-                ipaddress: "192.168.178.2".parse().unwrap(),
+                ipaddress: "192.168.178.2".parse().expect("should not happen"),
                 features: vec![Feature {
                     id: "nas".to_string(),
                     name: "nas".to_string(),
@@ -484,7 +487,7 @@ mod tests {
         ];
 
         let list2 = vec![FeaturesOfServer {
-            ipaddress: "192.168.178.2".parse().unwrap(),
+            ipaddress: "192.168.178.2".parse().expect("should not happen"),
             features: vec![Feature {
                 id: "upnp".to_string(),
                 name: "upnp".to_string(),
@@ -496,15 +499,15 @@ mod tests {
         let res = merge_features(list1, list2);
 
         assert_eq!(res.len(), 2); // since only two different ips
-        assert_eq!(res.get(0).unwrap().features.len(), 1); // only proxmox
-        assert_eq!(res.get(1).unwrap().features.len(), 2); // nas and upnp
+        assert_eq!(res.get(0).expect("should not happen").features.len(), 1); // only proxmox
+        assert_eq!(res.get(1).expect("should not happen").features.len(), 2); // nas and upnp
     }
 
     #[test]
     fn test_merge_features2() {
         let list1 = vec![
             FeaturesOfServer {
-                ipaddress: "192.168.178.1".parse().unwrap(),
+                ipaddress: "192.168.178.1".parse().expect("should not happen"),
                 features: vec![Feature {
                     id: "proxmox".to_string(),
                     name: "proxmox".to_string(),
@@ -513,7 +516,7 @@ mod tests {
                 }],
             },
             FeaturesOfServer {
-                ipaddress: "192.168.178.2".parse().unwrap(),
+                ipaddress: "192.168.178.2".parse().expect("should not happen"),
                 features: vec![Feature {
                     id: "nas".to_string(),
                     name: "nas".to_string(),
@@ -524,7 +527,7 @@ mod tests {
         ];
 
         let list2 = vec![FeaturesOfServer {
-            ipaddress: "192.168.178.3".parse().unwrap(),
+            ipaddress: "192.168.178.3".parse().expect("should not happen"),
             features: vec![Feature {
                 id: "upnp".to_string(),
                 name: "upnp".to_string(),
@@ -536,8 +539,8 @@ mod tests {
         let res = merge_features(list1, list2);
 
         assert_eq!(res.len(), 3); // since only two different ips
-        assert_eq!(res.get(0).unwrap().features.len(), 1); // only proxmox
-        assert_eq!(res.get(1).unwrap().features.len(), 1); // nas
-        assert_eq!(res.get(2).unwrap().features.len(), 1); // upnp
+        assert_eq!(res.get(0).expect("should not happen").features.len(), 1); // only proxmox
+        assert_eq!(res.get(1).expect("should not happen").features.len(), 1); // nas
+        assert_eq!(res.get(2).expect("should not happen").features.len(), 1); // upnp
     }
 }

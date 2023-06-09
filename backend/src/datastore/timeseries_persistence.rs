@@ -21,24 +21,20 @@ impl QuestDBConfig {
 }
 
 impl QuestDBConfig {
-    pub fn new() -> Self {
-        let timeseries_db_host = super::get_config()
-            .get_string("timeseries_db_host")
-            .unwrap();
+    pub fn new() -> Result<Self, AppError> {
+        let config = super::get_config()?;
 
-        let timeseries_influx_port = super::get_config()
-            .get_int("timeseries_db_influx_port")
-            .unwrap();
+        let timeseries_db_host = config.get_string("timeseries_db_host")?;
 
-        let timeseries_http_port = super::get_config()
-            .get_int("timeseries_db_http_port")
-            .unwrap();
+        let timeseries_influx_port = config.get_int("timeseries_db_influx_port")?;
 
-        QuestDBConfig {
+        let timeseries_http_port = config.get_int("timeseries_db_http_port")?;
+
+        Ok(QuestDBConfig {
             host: timeseries_db_host,
             influx_port: timeseries_influx_port as u16,
             http_port: timeseries_http_port as u16,
-        }
+        })
     }
 }
 
@@ -120,14 +116,14 @@ impl Timestamp {
 }
 
 impl TimeSeriesPersistence {
-    pub async fn new() -> TimeSeriesPersistence {
-        let config = QuestDBConfig::new();
+    pub async fn new() -> Result<TimeSeriesPersistence, AppError> {
+        let config = QuestDBConfig::new()?;
 
-        TimeSeriesPersistence {
+        Ok(TimeSeriesPersistence {
             host: config.host,
             port: config.influx_port,
             sender: None,
-        }
+        })
     }
 
     pub async fn save(

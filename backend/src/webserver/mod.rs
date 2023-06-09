@@ -27,9 +27,7 @@ pub async fn start_webserver(
     bind_address: String,
     app_data: appdata::AppData,
 ) -> Result<(), AppError> {
-    let secret_key = datastore::get_config()
-        .get_string("session_secret_key")
-        .unwrap();
+    let secret_key = datastore::get_config()?.get_string("session_secret_key")?;
 
     HttpServer::new(move || {
         App::new()
@@ -73,7 +71,7 @@ async fn validator_fn(
 ) -> Result<ServiceRequest, (actix_web::Error, ServiceRequest)> {
     let token = credentials.token();
 
-    match token_is_valid(token).await {
+    match datastore::is_valid_token(token) {
         Ok(valid) => {
             if valid {
                 Ok(req)
@@ -87,10 +85,6 @@ async fn validator_fn(
             Err((AuthenticationError::new(Bearer::default()).into(), req))
         }
     }
-}
-
-async fn token_is_valid(token: &str) -> Result<bool, actix_web::Error> {
-    Ok(datastore::is_valid_token(token))
 }
 
 fn init_no_token_api(cfg: &mut web::ServiceConfig) {
@@ -153,37 +147,52 @@ fn init_static(cfg: &mut web::ServiceConfig) {
     // <== files for frontend
 }
 
-async fn fav_icon(_req: HttpRequest) -> Result<fs::NamedFile> {
+async fn fav_icon(_req: HttpRequest) -> Result<fs::NamedFile, AppError> {
     handle_named_file("./server/static/images/favicon.ico")
 }
 
-async fn index_html(_req: HttpRequest) -> Result<fs::NamedFile> {
+async fn index_html(_req: HttpRequest) -> Result<fs::NamedFile, AppError> {
     handle_named_file("./server/static/index.html")
 }
 
-async fn named_file(req: HttpRequest) -> Result<fs::NamedFile> {
-    let path: PathBuf = req.match_info().query("filename").parse().unwrap();
-    handle_named_file(format!("./server/static/{}", path.as_os_str().to_str().unwrap()).as_str())
+async fn named_file(req: HttpRequest) -> Result<fs::NamedFile, AppError> {
+    handle_named_dir_and_filename("./server/static/", get_filename_from_request(req)?)
 }
 
-async fn named_file_svg(req: HttpRequest) -> Result<fs::NamedFile> {
-    let path: PathBuf = req.match_info().query("filename").parse().unwrap();
-    handle_named_file(
-        format!(
-            "./server/static/assets/svg/{}",
-            path.as_os_str().to_str().unwrap()
-        )
-        .as_str(),
+async fn named_file_svg(req: HttpRequest) -> Result<fs::NamedFile, AppError> {
+    handle_named_dir_and_filename(
+        "./server/static/assets/svg/",
+        get_filename_from_request(req)?,
     )
 }
 
-fn handle_named_file(file: &str) -> std::result::Result<fs::NamedFile, actix_web::Error> {
+fn get_filename_from_request(req: HttpRequest) -> Result<String, AppError> {
+    let path: PathBuf =
+        req.match_info().query("filename").parse().map_err(|err| {
+            AppError::Unknown(format!("Could not parse path. Error was: {}", err))
+        })?;
+
+    Ok(path
+        .as_os_str()
+        .to_str()
+        .ok_or(AppError::Unknown(format!(
+            "Could not get named file {:?}",
+            path
+        )))?
+        .to_owned())
+}
+
+fn handle_named_dir_and_filename(dir: &str, file: String) -> Result<fs::NamedFile, AppError> {
+    handle_named_file(format!("{}{}", dir, file).as_str())
+}
+
+fn handle_named_file(file: &str) -> Result<fs::NamedFile, AppError> {
     let path_found = fs::NamedFile::open(file);
     match path_found {
         Ok(file) => Ok(file),
         Err(err) => {
             log::error!("File not found {}. Error was: {}", file, err);
-            Err(actix_web::error::ErrorNotFound(""))
+            Err(AppError::Unknown(format!("File {} not found", file)))
         }
     }
 }

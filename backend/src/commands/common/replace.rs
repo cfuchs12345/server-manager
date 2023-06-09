@@ -18,10 +18,14 @@ enum Placeholder {
 }
 
 lazy_static! {
-    static ref PARAM_REGEX: Regex = Regex::new(Placeholder::Param.get_pattern()).unwrap();
-    static ref ARGS_REGEX: Regex = Regex::new(Placeholder::Args.get_pattern()).unwrap();
-    static ref CREDENTIAL_REGEX: Regex = Regex::new(Placeholder::Credential.get_pattern()).unwrap();
-    static ref BASE64_REGEX: Regex = Regex::new(Placeholder::Base64.get_pattern()).unwrap();
+    static ref PARAM_REGEX: Regex =
+        Regex::new(Placeholder::Param.get_pattern()).expect("Pattern is invalid");
+    static ref ARGS_REGEX: Regex =
+        Regex::new(Placeholder::Args.get_pattern()).expect("Pattern is invalid");
+    static ref CREDENTIAL_REGEX: Regex =
+        Regex::new(Placeholder::Credential.get_pattern()).expect("Pattern is invalid");
+    static ref BASE64_REGEX: Regex =
+        Regex::new(Placeholder::Base64.get_pattern()).expect("Pattern is invalid");
 }
 
 impl Placeholder {
@@ -161,14 +165,14 @@ fn get_credential_value(name: &str, input: &CommandInput) -> Result<(String, boo
         .clone()
         .ok_or(AppError::InvalidArgument("crypto_key".to_string(), None))?;
 
-    Ok((decrypt(&credential, key.as_str()), credential.encrypted))
+    Ok((decrypt(&credential, key.as_str())?, credential.encrypted))
 }
 
-fn decrypt(credential: &Credential, crypto_key: &str) -> String {
+fn decrypt(credential: &Credential, crypto_key: &str) -> Result<String, AppError> {
     if credential.encrypted {
         crate::common::default_decrypt(&credential.value, crypto_key)
     } else {
-        credential.value.clone()
+        Ok(credential.value.clone())
     }
 }
 
@@ -196,7 +200,7 @@ mod tests {
             Placeholder::Base64
                 .extract_placeholders("${encode_base64(USERNAME)}".to_string())
                 .first()
-                .unwrap()
+                .expect("should not happen")
                 .to_owned(),
             "${encode_base64(USERNAME)}".to_owned()
         );

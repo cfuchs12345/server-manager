@@ -35,11 +35,20 @@ pub async fn post_networks_action(
 
     match query.action_type {
         NetworkActionType::AutoDiscover => {
-            let network = params_map.get("network").unwrap();
-            let lookup_names: bool = params_map.get("lookup_names").unwrap().parse().unwrap();
+            let network = params_map
+                .get("network")
+                .ok_or(AppError::MissingURLParameter("network".to_owned()))?;
+            let lookup_names: bool = params_map
+                .get("lookup_names")
+                .ok_or(AppError::MissingURLParameter("lookup_names".to_owned()))?
+                .parse()?;
 
             if lookup_names
-                && (dns_server_result.is_err() || dns_server_result.as_ref().unwrap().is_empty())
+                && (dns_server_result.is_err()
+                    || dns_server_result
+                        .as_ref()
+                        .expect("Could not get ref")
+                        .is_empty())
             {
                 Err(AppError::DNSServersNotConfigured())
             } else {
@@ -88,7 +97,9 @@ pub async fn post_servers_actions(
             let ips_to_check: Vec<IpAddr> = match params_map.get("ipaddresses") {
                 Some(_list) => params_map
                     .get_split_by("ipaddresses", ",")
-                    .unwrap()
+                    .ok_or(AppError::Unknown(
+                        "Could not split ipaddresses by , ".to_owned(),
+                    ))?
                     .iter()
                     .flat_map(|s| {
                         let ip: Result<IpAddr, _> = s.parse();
@@ -116,7 +127,7 @@ pub async fn post_servers_actions(
             Ok(HttpResponse::Ok().json(list))
         }
         ServersActionType::ActionConditionCheck => {
-            Ok(HttpResponse::Ok().json(datastore::get_all_condition_results().to_vec()))
+            Ok(HttpResponse::Ok().json(datastore::get_all_condition_results()?.to_vec()))
         }
     }
 }
@@ -133,7 +144,7 @@ pub async fn post_servers_by_ipaddress_action(
 
     let server = datastore::get_server(&data.app_data_persistence, &ipaddress).await?;
 
-    let crypto_key = datastore::get_crypto_key();
+    let crypto_key = datastore::get_crypto_key()?;
 
     match query.action_type {
         ServerActionType::FeatureScan => {
@@ -222,7 +233,7 @@ pub async fn get_plugins(
     _data: web::Data<AppData>,
     _req: HttpRequest,
 ) -> Result<HttpResponse, AppError> {
-    Ok(HttpResponse::Ok().json(datastore::get_all_plugins()))
+    Ok(HttpResponse::Ok().json(datastore::get_all_plugins()?))
 }
 
 #[get("/plugins/actions")]
@@ -293,7 +304,7 @@ pub async fn post_dnsservers(
 
 #[get("/systeminformation/dnsservers")]
 pub async fn get_system_dnsservers(_data: web::Data<AppData>) -> Result<HttpResponse, AppError> {
-    Ok(HttpResponse::Ok().json(systeminfo::get_systenms_dns_servers()))
+    Ok(HttpResponse::Ok().json(systeminfo::get_systenms_dns_servers()?))
 }
 
 #[get("/configurations/dnsservers")]
@@ -328,7 +339,7 @@ pub async fn get_system_information() -> Result<HttpResponse, AppError> {
 
 #[get("/system/smtpconfigvalid")]
 pub async fn get_smtp_config_valid() -> Result<HttpResponse, AppError> {
-    Ok(HttpResponse::Ok().json(common::is_smtp_config_valid()))
+    Ok(HttpResponse::Ok().json(common::is_smtp_config_valid()?))
 }
 
 #[get("/users")]
@@ -381,8 +392,8 @@ async fn save_user_common(
     let update_result = datastore::insert_user(&data.app_data_persistence, &user).await?;
 
     if update_result {
-        if common::is_smtp_config_valid() {
-            let from_address = datastore::get_config().get_string("email_from").unwrap();
+        if common::is_smtp_config_valid()? {
+            let from_address = datastore::get_config()?.get_string("email_from")?;
 
             match common::send_email(from_address.as_str(),
                     &user.get_email(),
@@ -435,7 +446,7 @@ pub async fn put_user_changepassword(
         .get(HeaderName::from_static("x-custom"))
         .ok_or(AppError::Unknown("Missing header".to_owned()))?;
 
-    let otk_tuple = get_existing_otk(custom_header)?;
+    let otk_tuple = get_existing_otk(custom_header).await?;
 
     let secret = common::make_aes_secrect(query.user_id.as_str(), otk_tuple.1.as_str());
 
@@ -448,7 +459,7 @@ pub async fn put_user_changepassword(
     if password_check_result {
         let decrypted_new = common::aes_decrypt(&query.new_password, secret.as_str())?;
 
-        user.update_password_hash(common::hash_password(decrypted_new.as_str()).unwrap());
+        user.update_password_hash(common::hash_password(decrypted_new.as_str())?);
 
         let user_updated = datastore::update_user(&data.app_data_persistence, &user).await?;
 
@@ -464,7 +475,7 @@ pub async fn put_user_changepassword(
 
 #[get("users/authenticate/otk")]
 pub async fn get_one_time_key() -> Result<HttpResponse, AppError> {
-    let otk = OneTimeKey::generate();
+    let otk = OneTimeKey::generate().await?;
 
     Ok(HttpResponse::Ok().json(otk))
 }
@@ -482,7 +493,7 @@ pub async fn authenticate(
         .get(HeaderName::from_static("x-custom"))
         .ok_or(AppError::Unknown("Missing header value".to_owned()))?;
 
-    let otk_tuple = get_existing_otk(custom_header)?;
+    let otk_tuple = get_existing_otk(custom_header).await?;
 
     let auth_values = get_auth_data_split(auth_header)?
         .ok_or(AppError::Unknown("Could not split header".to_owned()))?;
@@ -499,7 +510,7 @@ pub async fn authenticate(
     if password_check_result {
         let token = common::generate_long_random_string();
 
-        datastore::insert_token(&token);
+        datastore::insert_token(&token)?;
 
         Ok(HttpResponse::Ok().json(UserToken { user_id, token }))
     } else {
@@ -522,7 +533,7 @@ async fn get_monitoring_ids(
     let mut names: Vec<String> = Vec::new();
 
     for feature in &server.features {
-        if let Some(plugin) = datastore::get_plugin(feature.id.as_str()) {
+        if let Some(plugin) = datastore::get_plugin(feature.id.as_str())? {
             let mut plugin_monitoring_ids: Vec<String> = plugin
                 .data
                 .iter()
@@ -561,17 +572,17 @@ async fn get_monitoring_data(
     Ok(HttpResponse::Ok().json(response))
 }
 
-fn get_existing_otk(header_value: &HeaderValue) -> Result<(NaiveDateTime, String), AppError> {
+async fn get_existing_otk(header_value: &HeaderValue) -> Result<(NaiveDateTime, String), AppError> {
     let number: u32 = header_value.to_str()?.parse()?;
 
-    common::OneTimeKey::get_token(number).ok_or(AppError::UnAuthorized)
+    common::OneTimeKey::get_token(number).await
 }
 
 fn get_auth_data_split(header_value: &HeaderValue) -> Result<Option<(String, String)>, AppError> {
-    let val_str = header_value.to_str().unwrap();
+    let val_str = header_value.to_str()?;
     let cut_val_str = val_str.replace("Basic ", "");
 
-    let decoded = common::decode_base64_urlsafe_with_pad(cut_val_str.as_str());
+    let decoded = common::decode_base64_urlsafe_with_pad(cut_val_str.as_str())?;
 
     Ok(decoded
         .split_once(':')

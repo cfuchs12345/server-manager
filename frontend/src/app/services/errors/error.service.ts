@@ -22,9 +22,9 @@ export class ErrorService {
   ) {
     let text: string;
     if (Object.hasOwn(error, 'error')) {
-      text = error.error;
+      text = JSON.stringify(error.error);
     } else if (Object.hasOwn(error, 'message')) {
-      text = error.message;
+      text = JSON.stringify(error.message);
     } else {
       text = JSON.stringify(error);
     }

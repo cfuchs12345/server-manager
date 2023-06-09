@@ -21,13 +21,13 @@ pub async fn get_monitoring_data(
     series_id: &str,
     ipaddress: IpAddr,
 ) -> Result<TimeSeriesResponse, AppError> {
-    let monitoring = get_monitoring_config_for_series(series_id).ok_or(AppError::Unknown(
+    let monitoring = get_monitoring_config_for_series(series_id)?.ok_or(AppError::Unknown(
         format!("Could not find monitoring config for series {}", series_id),
     ))?;
 
     log::trace!("querying monitoring data for {}", series_id);
 
-    let config = datastore::QuestDBConfig::new();
+    let config = datastore::QuestDBConfig::new()?;
 
     let select = create_data_select(&monitoring, series_id, format!("{}", ipaddress).as_str());
 
@@ -35,8 +35,7 @@ pub async fn get_monitoring_data(
 
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(1))
-        .build()
-        .unwrap();
+        .build()?;
 
     let result = client
         .get(format!(
@@ -88,9 +87,9 @@ fn create_data_select(monitoring: &Monitioring, series_id: &str, identifier: &st
     )
 }
 
-fn get_monitoring_config_for_series(series_id: &str) -> Option<Monitioring> {
+fn get_monitoring_config_for_series(series_id: &str) -> Result<Option<Monitioring>, AppError> {
     if series_id == "server_status" {
-        Some(Monitioring {
+        Ok(Some(Monitioring {
             pre_process: None,
             id: "server_status".to_owned(),
             name: "Server Status".to_owned(),
@@ -107,7 +106,7 @@ fn get_monitoring_config_for_series(series_id: &str) -> Option<Monitioring> {
                 value_type: "integer".to_owned(),
                 value: "".to_owned(),
             }],
-        })
+        }))
     } else {
         datastore::get_monitoring_config_for_series(series_id)
     }
@@ -132,9 +131,9 @@ fn enrich_response(
 }
 
 pub async fn monitor_all(silent: &bool) -> Result<(), AppError> {
-    let servers = datastore::get_all_servers();
-    let plugins = datastore::get_all_plugins();
-    let crypto_key = datastore::get_crypto_key();
+    let servers = datastore::get_all_servers()?;
+    let plugins = datastore::get_all_plugins()?;
+    let crypto_key = datastore::get_crypto_key()?;
 
     let relevant_plugins: Vec<Plugin> = plugins
         .iter()
@@ -191,7 +190,7 @@ pub async fn monitor_all(silent: &bool) -> Result<(), AppError> {
         }
     }
 
-    let mut persistence = TimeSeriesPersistence::new().await;
+    let mut persistence = TimeSeriesPersistence::new().await?;
 
     for (series_id, data_vec) in map {
         log::trace!("Saving time series data for {}: {:?}", series_id, data_vec);
