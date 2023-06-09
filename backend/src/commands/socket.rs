@@ -153,7 +153,7 @@ async fn execute(
     Ok("".to_string())
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SocketCommandResult {
     response: String,
 }

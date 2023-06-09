@@ -133,15 +133,6 @@ pub async fn discover_features(
 
             log::debug!("checking url {:?} for plugin {}", &url, &plugin.name);
 
-            log::debug!(
-                "Socket Check - not valid for Socket Connection. IP {} is loopback: {} is local IP: {}",
-                ipaddress,
-                ipaddress.is_loopback(),
-                LOCAL_IP_ADDRESSES
-                    .iter()
-                    .any(|a| a.cmp(&ipaddress) == Ordering::Equal)
-            );
-
             let response = match plugin.detection.command.as_str() {
                 commands::socket::SOCKET => {
                     // Socket makes only sense for the server where the manager itself is runnin
@@ -150,7 +141,7 @@ pub async fn discover_features(
                             .iter()
                             .any(|a| a.cmp(&ipaddress) == Ordering::Equal)
                     {
-                        log::debug!(
+                        log::info!(
                             "Trying to discover via socket for server {} {:?}",
                             ipaddress,
                             plugin
@@ -168,7 +159,11 @@ pub async fn discover_features(
                             response = match commands::execute::<SocketCommandResult>(input, silent)
                                 .await
                             {
-                                Ok(result) => Some(result.get_response()),
+                                Ok(result) => {
+                                    log::info!("result is {:?}", result);
+
+                                    Some(result.get_response())
+                                }
                                 Err(err) => {
                                     err.log();
                                     continue;
