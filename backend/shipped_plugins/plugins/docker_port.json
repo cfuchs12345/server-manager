@@ -25,7 +25,7 @@
                     },
                     {
                         "name": "url",
-                        "value": "${params.protocol}://${IP}:${params.port}"
+                        "value": "${params.protocol}://${IP}:${params.port}/version"
                     }
                 ]
             },
@@ -49,16 +49,16 @@
                     },
                     {
                         "name": "url",
-                        "value": "${params.protocol}://${IP}:${params.port}"
+                        "value": "${params.protocol}://${IP}:${params.port}/version"
                     }
                 ]
             }
         ],
         "script": {
             "script_type": "lua",
-            "script": "string.len(input) > 4"
-        },
-        "detection_possible": true
+            "script": "string.find(input, 'docker', 1, true)"
+          },
+          "detection_possible": true
     },
     "credentials": [],
     "data": [
