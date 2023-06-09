@@ -30,7 +30,7 @@ pub async fn execute_socket_request(
     headers: Option<Vec<(String, String)>>,
     body: Option<String>,
 ) -> Result<String, AppError> {
-    let header_map: http::HeaderMap = headers_to_map(headers);
+    let header_map: http::HeaderMap = headers_to_map(headers)?;
 
     log::debug!("executing http request {} on {}", method, url);
 
