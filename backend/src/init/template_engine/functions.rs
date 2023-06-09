@@ -1,5 +1,6 @@
 use handlebars::{
-    handlebars_helper, Context, Handlebars, Helper, HelperResult, Output, RenderContext, RenderError,
+    handlebars_helper, Context, Handlebars, Helper, HelperResult, Output, RenderContext,
+    RenderError,
 };
 use serde_json::Value;
 use std::cmp::Ordering;
@@ -26,7 +27,7 @@ fn sort_fct(
     };
 
     if value.is_array() {
-        let mut sorted_array = value.as_array().map(|v|v.to_owned()).unwrap_or_default();
+        let mut sorted_array = value.as_array().map(|v| v.to_owned()).unwrap_or_default();
 
         sorted_array.sort_by(|a, b| {
             if a[property].is_null() &&  b[property].is_null() {
@@ -59,11 +60,10 @@ fn sort_fct(
                     a.partial_cmp(&b).unwrap_or(Ordering::Less)
                 } else {
                     // neither a string, string containing number or number -> we don't know what to do and just sort it somehow
-                        log::warn!(
-                            "Property with name {} has an unknown type that cannot be sorted. Values are {} and {}",
-                            property,  a[property], b[property]
-                        );
-                  
+                    log::warn!(
+                        "Property with name {} has an unknown type that cannot be sorted. Values are {} and {}",
+                        property,  a[property], b[property]
+                    );
                     Ordering::Less
                 }
             }
@@ -106,7 +106,9 @@ fn parse_xml_input_as_upnp_device_fct(
     };
 
     if value.is_string() {
-        let xml = value.as_str().ok_or(RenderError::new("Could not get string from value"))?;
+        let xml = value
+            .as_str()
+            .ok_or(RenderError::new("Could not get string from value"))?;
 
         let device = upnp::parse_upnp_description(xml).unwrap_or({
             log::error!(
@@ -142,7 +144,7 @@ fn to_readable_mem(value: &Value) -> String {
 
                 format!("{} MB", mb)
             }
-            None => value.as_str().map(|v| v.to_owned()).unwrap_or_default()
+            None => value.as_str().map(|v| v.to_owned()).unwrap_or_default(),
         }
     } else {
         value.as_str().map(|v| v.to_owned()).unwrap_or_default()
