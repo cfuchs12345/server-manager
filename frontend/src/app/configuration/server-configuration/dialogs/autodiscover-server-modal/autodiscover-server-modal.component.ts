@@ -8,7 +8,7 @@ import { Subscription } from 'rxjs';
 import { ServerDiscoveryService } from 'src/app/services/servers/server-discovery.service';
 import { GeneralService } from 'src/app/services/general/general.service';
 import { DNSServer } from 'src/app/services/general/types';
-import { ErrorService } from 'src/app/services/errors/error.service';
+import { ErrorService, Source } from 'src/app/services/errors/error.service';
 
 @Component({
   selector: 'app-autodiscover-server-modal',
@@ -106,7 +106,7 @@ export class AutodiscoverServerModalComponent implements OnInit, OnDestroy {
 
   onClickAutoDiscover = () => {
     if( !this.dnsservers || this.dnsservers.length == 0 ) {
-      this.errorService.newError("Auto Discovery", undefined, "Cannot run autodovery. No DNS Server configured.");
+      this.errorService.newError(Source.AutodiscoverServerModalComponent, undefined, "Cannot run autodovery. No DNS Server configured.");
       return;
     }
     const value = this.formControlNetworkmask.getRawValue();

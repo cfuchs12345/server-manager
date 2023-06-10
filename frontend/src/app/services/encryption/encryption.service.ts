@@ -1,6 +1,9 @@
 import { Injectable } from "@angular/core";
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import {randomBytes, pbkdf2Sync, createCipheriv,createDecipheriv } from 'crypto'
 import { Buffer } from 'buffer';
+import { OneTimeKey } from "../auth/types";
 
 window.Buffer = window.Buffer || Buffer;
 
@@ -15,6 +18,8 @@ const UTF8 = 'utf8'
 
 @Injectable()
 export class EncryptionService {
+
+  constructor( private http: HttpClient) {}
 
   private getKey(salt: Buffer, secret: string) {
     return pbkdf2Sync(secret, salt, 100000, 32, SHA);
@@ -56,5 +61,10 @@ export class EncryptionService {
     const fp = uid.length > 5 ? uid.slice(uid.length-5, uid.length) : uid;
     const sp = otk.slice(0, otk.length - fp.length);
     return fp+sp;
+  }
+
+
+  requestOneTimeKey = (): Observable<OneTimeKey> => {
+    return this.http.get<OneTimeKey>('backend_nt/users/authenticate/otk');
   }
 }

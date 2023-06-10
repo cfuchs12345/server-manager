@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Feature, HostInformation, NetworksAction, Param, ServerAction, ServerFeature, ServersAction } from "./types";
 import { defaultHeadersForJSON } from '../common';
-import { ErrorService } from '../errors/error.service';
+import { ErrorService, Source } from '../errors/error.service';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
 import { DNSServer } from '../general/types';
@@ -42,7 +42,7 @@ export class ServerDiscoveryService {
           var f: Feature[] = foundFeature;
         },
         error: (err: any) => {
-          this.errorService.newError("Discovery-Service", ipaddress, err);
+          this.errorService.newError(Source.ServerDiscoveryService, ipaddress, err);
         },
         complete: () => {},
       });
@@ -74,7 +74,7 @@ export class ServerDiscoveryService {
           this.dataStore.discoveredServers = relevant_servers;
         },
         error: (err: any) => {
-          this.errorService.newError("Discovery-Service", undefined, err);
+          this.errorService.newError(Source.ServerDiscoveryService, undefined, err);
 
           this.resetDiscoveredServers();
         },
@@ -103,7 +103,7 @@ export class ServerDiscoveryService {
           this.dataStore.discoveredServerFeatures.push(...serverFeatures);
         },
         error: (err: any) => {
-          this.errorService.newError("Discovery-Service", undefined, err);
+          this.errorService.newError(Source.ServerDiscoveryService, undefined, err);
         },
         complete: () => {
             this.publishDiscoveredServerFeatures();

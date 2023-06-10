@@ -1,7 +1,8 @@
+import { Source } from "./error.service";
 
 export class Error {
 
-  constructor(public sourceName: string, public ipaddress: string | undefined, public errorMessage:string, public lastOccurrance:Date, public count: number = 1) {
+  constructor(public source: Source, public ipaddress: string | undefined, public errorMessage:string, public lastOccurrance:Date, public count: number = 1) {
   }
 
   increment = () => {

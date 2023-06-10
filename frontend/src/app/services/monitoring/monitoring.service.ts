@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
-import { ErrorService } from '../errors/error.service';
+import { ErrorService, Source } from '../errors/error.service';
 import { Server } from '../servers/types';
 import { TimeSeriesIds, TimeSeriesResponse } from './types';
 
@@ -37,7 +37,7 @@ export class MonitoringService {
       },
       error: (err: any) => {
         this.errorService.newError(
-          'Monitoring-Service',
+          Source.MonitoringService,
           undefined,
           err
         );
@@ -65,7 +65,7 @@ export class MonitoringService {
         },
         error: (err: any) => {
           this.errorService.newError(
-            'Monitoring-Service',
+            Source.MonitoringService,
             undefined,
             err
           );

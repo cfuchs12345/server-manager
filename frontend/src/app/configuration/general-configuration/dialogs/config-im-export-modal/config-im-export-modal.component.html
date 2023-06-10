@@ -1,0 +1,90 @@
+<small><b>The password is requird for both directions - import and export of config.</b></small>
+<div fxLayout="row">
+  <div fxFlex="80" fxFlex.gt-xs="70" fxFlexFill>
+    <mat-form-field style="margin: 5px; min-width: 300px">
+      <mat-label>{{ passwordLabel }}</mat-label>
+      <input
+        matInput
+        [placeholder]="passwordPlaceholder"
+        [formControl]="password"
+        type="password"
+      />
+      <mat-error *ngIf="password.invalid">{{ getPasswordMessage() }}</mat-error>
+      <mat-hint>{{ passwordHint }}</mat-hint>
+    </mat-form-field>
+  </div>
+</div>
+<hr />
+<b>Export</b>
+<br />
+<br />
+<div fxLayout="row">
+  <div>
+    <button
+      mat-button
+      mat-raised-button
+      color="primary"
+      (click)="onClickGenerateDownloadLink()"
+      style="margin: 5px"
+      [disabled]="!password.valid"
+    >
+      {{ buttonTextGenerateDownloadLink }}
+    </button>
+  </div>
+</div>
+<div fxLayout="row">
+  <div *ngIf="fileUrl !== undefined">
+    <a [href]="fileUrl" download="server_manager_configuration.json"
+      >Config Download</a
+    >
+  </div>
+</div>
+<hr />
+<b>Import</b>
+<br />
+<br />
+<form (ngSubmit)="onSubmit()">
+  <div fxLayout="row">
+    <div>
+      <mat-form-field style="margin: 5px; min-width: 300px">
+        <mat-label>{{ fileNameLabel }}</mat-label>
+        <input matInput [formControl]="fileName" type="text" />
+        <mat-error *ngIf="password.invalid">{{
+          getPasswordMessage()
+        }}</mat-error>
+        <mat-hint>{{ fileNameHint }}</mat-hint>
+      </mat-form-field>
+
+      <input
+        [formControl]="fileUpload"
+        type="file"
+        (change)="onFileSelected($event)"
+        #fileSelector
+      />
+    </div>
+    <div>
+      <button
+        mat-button
+        mat-raised-button
+        color="primary"
+        (click)="onClickSelectFile()"
+        style="margin: 5px"
+      >
+        {{ buttonTextSelectFile }}
+      </button>
+    </div>
+  </div>
+  <div fxLayout="row">
+    <div>
+      <button
+        mat-button
+        mat-raised-button
+        color="primary"
+        type="submit"
+        style="margin: 5px"
+      >
+        {{ buttonTextUploadFile }}
+      </button>
+    </div>
+  </div>
+</form>

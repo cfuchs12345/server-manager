@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map, mergeMap } from 'rxjs/operators';
-import { User, UserToken } from '../users/types';
+import { UserToken } from '../users/types';
 import { OneTimeKey } from './types';
 import { ErrorService } from '../errors/error.service';
 import { EncryptionService } from '../encryption/encryption.service';
@@ -23,7 +23,7 @@ export class AuthenticationService {
   ) {}
 
   login(userId: string, password: string): Observable<UserToken> {
-    return this.requestOneTimeKey().pipe(
+    return this.encryptionService.requestOneTimeKey().pipe(
       mergeMap((otk) => {
         var auth = 'Basic ' + btoa( userId + ':' + this.encryptionService.encrypt(password, this.encryptionService.makeSecret(userId, otk.key)));
 
@@ -47,10 +47,6 @@ export class AuthenticationService {
           );
       })
     );
-  }
-
-  requestOneTimeKey(): Observable<OneTimeKey> {
-    return this.http.get<OneTimeKey>('backend_nt/users/authenticate/otk');
   }
 
   userExist = (): Observable<boolean> => {

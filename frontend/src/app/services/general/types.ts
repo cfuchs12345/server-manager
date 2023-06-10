@@ -1,6 +1,7 @@
 import { SafeHtml } from '@angular/platform-browser';
 import { Feature, Server } from '../servers/types';
 import { Action } from '../plugins/types';
+import { User } from '../users/types';
 
 export class RowData {
   constructor(
@@ -38,4 +39,8 @@ export class SystemInformation {
 
 export class SystemInformationEntry {
     constructor(public name: string, public value: number) {}
+}
+
+export class Configuration {
+  constructor(public disabled_plugins: string[], public users: User[], public servers: Server[], public dns_servers: DNSServer[]) {};
 }

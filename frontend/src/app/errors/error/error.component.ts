@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, LOCALE_ID, Inject } from '@angular/core';
-import { ErrorService } from 'src/app/services/errors/error.service';
+import { ErrorService, Source } from 'src/app/services/errors/error.service';
 import { Subscription } from 'rxjs';
 import { Error } from 'src/app/services/errors/types';
 import {formatDate} from '@angular/common';
@@ -14,7 +14,7 @@ export class ErrorComponent  implements OnInit, OnDestroy {
   errors: Error[] = [];
   private subscriptionErrors: Subscription | undefined = undefined;
 
-  constructor(private errorService: ErrorService, @Inject(LOCALE_ID) private locale: string) {}
+  constructor(private errorService: ErrorService) {}
 
   ngOnInit(): void {
     this.subscriptionErrors = this.errorService.errors.subscribe((errors) => {
@@ -31,9 +31,5 @@ export class ErrorComponent  implements OnInit, OnDestroy {
     if( this.subscriptionErrors ) {
       this.subscriptionErrors.unsubscribe();
     }
-  }
-
-  formatDate = (date: Date): string => {
-    return formatDate(date, 'yyyy-MM-dd hh:mm:ss', this.locale);
   }
 }

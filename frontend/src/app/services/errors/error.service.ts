@@ -2,6 +2,21 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { Error } from './types';
 
+export enum Source {
+  GeneralService,
+  UserService,
+  ServerService,
+  ServerStatusService,
+  ServerDiscoveryService,
+  ServerDataService,
+  ServerActionService,
+  MonitoringService,
+  PluginService,
+  ServerSubActionComponent,
+  ServerFeaturesComponent,
+  AutodiscoverServerModalComponent,
+}
+
 @Injectable()
 export class ErrorService {
   private _errors = new BehaviorSubject<Map<string, Error>>(new Map());
@@ -16,7 +31,7 @@ export class ErrorService {
   constructor() {}
 
   newError(
-    sourceName: string,
+    source: Source,
     ipaddress: string | undefined = undefined,
     error: any
   ) {
@@ -29,20 +44,20 @@ export class ErrorService {
       text = JSON.stringify(error);
     }
 
-    this.publishError(new Date(), sourceName, ipaddress, text);
+    this.publishError(new Date(), source, ipaddress, text);
   }
 
   private publishError = (
     date: Date,
-    sourceName: string,
+    source: Source,
     ipaddress: string | undefined,
     errorMessage: string
   ) => {
-    const key = sourceName + '|' + errorMessage;
+    const key = source + '|' + errorMessage;
 
     var error = this.dataStore.errors.get(key);
     if (!error) {
-      error = new Error(sourceName, ipaddress, errorMessage, date, 1);
+      error = new Error(source, ipaddress, errorMessage, date, 1);
       this.dataStore.errors.set(key, error);
     } else {
       error.increment();

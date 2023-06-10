@@ -13,25 +13,33 @@ pub use persistence::Persistence;
 pub use timeseries_persistence::TimeSeriesPersistence;
 
 pub use self::config::delete_dnsserver;
+pub use self::config::get_all_dnsservers;
 pub use self::config::insert_dnsserver;
 pub use self::config::insert_new_encryption_key;
-pub use self::config::load_all_dnsservers;
+pub use self::config::upate_dnsserver;
+
+pub use self::config::export_config;
+pub use self::config::import_config;
 
 pub use self::plugins::disable_plugins;
 pub use self::plugins::get_disabled_plugins;
 pub use self::plugins::is_plugin_disabled;
 pub use self::plugins::load_plugin;
 
+pub use self::inmemory::get_all_servers as get_all_servers_from_cache;
 pub use self::servers::delete_server;
+pub use self::servers::get_all_servers;
 pub use self::servers::get_server;
 pub use self::servers::insert_server;
-pub use self::servers::load_all_servers;
+pub use self::servers::re_encrypt_servers;
 pub use self::servers::update_server;
 
+pub use self::users::decrypt_users;
 pub use self::users::delete_user;
+pub use self::users::encrypt_users;
+pub use self::users::get_all_users;
 pub use self::users::get_user;
 pub use self::users::insert_user;
-pub use self::users::load_all_users;
 pub use self::users::update_user;
 
 pub use self::inmemory::delete_expired_tokens;
@@ -45,7 +53,6 @@ pub use self::inmemory::clean_plugin_cache;
 pub use self::inmemory::get_all_condition_results;
 pub use self::inmemory::get_all_plugins;
 pub use self::inmemory::get_all_plugins_map;
-pub use self::inmemory::get_all_servers;
 pub use self::inmemory::get_config;
 pub use self::inmemory::get_crypto_key;
 pub use self::inmemory::get_monitoring_config_for_series;

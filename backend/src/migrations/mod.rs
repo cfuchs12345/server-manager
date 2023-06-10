@@ -61,7 +61,7 @@ pub async fn save_migration(
 }
 
 pub async fn do_encryption_migration(data: &AppData) -> std::result::Result<(), AppError> {
-    let servers = datastore::load_all_servers(&data.app_data_persistence, false).await?;
+    let servers = datastore::get_all_servers(&data.app_data_persistence, false).await?;
 
     let plugins_map = datastore::get_all_plugins_map()?;
 

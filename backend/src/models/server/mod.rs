@@ -32,6 +32,22 @@ impl Server {
             features: Vec::new(),
         }
     }
+
+    pub fn replace_feature(mut self, new_feature: Feature) -> Self {
+        if let Some(index) = self.features.iter().position(|f| f.id == new_feature.id) {
+            self.features.push(new_feature.clone());
+            let old_feature = self.features.swap_remove(index);
+            log::info!(
+                "replaced old feature {:?} with new {:?} at pos {}",
+                old_feature,
+                new_feature,
+                index
+            );
+        } else {
+            log::error!("did not find feature to replace {:?}", new_feature);
+        }
+        self
+    }
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize, Eq)]

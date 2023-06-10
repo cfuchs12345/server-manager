@@ -3,6 +3,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ConfigureDNSDialog as ConfigureDNSDialog, dialogSettings as configureDNSDialogSettings } from './dialogs/dialog-configure-dns';
 import { ConfigureUsersDialog,  dialogSettings as configureUsersDialogSettings } from './dialogs/dialog-configure-users';
 import { ChangePasswordDialog,  dialogSettings as changePasswordDialogSettings } from './dialogs/dialog-change-password';
+import { ConfigImExportDialog,  dialogSettings as changeDialogImExportConfig } from './dialogs/dialog-config-im-and-export';
 
 @Component({
   selector: 'app-general-configuration',
@@ -16,6 +17,7 @@ export class GeneralConfigurationComponent {
   buttonTextManageDNSServers: string = 'DNS Servers';
   buttonTextManageUsers: string = 'Users';
   buttonTextChangePassword: string = 'Change your password';
+  buttonTextImExportConfig: string = "Import/Export of Config"
 
   constructor(private dialog: MatDialog) {}
 
@@ -34,6 +36,12 @@ export class GeneralConfigurationComponent {
   openDialogChangePassword= () => {
     this.dialog.open(ChangePasswordDialog, {
       ...changePasswordDialogSettings()
+    });
+  }
+
+  openDialogImExportConfig=() => {
+    this.dialog.open(ConfigImExportDialog, {
+      ...changeDialogImExportConfig()
     });
   }
 }

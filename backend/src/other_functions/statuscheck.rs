@@ -16,7 +16,7 @@ lazy_static! {
 }
 
 pub async fn status_check_all(silent: &bool) -> Result<(), AppError> {
-    let servers = datastore::get_all_servers()?;
+    let servers = datastore::get_all_servers_from_cache()?;
 
     let permit = SEMAPHORE_AUTO_DISCOVERY.acquire().await?;
 
@@ -90,7 +90,7 @@ pub async fn status_check(
     use_cache: bool,
 ) -> Result<Vec<Status>, AppError> {
     let list_to_check = if ips_to_check.is_empty() {
-        datastore::get_all_servers()?
+        datastore::get_all_servers_from_cache()?
             .iter()
             .map(|s| s.ipaddress)
             .collect()

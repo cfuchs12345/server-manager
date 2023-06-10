@@ -1,14 +1,14 @@
 import { Component } from '@angular/core';
 
 @Component({
-  selector: 'dialog-change-password',
+  selector: 'dialog-config-im-export',
   template: '<h1 mat-dialog-title>{{title}}</h1>\
   <div mat-dialog-content>\
-    <app-change-password-modal></app-change-password-modal>\
+    <app-config-im-export-modal></app-config-im-export-modal>\
   </div>',
 })
-export class ChangePasswordDialog {
-  title: string = 'Change Password';
+export class ConfigImExportDialog {
+  title: string = 'Import and Export of Configuration';
 }
 
 export const dialogSettings = () => {

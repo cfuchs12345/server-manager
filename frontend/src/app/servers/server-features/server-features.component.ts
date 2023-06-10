@@ -1,6 +1,6 @@
 import { Component, Input, OnChanges, OnDestroy, OnInit } from "@angular/core";
 import { Subscription, filter } from "rxjs";
-import { ErrorService } from "src/app/services/errors/error.service";
+import { ErrorService, Source } from "src/app/services/errors/error.service";
 import { PluginService } from "src/app/services/plugins/plugin.service";
 import { Plugin } from "src/app/services/plugins/types";
 import { Server } from "src/app/services/servers/types";
@@ -51,7 +51,7 @@ export class ServerFeaturesComponent implements OnInit, OnDestroy, OnChanges {
         plugin_names.push(plugin.name);
       }
       else {
-        this.errorService.newError("Feature", this.server.ipaddress, "Plugin for feature " + feature.name + " not found.");
+        this.errorService.newError(Source.ServerFeaturesComponent, this.server.ipaddress, "Plugin for feature " + feature.name + " not found.");
       }
     }
     return plugin_names.sort();

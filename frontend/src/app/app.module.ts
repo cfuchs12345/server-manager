@@ -47,7 +47,7 @@ import { ConfigureDnsModalComponent } from './configuration/general-configuratio
 import { ConfigureUsersModalComponent } from './configuration/general-configuration/dialogs/configure-users-modal/configure-users-modal.component';
 import { ConfigureDNSDialog } from './configuration/general-configuration/dialogs/dialog-configure-dns';
 import { ConfigureUsersDialog } from './configuration/general-configuration/dialogs/dialog-configure-users';
-import { ChangePasswordDialog } from './configuration/general-configuration/dialogs/dialog-change-password'
+import { ChangePasswordDialog } from './configuration/general-configuration/dialogs/dialog-change-password';
 import { ConfigureFeaturesDialog } from './configuration/server-configuration/dialogs/dialog-configure-features';
 import { ConfigureFeaturesModalComponent } from './configuration/server-configuration/dialogs/configure-features-modal/configure-features-modal.component';
 import { ChangePasswordModalComponent } from './configuration/general-configuration/dialogs/change-password-modal/change-password-modal.component';
@@ -71,12 +71,16 @@ import { RegisterComponent } from './register/register.component';
 import { TokenInterceptor } from './auth/token.interceptor';
 import { ErrorInterceptor } from './auth/error.interceptor';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { MonitoringSingleServerComponent } from './monitoring/single-server/monitoring-single-server.component'
+import { MonitoringSingleServerComponent } from './monitoring/single-server/monitoring-single-server.component';
+import { ConfigImExportDialog } from './configuration/general-configuration/dialogs/dialog-config-im-and-export';
+import { ConfigImExportModalComponent } from './configuration/general-configuration/dialogs/config-im-export-modal/config-im-export-modal.component';
+import { ErrorSourceNamePipe } from './shared/error-enum-name.pipe';
 
 @NgModule({
   declarations: [
-    GridColsDirective,
+    ErrorSourceNamePipe,
 
+    GridColsDirective,
     AutoDiscoveryDialog,
     FeatureScanDialog,
     AddServerDialog,
@@ -94,6 +98,7 @@ import { MonitoringSingleServerComponent } from './monitoring/single-server/moni
     ConfigurationComponent,
     ServerListComponent,
     ServerListWrapperComponent,
+    ConfigImExportModalComponent,
     AddServerModalComponent,
     DeleteServerModalComponent,
     ServerConfigurationComponent,
@@ -125,7 +130,8 @@ import { MonitoringSingleServerComponent } from './monitoring/single-server/moni
     RegisterComponent,
     LineChartComponent,
     BarChartComponent,
-    MonitoringSingleServerComponent
+    MonitoringSingleServerComponent,
+    ConfigImExportDialog
   ],
   imports: [
     AppRoutingModule,
@@ -146,7 +152,7 @@ import { MonitoringSingleServerComponent } from './monitoring/single-server/moni
     ReactiveFormsModule,
     LayoutModule,
     MatSelectModule,
-    NgApexchartsModule
+    NgApexchartsModule,
   ],
   providers: [
     ErrorService,

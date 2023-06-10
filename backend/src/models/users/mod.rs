@@ -28,6 +28,10 @@ impl User {
         self.password_hash = password_hash;
     }
 
+    pub fn get_password_hash(&self) -> String {
+        self.password_hash.clone()
+    }
+
     pub fn get_user_id(&self) -> String {
         self.user_id.clone()
     }

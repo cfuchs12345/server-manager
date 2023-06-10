@@ -40,7 +40,7 @@ pub async fn start() -> Result<(), AppError> {
 }
 
 async fn init_server_list(persistence: &Persistence) -> Result<(), AppError> {
-    let servers = datastore::load_all_servers(persistence, false).await?;
+    let servers = datastore::get_all_servers(persistence, false).await?;
 
     datastore::cache_servers(servers)
 }

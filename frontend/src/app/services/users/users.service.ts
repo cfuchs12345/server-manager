@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { User, UserInitialPassword } from './types';
-import { ErrorService } from '../errors/error.service';
+import { ErrorService, Source } from '../errors/error.service';
 import { BehaviorSubject } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
 import { EncryptionService } from '../encryption/encryption.service';
@@ -27,7 +27,7 @@ export class UserService {
           this.dataStore.users = loadedUsers;
         },
         error: (err: any) => {
-          this.errorService.newError('User-Service', undefined, err);
+          this.errorService.newError(Source.UserService, undefined, err);
         },
         complete: () => {
           this.publishUsers();
@@ -51,7 +51,7 @@ export class UserService {
           this._initialPassword.next(new UserInitialPassword(user.user_id, response));
         },
         error: (err: any) => {
-          this.errorService.newError("User-Service", user.user_id, err);
+          this.errorService.newError(Source.UserService, user.user_id, err);
         },
         complete: () => {
           setTimeout(this.publishUsers, 500);
@@ -72,7 +72,7 @@ export class UserService {
               this.dataStore.users.splice(indexToDelete, 1);
             },
             error: (err: any) => {
-              this.errorService.newError("User-Service", user.user_id, err);
+              this.errorService.newError(Source.UserService, user.user_id, err);
             },
             complete: () => {
               if (usersToDelete[usersToDelete.length -1].user_id === user.user_id) {
@@ -104,7 +104,7 @@ export class UserService {
 
         },
         error: (err: any) => {
-          this.errorService.newError("User-Service", userId, err);
+          this.errorService.newError(Source.UserService, userId, err);
         },
         complete: () => {
 

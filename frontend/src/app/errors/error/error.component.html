@@ -9,8 +9,8 @@
     </thead>
     <tbody>
       <tr *ngFor="let error of errors">
-        <td class="app-left-align">{{formatDate(error.lastOccurrance)}}</td>
-        <td class="app-left-align">{{error.sourceName}}</td>
+        <td class="app-left-align">{{ error.lastOccurrance | date:"yyyy-MM-dd hh:mm:ss"}}</td>
+        <td class="app-left-align">{{ error.source | sourceName }}</td>
         <td class="app-left-align">{{error.ipaddress}}</td>
         <td class="app-left-align">{{error.errorMessage}}</td>
         <td class="app-right-align">{{error.count}}</td>

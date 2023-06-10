@@ -8,73 +8,79 @@ import { Router } from '@angular/router';
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.scss']
+  styleUrls: ['./login.component.scss'],
 })
 export class LoginComponent {
   userIdLabel: string = 'User Id';
   userIdPlaceholder: string = '';
   userIdHint: string = '';
-  userId : FormControl = new FormControl('', [Validators.required, Validators.minLength(4)]);
+  userId: FormControl = new FormControl('', [
+    Validators.required,
+    Validators.minLength(4),
+  ]);
 
   passwordLabel: string = 'Password';
   passwordPlaceholder: string = '';
   passwordHint: string = '';
-  password : FormControl = new FormControl('', [Validators.required, Validators.minLength(4)]);
+  password: FormControl = new FormControl('', [
+    Validators.required,
+    Validators.minLength(4),
+  ]);
 
   buttonTextLogin: string = 'Login';
 
-  form = new FormGroup({ "userId": this.userId, "password": this.password});
+  form = new FormGroup({ userId: this.userId, password: this.password });
 
-  constructor(private authService: AuthenticationService, private router: Router) {}
+  constructor(
+    private authService: AuthenticationService,
+    private router: Router
+  ) {}
 
   getErrorMessagUserId = (): string => {
-    if( this.userId.hasError("required")) {
-      return "You need to enter the user Id";
+    if (this.userId.hasError('required')) {
+      return 'You need to enter the user Id';
+    } else if (this.userId.hasError('minlength')) {
+      return 'The user Id has to be at least 4 chars long';
+    } else if (this.userId.invalid) {
+      return 'Unknown validation error';
     }
-    else if( this.userId.hasError("minlength")) {
-      return "The user Id has to be at least 4 chars long";
-    }
-    else if( this.userId.invalid ) {
-      return "Unknown validation error";
-    }
-    return "";
-  }
+    return '';
+  };
 
   getErrorMessagPassword = (): string => {
-    if( this.password.hasError("required")) {
-      return "You need to enter the password";
+    if (this.password.hasError('required')) {
+      return 'You need to enter the password';
     }
-    if( this.password.hasError("minlength")) {
-      return "The password has to be at least 6 chars long";
+    if (this.password.hasError('minlength')) {
+      return 'The password has to be at least 6 chars long';
+    } else if (this.password.invalid) {
+      return 'Unknown validation error';
     }
-    else if( this.password.invalid ) {
-      return "Unknown validation error";
-    }
-    return "";
-  }
+    return '';
+  };
 
   getLoginMessage = (): string => {
-    if( this.form.hasError("wrongLogin") ) {
-      return this.form.getError("wrongLogin");
+    if (this.form.hasError('wrongLogin')) {
+      return this.form.getError('wrongLogin');
     }
-    return "";
-  }
+    return '';
+  };
 
   onClickLogin = () => {
     // even if no TLS/HTTPS is used, we don't want to transfer a cleartext password
     // so we use a encryption here and the server is then checking the password against the hash value on the server side
     this.authService.login(this.userId.value, this.password.value).subscribe({
       next: (result) => {
-        if ( result && result.token) {
+        if (result && result.token) {
           this.router.navigate(['/home']);
         }
       },
       error: (err: any) => {
-        this.form.setErrors({"wrongLogin": "User Id and/or password is incorrect"});
+        this.form.setErrors({
+          wrongLogin: 'User Id and/or password is incorrect',
+        });
       },
-      complete: () => {
-
-      },
+      complete: () => {},
     });
-  }
+  };
 }

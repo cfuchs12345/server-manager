@@ -11,7 +11,7 @@ import {
   Server,
   ServerAction,
 } from './types';
-import { ErrorService } from '../errors/error.service';
+import { ErrorService, Source } from '../errors/error.service';
 
 @Injectable({
   providedIn: 'root',
@@ -50,7 +50,7 @@ export class ServerDataService {
           this.dataStore.dataResults.push(...results);
         },
         error: (err: any) => {
-          this.errorService.newError("Data-Service", server.ipaddress, err.error);
+          this.errorService.newError(Source.ServerDataService, server.ipaddress, err.error);
         },
         complete: () => {
           this.publishDataResult();

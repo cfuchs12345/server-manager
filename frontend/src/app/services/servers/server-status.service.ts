@@ -8,7 +8,7 @@ import {
 } from './types';
 
 import { Status } from './types';
-import { ErrorService } from '../errors/error.service';
+import { ErrorService, Source } from '../errors/error.service';
 
 @Injectable({
   providedIn: 'root',
@@ -45,7 +45,7 @@ export class ServerStatusService {
         error: (err: any) => {
           if (err !== undefined) {
             this.errorService.newError(
-              'Status-Service',
+              Source.ServerStatusService,
               undefined,
               err
             );

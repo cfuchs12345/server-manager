@@ -3,7 +3,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from 'src/app/ui/confirm-dialog/confirm-dialog.component';
 import { ServerActionService } from 'src/app/services/servers/server-action.service';
 import { PluginService } from 'src/app/services/plugins/plugin.service';
-import { ErrorService } from 'src/app/services/errors/error.service';
+import { ErrorService, Source } from 'src/app/services/errors/error.service';
 
 @Component({
   selector: 'app-server-sub-action',
@@ -70,11 +70,11 @@ export class ServerSubActionComponent {
       }
     }
     else {
-      this.errorService.newError("sub-action", ipaddress, "Could not execute sub-action "+ action_id + " since plugin " + feature_id + " doesn't contain such an action");
+      this.errorService.newError(Source.ServerSubActionComponent, ipaddress, "Could not execute sub-action "+ action_id + " since plugin " + feature_id + " doesn't contain such an action");
     }
   }
   else {
-    this.errorService.newError("sub-action", ipaddress, "Could not execute sub-action "+ action_id + " since plugin " + feature_id + " is not known");
+    this.errorService.newError(Source.ServerSubActionComponent, ipaddress, "Could not execute sub-action "+ action_id + " since plugin " + feature_id + " is not known");
   }
 }
 }

@@ -131,7 +131,7 @@ fn enrich_response(
 }
 
 pub async fn monitor_all(silent: &bool) -> Result<(), AppError> {
-    let servers = datastore::get_all_servers()?;
+    let servers = datastore::get_all_servers_from_cache()?;
     let plugins = datastore::get_all_plugins()?;
     let crypto_key = datastore::get_crypto_key()?;
 

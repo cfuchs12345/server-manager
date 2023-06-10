@@ -173,7 +173,7 @@ pub async fn check_action_conditions(
 }
 
 pub async fn check_main_action_conditions(silent: &bool) -> Result<(), AppError> {
-    let servers = datastore::get_all_servers()?;
+    let servers = datastore::get_all_servers_from_cache()?;
     let crypto_key = datastore::get_crypto_key()?;
 
     let mut vec: Vec<ConditionCheckResult> = Vec::new();

@@ -8,7 +8,7 @@ import {
 } from './types';
 
 import { Server, Param, ServerAction, Feature } from './types';
-import { ErrorService } from '../errors/error.service';
+import { ErrorService, Source } from '../errors/error.service';
 import { Action } from '../plugins/types';
 
 @Injectable({
@@ -46,7 +46,7 @@ export class ServerActionService {
           this.publishActionCheckResult();
         },
         error: (err: any) => {
-          this.errorService.newError('Action-Service', undefined, err !== undefined ? err: err);
+          this.errorService.newError(Source.ServerActionService, undefined, err !== undefined ? err: err);
         },
         complete: () => {},
       });
@@ -74,7 +74,7 @@ export class ServerActionService {
       .subscribe({
         next: (result) => {},
         error: (err: any) => {
-          this.errorService.newError('Action-Service', ipaddress, err);
+          this.errorService.newError(Source.ServerActionService, ipaddress, err);
         },
         complete: () => {},
       });

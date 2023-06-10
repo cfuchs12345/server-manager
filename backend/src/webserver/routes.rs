@@ -1,8 +1,10 @@
+use std::collections::HashMap;
 use std::net::IpAddr;
 use std::vec;
 
 use crate::common::OneTimeKey;
 use crate::models::config::dns_server::DNSServer;
+use crate::models::config::Configuration;
 use crate::models::error::AppError;
 use crate::models::request::common::QueryParamsAsMap;
 use crate::models::request::plugin::PluginsAction;
@@ -31,7 +33,7 @@ pub async fn post_networks_action(
 ) -> Result<HttpResponse, AppError> {
     let params_map = QueryParamsAsMap::from(query.params.clone());
 
-    let dns_server_result = datastore::load_all_dnsservers(&data.app_data_persistence).await;
+    let dns_server_result = datastore::get_all_dnsservers(&data.app_data_persistence).await;
 
     match query.action_type {
         NetworkActionType::AutoDiscover => {
@@ -70,7 +72,7 @@ pub async fn post_networks_action(
 
 #[get("/servers")]
 pub async fn get_servers(data: web::Data<AppData>) -> Result<HttpResponse, AppError> {
-    let result = datastore::load_all_servers(&data.app_data_persistence, true).await?;
+    let result = datastore::get_all_servers(&data.app_data_persistence, true).await?;
 
     Ok(HttpResponse::Ok().json(result))
 }
@@ -114,7 +116,7 @@ pub async fn post_servers_actions(
             Ok(HttpResponse::Ok().json(list))
         }
         ServersActionType::FeatureScan => {
-            let servers = datastore::load_all_servers(&data.app_data_persistence, true).await?;
+            let servers = datastore::get_all_servers(&data.app_data_persistence, true).await?;
 
             let upnp_activated = !datastore::is_plugin_disabled("upnp", &data.app_data_persistence)
                 .await
@@ -311,7 +313,7 @@ pub async fn get_system_dnsservers(_data: web::Data<AppData>) -> Result<HttpResp
 pub async fn get_dnsservers(data: web::Data<AppData>) -> Result<HttpResponse, AppError> {
     let persistence = &data.app_data_persistence;
 
-    let list = datastore::load_all_dnsservers(persistence).await?;
+    let list = datastore::get_all_dnsservers(persistence).await?;
     Ok(HttpResponse::Ok().json(list))
 }
 
@@ -344,14 +346,14 @@ pub async fn get_smtp_config_valid() -> Result<HttpResponse, AppError> {
 
 #[get("/users")]
 pub async fn get_users(data: web::Data<AppData>) -> Result<HttpResponse, AppError> {
-    let result = datastore::load_all_users(&data.app_data_persistence).await?;
+    let result = datastore::get_all_users(&data.app_data_persistence).await?;
 
     Ok(HttpResponse::Ok().json(result))
 }
 
 #[get("/users/exist")]
 pub async fn get_users_exist(data: web::Data<AppData>) -> Result<HttpResponse, AppError> {
-    let result = datastore::load_all_users(&data.app_data_persistence).await?;
+    let result = datastore::get_all_users(&data.app_data_persistence).await?;
 
     Ok(HttpResponse::Ok().json(!result.is_empty()))
 }
@@ -369,7 +371,7 @@ pub async fn post_first_user(
     data: web::Data<AppData>,
     query: web::Json<User>,
 ) -> Result<HttpResponse, AppError> {
-    let result = datastore::load_all_users(&data.app_data_persistence).await?;
+    let result = datastore::get_all_users(&data.app_data_persistence).await?;
 
     if !result.is_empty() {
         log::error!("Called function that is used for initial user save that allows and update without authorization. However, there are already users. So this is not the initial user creation.");
@@ -384,10 +386,16 @@ async fn save_user_common(
     query: web::Json<User>,
 ) -> Result<HttpResponse, AppError> {
     let initial_password = common::generate_short_random_string();
-    let password_hash = common::hash_password(common::generate_short_random_string().as_str())?;
+    let password_hash = common::hash_password(initial_password.as_str())?;
+    log::info!(
+        "initial password_hash {:?} initial_password {:?}",
+        password_hash,
+        initial_password
+    );
 
     let mut user = query.0;
     user.update_password_hash(password_hash);
+    log::info!("initial user {:?}", user);
 
     let update_result = datastore::insert_user(&data.app_data_persistence, &user).await?;
 
@@ -504,8 +512,11 @@ pub async fn authenticate(
     let decrypted = common::aes_decrypt(&auth_values.1, secret.as_str())?;
 
     let user = datastore::get_user(&data.app_data_persistence, user_id.as_str()).await?;
+    log::info!("User: {:?} : decrypted {}", user, decrypted);
 
     let password_check_result = user.check_password(&decrypted)?;
+
+    log::info!("password_check_result {}", password_check_result);
 
     if password_check_result {
         let token = common::generate_long_random_string();
@@ -570,6 +581,55 @@ async fn get_monitoring_data(
 
     let response = plugin_execution::get_monitoring_data(series_id, ipaddress).await?;
     Ok(HttpResponse::Ok().json(response))
+}
+
+#[get("configuration")]
+async fn get_config(data: web::Data<AppData>, req: HttpRequest) -> Result<HttpResponse, AppError> {
+    let decrypted_password = get_decrypted_password_from_header(req).await?;
+
+    Ok(HttpResponse::Ok().json(
+        datastore::export_config(&data.app_data_persistence, decrypted_password.as_str()).await?,
+    ))
+}
+
+#[post("configuration")]
+async fn post_config(
+    data: web::Data<AppData>,
+    query: web::Json<Configuration>,
+    req: HttpRequest,
+) -> Result<HttpResponse, AppError> {
+    let decrypted_password = get_decrypted_password_from_header(req).await?;
+
+    let config = query.into_inner();
+
+    Ok(HttpResponse::Ok().json(
+        datastore::import_config(
+            &data.app_data_persistence,
+            config,
+            true,
+            &decrypted_password,
+        )
+        .await?,
+    ))
+}
+
+async fn get_decrypted_password_from_header(req: HttpRequest) -> Result<String, AppError> {
+    let headers = req.headers();
+    log::info!("{:?}", headers);
+
+    let custom_header = headers
+        .get(HeaderName::from_static("x-custom"))
+        .ok_or(AppError::Unknown("Missing header".to_owned()))?;
+    let custom_header2 = headers
+        .get(HeaderName::from_static("x-custom2"))
+        .ok_or(AppError::Unknown("Missing header".to_owned()))?;
+
+    let encrypted_password: &str = custom_header2.to_str()?;
+
+    let otk_tuple = get_existing_otk(custom_header).await?;
+    let secret = common::make_aes_secrect("config", otk_tuple.1.as_str());
+
+    common::aes_decrypt(encrypted_password, secret.as_str())
 }
 
 async fn get_existing_otk(header_value: &HeaderValue) -> Result<(NaiveDateTime, String), AppError> {

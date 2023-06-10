@@ -7,6 +7,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { AuthenticationService } from 'src/app/services/auth/authentication.service';
+import { EncryptionService } from 'src/app/services/encryption/encryption.service';
 import { UserService } from 'src/app/services/users/users.service';
 
 @Component({
@@ -47,6 +48,7 @@ export class ChangePasswordModalComponent implements OnInit {
   constructor(
     private userService: UserService,
     private authService: AuthenticationService,
+    private encryptionService: EncryptionService,
     private formBuilder: FormBuilder
   ) {
     this.form = this.formBuilder.group({
@@ -63,7 +65,7 @@ export class ChangePasswordModalComponent implements OnInit {
   ngOnInit(): void {}
 
   onClickChangePassword = () => {
-    const otk = this.authService.requestOneTimeKey().subscribe((otk) => {
+    const otk = this.encryptionService.requestOneTimeKey().subscribe((otk) => {
       if (
         this.oldPassword.valid &&
         this.oldPassword.value &&

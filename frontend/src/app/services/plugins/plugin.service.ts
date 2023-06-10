@@ -3,7 +3,7 @@ import { Param, Plugin, PluginsAction } from './types';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
-import { ErrorService } from '../errors/error.service';
+import { ErrorService, Source } from '../errors/error.service';
 
 @Injectable({
   providedIn: 'root',
@@ -27,7 +27,7 @@ export class PluginService {
         this.dataStore.plugins = loadedPlugins;
       },
       error: (err: any) => {
-        this.errorService.newError('Plugin-Service', undefined, err);
+        this.errorService.newError(Source.PluginService, undefined, err);
       },
       complete: () => {
         this.publishPlugins();
@@ -43,7 +43,7 @@ export class PluginService {
           this.dataStore.disabledPlugins = idList;
         },
         error: (err: any) => {
-          this.errorService.newError('Plugin-Service', undefined, err);
+          this.errorService.newError(Source.PluginService, undefined, err);
         },
         complete: () => {
           this.publishDisabledPlugins();
@@ -65,7 +65,7 @@ export class PluginService {
         next: (result) => {
         },
         error: (err: any) => {
-          this.errorService.newError('Plugin-Service', undefined, err);
+          this.errorService.newError(Source.PluginService, undefined, err);
         },
         complete: () => {
           this.loadDisabledPlugins();
