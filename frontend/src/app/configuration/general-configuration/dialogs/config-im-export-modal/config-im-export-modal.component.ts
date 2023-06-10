@@ -49,6 +49,8 @@ export class ConfigImExportModalComponent implements OnInit {
   ngOnInit(): void {}
 
   onClickGenerateDownloadLink = () => {
+    this.fileUrl = undefined;
+
     if( this.password == undefined || this.password.value == undefined) {
       return;
     }

@@ -1,4 +1,9 @@
-<small><b>The password is requird for both directions - import and export of config.</b></small>
+<small
+  ><b
+    >The password is requird for both directions - import and export of
+    config.</b
+  ></small
+>
 <div fxLayout="row">
   <div fxFlex="80" fxFlex.gt-xs="70" fxFlexFill>
     <mat-form-field style="margin: 5px; min-width: 300px">
@@ -19,7 +24,7 @@
 <br />
 <br />
 <div fxLayout="row">
-  <div>
+  <div fxFlex="50" fxFlex.gt-xs="50" fxFlexFill>
     <button
       mat-button
       mat-raised-button
@@ -31,12 +36,13 @@
       {{ buttonTextGenerateDownloadLink }}
     </button>
   </div>
-</div>
-<div fxLayout="row">
-  <div *ngIf="fileUrl !== undefined">
-    <a [href]="fileUrl" download="server_manager_configuration.json"
-      >Config Download</a
-    >
+  <div fxFlex="50" fxFlex.gt-xs="50" fxFlexFill>
+    <div *ngIf="fileUrl !== undefined">
+      click to download:
+      <a [href]="fileUrl" download="server_manager_configuration.json">
+        <img src="assets/svg/json-file-svgrepo-com.svg" alt="json file"  style="width: 35px; height: 35px;"/>
+      </a>
+    </div>
   </div>
 </div>
 <hr />
