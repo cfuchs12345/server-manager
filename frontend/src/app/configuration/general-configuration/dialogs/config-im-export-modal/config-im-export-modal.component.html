@@ -88,6 +88,7 @@
         color="primary"
         type="submit"
         style="margin: 5px"
+        [disabled]="file === undefined || !password.valid"
       >
         {{ buttonTextUploadFile }}
       </button>
