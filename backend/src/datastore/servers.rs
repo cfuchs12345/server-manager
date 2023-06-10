@@ -36,7 +36,7 @@ pub async fn insert_server(persistence: &Persistence, server: &Server) -> Result
     let crypto_key = super::get_crypto_key()?;
 
     let encrypted_server =
-        de_or_encrypt_fields(server, common::default_encrypt, crypto_key.as_str()).await?;
+        de_or_encrypt_fields(server, common::default_encrypt, crypto_key.as_str(), false).await?;
     log::info!("Server after encryption: {:?}", encrypted_server);
 
     inmemory::add_server(&encrypted_server)?;
@@ -51,7 +51,7 @@ pub async fn update_server(persistence: &Persistence, server: &Server) -> Result
     let crypto_key = super::get_crypto_key()?;
 
     let encrypted_server =
-        de_or_encrypt_fields(server, common::default_encrypt, crypto_key.as_str()).await?;
+        de_or_encrypt_fields(server, common::default_encrypt, crypto_key.as_str(), false).await?;
 
     log::info!("Server after encryption: {:?}", encrypted_server);
     inmemory::add_server(&encrypted_server)?;
@@ -124,9 +124,15 @@ pub async fn re_encrypt_servers(
         }
 
         let decrypted =
-            de_or_encrypt_fields(&server, common::default_encrypt, decrypt_key.as_str()).await?;
-        let encrypted =
-            de_or_encrypt_fields(&decrypted, common::default_encrypt, encrypt_key.as_str()).await?;
+            de_or_encrypt_fields(&server, common::default_encrypt, decrypt_key.as_str(), true)
+                .await?;
+        let encrypted = de_or_encrypt_fields(
+            &decrypted,
+            common::default_encrypt,
+            encrypt_key.as_str(),
+            true,
+        )
+        .await?;
 
         updated_servers.push(encrypted);
     }
@@ -137,6 +143,7 @@ pub async fn de_or_encrypt_fields(
     server: &Server,
     crypt_func: fn(&str, &str) -> String,
     crypto_key: &str,
+    force_re_encryption: bool,
 ) -> Result<Server, AppError> {
     if !could_need_encryption(server)? {
         return Ok(server.clone());
@@ -149,34 +156,14 @@ pub async fn de_or_encrypt_fields(
             if !has_encrypted_fields(&plugin) {
                 continue;
             }
-            let encrypted_credentials =
-                encrypt_credentials(feature, plugin, server, &crypto_key, crypt_func);
-            server_result = update_feature(server_result, feature, encrypted_credentials);
-        }
-    }
-
-    Ok(server_result)
-}
-
-pub async fn decrypt_fields(
-    server: &Server,
-    crypt_func: fn(&str, &str) -> String,
-) -> Result<Server, AppError> {
-    if !could_need_encryption(server)? {
-        return Ok(server.clone());
-    }
-
-    let crypto_key = super::get_crypto_key()?;
-
-    let mut server_result = server.clone();
-
-    for feature in &server.features {
-        if let Some(plugin) = super::get_plugin(feature.id.as_str())? {
-            if !has_encrypted_fields(&plugin) {
-                continue;
-            }
-            let encrypted_credentials =
-                encrypt_credentials(feature, plugin, server, &crypto_key, crypt_func);
+            let encrypted_credentials = encrypt_credentials(
+                feature,
+                plugin,
+                server,
+                crypto_key,
+                crypt_func,
+                force_re_encryption,
+            );
             server_result = update_feature(server_result, feature, encrypted_credentials);
         }
     }
@@ -192,7 +179,7 @@ fn could_need_encryption(server: &Server) -> Result<bool, AppError> {
             .features
             .iter()
             .map(|feature| feature_could_need_encryption(feature).unwrap_or(false))
-            .any(|b| b == true))
+            .any(|b| b))
     }
 }
 
@@ -210,12 +197,13 @@ fn encrypt_credentials(
     server: &Server,
     key: &str,
     crypt_func: fn(&str, &str) -> String,
+    force_re_encryption: bool,
 ) -> Vec<Credential> {
     let mut new_credentials = Vec::new();
     for credential in &feature.credentials {
         let mut clone_credential = credential.clone();
 
-        if credential_needs_encryption(credential, &plugin) {
+        if credential_needs_encryption(credential, &plugin, force_re_encryption) {
             log::debug!(
                 "credential {:?} for server {} needs encryption",
                 credential,
@@ -248,8 +236,12 @@ fn has_encrypted_fields(plugin: &Plugin) -> bool {
         .any(|credential_definition| credential_definition.encrypt)
 }
 
-fn credential_needs_encryption(credential: &Credential, plugin: &Plugin) -> bool {
-    if credential.encrypted {
+fn credential_needs_encryption(
+    credential: &Credential,
+    plugin: &Plugin,
+    force_re_encryption: bool,
+) -> bool {
+    if credential.encrypted && !force_re_encryption {
         false
     } else {
         plugin.credentials.iter().any(|credential_definition| {

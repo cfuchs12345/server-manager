@@ -5,7 +5,6 @@ use crate::{
     models::{
         config::{dns_server::DNSServer, Configuration},
         error::AppError,
-        request::user,
         server::Server,
         users::User,
     },
