@@ -105,7 +105,7 @@ pub async fn execute_http_request(
             StatusCode::ACCEPTED => Ok(res.text().await.unwrap_or("".to_string())),
             StatusCode::OK => Ok(res.text().await.unwrap_or("".to_string())),
             y => {
-                log::info!("Returned StatusCode was not ACCEPTED or OK but {:?}", y);
+                log::debug!("Returned StatusCode was not ACCEPTED or OK but {:?}", y);
                 Err(AppError::NokOKResponse(
                     y,
                     res.text().await.unwrap_or_default(),
