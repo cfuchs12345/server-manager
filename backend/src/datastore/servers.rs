@@ -133,6 +133,8 @@ pub async fn re_encrypt_servers(
             continue;
         }
 
+        log::info!("before: {:?}", server);
+
         let decrypted = de_or_encrypt_fields(
             &server,
             common::default_decrypt,
@@ -141,6 +143,7 @@ pub async fn re_encrypt_servers(
         )
         .await?;
 
+        log::info!("decrypted: {:?} key: {}", decrypted, decrypt_key);
         let encrypted = de_or_encrypt_fields(
             &decrypted,
             common::default_encrypt,
@@ -148,7 +151,7 @@ pub async fn re_encrypt_servers(
             encrypt_key.as_str(),
         )
         .await?;
-
+        log::info!("encrypted: {:?}  key: {}", encrypted, encrypt_key);
         updated_servers.push(encrypted);
     }
     Ok(updated_servers)
