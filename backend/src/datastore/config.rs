@@ -76,16 +76,28 @@ pub async fn get_all_dnsservers(persistence: &Persistence) -> Result<Vec<DNSServ
 }
 
 pub async fn insert_new_encryption_key(persistence: &Persistence) -> Result<u64, AppError> {
-    persistence
-        .insert(
-            TABLE_ENCRYPTION,
-            Entry {
-                key: "default".to_string(),
-                value: common::get_random_key32()?,
-            },
-        )
-        .await
-        .map_err(AppError::from)
+    let key = "default".to_string();
+
+    if persistence
+        .get(TABLE_ENCRYPTION, key.as_str())
+        .await?
+        .is_none()
+    {
+        log::info!("new encryption key saved in database");
+
+        persistence
+            .insert(
+                TABLE_ENCRYPTION,
+                Entry {
+                    key,
+                    value: common::get_random_key32()?,
+                },
+            )
+            .await
+            .map_err(AppError::from)
+    } else {
+        Ok(0)
+    }
 }
 
 pub async fn export_config(

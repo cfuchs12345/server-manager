@@ -103,7 +103,7 @@ pub async fn do_encryption_migration(data: &AppData) -> std::result::Result<(), 
                             value: common::default_encrypt(
                                 &credential.value,
                                 &crypto_key_entry.value,
-                            ),
+                            )?,
                         });
                     } else {
                         new_credentials.push(credential.to_owned());

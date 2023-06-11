@@ -153,9 +153,25 @@ pub async fn re_encrypt_servers(
     Ok(updated_servers)
 }
 
+pub async fn decrypt_servers(servers: Vec<Server>) -> Result<Vec<Server>, AppError> {
+    let mut result = Vec::new();
+
+    for server in servers {
+        let decrypted_server = de_or_encrypt_fields(
+            &server,
+            common::default_decrypt,
+            credential_needs_decryption,
+            super::get_crypto_key()?.as_str(),
+        )
+        .await?;
+        result.push(decrypted_server);
+    }
+    Ok(result)
+}
+
 pub async fn de_or_encrypt_fields(
     server: &Server,
-    crypt_func: fn(&str, &str) -> String,
+    crypt_func: fn(&str, &str) -> Result<String, AppError>,
     check_func: fn(&Credential, &Plugin) -> bool,
     crypto_key: &str,
 ) -> Result<Server, AppError> {
@@ -172,7 +188,7 @@ pub async fn de_or_encrypt_fields(
             }
             let de_or_encrypted_credentials = de_or_encrypted_credentials(
                 feature, plugin, server, crypto_key, crypt_func, check_func,
-            );
+            )?;
             server_result = update_feature(server_result, feature, de_or_encrypted_credentials);
         }
     }
@@ -205,9 +221,9 @@ fn de_or_encrypted_credentials(
     plugin: Plugin,
     server: &Server,
     key: &str,
-    crypt_func: fn(&str, &str) -> String,
+    crypt_func: fn(&str, &str) -> Result<String, AppError>,
     check_func: fn(&Credential, &Plugin) -> bool,
-) -> Vec<Credential> {
+) -> Result<Vec<Credential>, AppError> {
     let mut new_credentials = Vec::new();
     for credential in &feature.credentials {
         let mut clone_credential = credential.clone();
@@ -219,11 +235,11 @@ fn de_or_encrypted_credentials(
                 server.ipaddress
             );
             clone_credential.encrypted = !clone_credential.encrypted;
-            clone_credential.value = crypt_func(credential.value.as_str(), key);
+            clone_credential.value = crypt_func(credential.value.as_str(), key)?;
         }
         new_credentials.push(clone_credential);
     }
-    new_credentials
+    Ok(new_credentials)
 }
 
 fn update_feature(

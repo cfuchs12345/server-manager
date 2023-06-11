@@ -67,7 +67,7 @@ pub fn encrypt_users(
         let mut clone = user.clone();
 
         let encrypted_hash =
-            common::default_encrypt(user.get_password_hash().as_str(), password_for_encryption);
+            common::default_encrypt(user.get_password_hash().as_str(), password_for_encryption)?;
 
         clone.update_password_hash(encrypted_hash);
 

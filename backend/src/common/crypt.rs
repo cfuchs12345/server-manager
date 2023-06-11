@@ -27,9 +27,9 @@ pub fn get_random_key32() -> Result<String, AppError> {
     Ok(hex::encode(arr))
 }
 
-pub fn default_encrypt(to_encrypt: &str, crypto_key: &str) -> String {
+pub fn default_encrypt(to_encrypt: &str, crypto_key: &str) -> Result<String, AppError> {
     let mc = new_magic_crypt!(crypto_key, 256);
-    mc.encrypt_str_to_base64(to_encrypt)
+    Ok(mc.encrypt_str_to_base64(to_encrypt))
 }
 
 pub fn default_decrypt(to_decrypt: &str, crypto_key: &str) -> Result<String, AppError> {
@@ -95,7 +95,7 @@ mod tests {
         let key = "this is a key";
         let input = "this is a text that should be encrypted and decrypted";
 
-        let encrypted = default_encrypt(input, key);
+        let encrypted = default_encrypt(input, key).expect("should not happen");
         assert_ne!(encrypted, input);
 
         let decrypted = default_decrypt(encrypted.as_str(), key).expect("should not happen");

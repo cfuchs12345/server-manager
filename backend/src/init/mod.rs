@@ -71,7 +71,8 @@ fn one_time_init() -> Result<(), AppError> {
 
     Ok(())
 }
-
+/* The methods called here should only do it's job once, like initializing the encryption key and so on
+ */
 pub async fn one_time_post_db_startup(data: &AppData) -> Result<(), AppError> {
     datastore::insert_new_encryption_key(&data.app_data_persistence).await?;
 

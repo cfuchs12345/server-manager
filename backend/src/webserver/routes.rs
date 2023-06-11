@@ -71,8 +71,8 @@ pub async fn post_networks_action(
 
 #[get("/servers")]
 pub async fn get_servers(data: web::Data<AppData>) -> Result<HttpResponse, AppError> {
-    let result = datastore::get_all_servers(&data.app_data_persistence, true).await?;
-
+    let servers = datastore::get_all_servers(&data.app_data_persistence, true).await?;
+    let result = datastore::decrypt_servers(servers).await?;
     Ok(HttpResponse::Ok().json(result))
 }
 
