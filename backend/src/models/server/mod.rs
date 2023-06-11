@@ -37,7 +37,7 @@ impl Server {
         if let Some(index) = self.features.iter().position(|f| f.id == new_feature.id) {
             self.features.push(new_feature.clone());
             let old_feature = self.features.swap_remove(index);
-            log::info!(
+            log::debug!(
                 "replaced old feature {:?} with new {:?} at pos {}",
                 old_feature,
                 new_feature,

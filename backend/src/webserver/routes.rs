@@ -386,15 +386,9 @@ async fn save_user_common(
 ) -> Result<HttpResponse, AppError> {
     let initial_password = common::generate_short_random_string();
     let password_hash = common::hash_password(initial_password.as_str())?;
-    log::info!(
-        "initial password_hash {:?} initial_password {:?}",
-        password_hash,
-        initial_password
-    );
 
     let mut user = query.0;
     user.update_password_hash(password_hash);
-    log::info!("initial user {:?}", user);
 
     let update_result = datastore::insert_user(&data.app_data_persistence, &user).await?;
 
@@ -511,11 +505,8 @@ pub async fn authenticate(
     let decrypted = common::aes_decrypt(&auth_values.1, secret.as_str())?;
 
     let user = datastore::get_user(&data.app_data_persistence, user_id.as_str()).await?;
-    log::info!("User: {:?} : decrypted {}", user, decrypted);
 
     let password_check_result = user.check_password(&decrypted)?;
-
-    log::info!("password_check_result {}", password_check_result);
 
     if password_check_result {
         let token = common::generate_long_random_string();
@@ -614,7 +605,6 @@ async fn post_config(
 
 async fn get_decrypted_password_from_header(req: HttpRequest) -> Result<String, AppError> {
     let headers = req.headers();
-    log::info!("{:?}", headers);
 
     let custom_header = headers
         .get(HeaderName::from_static("x-custom"))

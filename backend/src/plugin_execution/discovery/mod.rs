@@ -141,7 +141,7 @@ pub async fn discover_features(
                             .iter()
                             .any(|a| a.cmp(&ipaddress) == Ordering::Equal)
                     {
-                        log::info!(
+                        log::debug!(
                             "Trying to discover via socket for server {} {:?}",
                             ipaddress,
                             plugin
@@ -160,7 +160,7 @@ pub async fn discover_features(
                                 .await
                             {
                                 Ok(result) => {
-                                    log::info!("result is {:?}", result);
+                                    log::debug!("result is {:?}", result);
 
                                     Some(result.get_response())
                                 }

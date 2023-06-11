@@ -150,7 +150,7 @@ fn write_request_and_shutdown(
         }
     }
 
-    log::info!("sending message {}", message);
+    log::debug!("sending message {}", message);
 
     unix_stream.write_all(message.as_bytes())?;
 

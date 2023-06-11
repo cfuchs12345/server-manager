@@ -135,11 +135,12 @@ pub async fn re_encrypt_servers(
 
         let decrypted = de_or_encrypt_fields(
             &server,
-            common::default_encrypt,
+            common::default_decrypt,
             credential_needs_decryption,
             decrypt_key.as_str(),
         )
         .await?;
+
         let encrypted = de_or_encrypt_fields(
             &decrypted,
             common::default_encrypt,
