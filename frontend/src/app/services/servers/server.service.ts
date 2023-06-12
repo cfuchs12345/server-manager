@@ -101,8 +101,6 @@ export class ServerService {
               this.decryptIfNecessary(feature);
             });
           }
-
-          console.log(server);
         }
       }),
       catchError((err) => {
