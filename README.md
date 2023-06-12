@@ -92,6 +92,10 @@ After the first startup, the following folder hierarchy is created which contain
 
     # URL and port where the http server binds to
     BIND_ADDRESS=0.0.0.0:8088
+
+    # Sometime the OS chooses a wrong IP address as sender address when it sends out the message for Wake-on-Lan
+    # the following property can be used with the correct IP of your hosting server in the local network to fix this issue
+    # WOL_SOURCE_ADDRESS=<a valid IPv4 address of your host for your local network ie. something like 192.168.178.xxx>
     
     PLUGIN_BASE_PATH=external_files/plugins
     TEMPLATE_BASE_PATH=external_files/templates/
@@ -109,7 +113,7 @@ After the first startup, the following folder hierarchy is created which contain
 Some notes:
 
 - Passwords/credentials can be marked in the plugin so that they are automatically encrypted
-- Passwords are not sent cleartext - even if the web server is running only via HTTP, since there is an internal AES-GCM encryption for sensitive data with a one-time encryption key that always changes  **(ToDo: Also encrypt credentials between frontend and backend)**
+- Passwords are not sent cleartext - even if the web server is running only via HTTP, since there is an internal AES-GCM encryption for sensitive data with a one-time encryption key that always changes
 - User Passwords for the application itself are not stored as cleartext but using bcrypt hashes
 
 ## My ToDo list (not ordered by priority)
@@ -121,7 +125,7 @@ Some notes:
 - [x] Store received information as time series and build graphs (done - it uses [Apex](https://apexcharts.com/) charts for display and [Quest DB](https://questdb.io/) as database)
 - [ ] more Plugins (nearly everything that offers a REST, SOAP API is possible) CrowdSec, PfSense and many more is possible...
 - [ ] maybe build an agent that can be installed on remote machines to get information from the OS or installations like Wireguard, that offer no direct API
-- [ ] encrypt other passwords/credentials between frontend and backend
+- [x] encrypt other passwords/credentials between frontend and backend
 - [x] Config Im- and Export with a password as encryption key for sensitive data
 
 ## Some more ideas which would result in a lot of work
