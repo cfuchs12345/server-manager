@@ -3,6 +3,7 @@ import { BehaviorSubject } from 'rxjs';
 import { Error } from './types';
 
 export enum Source {
+  AuthenticationService,
   GeneralService,
   UserService,
   ServerService,

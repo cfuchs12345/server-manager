@@ -132,14 +132,16 @@ export class GeneralService {
   uploadConfigFile = (config: Configuration, password: string) => {
     const ref = this;
 
-    this.encryptionService.requestOneTimeKey().subscribe({
+    const subscriptionOTK = this.encryptionService.requestOneTimeKey().subscribe({
       next(otk) {
         ref.upload(otk, config, password);
       },
       error(err) {
         ref.errorService.newError(Source.GeneralService, undefined, err);
       },
-      complete() {},
+      complete() {
+        subscriptionOTK.unsubscribe();
+      },
     });
   };
 

@@ -14,14 +14,11 @@ export const AuthGuard: CanActivateFn = (
   const router = inject(Router);
   const service = inject(AuthenticationService);
 
-  if (
-    service.userToken !== undefined &&
-    service.userToken.token !== undefined
-  ) {
+  if (service.userToken && service.userToken.token) {
     return true;
   }
   // not logged in so redirect to login page with the return url
-  if (state.url === undefined || state.url.indexOf('login') < 0) {
+  if (!state.url || state.url.indexOf('login') < 0) {
     router.navigate(['/login']);
   }
   return false;

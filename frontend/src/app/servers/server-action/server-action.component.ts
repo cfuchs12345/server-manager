@@ -42,7 +42,7 @@ export class ServerActionComponent implements OnInit, OnDestroy, OnChanges {
         this.conditionCheckResult = checkResults.find((res) => res);
         this.allDependenciesMet =
           this.conditionCheckResult !== undefined &&
-          this.conditionCheckResult.result;
+          this.conditionCheckResult?.result;
       });
   }
 

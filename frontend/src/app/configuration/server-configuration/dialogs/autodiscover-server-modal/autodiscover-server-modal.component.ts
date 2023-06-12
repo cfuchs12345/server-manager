@@ -86,7 +86,6 @@ export class AutodiscoverServerModalComponent implements OnInit, OnDestroy {
     if( this.subscriptionExistingServers ) {
       this.subscriptionExistingServers.unsubscribe();
     }
-    this.discoverService.resetDiscoveredServers();
   }
 
 

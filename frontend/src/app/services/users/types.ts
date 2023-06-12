@@ -3,7 +3,7 @@ export class User {
 }
 
 export class UserToken {
-  constructor(public user_id: string, public token: string) {}
+  constructor(public user_id: string, public token: string, public client_key: string) {}
 }
 
 export class UserPasswordHash {

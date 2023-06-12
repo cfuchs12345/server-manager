@@ -119,7 +119,7 @@ export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
   generateSubActions = (
     groups: RegExpMatchArray
   ): Map<string, GUISubAction> => {
-    if (this.server === undefined) {
+    if (!this.server) {
       return new Map();
     }
     const conditionCheckResults = this.getConditionCheckResults();
@@ -134,7 +134,7 @@ export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
   getConditionCheckResults = (): ConditionCheckResult[]  => {
     var list: ConditionCheckResult[] = [];
 
-    if(this.dataResults === undefined) {
+    if(!this.dataResults) {
       return list;
     }
     for( const dataResult of this.dataResults) {
@@ -188,7 +188,7 @@ class GUISubAction {
     if (this.conditionMet) {
       let inner:string = "";
 
-      if( this.action_image !== undefined && this.action_image !== '') {
+      if( this.action_image  && this.action_image !== '') {
         return '<input type="image" src="'+this.action_image+'" alt="'+this.action_name+'" onclick="MyServerManagerNS.executeSubAction(\'' +
         this.feature_id +
         "','" +
@@ -203,7 +203,7 @@ class GUISubAction {
         this.ipaddress +
         '\')"></input>';
       }
-      else if ( this.action_name !== undefined ) {
+      else if ( this.action_name  ) {
         inner = this.action_name;
 
         return '<button onclick="MyServerManagerNS.executeSubAction(\'' +

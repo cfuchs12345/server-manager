@@ -48,7 +48,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
         if( passwd ) {
             this.userService.confirmInitialPasswordReceived();
 
-            if( passwd.password !== undefined && passwd.password !== null) {
+            if( passwd.password) {
             this.dialog.open(MessageDialogComponent, {
               data: {
                 title: 'Initial Password',
@@ -77,7 +77,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-      if( this.initialPasswordSubscription !== undefined) {
+      if( this.initialPasswordSubscription) {
         this.initialPasswordSubscription.unsubscribe();
       }
   }

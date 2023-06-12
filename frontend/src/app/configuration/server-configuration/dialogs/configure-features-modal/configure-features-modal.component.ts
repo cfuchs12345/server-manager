@@ -1,5 +1,12 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, ValidatorFn, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormControl,
+  FormGroup,
+  ValidatorFn,
+  Validators,
+} from '@angular/forms';
+import { error } from 'console';
 import { Subscription } from 'rxjs';
 import { PluginService } from 'src/app/services/plugins/plugin.service';
 import {
@@ -30,6 +37,7 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
   form: FormGroup;
 
   selectedServer: Server | undefined = undefined;
+  selectedServerFullData: Server | undefined = undefined;
   selectedFeature: Feature | undefined = undefined;
 
   paramsFromPlugin: ParamDefinition[] = [];
@@ -43,6 +51,7 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
   plugins: Plugin[] = [];
 
   subscriptionServers: Subscription | undefined = undefined;
+  subscriptionServerFullData: Subscription | undefined = undefined;
   subscriptionPlugins: Subscription | undefined = undefined;
 
   constructor(
@@ -82,6 +91,9 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
     if (this.subscriptionPlugins) {
       this.subscriptionPlugins.unsubscribe();
     }
+    if (this.subscriptionServerFullData) {
+      this.subscriptionServerFullData.unsubscribe();
+    }
   }
 
   getCurrentParamValue = (name: string): string => {
@@ -98,7 +110,10 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
 
   createInputControls = () => {
     this.paramsFromPlugin.forEach((param) =>
-        this.form.addControl('param.' + param.name, new FormControl('',  param.mandatory ? [Validators.required] : []))
+      this.form.addControl(
+        'param.' + param.name,
+        new FormControl('', param.mandatory ? [Validators.required] : [])
+      )
     );
     this.credentialsFromPlugin.forEach((credential) => {
       if (credential.encrypt) {
@@ -111,13 +126,12 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
     });
   };
 
-
   setInitialValuesOnInputControls = () => {
     this.paramsFromFeature.forEach((param) =>
-      this.form.controls['param.' + param.name].setValue(param.value)
+      this.form.controls[`param.${param.name}`].setValue(param.value)
     );
     this.credentialFromFeature.forEach((credential) =>
-      this.form.controls['credential.' + credential.name].setValue(
+      this.form.controls[`credential.${credential.name}`].setValue(
         credential.value
       )
     );
@@ -136,7 +150,11 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
     }
 
     const paramDef = this.paramsFromPlugin.find((param) => param.name === name);
-    if (paramDef && paramDef.default_value && paramDef.default_value.length > 0) {
+    if (
+      paramDef &&
+      paramDef.default_value &&
+      paramDef.default_value.length > 0
+    ) {
       return paramDef.default_value;
     }
     return 'None';
@@ -164,7 +182,11 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
     const credential = this.credentialsFromPlugin.find(
       (credential) => credential.name === name
     );
-    if (credential && credential.default_value && credential.default_value.length > 0) {
+    if (
+      credential &&
+      credential.default_value &&
+      credential.default_value.length > 0
+    ) {
       return credential.default_value;
     }
     return 'None';
@@ -173,20 +195,17 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
   isPasswordCredential = (name: string): boolean => {
     const res = this.passwordCredentials.get(name);
 
-    return res !== undefined && res;
+    return res === true;
   };
 
   isShowPasswordCredential = (name: string): boolean => {
     const res = this.showPasswordCredentials.get(name);
 
-    return res !== undefined && res;
+    return res === true;
   };
 
   onClickShowPasswordCredential = (name: string) => {
-    if (
-      this.showPasswordCredentials.get(name) === undefined ||
-      this.showPasswordCredentials.get(name) === false
-    ) {
+    if (!this.showPasswordCredentials.get(name)) {
       this.showPasswordCredentials.set(name, true);
     } else {
       this.showPasswordCredentials.set(name, false);
@@ -195,28 +214,25 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
 
   onClickSaveFeatureSettings = () => {
     const selectedFeature = this.selectedFeature;
-    const selectedServer = this.selectedServer;
 
-    if (!selectedServer || !selectedFeature || !selectedServer.ipaddress) {
+    if (
+      !this.selectedServerFullData ||
+      !selectedFeature ||
+      !this.selectedServerFullData.ipaddress
+    ) {
       return;
     }
-    const feature = selectedServer.features.find(
+    const feature = this.selectedServerFullData.features.find(
       (feature) => feature.id === selectedFeature.id
     );
-    if (feature === undefined) {
+    if (!feature) {
       return;
     }
 
     feature.credentials = this.makeCredentials();
     feature.params = this.makeParams();
 
-    const serverFeature = new ServerFeature(
-      selectedServer.ipaddress,
-      selectedServer.features,
-      true
-    );
-
-    this.serverService.updateServerFeatures([serverFeature], true);
+    this.serverService.updateServer(this.selectedServerFullData);
   };
 
   makeCredentials = (): Credential[] => {
@@ -261,17 +277,25 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
   };
 
   onChangeServer = () => {
+    const ref = this;
+
     this.form = this.formBuilder.group({});
-
-    this.features = this.selectedServer ? this.selectedServer.features : [];
-    this.paramsFromPlugin = [];
-    this.credentialsFromPlugin = [];
-    this.paramsFromFeature = [];
-    this.credentialFromFeature = [];
-
-    this.selectedFeature = undefined;
-
-    this.createInputControls();
+    if (this.selectedServer?.ipaddress) {
+      this.subscriptionServerFullData = this.serverService
+        .getServer(this.selectedServer?.ipaddress, true)
+        .subscribe({
+          next: (server) => {
+            this.selectedServerFullData = server;
+            ref.features = ref.selectedServerFullData
+              ? ref.selectedServerFullData.features
+              : [];
+            ref.resetSelections();
+            setTimeout(ref.createInputControls, 0);
+          },
+          error: (err) => {},
+          complete: () => {},
+        });
+    }
   };
 
   onChangeFeature = () => {
@@ -292,12 +316,26 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
           this.setInitialValuesOnInputControls();
         }
       } else {
-        this.paramsFromPlugin = [];
-        this.credentialsFromPlugin = [];
+        this.resetPluginSelections();
       }
     } else {
-      this.paramsFromFeature = [];
-      this.credentialFromFeature = [];
+      this.resetFeatureSelections();
     }
   };
+
+  private resetFeatureSelections() {
+    this.paramsFromFeature = [];
+    this.credentialFromFeature = [];
+  }
+
+  private resetPluginSelections() {
+    this.paramsFromPlugin = [];
+    this.credentialsFromPlugin = [];
+  }
+
+  private resetSelections() {
+    this.resetFeatureSelections();
+    this.resetPluginSelections();
+    this.selectedFeature = undefined;
+  }
 }

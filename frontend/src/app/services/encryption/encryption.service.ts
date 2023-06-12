@@ -40,22 +40,17 @@ export class EncryptionService {
   }
 
   decrypt(cipherText: string, secret: string) {
-    const stringValue = Buffer.from(String(cipherText), BASE64);
-
+    const stringValue = Buffer.from(cipherText, BASE64);
     const salt = stringValue.subarray(0, SALT_LENGTH);
     const iv = stringValue.subarray(SALT_LENGTH, SALT_LENGTH + IV_LENGTH);
-    const encrypted = stringValue.subarray(SALT_LENGTH + IV_LENGTH, stringValue.length - TAG_LENGTH);
-    const tag = stringValue.subarray(stringValue.length - TAG_LENGTH);
+    const encrypted = stringValue.subarray(SALT_LENGTH + IV_LENGTH, -TAG_LENGTH);
+    const tag = stringValue.subarray(-TAG_LENGTH);
     const key = this.getKey(salt, secret);
-
-
     const decipher = createDecipheriv(ALGORITHM, key, iv);
 
     decipher.setAuthTag(tag);
-
     return decipher.update(encrypted) + decipher.final(UTF8);
   }
-
 
   makeSecret = (uid: string, otk: string): string => {
     const fp = uid.length > 5 ? uid.slice(uid.length-5, uid.length) : uid;

@@ -114,8 +114,7 @@ pub async fn export_config(
         super::get_all_servers(persistence, false).await?,
         password_for_encryption,
         true,
-    )
-    .await?;
+    )?;
 
     Ok(Configuration {
         dns_servers,
@@ -133,7 +132,7 @@ pub async fn import_config(
 ) -> Result<bool, AppError> {
     let decrypted_users = super::decrypt_users(config.users, password_for_decryption)?;
     let decrypted_servers =
-        super::re_encrypt_servers(config.servers, password_for_decryption, false).await?;
+        super::re_encrypt_servers(config.servers, password_for_decryption, false)?;
 
     for dns_server in config.dns_servers {
         if dns_server_exists(persistence, &dns_server).await? {

@@ -5,11 +5,12 @@ use aes_gcm::{
     AesGcm,
     Nonce,
 };
-use base64::{engine::general_purpose, Engine as _};
+use base64::Engine as _;
 use bcrypt::{hash, verify, DEFAULT_COST};
+use log_derive::logfn;
 use magic_crypt::{new_magic_crypt, MagicCryptTrait};
 use pbkdf2::pbkdf2_hmac_array;
-use rand::{thread_rng, RngCore};
+use rand::{rngs::OsRng, thread_rng, RngCore};
 use sha2::Sha256;
 
 use crate::models::error::AppError;
@@ -27,11 +28,13 @@ pub fn get_random_key32() -> Result<String, AppError> {
     Ok(hex::encode(arr))
 }
 
+#[logfn(err = "Error", fmt = "default_encrypt: {:?}")]
 pub fn default_encrypt(to_encrypt: &str, crypto_key: &str) -> Result<String, AppError> {
     let mc = new_magic_crypt!(crypto_key, 256);
     Ok(mc.encrypt_str_to_base64(to_encrypt))
 }
 
+#[logfn(err = "Error", fmt = "default_decrypt: {:?}")]
 pub fn default_decrypt(to_decrypt: &str, crypto_key: &str) -> Result<String, AppError> {
     let mc = new_magic_crypt!(crypto_key, 256);
 
@@ -39,10 +42,9 @@ pub fn default_decrypt(to_decrypt: &str, crypto_key: &str) -> Result<String, App
         .map_err(AppError::from)
 }
 
+#[logfn(err = "Error", fmt = "aes_decrypt: {:?}")]
 pub fn aes_decrypt(to_decrypt: &str, secret: &str) -> Result<String, AppError> {
-    let bytes = general_purpose::STANDARD
-        .decode(to_decrypt)
-        .map_err(|e| AppError::Unknown(format!("{}", e)))?;
+    let bytes = decode_base64(to_decrypt)?;
 
     let salt = &bytes[..64];
     let iv = &bytes[64..64 + 16];
@@ -61,6 +63,47 @@ pub fn aes_decrypt(to_decrypt: &str, secret: &str) -> Result<String, AppError> {
         }
         Err(_err) => Err(AppError::DecryptionError),
     }
+}
+#[logfn(err = "Error", fmt = "aes_encrypt: {:?}")]
+pub fn aes_encrypt(to_encrypt: &str, secret: &str) -> Result<String, AppError> {
+    let bytes = to_encrypt.as_bytes();
+
+    let mut iv = [0_u8; 16];
+    OsRng.fill_bytes(&mut iv);
+
+    let mut salt = [0_u8; 64];
+    OsRng.fill_bytes(&mut salt);
+
+    let key = pbkdf2_hmac_array::<Sha256, 32>(secret.as_bytes(), &salt, 100000);
+
+    let cipher =
+        Aes256Gcm16::new_from_slice(&key).map_err(|e| AppError::Unknown(format!("{}", e)))?;
+
+    // nonce / iv from sender
+    let nonce = Nonce::from_slice(&iv);
+
+    match cipher.encrypt(nonce, bytes) {
+        Ok(mut encryted) => Ok(encode_base64(&concat(&mut salt, &mut iv, &mut encryted))),
+        Err(_err) => Err(AppError::DecryptionError),
+    }
+}
+
+fn concat(salt: &mut [u8], iv: &mut [u8], encryted: &mut [u8]) -> Vec<u8> {
+    let mut vec = Vec::new();
+    vec.append(&mut salt.to_vec());
+    vec.append(&mut iv.to_vec());
+    vec.append(&mut encryted.to_vec());
+    vec
+}
+
+fn decode_base64(to_decode: &str) -> Result<Vec<u8>, AppError> {
+    super::engine::general_purpose::STANDARD
+        .decode(to_decode)
+        .map_err(|e| AppError::Unknown(format!("{}", e)))
+}
+
+fn encode_base64(to_encode: &[u8]) -> String {
+    super::engine::general_purpose::STANDARD.encode(to_encode)
 }
 
 pub fn make_aes_secrect(user_id: &str, otk: &str) -> String {
@@ -99,6 +142,18 @@ mod tests {
         assert_ne!(encrypted, input);
 
         let decrypted = default_decrypt(encrypted.as_str(), key).expect("should not happen");
+        assert_eq!(&decrypted, input);
+    }
+
+    #[test]
+    fn test_aes_roundtrip() {
+        let key = "this is a key";
+        let input = "this is a text that should be encrypted and decrypted";
+
+        let encrypted = aes_encrypt(input, key).expect("should not happen");
+        assert_ne!(encrypted, input);
+
+        let decrypted = aes_decrypt(encrypted.as_str(), key).expect("should not happen");
         assert_eq!(&decrypted, input);
     }
 }

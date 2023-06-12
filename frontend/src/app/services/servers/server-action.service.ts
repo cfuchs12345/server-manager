@@ -2,14 +2,10 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
-import {
-  ConditionCheckResult,
-  ServersAction,
-} from './types';
+import { ConditionCheckResult, ServersAction } from './types';
 
-import { Server, Param, ServerAction, Feature } from './types';
+import { Param, ServerAction, Feature } from './types';
 import { ErrorService, Source } from '../errors/error.service';
-import { Action } from '../plugins/types';
 
 @Injectable({
   providedIn: 'root',
@@ -19,12 +15,6 @@ export class ServerActionService {
     []
   );
   readonly actionConditionChecks = this._actionConditionChecks.asObservable();
-
-  private dataStore: {
-    actionConditionChecks: ConditionCheckResult[];
-  } = {
-    actionConditionChecks: [],
-  };
 
   constructor(private http: HttpClient, private errorService: ErrorService) {}
 
@@ -38,15 +28,14 @@ export class ServerActionService {
       })
       .subscribe({
         next: (results) => {
-          this.dataStore.actionConditionChecks.splice(
-            0,
-            this.dataStore.actionConditionChecks.length
-          );
-          this.dataStore.actionConditionChecks.push(...results);
-          this.publishActionCheckResult();
+          this.publishActionCheckResult(results);
         },
         error: (err: any) => {
-          this.errorService.newError(Source.ServerActionService, undefined, err !== undefined ? err: err);
+          this.errorService.newError(
+            Source.ServerActionService,
+            undefined,
+            err !== undefined ? err : err
+          );
         },
         complete: () => {},
       });
@@ -74,15 +63,17 @@ export class ServerActionService {
       .subscribe({
         next: (result) => {},
         error: (err: any) => {
-          this.errorService.newError(Source.ServerActionService, ipaddress, err);
+          this.errorService.newError(
+            Source.ServerActionService,
+            ipaddress,
+            err
+          );
         },
         complete: () => {},
       });
   };
 
-  private publishActionCheckResult = () => {
-    this._actionConditionChecks.next(
-      this.dataStore.actionConditionChecks.slice()
-    );
+  private publishActionCheckResult = (list: ConditionCheckResult[]) => {
+    this._actionConditionChecks.next(list);
   };
 }

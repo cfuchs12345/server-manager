@@ -27,12 +27,14 @@ pub use self::plugins::is_plugin_disabled;
 pub use self::plugins::load_plugin;
 
 pub use self::inmemory::get_all_servers as get_all_servers_from_cache;
-pub use self::servers::decrypt_servers;
 pub use self::servers::delete_server;
 pub use self::servers::get_all_servers;
 pub use self::servers::get_server;
 pub use self::servers::insert_server;
+pub use self::servers::re_encrypt_server;
 pub use self::servers::re_encrypt_servers;
+pub use self::servers::simplify_server_for_client;
+pub use self::servers::simplify_servers_for_client;
 pub use self::servers::update_server;
 
 pub use self::users::decrypt_users;

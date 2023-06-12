@@ -1,6 +1,7 @@
 use base64::{alphabet, engine, engine::general_purpose, Engine as _};
 use rand::{rngs::OsRng, RngCore};
 
+pub mod clientkey;
 mod crypt;
 mod http_functions;
 mod mail;
@@ -12,6 +13,7 @@ pub use http_functions::GET;
 pub use http_functions::POST;
 
 pub use crypt::aes_decrypt;
+pub use crypt::aes_encrypt;
 pub use crypt::default_decrypt;
 pub use crypt::default_encrypt;
 pub use crypt::get_random_key32;
@@ -32,6 +34,8 @@ pub use mail::send_email;
 
 pub use onetimekey::invalidate_expired_one_time_keys;
 pub use onetimekey::OneTimeKey;
+
+pub use clientkey::ClientKey;
 
 use crate::models::error::AppError;
 

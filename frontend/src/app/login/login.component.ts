@@ -69,7 +69,7 @@ export class LoginComponent {
   onClickLogin = () => {
     // even if no TLS/HTTPS is used, we don't want to transfer a cleartext password
     // so we use a encryption here and the server is then checking the password against the hash value on the server side
-    this.authService.login(this.userId.value, this.password.value).subscribe({
+    const subscription = this.authService.login(this.userId.value, this.password.value).subscribe({
       next: (result) => {
         if (result && result.token) {
           this.router.navigate(['/home']);
@@ -80,7 +80,11 @@ export class LoginComponent {
           wrongLogin: 'User Id and/or password is incorrect',
         });
       },
-      complete: () => {},
+      complete: () => {
+        if(subscription) {
+          subscription.unsubscribe();
+        }
+      },
     });
   };
 }

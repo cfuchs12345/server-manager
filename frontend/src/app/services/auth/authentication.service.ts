@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { map, mergeMap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import { catchError, map, mergeMap } from 'rxjs/operators';
 import { UserToken } from '../users/types';
 import { OneTimeKey } from './types';
-import { ErrorService } from '../errors/error.service';
+import { ErrorService, Source } from '../errors/error.service';
 import { EncryptionService } from '../encryption/encryption.service';
 
 @Injectable({ providedIn: 'root' })
@@ -25,11 +25,16 @@ export class AuthenticationService {
   login(userId: string, password: string): Observable<UserToken> {
     return this.encryptionService.requestOneTimeKey().pipe(
       mergeMap((otk) => {
-        var auth = 'Basic ' + btoa( userId + ':' + this.encryptionService.encrypt(password, this.encryptionService.makeSecret(userId, otk.key)));
+        const secret = this.encryptionService.makeSecret(userId, otk.key);
+        const encrypted_password = this.encryptionService.encrypt(
+          password,
+          secret
+        );
+        const base64_enc = btoa(`${userId}:${encrypted_password}`);
 
         const headers = new HttpHeaders({
           'Content-Type': 'application/json',
-          Authorization: `${auth}`,
+          Authorization: `Basic ${base64_enc}`,
           'X-custom': `${otk.id}`,
         });
 
@@ -38,12 +43,19 @@ export class AuthenticationService {
             headers: headers,
           })
           .pipe(
+            catchError((err) => {
+              this.errorService.newError(
+                Source.AuthenticationService,
+                undefined,
+                err
+              );
+              return throwError(() => err);
+            }),
             map((userToken) => {
               this.userToken = userToken;
               this._userTokenSubject.next(userToken);
               return userToken;
             })
-
           );
       })
     );
@@ -51,11 +63,11 @@ export class AuthenticationService {
 
   userExist = (): Observable<boolean> => {
     return this.http.get<boolean>('/backend_nt/users/exist');
-  }
+  };
 
   logout = () => {
     this.userToken = undefined;
     this._userTokenSubject.next(null);
     this.router.navigate(['/login']);
-  }
+  };
 }

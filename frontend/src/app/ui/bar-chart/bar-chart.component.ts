@@ -78,19 +78,19 @@ export class BarChartComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (this.series_id === undefined || this.chartDataList === undefined) {
+    if (!this.series_id  || !this.chartDataList ) {
       return;
     }
     const chartData = this.chartDataList.list.find(
       (c) => c.series_id === this.series_id
     );
 
-    if (chartData !== undefined) {
+    if (chartData ) {
       this.chartOptions.series = chartData.series;
-      if (this.chartOptions.title !== undefined) {
+      if (this.chartOptions.title) {
         this.chartOptions.title.text = chartData.name;
       }
-      if (this.chartOptions.xaxis !== undefined && (chartData.series_type === 'datetime' || chartData.series_type === 'category'|| chartData.series_type === 'numeric')) {
+      if (this.chartOptions.xaxis && (chartData.series_type === 'datetime' || chartData.series_type === 'category'|| chartData.series_type === 'numeric')) {
         this.chartOptions.xaxis.type = chartData.series_type;
 
         if( chartData.series_type === 'datetime' ) {
@@ -102,7 +102,7 @@ export class BarChartComponent implements OnInit, OnChanges {
         }
       }
 
-      if( this.chart !== undefined) {
+      if( this.chart) {
         this.chart.render();
       }
     }

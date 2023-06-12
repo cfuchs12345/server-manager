@@ -6,7 +6,7 @@ export class Param {
 }
 
 export class Credential {
-  constructor(public name: string, public value: string, public is_encrypted: boolean) {}
+  constructor(public name: string, public value: string, public encrypted: boolean) {}
 }
 
 // types for server discovery

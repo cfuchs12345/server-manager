@@ -20,7 +20,7 @@ export class ServerSubActionComponent {
     private window: Window,
     private zone: NgZone
   ) {
-    if( window.MyServerManagerNS.executeSubAction === undefined ) {
+    if( !window.MyServerManagerNS.executeSubAction ) {
       window.MyServerManagerNS.executeSubAction = (feature_id: string, action_id:string, action_name:string, data_id: string, action_params: string, ipaddress: string) => {
         this.zone.run(() => {
           this.executeSubAction(feature_id, action_id, action_name, data_id, action_params, ipaddress);

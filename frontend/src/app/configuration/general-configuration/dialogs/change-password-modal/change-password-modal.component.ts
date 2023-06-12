@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component} from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -10,12 +10,13 @@ import { AuthenticationService } from 'src/app/services/auth/authentication.serv
 import { EncryptionService } from 'src/app/services/encryption/encryption.service';
 import { UserService } from 'src/app/services/users/users.service';
 
+
 @Component({
   selector: 'app-change-password-modal',
   templateUrl: './change-password-modal.component.html',
   styleUrls: ['./change-password-modal.component.scss'],
 })
-export class ChangePasswordModalComponent implements OnInit {
+export class ChangePasswordModalComponent {
   buttonText: string = 'Change the password';
 
   oldPasswordLabel: string = 'Old Password';
@@ -62,24 +63,32 @@ export class ChangePasswordModalComponent implements OnInit {
     );
   }
 
-  ngOnInit(): void {}
+
 
   onClickChangePassword = () => {
-    const otk = this.encryptionService.requestOneTimeKey().subscribe((otk) => {
-      if (
-        this.oldPassword.valid &&
-        this.oldPassword.value &&
-        this.newPassword.valid &&
-        this.newPassword.value &&
-        this.confirmNewPassword.valid &&
-        this.authService.userToken
-      ) {
-        this.userService.changePassword(
-          this.authService.userToken.user_id,
-          this.oldPassword.value,
-          this.newPassword.value,
-          otk
-        );
+    const subscriptionOTK = this.encryptionService.requestOneTimeKey().subscribe({
+      next: (otk) => {
+        if (
+          this.oldPassword.valid &&
+          this.oldPassword.value &&
+          this.newPassword.valid &&
+          this.newPassword.value &&
+          this.confirmNewPassword.valid &&
+          this.authService.userToken
+        ) {
+          this.userService.changePassword(
+            this.authService.userToken.user_id,
+            this.oldPassword.value,
+            this.newPassword.value,
+            otk
+          );
+        }
+      },
+      error: (err) => {},
+      complete: () => {
+        if( subscriptionOTK ) {
+          subscriptionOTK.unsubscribe();
+        }
       }
     });
   };

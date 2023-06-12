@@ -1,5 +1,11 @@
 import { Component, OnInit } from '@angular/core';
-import { AbstractControl, FormControl, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormControl,
+  ValidationErrors,
+  ValidatorFn,
+  Validators,
+} from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { Subscription } from 'rxjs';
 import { PluginService } from 'src/app/services/plugins/plugin.service';
@@ -8,8 +14,7 @@ import { ServerService } from 'src/app/services/servers/server.service';
 import { Feature, Server, ServerFeature } from 'src/app/services/servers/types';
 import { ConfirmDialogComponent } from 'src/app/ui/confirm-dialog/confirm-dialog.component';
 import { ServerAddressType } from 'src/types/ServerAddress';
-import {Validator} from 'ip-num/Validator'
-
+import { Validator } from 'ip-num/Validator';
 
 @Component({
   selector: 'app-add-server-modal',
@@ -24,13 +29,9 @@ export class AddServerModalComponent implements OnInit {
   nameHint: string = '';
   buttonTextAddServer: string = 'Add Server';
   name = new FormControl('', []);
-  ipaddress = new FormControl('', [
-    Validators.required,
-    ipValidator(),
-  ]);
+  ipaddress = new FormControl('', [Validators.required, ipValidator()]);
 
-  buttonTextAddFeature="Add Feature";
-
+  buttonTextAddFeature = 'Add Feature';
 
   selectedServer: Server | undefined = undefined;
   selectedPlugin: Plugin | undefined = undefined;
@@ -43,9 +44,11 @@ export class AddServerModalComponent implements OnInit {
   subscriptionServers: Subscription | undefined = undefined;
   subscriptionPlugins: Subscription | undefined = undefined;
 
-
-  constructor(private serverService: ServerService, private pluginService: PluginService, private dialog: MatDialog) {
-  }
+  constructor(
+    private serverService: ServerService,
+    private pluginService: PluginService,
+    private dialog: MatDialog
+  ) {}
 
   ngOnInit(): void {
     this.subscriptionServers = this.serverService.servers.subscribe(
@@ -81,40 +84,66 @@ export class AddServerModalComponent implements OnInit {
   saveServer = () => {
     if (this.ipaddress.value && this.name.value) {
       this.serverService.saveServers([
-        new Server(this.ipaddress.value, this.name.value)
+        new Server(this.ipaddress.value, this.name.value),
       ]);
       this.serverService.listServers(); // this refreshes also the server list on the main screen
     }
   };
 
   addFeatureToServer = () => {
-    if( this.selectedPlugin && this.selectedServer ) {
-      const features = this.selectedServer.features;
-      features.push(new Feature(this.selectedPlugin.id, this.selectedPlugin.name, [], []));
-      const featureOfServer = new ServerFeature( this.selectedServer.ipaddress, features, true);
-      this.serverService.updateServerFeatures([featureOfServer], false);
+    const ref = this;
+    if (this.selectedServer) {
+      this.serverService
+        .getServer(this.selectedServer.ipaddress, true)
+        .subscribe({
+          next: (server) => {
+            if (ref.selectedPlugin && ref.selectedServer) {
+              const features = server.features;
+              features.push(
+                new Feature(
+                  ref.selectedPlugin.id,
+                  ref.selectedPlugin.name,
+                  [],
+                  []
+                )
+              );
+              const featureOfServer = new ServerFeature(
+                ref.selectedServer.ipaddress,
+                features,
+                true
+              );
+              this.serverService.updateServer(server);
+            }
+          },
+          error: (err) => {},
+          complete: () => {
+            this.serverService.listServers();
+          },
+        });
     }
-  }
-
+  };
 
   onChangeServer = () => {
-    this.currentFeatures = this.selectedServer ? this.selectedServer.features : [];
-    this.availablePlugins = this.plugins.filter((plugin) => !this.isFeatureAlreadySet(plugin.id, this.currentFeatures));
+    this.currentFeatures = this.selectedServer
+      ? this.selectedServer.features
+      : [];
+    this.availablePlugins = this.plugins.filter(
+      (plugin) => !this.isFeatureAlreadySet(plugin.id, this.currentFeatures)
+    );
   };
 
-  onChangeFeature = () => {
-  };
+  onChangeFeature = () => {};
 
   private isFeatureAlreadySet(id: string, features: Feature[]) {
-    return features.filter( (feature) => feature.id === id).length > 0;
+    return features.filter((feature) => feature.id === id).length > 0;
   }
 }
 
 export function ipValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     let [validv4, errv4] = Validator.isValidIPv4String(control.value);
-    let [validv6, errv6]  = Validator.isValidIPv6String(control.value);
+    let [validv6, errv6] = Validator.isValidIPv6String(control.value);
 
-    return !validv4 && !validv6 ? {ip: {value: "invalid address"}}: null;
+    return !validv4 && !validv6 ? { ip: { value: 'invalid address' } } : null;
   };
 }

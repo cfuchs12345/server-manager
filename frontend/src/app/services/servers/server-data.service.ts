@@ -20,11 +20,6 @@ export class ServerDataService {
   private _dataResults = new BehaviorSubject<DataResult[]>(
     []
   );
-  private dataStore: {
-    dataResults: DataResult[];
-  } = {
-    dataResults: [],
-  };
 
   readonly dataResults = this._dataResults.asObservable();
 
@@ -46,21 +41,19 @@ export class ServerDataService {
       )
       .subscribe({
         next: (results) => {
-          this.dataStore.dataResults.splice(0, this.dataStore.dataResults.length);
-          this.dataStore.dataResults.push(...results);
+          this.publishDataResult(results);
         },
         error: (err: any) => {
           this.errorService.newError(Source.ServerDataService, server.ipaddress, err.error);
         },
         complete: () => {
-          this.publishDataResult();
         },
       });
   }
 
 
-  private publishDataResult = () => {
-    this._dataResults.next(this.dataStore.dataResults.slice());
+  private publishDataResult = (list: DataResult[]) => {
+    this._dataResults.next(list);
   };
 
 }

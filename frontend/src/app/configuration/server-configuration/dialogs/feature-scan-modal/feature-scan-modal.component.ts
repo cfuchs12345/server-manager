@@ -44,7 +44,6 @@ export class FeatureScanModalComponent implements OnInit, OnDestroy {
     if (this.subscriptionDiscoveredServersFeatures) {
       this.subscriptionDiscoveredServersFeatures.unsubscribe();
     }
-    this.discoveryService.resetDiscoveredServerFeatures();
   }
 
   private preSelectAllFeatures = (serverFeatures: ServerFeature[]) => {
@@ -73,9 +72,41 @@ export class FeatureScanModalComponent implements OnInit, OnDestroy {
   };
 
   onClickSaveServerFeatures = () => {
-    const soSave = this.discoveredServerFeatures.filter((f) => f.selected);
+    const found_server_features = this.discoveredServerFeatures.filter((f) => f.selected);
 
-    this.serverService.updateServerFeatures(soSave, false);
+    found_server_features.forEach( (found_server_feature, index) => {
+
+      let subscription = this.serverService.getServer(found_server_feature.ipaddress, true).subscribe({
+        next: (server) => {
+          let updated: boolean = false;
+
+          found_server_feature.features.forEach( (found) => {
+            const already_set = server.features.find((server_feature) => server_feature.id === found.id)
+
+            if( !already_set) {
+              updated = true;
+              server.features.push(found);
+            }
+          }); // we just add new features found, removal is only done manually
+
+          if( updated ) {
+            this.serverService.updateServer(server);
+          }
+        },
+        error: (err) => {
+
+        },
+        complete: () => {
+          if( subscription ) {
+            subscription.unsubscribe();
+          }
+          if( index === found_server_features.length -1) {
+            this.serverService.listServers();
+          }
+        }
+      });
+    });
+
 
     this.ref.close();
   };

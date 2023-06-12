@@ -31,7 +31,7 @@ export class SystemInformationComponent implements OnInit, OnDestroy  {
   }
 
   find = (infoType: 'memory_stats' | 'memory_usage' | 'load_average', name: string ): number | undefined => {
-    if(this.systemInformation === undefined) {
+    if(!this.systemInformation) {
       return undefined;
     }
 
@@ -39,18 +39,18 @@ export class SystemInformationComponent implements OnInit, OnDestroy  {
       case 'memory_stats': {
         const found = this.systemInformation.memory_stats.find( (i) => i.name === name);
 
-        return found !== undefined ? this.round(found.value /1024/1024, 2) : undefined;
+        return found ? this.round(found.value /1024/1024, 2) : undefined;
       }
       case 'memory_usage': {
         const found = this.systemInformation.memory_usage.find( (i) => i.name === name);
 
-        return found !== undefined ? this.round(found.value /1024/1024, 2) : undefined;
+        return found  ? this.round(found.value /1024/1024, 2) : undefined;
 
       }
       case 'load_average': {
         const found = this.systemInformation.load_average.find( (i) => i.name === name);
 
-        return found !== undefined ? this.round(found.value, 4) : undefined;
+        return found  ? this.round(found.value, 4) : undefined;
 
       }
     }

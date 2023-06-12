@@ -13,6 +13,10 @@ use super::{inmemory, persistence::Persistence, Entry};
 
 const TABLE: &str = "servers";
 
+type CheckCryptoNeededFunction = fn(&Credential, &Plugin) -> bool;
+type CryptoFunction = fn(&str, &str) -> Result<String, AppError>;
+type CryptoFunctions = (CryptoFunction, CryptoFunction);
+
 fn json_to_server(json: &str) -> Result<Server, AppError> {
     serde_json::from_str(json).map_err(AppError::from)
 }
@@ -40,8 +44,7 @@ pub async fn insert_server(persistence: &Persistence, server: &Server) -> Result
         common::default_encrypt,
         credential_needs_encryption,
         crypto_key.as_str(),
-    )
-    .await?;
+    )?;
 
     inmemory::add_server(&encrypted_server)?;
     let result = persistence
@@ -59,8 +62,7 @@ pub async fn update_server(persistence: &Persistence, server: &Server) -> Result
         common::default_encrypt,
         credential_needs_encryption,
         crypto_key.as_str(),
-    )
-    .await?;
+    )?;
 
     inmemory::add_server(&encrypted_server)?;
     let result = persistence
@@ -107,16 +109,55 @@ pub async fn get_server(persistence: &Persistence, ipaddress: &IpAddr) -> Result
     }
 }
 
-pub async fn re_encrypt_servers(
+pub fn re_encrypt_servers(
     servers: Vec<Server>,
     password_for_encryption: &str,
     direction_is_out: bool,
 ) -> Result<Vec<Server>, AppError> {
     let mut updated_servers = Vec::new();
+
+    let keys = get_keys_for_re_encryption(password_for_encryption, direction_is_out)?;
+    let functions = get_function_for_re_encryption(direction_is_out);
+
+    for server in servers {
+        if !could_need_encryption(&server)? {
+            updated_servers.push(server);
+            continue;
+        }
+        let encrypted = re_encrypt_server_internal(server, keys.clone(), functions)?;
+
+        updated_servers.push(encrypted);
+    }
+    Ok(updated_servers)
+}
+
+pub fn re_encrypt_server(
+    server: Server,
+    password_for_encryption: &str,
+    direction_is_out: bool,
+) -> Result<Server, AppError> {
+    let keys = get_keys_for_re_encryption(password_for_encryption, direction_is_out)?;
+    let functions = get_function_for_re_encryption(direction_is_out);
+
+    re_encrypt_server_internal(server, keys, functions)
+}
+
+fn get_function_for_re_encryption(direction_is_out: bool) -> CryptoFunctions {
+    if direction_is_out {
+        (common::default_decrypt, common::aes_encrypt)
+    } else {
+        (common::aes_decrypt, common::default_encrypt)
+    }
+}
+
+fn get_keys_for_re_encryption(
+    password_for_encryption: &str,
+    direction_is_out: bool,
+) -> Result<(String, String), AppError> {
     let default_crypto_key = super::get_crypto_key()?;
 
     let decrypt_key = match direction_is_out {
-        true => default_crypto_key.clone(),
+        true => default_crypto_key.to_owned(),
         false => password_for_encryption.to_owned(),
     };
 
@@ -124,53 +165,64 @@ pub async fn re_encrypt_servers(
         true => password_for_encryption.to_owned(),
         false => default_crypto_key,
     };
-
-    for server in servers {
-        if !could_need_encryption(&server)? {
-            updated_servers.push(server);
-            continue;
-        }
-
-        let decrypted = de_or_encrypt_fields(
-            &server,
-            common::default_decrypt,
-            credential_needs_decryption,
-            decrypt_key.as_str(),
-        )
-        .await?;
-
-        let encrypted = de_or_encrypt_fields(
-            &decrypted,
-            common::default_encrypt,
-            credential_needs_encryption,
-            encrypt_key.as_str(),
-        )
-        .await?;
-        updated_servers.push(encrypted);
-    }
-    Ok(updated_servers)
+    Ok((decrypt_key, encrypt_key))
 }
 
-pub async fn decrypt_servers(servers: Vec<Server>) -> Result<Vec<Server>, AppError> {
-    let mut result = Vec::new();
+fn re_encrypt_server_internal(
+    server: Server,
+    keys: (String, String),
+    functions: CryptoFunctions,
+) -> Result<Server, AppError> {
+    let decrypted = de_or_encrypt_fields(
+        &server,
+        functions.0,
+        credential_needs_decryption,
+        keys.0.as_str(),
+    )?;
 
-    for server in servers {
-        let decrypted_server = de_or_encrypt_fields(
-            &server,
-            common::default_decrypt,
-            credential_needs_decryption,
-            super::get_crypto_key()?.as_str(),
-        )
-        .await?;
-        result.push(decrypted_server);
-    }
-    Ok(result)
+    de_or_encrypt_fields(
+        &decrypted,
+        functions.1,
+        credential_needs_encryption,
+        keys.1.as_str(),
+    )
+}
+pub fn simplify_servers_for_client(servers: Vec<Server>) -> Vec<Server> {
+    servers
+        .iter()
+        .cloned()
+        .map(simplify_server_for_client)
+        .collect()
 }
 
-pub async fn de_or_encrypt_fields(
+pub fn simplify_server_for_client(server: Server) -> Server {
+    let mut server = server;
+
+    server.features = server
+        .features
+        .iter_mut()
+        .map(|feature| {
+            feature.credentials.clear();
+            feature.to_owned()
+        })
+        .collect();
+
+    server.features = server
+        .features
+        .iter_mut()
+        .map(|feature| {
+            feature.params.clear();
+            feature.to_owned()
+        })
+        .collect();
+
+    server
+}
+
+fn de_or_encrypt_fields(
     server: &Server,
-    crypt_func: fn(&str, &str) -> Result<String, AppError>,
-    check_func: fn(&Credential, &Plugin) -> bool,
+    crypt_func: CryptoFunction,
+    check_func: CheckCryptoNeededFunction,
     crypto_key: &str,
 ) -> Result<Server, AppError> {
     if !could_need_encryption(server)? {
@@ -219,8 +271,8 @@ fn de_or_encrypted_credentials(
     plugin: Plugin,
     server: &Server,
     key: &str,
-    crypt_func: fn(&str, &str) -> Result<String, AppError>,
-    check_func: fn(&Credential, &Plugin) -> bool,
+    crypt_func: CryptoFunction,
+    check_func: CheckCryptoNeededFunction,
 ) -> Result<Vec<Credential>, AppError> {
     let mut new_credentials = Vec::new();
     for credential in &feature.credentials {

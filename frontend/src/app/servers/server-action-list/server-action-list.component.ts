@@ -70,7 +70,7 @@ export class ServerActionListComponent implements OnInit, OnDestroy {
   }
 
   private getActionsForServer = () => {
-    if (!this.server || !this.server.features || this.plugins === undefined) {
+    if (!this.server || !this.server.features || !this.plugins) {
       return;
     }
 

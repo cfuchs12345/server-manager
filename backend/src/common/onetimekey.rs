@@ -44,7 +44,7 @@ impl OneTimeKey {
         Ok(OneTimeKey { id, key })
     }
 
-    pub async fn get_token(id: u32) -> Result<(NaiveDateTime, String), AppError> {
+    pub async fn get_one_time_key(id: u32) -> Result<(NaiveDateTime, String), AppError> {
         let read_keys = GENERATED_KEYS.read().await;
 
         let found = read_keys.get(&id).map(|val| val.to_owned());

@@ -78,11 +78,20 @@ export class DeleteServerModalComponent implements OnInit, OnDestroy {
 
   removeFeatureFromServer = () => {
     if(this.selectedServer && this.selectedFeature) {
-      const features = this.selectedServer.features.filter( (feature) => feature.id !== this.selectedFeature?.id);
+      const ref = this;
 
-      const featuresOfServer = new ServerFeature(this.selectedServer.ipaddress, features, true);
+      this.serverService.getServer(this.selectedServer.ipaddress, true).subscribe({
+        next: (server) => {
+          const filteredFeatures = server.features.filter( (feature) => feature.id !== ref.selectedFeature?.id);
+          server.features = filteredFeatures;
 
-      this.serverService.updateServerFeatures([featuresOfServer], false);
+          ref.serverService.updateServer(server);
+        },
+        error: (err) => {
+        },
+        complete: () => {
+        }
+      });
     }
   }
 

@@ -99,6 +99,7 @@ fn init_token_secured_api(cfg: &mut web::ServiceConfig) {
 
     cfg.service(routes::post_servers);
     cfg.service(routes::get_servers);
+    cfg.service(routes::get_servers_by_ipaddress);
     cfg.service(routes::put_servers_by_ipaddress);
     cfg.service(routes::delete_servers_by_ipaddress);
 

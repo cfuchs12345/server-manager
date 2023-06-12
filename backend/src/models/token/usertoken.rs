@@ -4,4 +4,5 @@ use serde::{Deserialize, Serialize};
 pub struct UserToken {
     pub user_id: String,
     pub token: String,
+    pub client_key: String,
 }

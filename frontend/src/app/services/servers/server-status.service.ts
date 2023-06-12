@@ -17,11 +17,6 @@ export class ServerStatusService {
   private _serverStatus = new BehaviorSubject<Status[]>([]);
   readonly serversStatus = this._serverStatus.asObservable();
 
-  private dataStore: {
-    serversStatus: Status[];
-  } = {
-    serversStatus: [],
-  };
 
   constructor(private http: HttpClient, private errorService: ErrorService) {}
 
@@ -35,15 +30,10 @@ export class ServerStatusService {
       })
       .subscribe({
         next: (statusList) => {
-          this.dataStore.serversStatus.splice(
-            0,
-            this.dataStore.serversStatus.length
-          );
-          this.dataStore.serversStatus.push(...statusList);
-          this.publishServerStatus();
+          this.publishServerStatus(statusList);
         },
         error: (err: any) => {
-          if (err !== undefined) {
+          if (err) {
             this.errorService.newError(
               Source.ServerStatusService,
               undefined,
@@ -55,7 +45,7 @@ export class ServerStatusService {
       });
   };
 
-  private publishServerStatus = () => {
-    this._serverStatus.next(Object.assign({}, this.dataStore).serversStatus);
+  private publishServerStatus = (list: Status[]) => {
+    this._serverStatus.next(list);
   };
 }

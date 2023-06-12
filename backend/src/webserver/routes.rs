@@ -1,7 +1,8 @@
+use log_derive::logfn;
 use std::net::IpAddr;
 use std::vec;
 
-use crate::common::OneTimeKey;
+use crate::common::{ClientKey, OneTimeKey};
 use crate::models::config::dns_server::DNSServer;
 use crate::models::config::Configuration;
 use crate::models::error::AppError;
@@ -20,6 +21,7 @@ use crate::models::users::User;
 use crate::webserver::appdata::AppData;
 use crate::{common, other_functions};
 use crate::{datastore, other_functions::systeminfo, plugin_execution};
+use actix_session::Session;
 use actix_web::delete;
 use actix_web::{get, post, put, web, HttpRequest, HttpResponse};
 use http::{header, HeaderName, HeaderValue};
@@ -72,8 +74,13 @@ pub async fn post_networks_action(
 #[get("/servers")]
 pub async fn get_servers(data: web::Data<AppData>) -> Result<HttpResponse, AppError> {
     let servers = datastore::get_all_servers(&data.app_data_persistence, true).await?;
-    let result = datastore::decrypt_servers(servers).await?;
-    Ok(HttpResponse::Ok().json(result))
+
+    // client doesn't need to know the credentials and or parameters normally
+    // only if a user wants to configure a feature, the information is required on the client side
+    // reduces client memory, increases speed and makes the data more secure, if the server doesn't send it out
+    let simplified_servers = datastore::simplify_servers_for_client(servers);
+
+    Ok(HttpResponse::Ok().json(simplified_servers))
 }
 
 #[post("/servers")]
@@ -215,6 +222,42 @@ pub async fn put_servers_by_ipaddress(
     datastore::update_server(&data.app_data_persistence, &query.0).await?;
 
     Ok(HttpResponse::Ok().finish())
+}
+
+#[get("/servers/{ipaddress}")]
+#[logfn(err = "Error", fmt = "Could not get server: {:?}")]
+pub async fn get_servers_by_ipaddress(
+    session: Session,
+    data: web::Data<AppData>,
+    path: web::Path<String>,
+    query: web::Query<std::collections::HashMap<String, String>>,
+) -> Result<HttpResponse, AppError> {
+    let ipaddress = path.into_inner().parse()?;
+    let params = query.into_inner();
+
+    let full_data: bool = params
+        .get("full_data")
+        .ok_or(AppError::MissingURLParameter(
+            "expected parameter full_data but it is missing".to_owned(),
+        ))?
+        .parse()?;
+    let server = datastore::get_server(&data.app_data_persistence, &ipaddress).await?;
+
+    if full_data {
+        let client_key = ClientKey::get_from_session(session)?.ok_or(AppError::Unknown(
+            "Could not find client key in session".to_owned(),
+        ))?;
+
+        let re_encrypted_server =
+            datastore::re_encrypt_server(server, client_key.key.as_str(), true)?;
+        log::info!("full server: {:?}", re_encrypted_server);
+        log::info!("key: {}", client_key.key);
+
+        Ok(HttpResponse::Ok().json(re_encrypted_server))
+    } else {
+        let simplified_server = datastore::simplify_server_for_client(server);
+        Ok(HttpResponse::Ok().json(simplified_server))
+    }
 }
 
 #[delete("/servers/{ipaddress}")]
@@ -483,6 +526,7 @@ pub async fn get_one_time_key() -> Result<HttpResponse, AppError> {
 
 #[post("users/authenticate")]
 pub async fn authenticate(
+    session: Session,
     data: web::Data<AppData>,
     req: HttpRequest,
 ) -> Result<HttpResponse, AppError> {
@@ -509,11 +553,17 @@ pub async fn authenticate(
     let password_check_result = user.check_password(&decrypted)?;
 
     if password_check_result {
+        let client_key = ClientKey::new().register_for_session(session)?;
+
         let token = common::generate_long_random_string();
 
         datastore::insert_token(&token)?;
 
-        Ok(HttpResponse::Ok().json(UserToken { user_id, token }))
+        Ok(HttpResponse::Ok().json(UserToken {
+            user_id,
+            token,
+            client_key: client_key.key,
+        }))
     } else {
         Err(AppError::InvalidPassword())
     }
@@ -624,7 +674,7 @@ async fn get_decrypted_password_from_header(req: HttpRequest) -> Result<String, 
 async fn get_existing_otk(header_value: &HeaderValue) -> Result<(NaiveDateTime, String), AppError> {
     let number: u32 = header_value.to_str()?.parse()?;
 
-    common::OneTimeKey::get_token(number).await
+    common::OneTimeKey::get_one_time_key(number).await
 }
 
 fn get_auth_data_split(header_value: &HeaderValue) -> Result<Option<(String, String)>, AppError> {

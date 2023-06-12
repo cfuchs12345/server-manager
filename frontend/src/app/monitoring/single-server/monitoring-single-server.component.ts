@@ -47,14 +47,12 @@ export class MonitoringSingleServerComponent
       .pipe(
         filter(
           (data) =>
-            data !== undefined &&
-            this.server !== undefined &&
-            data.meta_data.ipaddress === this.server.ipaddress
+            data?.meta_data.ipaddress === this.server?.ipaddress
         )
       )
       .subscribe((data) => {
         setTimeout(() => {
-          if (data !== undefined) {
+          if (data) {
             this.updateDataMap(data);
           }
         }, 0);
@@ -63,9 +61,7 @@ export class MonitoringSingleServerComponent
       .pipe(
         filter(
           (seriesData) =>
-            seriesData !== undefined &&
-            this.server !== undefined &&
-            seriesData.ipaddress === this.server.ipaddress
+            seriesData?.ipaddress === this.server?.ipaddress
         ),
         take(1)
       )
@@ -73,7 +69,7 @@ export class MonitoringSingleServerComponent
         this.seriesData = seriesData;
 
         setTimeout(() => {
-          if (this.server !== undefined && this.seriesData !== undefined) {
+          if (this.server && this.seriesData ) {
             for (const seriesId of this.seriesData.seriesIds) {
               this.monitoringService.loadMonitoringData(this.server, seriesId);
             }
@@ -81,16 +77,16 @@ export class MonitoringSingleServerComponent
         }, 0);
       });
 
-    if (this.server !== undefined) {
+    if (this.server) {
       this.monitoringService.getMonitoringIds(this.server);
     }
   }
 
   ngOnDestroy(): void {
-    if (this.monitoringDataSubscription !== undefined) {
+    if (this.monitoringDataSubscription ) {
       this.monitoringDataSubscription.unsubscribe();
     }
-    if (this.monitorinTimeSeriesSubscription !== undefined) {
+    if (this.monitorinTimeSeriesSubscription ) {
       this.monitorinTimeSeriesSubscription.unsubscribe();
     }
   }
@@ -103,7 +99,7 @@ export class MonitoringSingleServerComponent
             this.seriesData = undefined;
 
             setTimeout(() => {
-              if (this.server !== undefined) {
+              if (this.server ) {
                 this.monitoringService.getMonitoringIds(this.server);
               }
             }, 500);
@@ -114,7 +110,7 @@ export class MonitoringSingleServerComponent
   }
 
   updateDataMap = (response: TimeSeriesResponse) => {
-    if (response !== undefined) {
+    if (response) {
       const dataset = response.data.dataset;
       const columns = response.data.columns;
 
@@ -237,7 +233,7 @@ class SeriesValues {
 
   add = (key: string, value: number, timestamp: number) => {
     let series_array = this.map.get(key);
-    if (series_array === undefined) {
+    if (!series_array) {
       series_array = [];
       this.map.set(key, series_array);
     }

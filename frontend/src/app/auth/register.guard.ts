@@ -18,7 +18,7 @@ export const RegisterGuard: CanActivateFn = (
   const service = inject(AuthenticationService);
 
   if (usersExist) {
-    if (state.url === undefined || state.url.indexOf('login') < 0) {
+    if (!state.url || state.url.indexOf('login') < 0) {
       router.navigate(['/login']);
     }
     return of(true);
@@ -28,11 +28,11 @@ export const RegisterGuard: CanActivateFn = (
     tap((res) => {
       if (res) {
         usersExist = true;
-        if (state.url === undefined || state.url.indexOf('login') < 0) {
+        if (!state.url  || state.url.indexOf('login') < 0) {
           router.navigate(['/login']);
         }
       } else {
-        if (state.url === undefined || state.url.indexOf('register') < 0) {
+        if (!state.url || state.url.indexOf('register') < 0) {
           router.navigate(['/register']);
         }
       }

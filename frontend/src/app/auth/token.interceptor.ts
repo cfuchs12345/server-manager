@@ -18,10 +18,10 @@ export class TokenInterceptor implements HttpInterceptor {
   ): Observable<HttpEvent<any>> {
     // add header with basic auth credentials if user is logged in and request is to the api url
     const userToken = this.authenticationService.userToken;
-    const isLoggedIn = userToken !== null && userToken !== undefined;
+
     const isApiUrl = request.url.startsWith('/backend');
 
-    if (isLoggedIn && isApiUrl) {
+    if (userToken && isApiUrl) {
       request = request.clone({
         setHeaders: {
           Authorization: `Bearer ${userToken.token}`,

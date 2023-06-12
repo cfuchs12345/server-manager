@@ -37,7 +37,7 @@
     </button>
   </div>
   <div fxFlex="50" fxFlex.gt-xs="50" fxFlexFill>
-    <div *ngIf="fileUrl !== undefined">
+    <div *ngIf="fileUrl">
       click to download:
       <a [href]="fileUrl" download="server_manager_configuration.json">
         <img src="assets/svg/json-file-svgrepo-com.svg" alt="json file"  style="width: 35px; height: 35px;"/>
@@ -88,7 +88,7 @@
         color="primary"
         type="submit"
         style="margin: 5px"
-        [disabled]="file === undefined || !password.valid"
+        [disabled]="!file || !password.valid"
       >
         {{ buttonTextUploadFile }}
       </button>

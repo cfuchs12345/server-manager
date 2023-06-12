@@ -22,10 +22,9 @@ export class MonitoringService {
   constructor(private http: HttpClient, private errorService: ErrorService) {}
 
   getMonitoringIds = (server: Server) => {
-    const options =
-      server !== undefined
-        ? { params: new HttpParams().set('ipaddress', server.ipaddress) }
-        : {};
+    const options = server
+      ? { params: new HttpParams().set('ipaddress', server.ipaddress) }
+      : {};
 
     this.http.get<string[]>('/backend/monitoring/ids', options).subscribe({
       next: (ids) => {
@@ -36,24 +35,19 @@ export class MonitoringService {
         }, 100);
       },
       error: (err: any) => {
-        this.errorService.newError(
-          Source.MonitoringService,
-          undefined,
-          err
-        );
+        this.errorService.newError(Source.MonitoringService, undefined, err);
       },
     });
   };
 
   loadMonitoringData = (server: Server, series_id: string) => {
-    const options =
-      server !== undefined
-        ? {
-            params: new HttpParams()
-              .set('ipaddress', server.ipaddress)
-              .set('series_id', series_id),
-          }
-        : {};
+    const options = server
+      ? {
+          params: new HttpParams()
+            .set('ipaddress', server.ipaddress)
+            .set('series_id', series_id),
+        }
+      : {};
 
     this.http
       .get<TimeSeriesResponse>('/backend/monitoring/data', options)
@@ -64,23 +58,19 @@ export class MonitoringService {
           }, 100);
         },
         error: (err: any) => {
-          this.errorService.newError(
-            Source.MonitoringService,
-            undefined,
-            err
-          );
+          this.errorService.newError(Source.MonitoringService, undefined, err);
         },
       });
   };
 
   private publisMonitoringhData = (data: TimeSeriesResponse) => {
-    if (data !== undefined) {
+    if (data) {
       this._data.next(data);
     }
   };
 
   private publishMonitoringSeriesData = (data: TimeSeriesIds) => {
-    if (data !== undefined) {
+    if (data) {
       this._monitoringSeriesData.next(data);
     }
   };

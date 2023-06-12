@@ -16,16 +16,6 @@ export class ServerDiscoveryService {
   readonly discoveredServers = this._discoveredServers.asObservable();
   readonly discoveredServerFeatures = this._discoveredServerFeatures.asObservable();
 
-  private dataStore: {
-    discoveredServers: HostInformation[];
-    discoveredServerFeatures: ServerFeature[];
-  } = {
-    discoveredServers: [],
-    discoveredServerFeatures: [],
-  };
-
-
-
   constructor(private http: HttpClient, private errorService: ErrorService) {}
 
   scanFeature = (ipaddress: string) => {
@@ -71,15 +61,13 @@ export class ServerDiscoveryService {
               filter.is_running || (filter.dnsname && filter.dnsname !== '')
           );
 
-          this.dataStore.discoveredServers = relevant_servers;
+          this.publishDiscoveredServers(relevant_servers);
         },
         error: (err: any) => {
           this.errorService.newError(Source.ServerDiscoveryService, undefined, err);
-
-          this.resetDiscoveredServers();
         },
         complete: () => {
-          this.publishDiscoveredServers();
+
         },
       });
   };
@@ -96,45 +84,21 @@ export class ServerDiscoveryService {
       })
       .subscribe({
         next: (serverFeatures) => {
-          this.dataStore.discoveredServerFeatures.splice(
-            0,
-            this.dataStore.discoveredServerFeatures.length
-          );
-          this.dataStore.discoveredServerFeatures.push(...serverFeatures);
+          this.publishDiscoveredServerFeatures(serverFeatures);
         },
         error: (err: any) => {
           this.errorService.newError(Source.ServerDiscoveryService, undefined, err);
         },
         complete: () => {
-            this.publishDiscoveredServerFeatures();
         },
       });
   };
 
-  resetDiscoveredServerFeatures = () => {
-    this.dataStore.discoveredServerFeatures = [];
-    this.publishDiscoveredServerFeatures();
+  private publishDiscoveredServers = (list: HostInformation[]) => {
+    this._discoveredServers.next(list);
   };
 
-
-  resetDiscoveredServers = () => {
-    this.dataStore.discoveredServers.splice(
-      0,
-      this.dataStore.discoveredServers.length
-    );
-    this.publishDiscoveredServers();
-  };
-
-
-  private publishDiscoveredServers = () => {
-    this._discoveredServers.next(
-      Object.assign({}, this.dataStore).discoveredServers
-    );
-  };
-
-  private publishDiscoveredServerFeatures = () => {
-    this._discoveredServerFeatures.next(
-      Object.assign({}, this.dataStore).discoveredServerFeatures
-    );
+  private publishDiscoveredServerFeatures = (list: ServerFeature[]) => {
+    this._discoveredServerFeatures.next(list);
   };
 }
