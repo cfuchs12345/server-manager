@@ -75,6 +75,7 @@ import { MonitoringSingleServerComponent } from './monitoring/single-server/moni
 import { ConfigImExportDialog } from './configuration/general-configuration/dialogs/dialog-config-im-and-export';
 import { ConfigImExportModalComponent } from './configuration/general-configuration/dialogs/config-im-export-modal/config-im-export-modal.component';
 import { ErrorSourceNamePipe } from './shared/error-enum-name.pipe';
+import { LoggerModule, NgxLoggerLevel } from "ngx-logger";
 
 @NgModule({
   declarations: [
@@ -153,6 +154,11 @@ import { ErrorSourceNamePipe } from './shared/error-enum-name.pipe';
     LayoutModule,
     MatSelectModule,
     NgApexchartsModule,
+    LoggerModule.forRoot({
+      serverLoggingUrl: '/api/logs',
+      level: NgxLoggerLevel.DEBUG,
+      serverLogLevel: NgxLoggerLevel.ERROR
+    }),
   ],
   providers: [
     ErrorService,

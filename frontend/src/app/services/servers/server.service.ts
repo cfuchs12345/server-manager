@@ -3,16 +3,15 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import {
   BehaviorSubject,
   Observable,
-  catchError,
-  map,
   tap,
-  throwError,
 } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
 
-import { Server, Feature, ServerFeature } from './types';
+import { Server, Feature } from './types';
 import { ErrorService, Source } from '../errors/error.service';
 import { EncryptionService } from '../encryption/encryption.service';
+
+import { NGXLogger } from "ngx-logger";
 import { AuthenticationService } from '../auth/authentication.service';
 
 @Injectable({
@@ -29,6 +28,7 @@ export class ServerService {
   readonly servers = this._servers.asObservable();
 
   constructor(
+    private logger: NGXLogger,
     private http: HttpClient,
     private errorService: ErrorService,
     private encryptionService: EncryptionService,
@@ -89,23 +89,20 @@ export class ServerService {
       : {};
 
     return this.http.get<Server>(`/backend/servers/${ipaddress}`, options).pipe(
-      catchError((err) => {
-        this.errorService.newError(Source.ServerService, ipaddress, err);
-        return throwError(() => err);
-      }),
       tap((server) => {
         if (fullData) {
 
           if (server.features) {
             server.features.forEach((feature: Feature) => {
-              this.decryptIfNecessary(feature);
+              try {
+                this.decryptIfNecessary(feature);
+              } catch(err: any) {
+                this.logger.error("Could not decrypt credentials in server feature. Error was:", err);
+                this.errorService.newError(Source.ServerService, ipaddress, err);
+              }
             });
           }
         }
-      }),
-      catchError((err) => {
-        this.errorService.newError(Source.ServerService, ipaddress, err);
-        return throwError(() => err);
       }),
     );
   };
@@ -186,52 +183,5 @@ export class ServerService {
         .reduce((a, v) => ((a += v), a), 0)
     );
     return numA - numB;
-  };
-
-  private updateOrAddFeature = (
-    foundFeature: Feature[],
-    server: Server,
-    overwriteParams: boolean
-  ): Server => {
-    for (var feature of foundFeature) {
-      var existing = server.features.find((f) => f.id === feature.id);
-
-      if (!existing) {
-        server.features.push(
-          new Feature(
-            feature.id,
-            feature.name,
-            feature.params,
-            feature.credentials
-          )
-        );
-      } else if (overwriteParams) {
-        existing.name = feature.name;
-        existing.params = feature.params;
-        existing.credentials = feature.credentials;
-      }
-    }
-    return server;
-  };
-
-  private removeFeaturesNoLongerInList = (
-    featuresToSetForServer: Feature[],
-    server: Server
-  ): Server => {
-    server.features = server.features.filter((existingFeature) =>
-      this.isInList(existingFeature, featuresToSetForServer)
-    );
-
-    return server;
-  };
-
-  private isInList = (
-    featureToCheck: Feature,
-    featureListToCheck: Feature[]
-  ): boolean => {
-    return (
-      featureListToCheck.find((feature) => feature.id == featureToCheck.id) !==
-      undefined
-    );
   };
 }
