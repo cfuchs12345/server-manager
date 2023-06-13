@@ -77,7 +77,7 @@ pub async fn discover_features_of_all_servers(
 
     // list of async tasks executed by tokio
     let mut tasks = Vec::new();
-    for server in servers {
+    for server in servers.clone() {
         let crypto_key = crypto_key.clone();
         let silent = *silent;
 
@@ -102,10 +102,11 @@ pub async fn discover_features_of_all_servers(
         features_from_upnp_discovery
     );
 
-    Ok(merge_features(
-        features_from_plugin_discovery,
-        features_from_upnp_discovery,
-    ))
+    let all_found = merge_features(features_from_plugin_discovery, features_from_upnp_discovery);
+
+    let filtered_only_new = filter(&all_found, &servers);
+
+    Ok(filtered_only_new)
 }
 
 pub async fn discover_features(
@@ -419,6 +420,46 @@ pub fn plugin_detect_match(plugin: &Plugin, input: &str) -> Result<bool, AppErro
             Some(script_type),
         ))
     }
+}
+
+fn filter(all_found: &[FeaturesOfServer], servers: &[Server]) -> Vec<FeaturesOfServer> {
+    all_found
+        .iter()
+        .map(|found_features_for_server| filter_features(found_features_for_server, servers)) // first update features list and remove single features
+        .filter(|found_features_for_server| {
+            // filter out FeaturesOfServer where the list of features is empty after the step before (when there is no new feature for a server and all are already known)
+            !found_features_for_server.features.is_empty()
+        })
+        .collect()
+}
+
+fn filter_features(
+    found_features_for_server: &FeaturesOfServer,
+    servers: &[Server],
+) -> FeaturesOfServer {
+    let mut updated = found_features_for_server.to_owned();
+
+    if let Some(server) = servers
+        .iter()
+        .find(|server| server.ipaddress == found_features_for_server.ipaddress)
+    {
+        let only_new_features: Vec<Feature> = updated
+            .features
+            .iter()
+            .filter(|found_feature| !server_has_feature(found_feature, server))
+            .map(|f| f.to_owned())
+            .collect();
+
+        updated.features = only_new_features;
+    }
+    updated
+}
+
+fn server_has_feature(found_feature: &Feature, server: &Server) -> bool {
+    server
+        .features
+        .iter()
+        .any(|existing_feature| existing_feature.id == found_feature.id)
 }
 
 #[cfg(test)]

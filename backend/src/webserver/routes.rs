@@ -250,8 +250,6 @@ pub async fn get_servers_by_ipaddress(
 
         let re_encrypted_server =
             datastore::re_encrypt_server(server, client_key.key.as_str(), true)?;
-        log::info!("full server: {:?}", re_encrypted_server);
-        log::info!("key: {}", client_key.key);
 
         Ok(HttpResponse::Ok().json(re_encrypted_server))
     } else {
