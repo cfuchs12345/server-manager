@@ -34,13 +34,22 @@ export class DNSServer {
 }
 
 export class SystemInformation {
-  constructor( public memory_stats: SystemInformationEntry[],  public memory_usage: SystemInformationEntry[],  public load_average: SystemInformationEntry[]) {};
+  constructor(
+    public memory_stats: SystemInformationEntry[],
+    public memory_usage: SystemInformationEntry[],
+    public load_average: SystemInformationEntry[]
+  ) {}
 }
 
 export class SystemInformationEntry {
-    constructor(public name: string, public value: number) {}
+  constructor(public name: string, public value: number) {}
 }
 
 export class Configuration {
-  constructor(public disabled_plugins: string[], public users: User[], public servers: Server[], public dns_servers: DNSServer[]) {};
+  constructor(
+    public disabled_plugins: string[],
+    public users: User[],
+    public servers: Server[],
+    public dns_servers: DNSServer[]
+  ) {}
 }

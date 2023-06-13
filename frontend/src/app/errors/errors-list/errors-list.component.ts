@@ -5,12 +5,11 @@ import { Subscription } from 'rxjs';
 @Component({
   selector: 'app-errors-list',
   templateUrl: './errors-list.component.html',
-  styleUrls: ['./errors-list.component.scss']
+  styleUrls: ['./errors-list.component.scss'],
 })
-export class ErrorsListComponent  implements OnInit, OnDestroy  {
+export class ErrorsListComponent implements OnInit, OnDestroy {
   errorCount: number = 0;
   classes: string[] = [];
-
 
   private subscriptionErrors: Subscription | undefined = undefined;
 
@@ -19,12 +18,11 @@ export class ErrorsListComponent  implements OnInit, OnDestroy  {
   ngOnInit(): void {
     this.subscriptionErrors = this.errorService.errors.subscribe((errors) => {
       if (errors) {
-
         var count = 0;
-        for( let [i, error] of errors.entries()) {
+        for (let [i, error] of errors.entries()) {
           count += error.count;
         }
-        if( this.errorCount < count  ) {
+        if (this.errorCount < count) {
           setTimeout(this.flashErrorList, 0);
         }
         this.errorCount = count;
@@ -32,20 +30,18 @@ export class ErrorsListComponent  implements OnInit, OnDestroy  {
         // clear messages when empty message received
         this.errorCount = 0;
       }
-    }
-    );
+    });
   }
   ngOnDestroy(): void {
-    if( this.subscriptionErrors ) {
+    if (this.subscriptionErrors) {
       this.subscriptionErrors.unsubscribe();
     }
   }
 
   flashErrorList = () => {
-    this.classes.push("flash");
-    setTimeout( () => {
+    this.classes.push('flash');
+    setTimeout(() => {
       this.classes.splice(0, this.classes.length);
     }, 500);
-  }
-
+  };
 }

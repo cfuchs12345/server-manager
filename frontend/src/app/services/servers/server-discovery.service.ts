@@ -1,10 +1,17 @@
 import { Injectable } from '@angular/core';
-import { Feature, HostInformation, NetworksAction, Param, ServerAction, ServerFeature, ServersAction } from "./types";
+import {
+  Feature,
+  HostInformation,
+  NetworksAction,
+  Param,
+  ServerAction,
+  ServerFeature,
+  ServersAction,
+} from './types';
 import { defaultHeadersForJSON } from '../common';
 import { ErrorService, Source } from '../errors/error.service';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
-import { DNSServer } from '../general/types';
 
 @Injectable({
   providedIn: 'root',
@@ -14,7 +21,8 @@ export class ServerDiscoveryService {
   private _discoveredServerFeatures = new BehaviorSubject<ServerFeature[]>([]);
 
   readonly discoveredServers = this._discoveredServers.asObservable();
-  readonly discoveredServerFeatures = this._discoveredServerFeatures.asObservable();
+  readonly discoveredServerFeatures =
+    this._discoveredServerFeatures.asObservable();
 
   constructor(private http: HttpClient, private errorService: ErrorService) {}
 
@@ -32,16 +40,17 @@ export class ServerDiscoveryService {
           var f: Feature[] = foundFeature;
         },
         error: (err: any) => {
-          this.errorService.newError(Source.ServerDiscoveryService, ipaddress, err);
+          this.errorService.newError(
+            Source.ServerDiscoveryService,
+            ipaddress,
+            err
+          );
         },
         complete: () => {},
       });
   };
 
-  autoDiscoverServers = (
-    network: string,
-    dnsLookup: boolean
-  ) => {
+  autoDiscoverServers = (network: string, dnsLookup: boolean) => {
     const params = [
       new Param('network', network),
       new Param('lookup_names', dnsLookup ? 'true' : 'false'),
@@ -64,14 +73,15 @@ export class ServerDiscoveryService {
           this.publishDiscoveredServers(relevant_servers);
         },
         error: (err: any) => {
-          this.errorService.newError(Source.ServerDiscoveryService, undefined, err);
+          this.errorService.newError(
+            Source.ServerDiscoveryService,
+            undefined,
+            err
+          );
         },
-        complete: () => {
-
-        },
+        complete: () => {},
       });
   };
-
 
   scanFeatureOfAllServers = () => {
     const query = new ServersAction('FeatureScan');
@@ -87,10 +97,13 @@ export class ServerDiscoveryService {
           this.publishDiscoveredServerFeatures(serverFeatures);
         },
         error: (err: any) => {
-          this.errorService.newError(Source.ServerDiscoveryService, undefined, err);
+          this.errorService.newError(
+            Source.ServerDiscoveryService,
+            undefined,
+            err
+          );
         },
-        complete: () => {
-        },
+        complete: () => {},
       });
   };
 

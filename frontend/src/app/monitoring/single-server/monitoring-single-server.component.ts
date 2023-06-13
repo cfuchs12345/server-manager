@@ -36,17 +36,12 @@ export class MonitoringSingleServerComponent
 
   chartTypes: Map<string, string> = new Map();
 
-  constructor(
-    private monitoringService: MonitoringService
-  ) {}
+  constructor(private monitoringService: MonitoringService) {}
 
   ngOnInit(): void {
     this.monitoringDataSubscription = this.monitoringService.data
       .pipe(
-        filter(
-          (data) =>
-            data?.meta_data.ipaddress === this.server?.ipaddress
-        )
+        filter((data) => data?.meta_data.ipaddress === this.server?.ipaddress)
       )
       .subscribe((data) => {
         setTimeout(() => {
@@ -58,8 +53,7 @@ export class MonitoringSingleServerComponent
     this.monitorinTimeSeriesSubscription = this.monitoringService.monitoringIds
       .pipe(
         filter(
-          (seriesData) =>
-            seriesData?.ipaddress === this.server?.ipaddress
+          (seriesData) => seriesData?.ipaddress === this.server?.ipaddress
         ),
         take(1)
       )
@@ -67,7 +61,7 @@ export class MonitoringSingleServerComponent
         this.seriesData = seriesData;
 
         setTimeout(() => {
-          if (this.server && this.seriesData ) {
+          if (this.server && this.seriesData) {
             for (const seriesId of this.seriesData.seriesIds) {
               this.monitoringService.loadMonitoringData(this.server, seriesId);
             }
@@ -81,10 +75,10 @@ export class MonitoringSingleServerComponent
   }
 
   ngOnDestroy(): void {
-    if (this.monitoringDataSubscription ) {
+    if (this.monitoringDataSubscription) {
       this.monitoringDataSubscription.unsubscribe();
     }
-    if (this.monitorinTimeSeriesSubscription ) {
+    if (this.monitorinTimeSeriesSubscription) {
       this.monitorinTimeSeriesSubscription.unsubscribe();
     }
   }
@@ -97,7 +91,7 @@ export class MonitoringSingleServerComponent
             this.seriesData = undefined;
 
             setTimeout(() => {
-              if (this.server ) {
+              if (this.server) {
                 this.monitoringService.getMonitoringIds(this.server);
               }
             }, 300);
@@ -217,9 +211,11 @@ export class MonitoringSingleServerComponent
     return key;
   };
 
-  getChartData = (seriesId: String) : ChartData | undefined => {
-    return this.chartDataList.list.find((chartData : ChartData) => chartData.series_id === seriesId);
-  }
+  getChartData = (seriesId: String): ChartData | undefined => {
+    return this.chartDataList.list.find(
+      (chartData: ChartData) => chartData.series_id === seriesId
+    );
+  };
 }
 
 class SeriesValues {

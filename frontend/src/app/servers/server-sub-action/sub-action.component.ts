@@ -11,7 +11,6 @@ import { ErrorService, Source } from 'src/app/services/errors/error.service';
   styleUrls: ['./server-sub-action.component.scss'],
 })
 export class ServerSubActionComponent {
-
   constructor(
     private serverActionService: ServerActionService,
     private errorService: ErrorService,
@@ -20,36 +19,66 @@ export class ServerSubActionComponent {
     private window: Window,
     private zone: NgZone
   ) {
-    if( !window.MyServerManagerNS.executeSubAction ) {
-      window.MyServerManagerNS.executeSubAction = (feature_id: string, action_id:string, action_name:string, data_id: string, action_params: string, ipaddress: string) => {
+    if (!window.MyServerManagerNS.executeSubAction) {
+      window.MyServerManagerNS.executeSubAction = (
+        feature_id: string,
+        action_id: string,
+        action_name: string,
+        data_id: string,
+        action_params: string,
+        ipaddress: string
+      ) => {
         this.zone.run(() => {
-          this.executeSubAction(feature_id, action_id, action_name, data_id, action_params, ipaddress);
+          this.executeSubAction(
+            feature_id,
+            action_id,
+            action_name,
+            data_id,
+            action_params,
+            ipaddress
+          );
         });
-      }
+      };
     }
   }
 
-  executeSubAction = (feature_id: string, action_id: string, action_name: string, data_id: string, action_params: string, ipaddress: string) => {
-  const plugin = this.pluginCache.getPlugin(feature_id);
+  executeSubAction = (
+    feature_id: string,
+    action_id: string,
+    action_name: string,
+    data_id: string,
+    action_params: string,
+    ipaddress: string
+  ) => {
+    const plugin = this.pluginCache.getPlugin(feature_id);
 
-  if(plugin) {
-    const action = plugin.actions.find((a) => a.id === action_id);
-    if( action ) {
-      if( action.needs_confirmation) {
-        const message =
-        "Do you want to execute the Action '" +
-          action_name +
-        "' on server with IP " +
-        ipaddress +
-        '?';
-      const confirmDialog = this.dialog.open(ConfirmDialogComponent, {
-        data: {
-          title: 'Confirm Action',
-          message,
-        },
-      });
-      confirmDialog.afterClosed().subscribe((result) => {
-        if (result === true) {
+    if (plugin) {
+      const action = plugin.actions.find((a) => a.id === action_id);
+      if (action) {
+        if (action.needs_confirmation) {
+          const message =
+            "Do you want to execute the Action '" +
+            action_name +
+            "' on server with IP " +
+            ipaddress +
+            '?';
+          const confirmDialog = this.dialog.open(ConfirmDialogComponent, {
+            data: {
+              title: 'Confirm Action',
+              message,
+            },
+          });
+          confirmDialog.afterClosed().subscribe((result) => {
+            if (result === true) {
+              this.serverActionService.executeAction(
+                feature_id,
+                action_id,
+                ipaddress,
+                action_params
+              );
+            }
+          });
+        } else {
           this.serverActionService.executeAction(
             feature_id,
             action_id,
@@ -57,24 +86,27 @@ export class ServerSubActionComponent {
             action_params
           );
         }
-      });
-
-      }
-      else {
-        this.serverActionService.executeAction(
-          feature_id,
-          action_id,
+      } else {
+        this.errorService.newError(
+          Source.ServerSubActionComponent,
           ipaddress,
-          action_params
+          'Could not execute sub-action ' +
+            action_id +
+            ' since plugin ' +
+            feature_id +
+            " doesn't contain such an action"
         );
       }
+    } else {
+      this.errorService.newError(
+        Source.ServerSubActionComponent,
+        ipaddress,
+        'Could not execute sub-action ' +
+          action_id +
+          ' since plugin ' +
+          feature_id +
+          ' is not known'
+      );
     }
-    else {
-      this.errorService.newError(Source.ServerSubActionComponent, ipaddress, "Could not execute sub-action "+ action_id + " since plugin " + feature_id + " doesn't contain such an action");
-    }
-  }
-  else {
-    this.errorService.newError(Source.ServerSubActionComponent, ipaddress, "Could not execute sub-action "+ action_id + " since plugin " + feature_id + " is not known");
-  }
-}
+  };
 }

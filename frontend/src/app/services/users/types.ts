@@ -1,9 +1,17 @@
 export class User {
-  constructor(public user_id: string, public full_name: string, public email: string) {}
+  constructor(
+    public user_id: string,
+    public full_name: string,
+    public email: string
+  ) {}
 }
 
 export class UserToken {
-  constructor(public user_id: string, public token: string, public client_key: string) {}
+  constructor(
+    public user_id: string,
+    public token: string,
+    public client_key: string
+  ) {}
 }
 
 export class UserPasswordHash {
@@ -11,5 +19,8 @@ export class UserPasswordHash {
 }
 
 export class UserInitialPassword {
-  constructor(public user_id: string, public password: string | undefined | null = undefined) {}
+  constructor(
+    public user_id: string,
+    public password: string | undefined | null = undefined
+  ) {}
 }

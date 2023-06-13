@@ -1,9 +1,14 @@
-import { Injectable } from "@angular/core";
+import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import {randomBytes, pbkdf2Sync, createCipheriv,createDecipheriv } from 'crypto'
+import {
+  randomBytes,
+  pbkdf2Sync,
+  createCipheriv,
+  createDecipheriv,
+} from 'crypto';
 import { Buffer } from 'buffer';
-import { OneTimeKey } from "../auth/types";
+import { OneTimeKey } from '../auth/types';
 
 window.Buffer = window.Buffer || Buffer;
 
@@ -14,12 +19,11 @@ const TAG_LENGTH = 16;
 
 const SHA = 'sha256';
 const BASE64 = 'base64';
-const UTF8 = 'utf8'
+const UTF8 = 'utf8';
 
 @Injectable()
 export class EncryptionService {
-
-  constructor( private http: HttpClient) {}
+  constructor(private http: HttpClient) {}
 
   private getKey(salt: Buffer, secret: string) {
     return pbkdf2Sync(secret, salt, 100000, 32, SHA);
@@ -43,7 +47,10 @@ export class EncryptionService {
     const stringValue = Buffer.from(cipherText, BASE64);
     const salt = stringValue.subarray(0, SALT_LENGTH);
     const iv = stringValue.subarray(SALT_LENGTH, SALT_LENGTH + IV_LENGTH);
-    const encrypted = stringValue.subarray(SALT_LENGTH + IV_LENGTH, -TAG_LENGTH);
+    const encrypted = stringValue.subarray(
+      SALT_LENGTH + IV_LENGTH,
+      -TAG_LENGTH
+    );
     const tag = stringValue.subarray(-TAG_LENGTH);
     const key = this.getKey(salt, secret);
     const decipher = createDecipheriv(ALGORITHM, key, iv);
@@ -53,13 +60,12 @@ export class EncryptionService {
   }
 
   makeSecret = (uid: string, otk: string): string => {
-    const fp = uid.length > 5 ? uid.slice(uid.length-5, uid.length) : uid;
+    const fp = uid.length > 5 ? uid.slice(uid.length - 5, uid.length) : uid;
     const sp = otk.slice(0, otk.length - fp.length);
-    return fp+sp;
-  }
-
+    return fp + sp;
+  };
 
   requestOneTimeKey = (): Observable<OneTimeKey> => {
     return this.http.get<OneTimeKey>('backend_nt/users/authenticate/otk');
-  }
+  };
 }

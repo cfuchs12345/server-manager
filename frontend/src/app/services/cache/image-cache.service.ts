@@ -23,7 +23,6 @@ export class ImageCache {
     this.actionIcons = this.createActionIconMap(plugins);
   }
 
-
   getDefaultIcon(): SafeHtml | undefined {
     return this.defaultIcon;
   }
@@ -31,9 +30,12 @@ export class ImageCache {
     return this.featureIcons.get(feature_id);
   }
 
-  getImageFeatureAction(feature_id: string, action_id: string) : SafeHtml | undefined {
+  getImageFeatureAction(
+    feature_id: string,
+    action_id: string
+  ): SafeHtml | undefined {
     const actionsMap = this.actionIcons.get(feature_id);
-    if( actionsMap ) {
+    if (actionsMap) {
       return actionsMap.get(action_id);
     }
     return undefined;
@@ -80,5 +82,4 @@ export class ImageCache {
     }
     return map;
   };
-
 }

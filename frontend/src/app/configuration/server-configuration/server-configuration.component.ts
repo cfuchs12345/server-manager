@@ -1,58 +1,70 @@
 import { Component } from '@angular/core';
-import { AutoDiscoveryDialog, dialogSettings as autodiscoverDialogSettings } from './dialogs/dialog-autodiscover'
-import { FeatureScanDialog , dialogSettings as featurescanDialogSettings } from './dialogs/dialog-feature-scan'
-import { AddServerDialog , dialogSettings as addServerDialogSettings } from './dialogs/dialog-add-server'
-import { DeleteServerDialog , dialogSettings as deleteDialogSettings } from './dialogs/dialog-delete-server'
-import { ConfigureFeaturesDialog, dialogSettings as configureFeaturesDialogSettings } from './dialogs/dialog-configure-features';
+import {
+  AutoDiscoveryDialog,
+  dialogSettings as autodiscoverDialogSettings,
+} from './dialogs/dialog-autodiscover';
+import {
+  FeatureScanDialog,
+  dialogSettings as featurescanDialogSettings,
+} from './dialogs/dialog-feature-scan';
+import {
+  AddServerDialog,
+  dialogSettings as addServerDialogSettings,
+} from './dialogs/dialog-add-server';
+import {
+  DeleteServerDialog,
+  dialogSettings as deleteDialogSettings,
+} from './dialogs/dialog-delete-server';
+import {
+  ConfigureFeaturesDialog,
+  dialogSettings as configureFeaturesDialogSettings,
+} from './dialogs/dialog-configure-features';
 import { MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-server-configuration',
   templateUrl: './server-configuration.component.html',
-  styleUrls: ['./server-configuration.component.scss']
+  styleUrls: ['./server-configuration.component.scss'],
 })
 export class ServerConfigurationComponent {
   title: string = 'Server Configuration';
-  description: string = 'Configure the list of available/known servers.'
+  description: string = 'Configure the list of available/known servers.';
 
   buttonTextAutoDiscover: string = 'Autodiscovery';
-  buttonTextAddManually: string = 'Add Server/Feature'
-  buttonTextDelete: string = "Delete Server/Feature";
+  buttonTextAddManually: string = 'Add Server/Feature';
+  buttonTextDelete: string = 'Delete Server/Feature';
   buttonTextFeatureScan: string = 'Feature Scan';
   buttonTextConfigureFeatures: string = 'Configure Features';
 
-  constructor (private dialog: MatDialog) {}
+  constructor(private dialog: MatDialog) {}
 
   openDialogAutodiscovery = () => {
     this.dialog.open(AutoDiscoveryDialog, {
-      ...autodiscoverDialogSettings()
+      ...autodiscoverDialogSettings(),
     });
-  }
+  };
 
   openDialogFeatureScan = () => {
     this.dialog.open(FeatureScanDialog, {
-      ...featurescanDialogSettings()
+      ...featurescanDialogSettings(),
     });
-  }
+  };
 
   openDialogAddManually = () => {
     this.dialog.open(AddServerDialog, {
-      ...addServerDialogSettings()
+      ...addServerDialogSettings(),
     });
-  }
+  };
 
   openDialogDelete = () => {
     this.dialog.open(DeleteServerDialog, {
-      ...deleteDialogSettings()
+      ...deleteDialogSettings(),
     });
-  }
+  };
 
   openDialogConfigureFeatures = () => {
     this.dialog.open(ConfigureFeaturesDialog, {
-      ...configureFeaturesDialogSettings()
+      ...configureFeaturesDialogSettings(),
     });
-  }
+  };
 }
-
-
-

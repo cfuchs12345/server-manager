@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Param, Plugin, PluginsAction } from './types';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
 import { ErrorService, Source } from '../errors/error.service';
 
@@ -62,8 +62,7 @@ export class PluginService {
         headers: defaultHeadersForJSON(),
       })
       .subscribe({
-        next: (result) => {
-        },
+        next: (result) => {},
         error: (err: any) => {
           this.errorService.newError(Source.PluginService, undefined, err);
         },
@@ -73,19 +72,15 @@ export class PluginService {
       });
   };
 
-  private publishDisabledPlugins = ()=> {
-    this._disabledPlugins.next(
-      this.dataStore.disabledPlugins.slice()
-    );
-  }
+  private publishDisabledPlugins = () => {
+    this._disabledPlugins.next(this.dataStore.disabledPlugins.slice());
+  };
 
   private publishPlugins = () => {
-    this._plugins.next(
-      this.dataStore.plugins.slice()
-    );
-  }
+    this._plugins.next(this.dataStore.plugins.slice());
+  };
 
   getPlugin = (id: string): Plugin | undefined => {
     return this.dataStore.plugins.find((p) => p.id === id);
-  }
+  };
 }

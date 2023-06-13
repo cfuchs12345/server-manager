@@ -2,10 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
-import {
-  Server,
-  ServersAction,
-} from './types';
+import { Server, ServersAction } from './types';
 
 import { Status } from './types';
 import { ErrorService, Source } from '../errors/error.service';
@@ -16,7 +13,6 @@ import { ErrorService, Source } from '../errors/error.service';
 export class ServerStatusService {
   private _serverStatus = new BehaviorSubject<Status[]>([]);
   readonly serversStatus = this._serverStatus.asObservable();
-
 
   constructor(private http: HttpClient, private errorService: ErrorService) {}
 

@@ -8,13 +8,11 @@ import {
 } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Subscription, map } from 'rxjs';
-import { ServerActionService } from 'src/app/services/servers/server-action.service';
 import { ServerDataService } from 'src/app/services/servers/server-data.service';
 import {
   ConditionCheckResult,
   DataResult,
   Server,
-  SubActionConditionCheck,
 } from 'src/app/services/servers/types';
 
 const action_regex = /\[\[Action.*\]\]/g;
@@ -51,14 +49,14 @@ export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
         })
       )
       .subscribe((result) => {
-          this.dataResults = result;
-          setTimeout(this.formatData, 100);
+        this.dataResults = result;
+        setTimeout(this.formatData, 100);
       });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     for (const propName in changes) {
-      if (Object.hasOwn(changes,propName)) {
+      if (Object.hasOwn(changes, propName)) {
         switch (propName) {
           case 'showDetail': {
             if (this.server && this.showDetail && !this.turnDetail) {
@@ -83,7 +81,7 @@ export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     if (this.dataResults) {
-      var concatString = this.dataResults.map( (d) => d.result).join('');
+      var concatString = this.dataResults.map((d) => d.result).join('');
       concatString = this.replaceSubActions(concatString);
       this.innerHtml = this.sanitizer.bypassSecurityTrustHtml(concatString);
     }
@@ -126,26 +124,26 @@ export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
 
     var map: Map<string, GUISubAction> = new Map();
     for (var group of groups) {
-      map.set(group, new GUISubAction(this.server.ipaddress, group, conditionCheckResults));
+      map.set(
+        group,
+        new GUISubAction(this.server.ipaddress, group, conditionCheckResults)
+      );
     }
     return map;
   };
 
-  getConditionCheckResults = (): ConditionCheckResult[]  => {
+  getConditionCheckResults = (): ConditionCheckResult[] => {
     var list: ConditionCheckResult[] = [];
 
-    if(!this.dataResults) {
+    if (!this.dataResults) {
       return list;
     }
-    for( const dataResult of this.dataResults) {
-      list.push(... dataResult.check_results);
+    for (const dataResult of this.dataResults) {
+      list.push(...dataResult.check_results);
     }
     return list;
   };
 }
-
-
-
 
 class GUISubAction {
   private conditionMet: boolean = false;
@@ -156,7 +154,11 @@ class GUISubAction {
   private action_image: string | undefined;
   private data_id: string | undefined;
 
-  constructor(private ipaddress: string,  regexGroup: string, conditionCheckResults: ConditionCheckResult[]) {
+  constructor(
+    private ipaddress: string,
+    regexGroup: string,
+    conditionCheckResults: ConditionCheckResult[]
+  ) {
     const stripped = regexGroup.replace('[[', '').replace(']]', '');
     const split = stripped.split(' ');
     this.feature_id = this.find(split, 'feature.id');
@@ -170,10 +172,16 @@ class GUISubAction {
   }
 
   checkCondition = (conditionCheckResults: ConditionCheckResult[]): boolean => {
-    const found = conditionCheckResults.find( (res) => res.ipaddress === this.ipaddress && res.feature_id === this.feature_id && res.action_id === this.action_id && res.action_params === this.action_params);
+    const found = conditionCheckResults.find(
+      (res) =>
+        res.ipaddress === this.ipaddress &&
+        res.feature_id === this.feature_id &&
+        res.action_id === this.action_id &&
+        res.action_params === this.action_params
+    );
 
     return found !== undefined && found.result;
-  }
+  };
 
   find = (split: string[], to_find: string): string | undefined => {
     const found = split.find((s) => s.startsWith(to_find));
@@ -186,41 +194,48 @@ class GUISubAction {
 
   generateUIElement = (): string => {
     if (this.conditionMet) {
-      let inner:string = "";
+      let inner: string = '';
 
-      if( this.action_image  && this.action_image !== '') {
-        return '<input type="image" src="'+this.action_image+'" alt="'+this.action_name+'" onclick="MyServerManagerNS.executeSubAction(\'' +
-        this.feature_id +
-        "','" +
-        this.action_id +
-        "', '" +
-        this.action_name +
-        "', '" +
-        this.data_id +
-        "','" +
-        this.action_params +
-        "','" +
-        this.ipaddress +
-        '\')"></input>';
-      }
-      else if ( this.action_name  ) {
+      if (this.action_image && this.action_image !== '') {
+        return (
+          '<input type="image" src="' +
+          this.action_image +
+          '" alt="' +
+          this.action_name +
+          '" onclick="MyServerManagerNS.executeSubAction(\'' +
+          this.feature_id +
+          "','" +
+          this.action_id +
+          "', '" +
+          this.action_name +
+          "', '" +
+          this.data_id +
+          "','" +
+          this.action_params +
+          "','" +
+          this.ipaddress +
+          '\')"></input>'
+        );
+      } else if (this.action_name) {
         inner = this.action_name;
 
-        return '<button onclick="MyServerManagerNS.executeSubAction(\'' +
-        this.feature_id +
-        "','" +
-        this.action_id +
-        "', '" +
-        this.action_name +
-        "', '" +
-        this.data_id +
-        "','" +
-        this.action_params +
-        "','" +
-        this.ipaddress +
-        '\')">' +
-        inner +
-        '</button>';
+        return (
+          '<button onclick="MyServerManagerNS.executeSubAction(\'' +
+          this.feature_id +
+          "','" +
+          this.action_id +
+          "', '" +
+          this.action_name +
+          "', '" +
+          this.data_id +
+          "','" +
+          this.action_params +
+          "','" +
+          this.ipaddress +
+          '\')">' +
+          inner +
+          '</button>'
+        );
       }
     }
     return '';

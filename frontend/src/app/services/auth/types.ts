@@ -1,3 +1,3 @@
 export class OneTimeKey {
-  constructor(public id: number, public key: string) {};
+  constructor(public id: number, public key: string) {}
 }

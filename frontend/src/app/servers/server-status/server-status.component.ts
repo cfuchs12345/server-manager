@@ -1,9 +1,7 @@
-import { HostListener, Component, OnInit, Input  } from '@angular/core';
-import { Subscription, filter, map, tap } from 'rxjs';
+import { Component, OnInit, Input } from '@angular/core';
+import { Subscription, map } from 'rxjs';
 import { ServerStatusService } from 'src/app/services/servers/server-status.service';
-import { ServerService } from 'src/app/services/servers/server.service';
 import { Server, Status } from 'src/app/services/servers/types';
-
 
 @Component({
   selector: 'app-server-status',
@@ -16,18 +14,20 @@ export class ServerStatusComponent implements OnInit {
 
   private serverStatusSubscription: Subscription | undefined = undefined;
 
-  constructor(private serverStatusService: ServerStatusService) { }
+  constructor(private serverStatusService: ServerStatusService) {}
 
   ngOnInit(): void {
-    this.serverStatusSubscription = this.serverStatusService.serversStatus.pipe(
-      //tap( (status) => console.log("before filter " + status.length)),
-      map( status => {
-        return status.filter( s =>   this.server && s.ipaddress === this.server.ipaddress)
-      }),
-      //tap( (status) => console.log( "after filter " + status.length)),
-    ).subscribe( status => {
-      this.status = status.find(el => el !== undefined)
-    });
+    this.serverStatusSubscription = this.serverStatusService.serversStatus
+      .pipe(
+        map((status) => {
+          return status.filter(
+            (s) => this.server && s.ipaddress === this.server.ipaddress
+          );
+        })
+      )
+      .subscribe((status) => {
+        this.status = status.find((el) => el !== undefined);
+      });
   }
 
   ngOnDestroy(): void {
@@ -37,9 +37,9 @@ export class ServerStatusComponent implements OnInit {
   }
 
   isRunning = (): boolean => {
-    if( this.status && this.status.is_running) {
+    if (this.status && this.status.is_running) {
       return this.status.is_running;
     }
     return false;
-  }
+  };
 }

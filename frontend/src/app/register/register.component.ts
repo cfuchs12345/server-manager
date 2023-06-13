@@ -39,47 +39,50 @@ export class RegisterComponent implements OnInit, OnDestroy {
 
   initialPasswordSubscription: Subscription | undefined = undefined;
 
-  constructor(private userService: UserService, private router: Router, private dialog: MatDialog) {}
-
+  constructor(
+    private userService: UserService,
+    private router: Router,
+    private dialog: MatDialog
+  ) {}
 
   ngOnInit(): void {
     this.initialPasswordSubscription =
       this.userService.initialPassword.subscribe((passwd) => {
-        if( passwd ) {
-            this.userService.confirmInitialPasswordReceived();
+        if (passwd) {
+          this.userService.confirmInitialPasswordReceived();
 
-            if( passwd.password) {
-            this.dialog.open(MessageDialogComponent, {
-              data: {
-                title: 'Initial Password',
-                message:
-                  'The initial password for user ' +
-                  passwd.user_id +
-                  ' is: "' +
-                  passwd.password +
-                  '"',
-              },
-            }).afterClosed().subscribe( (any) => {
-              setTimeout(() => {
-                this.router.navigate(["/login"]);
-              },50);
-
-            });
-          }
-          else {
+          if (passwd.password) {
+            this.dialog
+              .open(MessageDialogComponent, {
+                data: {
+                  title: 'Initial Password',
+                  message:
+                    'The initial password for user ' +
+                    passwd.user_id +
+                    ' is: "' +
+                    passwd.password +
+                    '"',
+                },
+              })
+              .afterClosed()
+              .subscribe((any) => {
+                setTimeout(() => {
+                  this.router.navigate(['/login']);
+                }, 50);
+              });
+          } else {
             setTimeout(() => {
-              this.router.navigate(["/login"]);
-            },50);
-
+              this.router.navigate(['/login']);
+            }, 50);
           }
         }
       });
   }
 
   ngOnDestroy(): void {
-      if( this.initialPasswordSubscription) {
-        this.initialPasswordSubscription.unsubscribe();
-      }
+    if (this.initialPasswordSubscription) {
+      this.initialPasswordSubscription.unsubscribe();
+    }
   }
 
   getPasswordMessage = (): string => {
@@ -108,8 +111,9 @@ export class RegisterComponent implements OnInit, OnDestroy {
       this.email.value !== null
     ) {
       this.userService.saveUser(
-        new User(this.userId.value, this.fullName.value, this.email.value)
-      ,true);
+        new User(this.userId.value, this.fullName.value, this.email.value),
+        true
+      );
     }
   };
 }

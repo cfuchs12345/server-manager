@@ -76,8 +76,7 @@ import { MonitoringSingleServerComponent } from './monitoring/single-server/moni
 import { ConfigImExportDialog } from './configuration/general-configuration/dialogs/dialog-config-im-and-export';
 import { ConfigImExportModalComponent } from './configuration/general-configuration/dialogs/config-im-export-modal/config-im-export-modal.component';
 import { ErrorSourceNamePipe } from './shared/error-enum-name.pipe';
-import { LoggerModule, NgxLoggerLevel } from "ngx-logger";
-
+import { LoggerModule, NgxLoggerLevel } from 'ngx-logger';
 
 @NgModule({
   declarations: [
@@ -135,7 +134,7 @@ import { LoggerModule, NgxLoggerLevel } from "ngx-logger";
     BarChartComponent,
     ChartWrapperComponent,
     MonitoringSingleServerComponent,
-    ConfigImExportDialog
+    ConfigImExportDialog,
   ],
   imports: [
     AppRoutingModule,
@@ -160,7 +159,7 @@ import { LoggerModule, NgxLoggerLevel } from "ngx-logger";
     LoggerModule.forRoot({
       serverLoggingUrl: '/api/logs',
       level: NgxLoggerLevel.DEBUG,
-      serverLogLevel: NgxLoggerLevel.ERROR
+      serverLogLevel: NgxLoggerLevel.ERROR,
     }),
   ],
   providers: [

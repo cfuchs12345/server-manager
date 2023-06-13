@@ -7,12 +7,8 @@ import {
   ViewChild,
 } from '@angular/core';
 
-import {
-  ChartComponent,
-} from 'ng-apexcharts';
-import { ChartData, ChartDataList, ChartOptions } from 'src/types/ChartData';
-
-
+import { ChartComponent } from 'ng-apexcharts';
+import { ChartData, ChartOptions } from 'src/types/ChartData';
 
 @Component({
   selector: 'app-bar-chart',
@@ -54,8 +50,8 @@ export class BarChartComponent implements OnInit, OnChanges {
       xaxis: {
         type: 'datetime',
         tooltip: {
-          enabled: false
-        }
+          enabled: false,
+        },
       },
       grid: {
         row: {
@@ -63,35 +59,38 @@ export class BarChartComponent implements OnInit, OnChanges {
           opacity: 0.5,
         },
       },
-      tooltip: {
-
-      }
+      tooltip: {},
     };
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (!this.series_id  || !this.chartData ) {
+    if (!this.series_id || !this.chartData) {
       return;
     }
 
-    if (this.chartData ) {
+    if (this.chartData) {
       this.chartOptions.series = this.chartData.series;
       if (this.chartOptions.title) {
         this.chartOptions.title.text = this.chartData.name;
       }
-      if (this.chartOptions.xaxis && (this.chartData.series_type === 'datetime' || this.chartData.series_type === 'category'|| this.chartData.series_type === 'numeric')) {
+      if (
+        this.chartOptions.xaxis &&
+        (this.chartData.series_type === 'datetime' ||
+          this.chartData.series_type === 'category' ||
+          this.chartData.series_type === 'numeric')
+      ) {
         this.chartOptions.xaxis.type = this.chartData.series_type;
 
-        if( this.chartData.series_type === 'datetime' ) {
+        if (this.chartData.series_type === 'datetime') {
           this.chartOptions.tooltip = {
             x: {
-              format: 'dd.MM.yy HH:mm'
-            }
-          }
+              format: 'dd.MM.yy HH:mm',
+            },
+          };
         }
       }
 
-      if( this.chart) {
+      if (this.chart) {
         this.chart.render();
       }
     }

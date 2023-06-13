@@ -1,4 +1,4 @@
-import {Directive, Input, OnDestroy, OnInit} from '@angular/core';
+import { Directive, Input, OnInit } from '@angular/core';
 import { MatGridList } from '@angular/material/grid-list';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 
@@ -10,10 +10,10 @@ export interface GridColumns {
   xl: number;
 }
 @Directive({
-  selector: '[gridCols]'
+  selector: '[gridCols]',
 })
 export class GridColsDirective implements OnInit {
-  private gridCols: GridColumns = {xs: 1, sm: 2, md: 4, lg: 6, xl: 8};
+  private gridCols: GridColumns = { xs: 1, sm: 2, md: 4, lg: 6, xl: 8 };
 
   public get cols(): GridColumns {
     return this.gridCols;
@@ -21,45 +21,49 @@ export class GridColsDirective implements OnInit {
 
   @Input('gridCols')
   public set cols(map: GridColumns) {
-    if (map && ('object' === (typeof map))) {
+    if (map && 'object' === typeof map) {
       this.gridCols = map;
     }
   }
 
-  public constructor(private grid: MatGridList, private breakpointObserver: BreakpointObserver) {
-    if(this.grid != null) {
+  public constructor(
+    private grid: MatGridList,
+    private breakpointObserver: BreakpointObserver
+  ) {
+    if (this.grid != null) {
       this.grid.cols = this.gridCols.xs;
     }
   }
 
   public ngOnInit(): void {
-    if(this.grid != null) {
+    if (this.grid != null) {
       this.grid.cols = this.gridCols.xs;
     }
-    this.breakpointObserver.observe([
-      Breakpoints.XSmall,
-      Breakpoints.Small,
-      Breakpoints.Medium,
-      Breakpoints.Large,
-      Breakpoints.XLarge
-    ]).subscribe(result => {
-
-      if (result.breakpoints[Breakpoints.XSmall]) {
-        this.grid.cols = this.gridCols.xs;
-      }
-      if (result.breakpoints[Breakpoints.Small]) {
-        this.grid.cols = this.gridCols.sm;
-      }
-      if (result.breakpoints[Breakpoints.Medium]) {
-        this.grid.cols = this.gridCols.md;
-      }
-      if (result.breakpoints[Breakpoints.Large]) {
-        this.grid.cols = this.gridCols.lg;
-      }
-      if (result.breakpoints[Breakpoints.XLarge]) {
-        this.grid.cols = this.gridCols.xl;
-      }
-      alert(this.grid.cols);
-    });
+    this.breakpointObserver
+      .observe([
+        Breakpoints.XSmall,
+        Breakpoints.Small,
+        Breakpoints.Medium,
+        Breakpoints.Large,
+        Breakpoints.XLarge,
+      ])
+      .subscribe((result) => {
+        if (result.breakpoints[Breakpoints.XSmall]) {
+          this.grid.cols = this.gridCols.xs;
+        }
+        if (result.breakpoints[Breakpoints.Small]) {
+          this.grid.cols = this.gridCols.sm;
+        }
+        if (result.breakpoints[Breakpoints.Medium]) {
+          this.grid.cols = this.gridCols.md;
+        }
+        if (result.breakpoints[Breakpoints.Large]) {
+          this.grid.cols = this.gridCols.lg;
+        }
+        if (result.breakpoints[Breakpoints.XLarge]) {
+          this.grid.cols = this.gridCols.xl;
+        }
+        alert(this.grid.cols);
+      });
   }
 }

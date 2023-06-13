@@ -61,11 +61,14 @@ export class ServerListComponent implements OnChanges {
     this.dataSource.filter = (event.target as HTMLInputElement).value.trim();
   }
 
-  constructor(private authService: AuthenticationService, private ref: ChangeDetectorRef) {}
+  constructor(
+    private authService: AuthenticationService,
+    private ref: ChangeDetectorRef
+  ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     for (const propName in changes) {
-      if (Object.hasOwn(changes,propName)) {
+      if (Object.hasOwn(changes, propName)) {
         switch (propName) {
           case 'servers': {
             this.dataSource.data = this.toRowData(this.servers);
@@ -80,11 +83,10 @@ export class ServerListComponent implements OnChanges {
     let change = this.expandedElement !== rowData;
 
     // same detail clicked again - will close the details, so we set the element to null
-    if( !change) {
+    if (!change) {
       rowData.show_details = !rowData.show_details;
       this.expandedElement = null;
-    }
-    else {
+    } else {
       this.expandedElement = rowData;
     }
 

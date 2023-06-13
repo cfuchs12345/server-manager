@@ -132,17 +132,19 @@ export class GeneralService {
   uploadConfigFile = (config: Configuration, password: string) => {
     const ref = this;
 
-    const subscriptionOTK = this.encryptionService.requestOneTimeKey().subscribe({
-      next(otk) {
-        ref.upload(otk, config, password);
-      },
-      error(err) {
-        ref.errorService.newError(Source.GeneralService, undefined, err);
-      },
-      complete() {
-        subscriptionOTK.unsubscribe();
-      },
-    });
+    const subscriptionOTK = this.encryptionService
+      .requestOneTimeKey()
+      .subscribe({
+        next(otk) {
+          ref.upload(otk, config, password);
+        },
+        error(err) {
+          ref.errorService.newError(Source.GeneralService, undefined, err);
+        },
+        complete() {
+          subscriptionOTK.unsubscribe();
+        },
+      });
   };
 
   upload = (otk: OneTimeKey, config: Configuration, password: string) => {
@@ -155,7 +157,7 @@ export class GeneralService {
     const headers = new HttpHeaders({
       'X-custom': `${otk.id}`,
       'X-custom2': `${encrypted_password}`,
-      'Content-Type':  'application/json',
+      'Content-Type': 'application/json',
     });
     this.http
       .post<boolean>('/backend/configuration', body, {
@@ -186,8 +188,8 @@ export class GeneralService {
           'X-custom2': `${encrypted_password}`,
         });
         const httpOptions = {
-          headers: headers
-        }
+          headers: headers,
+        };
         return this.http
           .get<Configuration>('/backend/configuration', httpOptions)
           .pipe(

@@ -18,7 +18,6 @@ export class ServerListWrapperComponent implements OnInit, OnDestroy {
 
   servers: Server[] = [];
 
-
   constructor(
     private serverService: ServerService,
     private pluginService: PluginService,
@@ -30,12 +29,12 @@ export class ServerListWrapperComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.serverSubscription = this.serverService.servers.subscribe(
       (servers) => {
-       this.servers = servers;
+        this.servers = servers;
       }
     );
 
     this.pluginSubscription = this.pluginService.plugins.subscribe(
-      ( plugins) => {
+      (plugins) => {
         this.imageCache.init(plugins);
       }
     );
@@ -55,10 +54,7 @@ export class ServerListWrapperComponent implements OnInit, OnDestroy {
         this.serverActionService.listActionCheckResults();
       }
     }, 10000);
-
-
   }
-
 
   ngOnDestroy(): void {
     if (this.serverSubscription) {

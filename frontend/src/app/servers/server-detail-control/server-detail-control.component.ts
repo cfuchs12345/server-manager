@@ -1,9 +1,4 @@
-import {
-  EventEmitter,
-  Component,
-  Input,
-  Output,
-} from '@angular/core';
+import { EventEmitter, Component, Input, Output } from '@angular/core';
 import { Server } from 'src/app/services/servers/types';
 
 @Component({
@@ -20,11 +15,9 @@ export class ServerDetailControlComponent {
 
   constructor() {}
 
-
   onClickTurnDetails = () => {
     this.showBack = !this.showBack;
 
     this.turnDetail.emit(this.showBack);
   };
-
 }

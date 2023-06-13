@@ -1,17 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import {
-  BehaviorSubject,
-  Observable,
-  tap,
-} from 'rxjs';
+import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
 
 import { Server, Feature } from './types';
 import { ErrorService, Source } from '../errors/error.service';
 import { EncryptionService } from '../encryption/encryption.service';
 
-import { NGXLogger } from "ngx-logger";
+import { NGXLogger } from 'ngx-logger';
 import { AuthenticationService } from '../auth/authentication.service';
 
 @Injectable({
@@ -91,19 +87,25 @@ export class ServerService {
     return this.http.get<Server>(`/backend/servers/${ipaddress}`, options).pipe(
       tap((server) => {
         if (fullData) {
-
           if (server.features) {
             server.features.forEach((feature: Feature) => {
               try {
                 this.decryptIfNecessary(feature);
-              } catch(err: any) {
-                this.logger.error("Could not decrypt credentials in server feature. Error was:", err);
-                this.errorService.newError(Source.ServerService, ipaddress, err);
+              } catch (err: any) {
+                this.logger.error(
+                  'Could not decrypt credentials in server feature. Error was:',
+                  err
+                );
+                this.errorService.newError(
+                  Source.ServerService,
+                  ipaddress,
+                  err
+                );
               }
             });
           }
         }
-      }),
+      })
     );
   };
 
@@ -116,11 +118,13 @@ export class ServerService {
     feature.credentials.forEach((credential) => {
       if (credential.encrypted && key) {
         credential.encrypted = !credential.encrypted;
-        credential.value = this.encryptionService.decrypt(credential.value, key);
+        credential.value = this.encryptionService.decrypt(
+          credential.value,
+          key
+        );
       }
     });
   };
-
 
   saveServers = (servers: Server[]) => {
     for (const [i, server] of servers.entries()) {
