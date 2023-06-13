@@ -58,7 +58,7 @@ export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
 
   ngOnChanges(changes: SimpleChanges): void {
     for (const propName in changes) {
-      if (changes.hasOwnProperty(propName)) {
+      if (Object.hasOwn(changes,propName)) {
         switch (propName) {
           case 'showDetail': {
             if (this.server && this.showDetail && !this.turnDetail) {
