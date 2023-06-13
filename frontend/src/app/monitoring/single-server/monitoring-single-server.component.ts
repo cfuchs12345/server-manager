@@ -5,7 +5,6 @@ import {
   OnDestroy,
   OnChanges,
   SimpleChanges,
-  ChangeDetectorRef,
 } from '@angular/core';
 import { Subscription, filter, take } from 'rxjs';
 import { MonitoringService } from 'src/app/services/monitoring/monitoring.service';
@@ -35,11 +34,10 @@ export class MonitoringSingleServerComponent
 
   chartDataList: ChartDataList = new ChartDataList();
 
-  private chartTypes: Map<string, string> = new Map();
+  chartTypes: Map<string, string> = new Map();
 
   constructor(
-    private monitoringService: MonitoringService,
-    private cdr: ChangeDetectorRef
+    private monitoringService: MonitoringService
   ) {}
 
   ngOnInit(): void {
@@ -93,7 +91,7 @@ export class MonitoringSingleServerComponent
 
   ngOnChanges(changes: SimpleChanges): void {
     for (const propName in changes) {
-      if (Object.prototype.hasOwnProperty.call(changes, propName)) {
+      if (Object.hasOwn(changes, propName)) {
         switch (propName) {
           case 'server':
             this.seriesData = undefined;
@@ -102,7 +100,7 @@ export class MonitoringSingleServerComponent
               if (this.server ) {
                 this.monitoringService.getMonitoringIds(this.server);
               }
-            }, 500);
+            }, 300);
             break;
         }
       }
@@ -201,14 +199,6 @@ export class MonitoringSingleServerComponent
     return parseFloat(value);
   };
 
-  isBarChart = (series_id: string): boolean => {
-    return this.chartTypes.get(series_id) === 'bar';
-  };
-
-  isLineChart = (series_id: string): boolean => {
-    return this.chartTypes.get(series_id) === 'line';
-  };
-
   private getKey = (
     has_sub_identifier: boolean,
     has_sub_identifier2: boolean,
@@ -226,6 +216,10 @@ export class MonitoringSingleServerComponent
 
     return key;
   };
+
+  getChartData = (seriesId: String) : ChartData | undefined => {
+    return this.chartDataList.list.find((chartData : ChartData) => chartData.series_id === seriesId);
+  }
 }
 
 class SeriesValues {

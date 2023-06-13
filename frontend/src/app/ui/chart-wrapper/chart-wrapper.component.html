@@ -1,0 +1,18 @@
+<div *ngIf="hasMultipleGraphs(); else singleValue" class="appTopRow">
+  <mat-form-field class="formElement appSelector">
+    <mat-select [(ngModel)]="selectedGraphs" (ngModelChange)="onChangeGraph()" multiple="true">
+      <mat-option *ngFor="let name of getNames()" [value]="name">{{
+        name
+      }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+</div>
+<ng-template #singleValue>
+  <div class="appTopRow"></div>
+</ng-template>
+<div class="chartwrapper" *ngIf="isLineChart()">
+  <app-line-chart [chartData]="chartdataToShow" [series_id]="series_id" />
+</div>
+<div class="chartwrapper" *ngIf="isBarChart()">
+  <app-bar-chart [chartData]="chartdataToShow" [series_id]="series_id" />
+</div>

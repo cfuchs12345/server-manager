@@ -9,16 +9,8 @@ import {
 
 import {
   ChartComponent,
-  ApexAxisChartSeries,
-  ApexChart,
-  ApexXAxis,
-  ApexDataLabels,
-  ApexTitleSubtitle,
-  ApexStroke,
-  ApexGrid,
-  ApexTooltip,
 } from 'ng-apexcharts';
-import { ChartDataList, ChartOptions } from 'src/types/ChartData';
+import { ChartData, ChartDataList, ChartOptions } from 'src/types/ChartData';
 
 
 @Component({
@@ -28,7 +20,7 @@ import { ChartDataList, ChartOptions } from 'src/types/ChartData';
 })
 export class LineChartComponent implements OnInit, OnChanges {
   @Input() series_id: string | undefined;
-  @Input() chartDataList: ChartDataList | undefined;
+  @Input() chartData: ChartData | undefined;
 
   @ViewChild('chart') chart: ChartComponent | undefined;
   public chartOptions: Partial<ChartOptions>;
@@ -79,23 +71,20 @@ export class LineChartComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (!this.series_id|| !this.chartDataList) {
+    if (!this.series_id|| !this.chartData) {
       return;
     }
-    const chartData = this.chartDataList.list.find(
-      (c) => c.series_id === this.series_id
-    );
 
-    if (chartData) {
-      this.chartOptions.series = chartData.series;
+    if (this.chartData) {
+      this.chartOptions.series = this.chartData.series;
 
       if (this.chartOptions.title) {
-        this.chartOptions.title.text = chartData.name;
+        this.chartOptions.title.text = this.chartData.name;
       }
-      if (this.chartOptions.xaxis && (chartData.series_type === 'datetime' || chartData.series_type === 'category'|| chartData.series_type === 'numeric')) {
-        this.chartOptions.xaxis.type = chartData.series_type;
+      if (this.chartOptions.xaxis && (this.chartData.series_type === 'datetime' || this.chartData.series_type === 'category'|| this.chartData.series_type === 'numeric')) {
+        this.chartOptions.xaxis.type = this.chartData.series_type;
 
-        if( chartData.series_type === 'datetime' ) {
+        if( this.chartData.series_type === 'datetime' ) {
           this.chartOptions.tooltip = {
             x: {
               format: 'dd.MM.yy HH:mm'

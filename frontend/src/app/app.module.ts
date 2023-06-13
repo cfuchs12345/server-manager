@@ -55,6 +55,7 @@ import { ConfirmDialogComponent } from './ui/confirm-dialog/confirm-dialog.compo
 import { MessageDialogComponent } from './ui/message_dialog/message-dialog.component';
 import { LineChartComponent } from './ui/line-chart/line-chart.component';
 import { BarChartComponent } from './ui/bar-chart/bar-chart.component';
+import { ChartWrapperComponent } from './ui/chart-wrapper/chart-wrapper.component';
 import { DeleteServerModalComponent } from './configuration/server-configuration/dialogs/delete-server-modal/delete-server-modal.component';
 import { ErrorsListComponent } from './errors/errors-list/errors-list.component';
 import { ErrorComponent } from './errors/error/error.component';
@@ -76,6 +77,7 @@ import { ConfigImExportDialog } from './configuration/general-configuration/dial
 import { ConfigImExportModalComponent } from './configuration/general-configuration/dialogs/config-im-export-modal/config-im-export-modal.component';
 import { ErrorSourceNamePipe } from './shared/error-enum-name.pipe';
 import { LoggerModule, NgxLoggerLevel } from "ngx-logger";
+
 
 @NgModule({
   declarations: [
@@ -131,6 +133,7 @@ import { LoggerModule, NgxLoggerLevel } from "ngx-logger";
     RegisterComponent,
     LineChartComponent,
     BarChartComponent,
+    ChartWrapperComponent,
     MonitoringSingleServerComponent,
     ConfigImExportDialog
   ],

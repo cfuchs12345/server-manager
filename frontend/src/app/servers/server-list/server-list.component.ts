@@ -65,7 +65,7 @@ export class ServerListComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     for (const propName in changes) {
-      if (changes.hasOwnProperty(propName)) {
+      if (Object.hasOwn(changes,propName)) {
         switch (propName) {
           case 'servers': {
             this.dataSource.data = this.toRowData(this.servers);
