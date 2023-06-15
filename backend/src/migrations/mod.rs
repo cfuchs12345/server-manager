@@ -4,7 +4,6 @@ use std::{collections::HashMap, path::Path};
 use crate::{
     common,
     datastore::{self, Migration, Persistence},
-    init,
     models::{
         error::AppError,
         plugin::Plugin,

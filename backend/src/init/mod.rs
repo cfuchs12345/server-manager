@@ -3,10 +3,7 @@ mod scheduling;
 mod template_engine;
 
 use config::Config;
-use futures::lock::Mutex;
-use futures::Future;
 use std::path::Path;
-use std::pin::Pin;
 
 use crate::datastore::Persistence;
 use crate::datastore::{self, TimeSeriesPersistence};
