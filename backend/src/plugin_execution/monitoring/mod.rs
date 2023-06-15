@@ -1,16 +1,19 @@
-use std::{collections::HashMap, net::IpAddr, time::Duration};
+use std::{collections::HashMap, net::IpAddr};
+
+use std::time::{Duration, Instant};
 
 use crate::{
+    commands::CommandInput,
     common,
     datastore::{self, TimeSeriesData, TimeSeriesPersistence},
     models::{
         error::AppError,
         plugin::{
+            data::DataDef,
             monitoring::{
-                ChartyType, KeyValue, Monitioring, SeriesType, TimeSeriesResponse,
+                ChartyType, KeyValue, MonitioringDef, SeriesType, TimeSeriesResponse,
                 TimeSeriesResponseData, TimeSeriesResponseMetaData,
             },
-            Plugin,
         },
     },
 };
@@ -56,7 +59,7 @@ pub async fn get_monitoring_data(
     enrich_response(value, ipaddress, series_id, &monitoring)
 }
 
-fn create_data_select(monitoring: &Monitioring, series_id: &str, identifier: &str) -> String {
+fn create_data_select(monitoring: &MonitioringDef, series_id: &str, identifier: &str) -> String {
     let mut cols: Vec<String> = Vec::new();
     cols.push(common::IDENTIFIER.to_owned());
 
@@ -87,9 +90,9 @@ fn create_data_select(monitoring: &Monitioring, series_id: &str, identifier: &st
     )
 }
 
-fn get_monitoring_config_for_series(series_id: &str) -> Result<Option<Monitioring>, AppError> {
+fn get_monitoring_config_for_series(series_id: &str) -> Result<Option<MonitioringDef>, AppError> {
     if series_id == "server_status" {
-        Ok(Some(Monitioring {
+        Ok(Some(MonitioringDef {
             pre_process: None,
             id: "server_status".to_owned(),
             name: "Server Status".to_owned(),
@@ -116,7 +119,7 @@ fn enrich_response(
     data: TimeSeriesResponseData,
     ipaddress: IpAddr,
     series: &str,
-    monitoring: &Monitioring,
+    monitoring: &MonitioringDef,
 ) -> Result<TimeSeriesResponse, AppError> {
     let meta_data = TimeSeriesResponseMetaData {
         ipaddress: format!("{}", ipaddress),
@@ -130,73 +133,54 @@ fn enrich_response(
     Ok(data.to_response(meta_data))
 }
 
-pub async fn monitor_all(silent: &bool) -> Result<(), AppError> {
-    let servers = datastore::get_all_servers_from_cache()?;
-    let plugins = datastore::get_all_plugins()?;
-    let crypto_key = datastore::get_crypto_key()?;
+pub struct MonitoringProcessor {
+    map: HashMap<String, Vec<TimeSeriesData>>,
+    time_reached: bool,
+}
 
-    let relevant_plugins: Vec<Plugin> = plugins
-        .iter()
-        .filter(|p| p.data.iter().any(|d| !d.monitoring.is_empty()))
-        .map(|p| p.to_owned())
-        .collect();
-
-    let mut map: HashMap<String, Vec<TimeSeriesData>> = HashMap::new();
-
-    log::debug!("relevant plugins for monitoring: {:?}", &relevant_plugins);
-
-    for server in servers {
-        for plugin in &relevant_plugins {
-            let feature = server.find_feature(plugin.id.as_str());
-
-            if let Some(feature) = feature {
-                log::trace!("Server {:?} has relevant feature {:?}", server, feature);
-
-                for data in &plugin.data {
-                    if data.monitoring.is_empty() {
-                        continue;
-                    }
-
-                    let input_response_tuples_result = super::data::execute_specific_data_query(
-                        &server,
-                        plugin,
-                        &feature,
-                        data,
-                        None,
-                        crypto_key.as_str(),
-                        silent, // silent - no error log
-                    )
-                    .await;
-
-                    if let Ok(input_response_tuples) = input_response_tuples_result {
-                        let parser = response_parser::MonitoringDataExtractor::new(
-                            input_response_tuples,
-                            data,
-                        );
-
-                        let parsed_data = parser.parse()?;
-
-                        map.extend(parsed_data);
-                    }
-                }
-            } else {
-                log::debug!(
-                    "Feature {:?} not relevant for Server {:?} it only has following features: {:?}",
-                    feature,
-                    server,
-                    server.features
-                );
-            }
+impl MonitoringProcessor {
+    pub fn new(last_run: Option<Instant>, interval: Duration) -> Self {
+        MonitoringProcessor {
+            map: HashMap::new(),
+            time_reached: last_run.is_none()
+                || last_run
+                    .unwrap()
+                    .checked_add(interval)
+                    .unwrap()
+                    .lt(&Instant::now()),
         }
     }
 
-    let mut persistence = TimeSeriesPersistence::new().await?;
-
-    for (series_id, data_vec) in map {
-        log::trace!("Saving time series data for {}: {:?}", series_id, data_vec);
-        datastore::save_timeseries_data(&mut persistence, series_id.as_str(), data_vec.clone())
-            .await?;
+    pub fn is_relevant_data_for_processing(&self, data: &DataDef) -> bool {
+        !data.monitoring.is_empty() || !self.time_reached
     }
 
-    Ok(())
+    pub async fn process(
+        &mut self,
+        data: &DataDef,
+        input_response_tuples: &[(CommandInput, String)],
+    ) -> Result<(), AppError> {
+        if !self.is_relevant_data_for_processing(data) {
+            return Ok(());
+        }
+
+        let parser = response_parser::MonitoringDataExtractor::new(input_response_tuples, data);
+
+        let parsed_data = parser.parse()?;
+
+        self.map.extend(parsed_data);
+
+        Ok(())
+    }
+
+    pub async fn finish(self) -> Result<(), AppError> {
+        let mut persistence = TimeSeriesPersistence::new().await?;
+
+        for (series_id, data_vec) in self.map {
+            log::trace!("Saving time series data for {}: {:?}", series_id, data_vec);
+            datastore::save_timeseries_data(&mut persistence, series_id.as_str(), data_vec.clone())
+                .await?;
+        }
+        Ok(())
+    }
 }

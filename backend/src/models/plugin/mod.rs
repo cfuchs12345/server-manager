@@ -3,11 +3,14 @@ pub mod common;
 pub mod data;
 pub mod detection;
 pub mod monitoring;
+pub mod notification;
 pub mod sub_action;
 
 use serde::{Deserialize, Serialize};
 
-use self::{action::Action, data::Data, detection::Detection};
+use self::{
+    action::ActionDef, data::DataDef, detection::DetectionDef, notification::NotificationDef,
+};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq)]
 pub struct Plugin {
@@ -16,15 +19,17 @@ pub struct Plugin {
     pub description: String,
     #[serde(default)]
     pub server_icon: String,
-    pub detection: Detection,
+    pub detection: DetectionDef,
     #[serde(default)]
     pub credentials: Vec<CredentialDef>,
     #[serde(default)]
     pub params: Vec<ParamDef>,
     #[serde(default)]
-    pub data: Vec<Data>,
+    pub data: Vec<DataDef>,
     #[serde(default)]
-    pub actions: Vec<Action>,
+    pub notifications: Vec<NotificationDef>,
+    #[serde(default)]
+    pub actions: Vec<ActionDef>,
 }
 
 impl PartialEq for Plugin {
@@ -34,7 +39,7 @@ impl PartialEq for Plugin {
 }
 
 impl Plugin {
-    pub fn find_action(&self, action_id: &str) -> Option<&Action> {
+    pub fn find_action(&self, action_id: &str) -> Option<&ActionDef> {
         self.actions.iter().find(|plugin| plugin.id == action_id)
     }
 }

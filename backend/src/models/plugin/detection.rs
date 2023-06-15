@@ -14,7 +14,7 @@ pub struct DetectionEntry {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-pub struct Detection {
+pub struct DetectionDef {
     #[serde(default)]
     pub list: Vec<DetectionEntry>,
     #[serde(default)]

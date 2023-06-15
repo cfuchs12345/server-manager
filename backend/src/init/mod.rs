@@ -3,7 +3,10 @@ mod scheduling;
 mod template_engine;
 
 use config::Config;
+use futures::lock::Mutex;
+use futures::Future;
 use std::path::Path;
+use std::pin::Pin;
 
 use crate::datastore::Persistence;
 use crate::datastore::{self, TimeSeriesPersistence};
@@ -13,8 +16,6 @@ use crate::webserver;
 use crate::webserver::AppData;
 
 pub static ENV_FILENAME: &str = "./external_files/.env";
-
-pub static DB_FILENAME: &str = "./external_files/server-manager.db";
 
 pub async fn start() -> Result<(), AppError> {
     scheduling::start_scheduled_jobs().await?;
@@ -46,7 +47,7 @@ async fn init_server_list(persistence: &Persistence) -> Result<(), AppError> {
 }
 
 fn create_common_app_data() -> Result<AppData, AppError> {
-    let persistence = futures::executor::block_on(create_persistence())?;
+    let persistence = futures::executor::block_on(Persistence::get_instance())?;
     let timeseries_persistence = futures::executor::block_on(create_timeseries_persistence())?;
     let template_engine = template_engine::create_templateengine()?;
 
@@ -55,11 +56,6 @@ fn create_common_app_data() -> Result<AppData, AppError> {
         app_data_timeseries_persistence: timeseries_persistence,
         app_data_template_engine: template_engine,
     })
-}
-
-async fn create_persistence() -> Result<Persistence, AppError> {
-    let db_url = format!("sqlite:{}?mode=rwc", DB_FILENAME);
-    Persistence::new(&db_url).await
 }
 
 async fn create_timeseries_persistence() -> Result<TimeSeriesPersistence, AppError> {

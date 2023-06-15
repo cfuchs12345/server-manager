@@ -2,11 +2,11 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     common::{ArgDef, Script},
-    monitoring::Monitioring,
+    monitoring::MonitioringDef,
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-pub struct Data {
+pub struct DataDef {
     pub id: String,
     #[serde(default)]
     pub name: String,
@@ -29,7 +29,7 @@ pub struct Data {
     #[serde(default)]
     pub post_process: Option<Script>,
     #[serde(default)]
-    pub monitoring: Vec<Monitioring>,
+    pub monitoring: Vec<MonitioringDef>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq)]

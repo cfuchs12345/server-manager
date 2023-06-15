@@ -24,10 +24,8 @@ pub use http_functions::execute_http_request;
 #[cfg(all(target_os = "linux"))]
 pub use http_functions::execute_socket_request;
 
-pub use script_languages::match_with_lua;
-pub use script_languages::match_with_rhai;
-pub use script_languages::process_with_lua;
-pub use script_languages::process_with_rhai;
+pub use script_languages::script_match;
+pub use script_languages::script_process;
 
 pub use mail::is_smtp_config_valid;
 pub use mail::send_email;
@@ -47,6 +45,8 @@ pub const SUB_IDENTIFIER: &str = "Sub_Identifier";
 pub const SUB_IDENTIFIER_2: &str = "Sub_Identifier2";
 pub const VALUE: &str = "Value";
 pub const TIMESTAMP: &str = "timestamp";
+
+pub static DB_FILENAME: &str = "./external_files/server-manager.db";
 
 pub fn generate_long_random_string() -> String {
     let key: String = {

@@ -3,7 +3,7 @@ use serde_json::{json, Value};
 
 use crate::models::{
     error::AppError,
-    plugin::data::{Data, ResultFormat},
+    plugin::data::{DataDef, ResultFormat},
 };
 
 #[derive(Serialize, Deserialize)]
@@ -15,7 +15,7 @@ pub fn convert_result_string_to_html(
     template: &str,
     input: String,
     template_engine: &handlebars::Handlebars<'static>,
-    data: &Data,
+    data: &DataDef,
 ) -> Result<String, AppError> {
     log::debug!("Data input is: {}", input);
 
@@ -24,7 +24,7 @@ pub fn convert_result_string_to_html(
     format_data_with_template_engine(data_value, template_engine, template)
 }
 
-fn create_data_input_structure(data: &Data, input: String) -> Result<Value, AppError> {
+fn create_data_input_structure(data: &DataDef, input: String) -> Result<Value, AppError> {
     match &data.result_format {
         ResultFormat::XML => {
             Ok(json!(Xml {

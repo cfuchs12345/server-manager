@@ -1,11 +1,43 @@
 use rhai::{Engine, Scope};
 use rlua::Lua;
 
-use crate::models::error::AppError;
+use crate::models::{error::AppError, plugin::common::Script};
 
 const INPUT: &str = "input";
 
-pub fn match_with_rhai(input: &str, script: &str) -> Result<bool, AppError> {
+pub fn script_process(script: &Script, input: &str) -> Result<String, AppError> {
+    let is_lua = matches!(script.script_type.as_str(), "lua");
+    let is_rhai = matches!(script.script_type.as_str(), "rhai");
+
+    if is_lua {
+        process_with_lua(input, &script.script)
+    } else if is_rhai {
+        process_with_rhai(input, &script.script)
+    } else {
+        Err(AppError::InvalidArgument(
+            "script".to_string(),
+            Some(script.script_type.clone()),
+        ))
+    }
+}
+
+pub fn script_match(script: &Script, input: &str) -> Result<bool, AppError> {
+    let is_lua = matches!(script.script_type.as_str(), "lua");
+    let is_rhai = matches!(script.script_type.as_str(), "rhai");
+
+    if is_lua {
+        match_with_lua(input, &script.script)
+    } else if is_rhai {
+        match_with_rhai(input, &script.script)
+    } else {
+        Err(AppError::InvalidArgument(
+            "script".to_string(),
+            Some(script.script_type.clone()),
+        ))
+    }
+}
+
+fn match_with_rhai(input: &str, script: &str) -> Result<bool, AppError> {
     let mut scope = Scope::new();
 
     scope.push(INPUT, input.to_owned());
@@ -42,7 +74,7 @@ pub fn match_with_lua(input: &str, script: &str) -> Result<bool, AppError> {
     result
 }
 
-pub fn process_with_lua(input: &str, script: &str) -> Result<String, AppError> {
+fn process_with_lua(input: &str, script: &str) -> Result<String, AppError> {
     let lua = Lua::new();
     let mut result: Result<String, AppError> = Ok("".to_string());
 
@@ -61,7 +93,7 @@ pub fn process_with_lua(input: &str, script: &str) -> Result<String, AppError> {
     result
 }
 
-pub fn process_with_rhai(input: &str, script: &str) -> Result<String, AppError> {
+fn process_with_rhai(input: &str, script: &str) -> Result<String, AppError> {
     let mut scope = Scope::new();
 
     scope.push(INPUT, input.to_owned());

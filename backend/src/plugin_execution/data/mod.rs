@@ -9,7 +9,7 @@ use crate::{
     datastore::{self},
     models::{
         error::AppError,
-        plugin::{data::Data, sub_action::SubAction, Plugin},
+        plugin::{data::DataDef, sub_action::SubAction, Plugin},
         response::data_result::DataResult,
         server::{Feature, Server},
     },
@@ -104,7 +104,7 @@ pub async fn execute_data_query(
 }
 
 fn process_result_for_display(
-    data: &Data,
+    data: &DataDef,
     response: &str,
     template_engine: &handlebars::Handlebars<'static>,
     feature: &Feature,
@@ -137,7 +137,7 @@ pub async fn execute_specific_data_query(
     server: &Server,
     plugin: &Plugin,
     feature: &Feature,
-    data: &Data,
+    data: &DataDef,
     action_params: Option<String>,
     crypto_key: &str,
     silent: &bool,
@@ -188,7 +188,7 @@ async fn execute_command(input: CommandInput, silent: &bool) -> Result<String, A
 
 #[async_recursion]
 async fn get_command_inputs(
-    data: &Data,
+    data: &DataDef,
     crypto_key: &str,
     action_params: Option<String>,
     feature: &Feature,
@@ -238,7 +238,7 @@ fn extract_actions(input: &str) -> Result<Vec<SubAction>, AppError> {
     Ok(result)
 }
 
-fn inject_meta_data_for_actions(input: String, feature: &Feature, data: &Data) -> String {
+fn inject_meta_data_for_actions(input: String, feature: &Feature, data: &DataDef) -> String {
     input.replace(
         "[[Action ",
         format!(

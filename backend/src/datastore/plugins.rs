@@ -174,9 +174,9 @@ pub async fn is_plugin_disabled(
 mod tests {
     use super::*;
     use crate::models::plugin::{
-        action::{Action, State},
+        action::{ActionDef, State},
         common::{ArgDef, ArgType, Script},
-        detection::{Detection, DetectionEntry},
+        detection::{DetectionDef, DetectionEntry},
         ParamDef,
     };
     use config::Config;
@@ -188,7 +188,7 @@ mod tests {
             name: "Test".to_string(),
             description: "".to_string(),
             server_icon: "".to_string(),
-            detection: Detection {
+            detection: DetectionDef {
                 list: vec![DetectionEntry {
                     params: vec![ParamDef {
                         name: "port".to_string(),
@@ -221,7 +221,8 @@ mod tests {
             credentials: vec![],
             params: vec![],
             data: vec![],
-            actions: vec![Action {
+            notifications: vec![],
+            actions: vec![ActionDef {
                 id: "".to_string(),
                 name: "".to_string(),
                 show_on_main: false,
@@ -261,7 +262,7 @@ mod tests {
             name: "Test".to_string(),
             description: "".to_string(),
             server_icon: "".to_string(),
-            detection: Detection {
+            detection: DetectionDef {
                 list: vec![DetectionEntry {
                     params: vec![ParamDef {
                         name: "port".to_string(),
@@ -294,7 +295,8 @@ mod tests {
             credentials: vec![],
             params: vec![],
             data: vec![],
-            actions: vec![Action {
+            notifications: vec![],
+            actions: vec![ActionDef {
                 id: "".to_string(),
                 name: "".to_string(),
                 show_on_main: false,

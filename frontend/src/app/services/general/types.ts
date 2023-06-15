@@ -1,6 +1,6 @@
 import { SafeHtml } from '@angular/platform-browser';
 import { Feature, Server } from '../servers/types';
-import { Action } from '../plugins/types';
+import { ActionDefinition } from '../plugins/types';
 import { User } from '../users/types';
 
 export class RowData {
@@ -16,7 +16,7 @@ export class RowData {
 export class GUIAction {
   constructor(
     public feature: Feature,
-    public action: Action,
+    public action: ActionDefinition,
     public icon: SafeHtml | undefined,
     public needs_confirmation: boolean
   ) {}

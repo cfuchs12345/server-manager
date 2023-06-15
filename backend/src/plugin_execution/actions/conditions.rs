@@ -5,8 +5,8 @@ use crate::{
     models::{
         error::AppError,
         plugin::{
-            action::{Action, DependsDef, State},
-            data::Data,
+            action::{ActionDef, DependsDef, State},
+            data::DataDef,
             Plugin,
         },
         server::{Feature, Server},
@@ -29,7 +29,7 @@ use super::CheckType;
 pub async fn check_condition_for_action_met(
     server: Server,
     feature: Option<Feature>,
-    action: Option<Action>,
+    action: Option<ActionDef>,
     action_params: Option<String>,
     crypto_key: String,
     silent: &bool,
@@ -222,27 +222,15 @@ pub async fn check_all_action_conditions<'l>(
 }
 
 fn response_data_match(dependency: &DependsDef, input: Option<String>) -> Result<bool, AppError> {
-    if input.is_none() {
-        return Ok(false);
-    }
-    let script = dependency.script.clone();
-    let script_type = dependency.script_type.clone();
-
-    let is_lua = matches!(script_type.as_str(), "lua");
-    let is_rhai = matches!(script_type.as_str(), "rhai");
-
-    if is_lua {
-        common::match_with_lua(input.unwrap_or_default().as_str(), &script)
-    } else if is_rhai {
-        common::match_with_rhai(input.unwrap_or_default().as_str(), &script)
-    } else {
-        Err(AppError::InvalidArgument(
-            "script".to_string(),
-            Some(script_type),
-        ))
+    match input {
+        Some(input) => common::script_match(&dependency.script, input.as_str()),
+        None => Ok(false),
     }
 }
 
-fn find_data_for_action_condition<'a>(depend: &DependsDef, plugin: &'a Plugin) -> Option<&'a Data> {
+fn find_data_for_action_condition<'a>(
+    depend: &DependsDef,
+    plugin: &'a Plugin,
+) -> Option<&'a DataDef> {
     plugin.data.iter().find(|d| d.id == depend.data_id)
 }

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::common::ArgDef;
+use super::common::{ArgDef, Script};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq)]
 pub enum State {
@@ -11,7 +11,7 @@ pub enum State {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq)]
-pub struct Action {
+pub struct ActionDef {
     pub id: String,
     #[serde(default)]
     pub name: String,
@@ -33,7 +33,7 @@ pub struct Action {
     pub args: Vec<ArgDef>,
 }
 
-impl PartialEq for Action {
+impl PartialEq for ActionDef {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
     }
@@ -43,9 +43,7 @@ impl PartialEq for Action {
 pub struct DependsDef {
     pub data_id: String,
     #[serde(default)]
-    pub script_type: String,
-    #[serde(default)]
-    pub script: String,
+    pub script: Script,
 }
 
 fn default_true() -> bool {

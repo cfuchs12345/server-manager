@@ -141,7 +141,7 @@ impl CommandInput {
     pub fn get_name(&self) -> &str {
         self.name.as_str()
     }
-    fn get_ipaddress(&self) -> Option<IpAddr> {
+    pub fn get_ipaddress(&self) -> Option<IpAddr> {
         self.ipaddress
     }
     fn find_single_arg(&self, name: &str) -> Result<&str, AppError> {

@@ -32,7 +32,7 @@ pub fn check_necessary_migration() -> Vec<MigrationTypes> {
     let mut migrations: Vec<MigrationTypes> = Vec::new();
 
     let old_path = Path::new("./server-manager.db");
-    let new_path = Path::new(init::DB_FILENAME);
+    let new_path = Path::new(common::DB_FILENAME);
     if old_path.exists() && !new_path.exists() {
         migrations.push(MigrationTypes::DbLocation);
         migrations.push(MigrationTypes::Encryption);
@@ -43,7 +43,7 @@ pub fn check_necessary_migration() -> Vec<MigrationTypes> {
 
 pub fn do_db_location_migration() -> std::result::Result<u64, AppError> {
     let old_path = Path::new("./server-manager.db");
-    let new_path = Path::new(init::DB_FILENAME);
+    let new_path = Path::new(common::DB_FILENAME);
 
     std::fs::copy(old_path, new_path).map_err(|e| AppError::Unknown(format!("{}", e)))
 }

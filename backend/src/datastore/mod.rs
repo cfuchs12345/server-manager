@@ -1,6 +1,7 @@
 mod config;
 mod inmemory;
 mod model;
+mod notifications;
 mod persistence;
 mod plugins;
 mod servers;
@@ -44,6 +45,10 @@ pub use self::users::get_all_users;
 pub use self::users::get_user;
 pub use self::users::insert_user;
 pub use self::users::update_user;
+
+pub use self::notifications::get_all_notifications;
+pub use self::notifications::insert_notifications;
+pub use self::notifications::insert_or_update_notifications;
 
 pub use self::inmemory::delete_expired_tokens;
 pub use self::inmemory::insert_token;

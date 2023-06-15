@@ -24,6 +24,7 @@ const initialDisplayedColumns: string[] = [
   'name',
   'dnsname',
   'features',
+  'notifications',
   'actions',
 ];
 const displayedColumnForMobilesPhones: string[] = [

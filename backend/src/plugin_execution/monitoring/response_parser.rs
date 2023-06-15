@@ -10,8 +10,8 @@ use crate::{
     datastore::{self, TimeSeriesData, TimeSeriesValue},
     models::{
         error::AppError,
-        plugin::data::Data,
-        plugin::monitoring::{KeyValue, Monitioring},
+        plugin::data::DataDef,
+        plugin::monitoring::{KeyValue, MonitioringDef},
     },
     plugin_execution,
 };
@@ -93,7 +93,7 @@ impl IdentifiersAndValues {
     pub fn extract_values(
         mut self,
         json: Value,
-        monitoring: &Monitioring,
+        monitoring: &MonitioringDef,
         input: &CommandInput,
     ) -> Result<Self, AppError> {
         self.identifiers = get_values(
@@ -120,14 +120,14 @@ impl IdentifiersAndValues {
 
 pub struct MonitoringDataExtractor {
     input_response_tuples: Vec<(CommandInput, String)>,
-    data: Data,
+    data: DataDef,
 }
 
 impl MonitoringDataExtractor {
-    pub fn new(responses: Vec<(CommandInput, String)>, data: &Data) -> Self {
+    pub fn new(responses: &[(CommandInput, String)], data: &DataDef) -> Self {
         MonitoringDataExtractor {
             data: data.clone(),
-            input_response_tuples: responses,
+            input_response_tuples: responses.to_owned(),
         }
     }
 
@@ -155,7 +155,7 @@ impl MonitoringDataExtractor {
 
 fn extract_monitoring_data(
     response: &str,
-    monitoring: &Monitioring,
+    monitoring: &MonitioringDef,
     input: &CommandInput,
 ) -> Result<Vec<TimeSeriesData>, AppError> {
     let mut vec = Vec::new();

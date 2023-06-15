@@ -35,7 +35,7 @@ export class DependsDef {
   constructor(public data_id: string) {}
 }
 
-export class Action {
+export class ActionDefinition {
   constructor(
     public id: string,
     public name: string,
@@ -48,12 +48,19 @@ export class Action {
   ) {}
 }
 
-export class Detection {
+export class DetectionDefinition {
   constructor(
     public ports: number[],
     public script: Script[],
     public detection_possible: boolean
   ) {}
+}
+
+export class NotificationDefinition {
+  constructor(
+
+  ) {
+  }
 }
 
 export class Plugin {
@@ -62,9 +69,10 @@ export class Plugin {
     public name: string,
     public description: string,
     public server_icon: string,
-    public detection: Detection,
+    public detection: DetectionDefinition,
     public credentials: CredentialDefinition[],
     public params: ParamDefinition[],
-    public actions: Action[]
+    public notification: NotificationDefinition[],
+    public actions: ActionDefinition[]
   ) {}
 }

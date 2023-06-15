@@ -1,6 +1,27 @@
+use std::time::Instant;
+use std::{collections::HashMap, time::Duration};
+
+use lazy_static::lazy_static;
+use tokio::sync::RwLock;
 use tokio_cron_scheduler::{Job, JobScheduler};
 
-use crate::{common, datastore, models::error::AppError, other_functions};
+use crate::{
+    common,
+    datastore::{self, Persistence},
+    models::error::AppError,
+    other_functions,
+};
+
+const MONITORING_INTERVAL: u64 = 5;
+const NOTIFICATION_INTERVAL: u64 = 30;
+
+lazy_static! {
+    static ref LAST_RUN: RwLock<HashMap<String, Instant>> = RwLock::new(HashMap::new());
+}
+
+pub async fn get_last_run(name: &str) -> Option<Instant> {
+    LAST_RUN.read().await.get(name).map(|v| v.to_owned())
+}
 
 pub async fn start_scheduled_jobs() -> Result<(), AppError> {
     let scheduler = JobScheduler::new().await?;
@@ -55,9 +76,29 @@ async fn schedule_monitoring(scheduler: &JobScheduler) -> Result<(), AppError> {
     scheduler
         .add(Job::new_async("1/20 * * * * *", |_uuid, _l| {
             Box::pin(async {
-                crate::plugin_execution::monitor_all(&true)
+                let intervals = get_intervals();
+
+                if let Ok(persistence) = Persistence::get_instance().await {
+                    match crate::plugin_execution::execute_all_data_dependent(
+                        &persistence,
+                        &true,
+                        get_last_run("schedule_monitoring").await,
+                        Duration::from_secs(intervals.0),
+                        Duration::from_secs(intervals.1),
+                    )
                     .await
-                    .expect("Error during scheduled monitoring");
+                    {
+                        Ok(_) => {
+                            LAST_RUN
+                                .write()
+                                .await
+                                .insert("schedule_monitoring".to_owned(), Instant::now());
+                        }
+                        Err(err) => {
+                            log::error!("error while executing schedule_monitoring: {}", err);
+                        }
+                    }
+                }
             })
         })?)
         .await?;
@@ -112,4 +153,19 @@ async fn schedule_one_time_crypt_key_cleanup(scheduler: &JobScheduler) -> Result
         .await?;
 
     Ok(())
+}
+
+fn get_intervals() -> (u64, u64) {
+    datastore::get_config()
+        .map(|c| {
+            (
+                c.get_int("monitoring_interval")
+                    .map(|v| v as u64)
+                    .unwrap_or(MONITORING_INTERVAL),
+                c.get_int("notification_interval")
+                    .map(|v| v as u64)
+                    .unwrap_or(NOTIFICATION_INTERVAL),
+            )
+        })
+        .unwrap_or((MONITORING_INTERVAL, NOTIFICATION_INTERVAL))
 }

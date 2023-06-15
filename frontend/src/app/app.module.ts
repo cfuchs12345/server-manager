@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { AppComponent } from './app.component';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { AppRoutingModule } from './app-routing.module';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -22,6 +23,7 @@ import { ActiveLightComponent } from './ui/active-light/active-light.component';
 import { ServerListComponent } from './servers/server-list/server-list.component';
 import { ServerIconComponent } from './servers/server-icon/server-icon.component';
 import { ServerStatusComponent } from './servers/server-status/server-status.component';
+import { ServerNotificationComponent } from './servers/server-notifications/server-notifications.component';
 import { ServerActionListComponent } from './servers/server-action-list/server-action-list.component';
 import { ServerActionComponent } from './servers/server-action/server-action.component';
 import { ServerDetailComponent } from './servers/server-detail/server-detail.component';
@@ -104,6 +106,7 @@ import { LoggerModule, NgxLoggerLevel } from 'ngx-logger';
     AddServerModalComponent,
     DeleteServerModalComponent,
     ServerConfigurationComponent,
+    ServerNotificationComponent,
     ConfigurationGroupComponent,
     GeneralConfigurationComponent,
     FeatureScanModalComponent,
@@ -155,6 +158,7 @@ import { LoggerModule, NgxLoggerLevel } from 'ngx-logger';
     ReactiveFormsModule,
     LayoutModule,
     MatSelectModule,
+    MatTooltipModule,
     NgApexchartsModule,
     LoggerModule.forRoot({
       serverLoggingUrl: '/api/logs',

@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs';
 import { Server } from 'src/app/services/servers/types';
 import { ImageCache } from 'src/app/services/cache/image-cache.service';
 import { ServerActionService } from 'src/app/services/servers/server-action.service';
+import { NotificationService } from 'src/app/services/notifications/notifications.service';
 
 @Component({
   selector: 'app-server-list-wrapper',
@@ -23,6 +24,7 @@ export class ServerListWrapperComponent implements OnInit, OnDestroy {
     private pluginService: PluginService,
     private statusService: ServerStatusService,
     private serverActionService: ServerActionService,
+    private notificationService: NotificationService,
     private imageCache: ImageCache
   ) {}
 
@@ -38,10 +40,11 @@ export class ServerListWrapperComponent implements OnInit, OnDestroy {
         this.imageCache.init(plugins);
       }
     );
-    this.pluginService.loadPlugins();
-    this.serverService.listServers();
-    this.statusService.listServerStatus(this.servers);
-    this.serverActionService.listActionCheckResults();
+    setTimeout(this.pluginService.loadPlugins, 0);
+    setTimeout(this.serverService.listServers,0);
+    setTimeout( () => {this.statusService.listServerStatus(this.servers)}, 0);
+    setTimeout(this.serverActionService.listActionCheckResults, 0);
+    setTimeout(this.notificationService.listNotifications, 0);
 
     setInterval(() => {
       if (this.servers) {
@@ -54,6 +57,12 @@ export class ServerListWrapperComponent implements OnInit, OnDestroy {
         this.serverActionService.listActionCheckResults();
       }
     }, 10000);
+
+    setInterval(() => {
+      if (this.servers) {
+        this.notificationService.listNotifications();
+      }
+    }, 30000);
   }
 
   ngOnDestroy(): void {

@@ -29,7 +29,7 @@ impl ChartyType {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-pub struct Monitioring {
+pub struct MonitioringDef {
     pub pre_process: Option<Script>,
     pub id: String,
     pub name: String,
@@ -40,7 +40,7 @@ pub struct Monitioring {
     pub values: Vec<KeyValue>,
 }
 
-impl Monitioring {
+impl MonitioringDef {
     pub fn get_sub_identifiers_as_vec(&self) -> Vec<KeyValue> {
         self.sub_identifier.iter().cloned().collect()
     }

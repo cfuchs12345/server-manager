@@ -6,7 +6,7 @@ use super::{
 };
 use crate::models::{
     error::AppError,
-    plugin::{action::Action, data::Data, detection::DetectionEntry, Plugin},
+    plugin::{action::ActionDef, data::DataDef, detection::DetectionEntry, Plugin},
     server::{Feature, Server},
 };
 use async_trait::async_trait;
@@ -128,7 +128,7 @@ impl CommandResult for HttpCommandResult {}
 pub async fn make_command_input_from_subaction(
     server: &Server,
     crypto_key: &str,
-    action: &Action,
+    action: &ActionDef,
     action_params: Option<String>,
     feature: &Feature,
     plugin: &Plugin,
@@ -161,7 +161,7 @@ pub async fn make_command_input_from_subaction(
 pub async fn make_command_input_from_data(
     server: &Server,
     crypto_key: &str,
-    data: &Data,
+    data: &DataDef,
     action_params: Option<String>,
     feature: &Feature,
     plugin: &Plugin,

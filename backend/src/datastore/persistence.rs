@@ -1,7 +1,7 @@
 use sqlx::{sqlite::SqliteConnectOptions, ConnectOptions, Pool, Sqlite, SqlitePool};
 use std::str::FromStr;
 
-use crate::models::error::AppError;
+use crate::{common, models::error::AppError};
 
 use super::{Entry, Migration};
 
@@ -27,6 +27,8 @@ impl Persistence {
                 ("users", vec![("key", "TEXT"), ("value", "TEXT")]),
                 ("plugin_config", vec![("key", "TEXT"), ("value", "TEXT")]),
                 ("dns_servers", vec![("key", "TEXT"), ("value", "TEXT")]),
+                ("notifications", vec![("key", "TEXT"), ("value", "TEXT")]),
+                ("alarms", vec![("key", "TEXT"), ("value", "TEXT")]),
             ])
             .await?;
         instance
@@ -41,7 +43,18 @@ impl Persistence {
         instance
             .create_index(vec![("dns_servers", true, vec!["key"])])
             .await?;
+        instance
+            .create_index(vec![("notifications", true, vec!["key"])])
+            .await?;
+        instance
+            .create_index(vec![("alarms", true, vec!["key"])])
+            .await?;
         Ok(instance)
+    }
+
+    pub async fn get_instance() -> Result<Persistence, AppError> {
+        let db_url = format!("sqlite:{}?mode=rwc", common::DB_FILENAME);
+        Persistence::new(&db_url).await
     }
 
     async fn get_connection(db_url: &str) -> Result<Pool<Sqlite>, AppError> {

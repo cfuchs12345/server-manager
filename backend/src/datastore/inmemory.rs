@@ -6,7 +6,7 @@ use crate::{
     models::response::{data_result::ConditionCheckResult, status::Status},
     models::{
         error::AppError,
-        plugin::{monitoring::Monitioring, Plugin},
+        plugin::{monitoring::MonitioringDef, Plugin},
         server::Server,
     },
 };
@@ -35,7 +35,7 @@ lazy_static! {
     static ref SERVER_STATUS_CACHE: RwLock<HashMap<IpAddr, Status>> = RwLock::new(HashMap::new());
     static ref SERVER_ACTION_CONDITION_RESULTS: RwLock<HashMap<String, ConditionCheckResult>> =
         RwLock::new(HashMap::new());
-    static ref SERIES_TO_MONITORING: RwLock<HashMap<String, Monitioring>> =
+    static ref SERIES_TO_MONITORING: RwLock<HashMap<String, MonitioringDef>> =
         RwLock::new(HashMap::new());
 }
 
@@ -258,7 +258,9 @@ pub fn is_valid_token(token: &str) -> Result<bool, AppError> {
     Ok(res)
 }
 
-pub fn get_monitoring_config_for_series(series_id: &str) -> Result<Option<Monitioring>, AppError> {
+pub fn get_monitoring_config_for_series(
+    series_id: &str,
+) -> Result<Option<MonitioringDef>, AppError> {
     let cache = SERIES_TO_MONITORING
         .read()
         .map_err(|err| AppError::Unknown(format!("Could not get read lock. Error: {}", err)))?;

@@ -1,166 +1,170 @@
 {
-    "id": "tasmota",
-    "name": "Tasmota",
-    "description": "Control for Tasmota based devices like switchable power outlets",
-    "server_icon": "<svg  width=\"25px\" height=\"25px\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><title>Tasmota</title><path d=\"M12 0L0 12l1.371 1.372L12 2.743l10.629 10.629L24 12 12 0zm0 8.463a7.41 7.41 0 0 0-2.64 14.334v-2.133a5.464 5.464 0 0 1 1.671-10.17V24h1.94V10.494a5.464 5.464 0 0 1 1.669 10.171v2.133A7.41 7.41 0 0 0 12 8.463z\"/></svg>",
-    "detection": {
-        "list": [
-            {
-                "params": [
-                    {
-                        "name": "port",
-                        "param_type": "number",
-                        "default_value": "80"
-                    },
-                    {
-                        "name": "protocol",
-                        "param_type": "string",
-                        "default_value": "http"
-                    }
-                ],
-                "args": [
-                    {
-                        "name": "method",
-                        "value": "get"
-                    },
-                    {
-                        "name": "url",
-                        "value": "${params.protocol}://${IP}:${params.port}"
-                    }
-                ]
-            },
-            {
-                "params": [
-                    {
-                        "name": "port",
-                        "param_type": "number",
-                        "default_value": "443"
-                    },
-                    {
-                        "name": "protocol",
-                        "param_type": "string",
-                        "default_value": "https"
-                    }
-                ],
-                "args": [
-                    {
-                        "name": "method",
-                        "value": "get"
-                    },
-                    {
-                        "name": "url",
-                        "value": "${params.protocol}://${IP}:${params.port}"
-                    }
-                ]
-            }
-        ],
-        "script": {
-            "script_type": "lua",
-            "script": "string.find(input, 'tasmota', 1, true)"
-        },
-        "detection_possible": true
-    },
-    "credentials": [],
-    "params": [
-        {
+  "id": "tasmota",
+  "name": "Tasmota",
+  "description": "Control for Tasmota based devices like switchable power outlets",
+  "server_icon": "<svg  width=\"25px\" height=\"25px\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><title>Tasmota</title><path d=\"M12 0L0 12l1.371 1.372L12 2.743l10.629 10.629L24 12 12 0zm0 8.463a7.41 7.41 0 0 0-2.64 14.334v-2.133a5.464 5.464 0 0 1 1.671-10.17V24h1.94V10.494a5.464 5.464 0 0 1 1.669 10.171v2.133A7.41 7.41 0 0 0 12 8.463z\"/></svg>",
+  "detection": {
+    "list": [
+      {
+        "params": [
+          {
             "name": "port",
             "param_type": "number",
             "default_value": "80"
-        },
-        {
+          },
+          {
             "name": "protocol",
             "param_type": "string",
             "default_value": "http"
-        }
+          }
+        ],
+        "args": [
+          {
+            "name": "method",
+            "value": "get"
+          },
+          {
+            "name": "url",
+            "value": "${params.protocol}://${IP}:${params.port}"
+          }
+        ]
+      },
+      {
+        "params": [
+          {
+            "name": "port",
+            "param_type": "number",
+            "default_value": "443"
+          },
+          {
+            "name": "protocol",
+            "param_type": "string",
+            "default_value": "https"
+          }
+        ],
+        "args": [
+          {
+            "name": "method",
+            "value": "get"
+          },
+          {
+            "name": "url",
+            "value": "${params.protocol}://${IP}:${params.port}"
+          }
+        ]
+      }
     ],
-    "data": [
+    "script": {
+      "script_type": "lua",
+      "script": "string.find(input, 'tasmota', 1, true)"
+    },
+    "detection_possible": true
+  },
+  "credentials": [],
+  "params": [
+    {
+      "name": "port",
+      "param_type": "number",
+      "default_value": "80"
+    },
+    {
+      "name": "protocol",
+      "param_type": "string",
+      "default_value": "http"
+    }
+  ],
+  "data": [
+    {
+      "id": "power_state",
+      "name": "Power State",
+      "template": "tasmota/data_powerstate",
+      "description": "Power state of the Tasmota device",
+      "command": "http",
+      "args": [
         {
-            "id": "power_state",
-            "name": "Power State",
-            "template": "tasmota/data_powerstate",
-            "description": "Power state of the Tasmota device",
-            "command": "http",
-            "args": [
-                {
-                    "name": "method",
-                    "value": "get"
-                },
-                {
-                    "name": "url",
-                    "value": "${params.protocol}://${IP}:${params.port}/cm?cmnd=Power"
-                }
-            ]
+          "name": "method",
+          "value": "get"
         },
         {
-            "id": "status",
-            "name": "Status",
-            "template": "tasmota/data_status",
-            "description": "Status of the Tasmota device",
-            "command": "http",
-            "args": [
-                {
-                    "name": "method",
-                    "value": "get"
-                },
-                {
-                    "name": "url",
-                    "value": "${params.protocol}://${IP}:${params.port}/cm?cmnd=Status"
-                }
-            ]
+          "name": "url",
+          "value": "${params.protocol}://${IP}:${params.port}/cm?cmnd=Power"
         }
-    ],
-    "actions": [
+      ]
+    },
+    {
+      "id": "status",
+      "name": "Status",
+      "template": "tasmota/data_status",
+      "description": "Status of the Tasmota device",
+      "command": "http",
+      "args": [
         {
-            "id": "on",
-            "name": "Switch On",
-            "needs_confirmation": true,
-            "available_for_state": "Active",
-            "depends": [
-                {
-                    "data_id": "power_state",
-                    "script_type": "lua",
-                    "script": "string.find(input, 'OFF', 1, true)"
-                }
-            ],
-            "description": "Switch On",
-            "icon": "<svg width=\"25px\" height=\"25px\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"> <path stroke=\"#000000\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z\"></path> <path stroke=\"#000000\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M3 12a6 6 0 0 0 6 6h6a6 6 0 0 0 0-12H9a6 6 0 0 0-6 6Z\"></path> </g></svg>",
-            "command": "http",
-            "args": [
-                {
-                    "name": "method",
-                    "value": "get"
-                },
-                {
-                    "name": "url",
-                    "value": "${params.protocol}://${IP}:${params.port}/cm?cmnd=Power%20On"
-                }
-            ]
+          "name": "method",
+          "value": "get"
         },
         {
-            "id": "off",
-            "name": "Switch Off",
-            "needs_confirmation": true,
-            "available_for_state": "Active",
-            "depends": [
-                {
-                    "data_id": "power_state",
-                    "script_type": "lua",
-                    "script": "string.find(input, 'ON', 1, true)"
-                }
-            ],
-            "description": "Switch Off",
-            "icon": "<svg width=\"25px\" height=\"25px\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"> <path stroke=\"#000000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M15 6H9a6 6 0 1 0 0 12h6a6 6 0 0 0 0-12Z\"></path> <circle cx=\"15\" cy=\"12\" r=\"3\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"2\"></circle> </g></svg>",
-            "command": "http",
-            "args": [
-                {
-                    "name": "method",
-                    "value": "get"
-                },
-                {
-                    "name": "url",
-                    "value": "${params.protocol}://${IP}:${params.port}/cm?cmnd=Power%20Off"
-                }
-            ]
+          "name": "url",
+          "value": "${params.protocol}://${IP}:${params.port}/cm?cmnd=Status"
         }
-    ]
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "on",
+      "name": "Switch On",
+      "needs_confirmation": true,
+      "available_for_state": "Active",
+      "depends": [
+        {
+          "data_id": "power_state",
+          "script": {
+            "script_type": "lua",
+            "script": "string.find(input, 'OFF', 1, true)"
+          }
+        }
+      ],
+      "description": "Switch On",
+      "icon": "<svg width=\"25px\" height=\"25px\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"> <path stroke=\"#000000\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z\"></path> <path stroke=\"#000000\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M3 12a6 6 0 0 0 6 6h6a6 6 0 0 0 0-12H9a6 6 0 0 0-6 6Z\"></path> </g></svg>",
+      "command": "http",
+      "args": [
+        {
+          "name": "method",
+          "value": "get"
+        },
+        {
+          "name": "url",
+          "value": "${params.protocol}://${IP}:${params.port}/cm?cmnd=Power%20On"
+        }
+      ]
+    },
+    {
+      "id": "off",
+      "name": "Switch Off",
+      "needs_confirmation": true,
+      "available_for_state": "Active",
+      "depends": [
+        {
+          "data_id": "power_state",
+          "script": {
+            "script_type": "lua",
+            "script": "string.find(input, 'ON', 1, true)"
+          }
+        }
+      ],
+      "description": "Switch Off",
+      "icon": "<svg width=\"25px\" height=\"25px\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\"><g id=\"SVGRepo_bgCarrier\" stroke-width=\"0\"></g><g id=\"SVGRepo_tracerCarrier\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></g><g id=\"SVGRepo_iconCarrier\"> <path stroke=\"#000000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M15 6H9a6 6 0 1 0 0 12h6a6 6 0 0 0 0-12Z\"></path> <circle cx=\"15\" cy=\"12\" r=\"3\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"2\"></circle> </g></svg>",
+      "command": "http",
+      "args": [
+        {
+          "name": "method",
+          "value": "get"
+        },
+        {
+          "name": "url",
+          "value": "${params.protocol}://${IP}:${params.port}/cm?cmnd=Power%20Off"
+        }
+      ]
+    }
+  ]
 }

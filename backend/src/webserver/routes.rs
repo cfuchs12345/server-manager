@@ -6,6 +6,7 @@ use crate::common::{ClientKey, OneTimeKey};
 use crate::models::config::dns_server::DNSServer;
 use crate::models::config::Configuration;
 use crate::models::error::AppError;
+use crate::models::plugin::notification::Notification;
 use crate::models::request::common::QueryParamsAsMap;
 use crate::models::request::plugin::PluginsAction;
 use crate::models::request::server::{
@@ -619,6 +620,21 @@ async fn get_monitoring_data(
 
     let response = plugin_execution::get_monitoring_data(series_id, ipaddress).await?;
     Ok(HttpResponse::Ok().json(response))
+}
+
+#[get("notifications")]
+async fn get_notifications(
+    data: web::Data<AppData>,
+    _query: web::Query<std::collections::HashMap<String, String>>,
+) -> Result<HttpResponse, AppError> {
+    let notifications: Vec<Notification> =
+        datastore::get_all_notifications(&data.app_data_persistence)
+            .await?
+            .values()
+            .flat_map(|v| v.to_owned())
+            .collect();
+
+    Ok(HttpResponse::Ok().json(notifications))
 }
 
 #[get("configuration")]

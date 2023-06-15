@@ -12,6 +12,7 @@ import { Configuration, DNSServer, SystemInformation } from './types';
 import { ErrorService, Source } from '../errors/error.service';
 import { EncryptionService } from '../encryption/encryption.service';
 import { OneTimeKey } from '../auth/types';
+import { NGXLogger } from 'ngx-logger';
 
 @Injectable({
   providedIn: 'root',
@@ -45,7 +46,8 @@ export class GeneralService {
   constructor(
     private http: HttpClient,
     private errorService: ErrorService,
-    private encryptionService: EncryptionService
+    private encryptionService: EncryptionService,
+    private logger: NGXLogger
   ) {}
 
   saveDNSServer = (server: DNSServer) => {
@@ -165,7 +167,7 @@ export class GeneralService {
       })
       .subscribe({
         next: (res) => {
-          console.log(res);
+          this.logger.debug(res);
         },
         error: (err: any) => {
           this.errorService.newError(Source.GeneralService, undefined, err);

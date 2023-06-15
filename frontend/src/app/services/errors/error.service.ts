@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { Error } from './types';
 
+
 export enum Source {
   AuthenticationService,
   GeneralService,
@@ -16,6 +17,7 @@ export enum Source {
   ServerSubActionComponent,
   ServerFeaturesComponent,
   AutodiscoverServerModalComponent,
+  NotificationService
 }
 
 @Injectable()

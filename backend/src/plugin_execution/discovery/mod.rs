@@ -394,31 +394,12 @@ async fn check_plugin_match(input: &Option<String>, plugin: &Plugin) -> bool {
         return false;
     };
 
-    match plugin_detect_match(plugin, input_to_check.as_str()) {
+    match common::script_match(&plugin.detection.script, input_to_check.as_str()) {
         Ok(res) => res,
         Err(err) => {
             error!("{:?}", err);
             false
         }
-    }
-}
-
-pub fn plugin_detect_match(plugin: &Plugin, input: &str) -> Result<bool, AppError> {
-    let script = plugin.detection.script.script.clone();
-    let script_type = plugin.detection.script.script_type.clone();
-
-    let is_lua = matches!(script_type.as_str(), "lua");
-    let is_rhai = matches!(script_type.as_str(), "rhai");
-
-    if is_lua {
-        common::match_with_lua(input, &script)
-    } else if is_rhai {
-        common::match_with_rhai(input, &script)
-    } else {
-        Err(AppError::InvalidArgument(
-            "script".to_string(),
-            Some(script_type),
-        ))
     }
 }
 
@@ -493,10 +474,10 @@ mod tests {
                 </result>";
 
         let plugin = datastore::load_plugin("shipped_plugins/plugins", "sleep.json").await;
+        let i = Some(input.to_owned());
+        let result = check_plugin_match(&i, &plugin.expect("should not happen")).await;
 
-        let result = plugin_detect_match(&plugin.expect("should not happen"), input);
-
-        assert!(result.expect("should not happen"));
+        assert!(result);
     }
 
     #[test]
