@@ -19,6 +19,8 @@ pub struct NotificationDef {
     #[serde(default)]
     pub message: String,
     #[serde(default)]
+    pub auto_ack: bool,
+    #[serde(default)]
     pub script: Script,
     #[serde(default)]
     pub notification_level: Level,

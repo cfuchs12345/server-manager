@@ -2,7 +2,10 @@ use std::fmt::Debug;
 
 use questdb::ingress::{Buffer, Sender, SenderBuilder};
 
-use crate::models::error::AppError;
+use crate::models::{
+    error::AppError,
+    timeseries::{TimeSeriesData, TimeSeriesValue},
+};
 
 #[derive(Clone, Debug)]
 pub struct QuestDBConfig {
@@ -21,7 +24,7 @@ impl QuestDBConfig {
 }
 
 impl QuestDBConfig {
-    pub fn new() -> Result<Self, AppError> {
+    fn new() -> Result<Self, AppError> {
         let config = super::get_config()?;
 
         let timeseries_db_host = config.get_string("timeseries_db_host")?;
@@ -38,12 +41,8 @@ impl QuestDBConfig {
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct TimeSeriesData {
-    pub identifier: TimeSeriesValue,
-    pub sub_identifiers: Vec<TimeSeriesValue>,
-    pub value: TimeSeriesValue,
-    pub timestamp: Timestamp,
+pub fn get_timeseriesdb_config() -> Result<QuestDBConfig, AppError> {
+    QuestDBConfig::new()
 }
 
 #[derive(Debug)]
@@ -63,56 +62,12 @@ impl Clone for TimeSeriesPersistence {
     }
 }
 
-#[derive(Clone, Debug)]
-pub enum TimeSeriesValue {
-    Bool(String, bool),
-    Int(String, i64),
-    Float(String, f64),
-    String(String, String),
-    Symbol(String, String),
-}
-
-impl TimeSeriesValue {
-    fn apply(&self, buffer: &mut Buffer) -> Result<(), AppError> {
-        match self {
-            TimeSeriesValue::Bool(name, value) => buffer
-                .column_bool(name.as_str(), value.to_owned())
-                .map_err(|err| AppError::DatabaseError(format!("{}", err)))?,
-            TimeSeriesValue::Float(name, value) => buffer
-                .column_f64(name.as_str(), value.to_owned())
-                .map_err(|err| AppError::DatabaseError(format!("{}", err)))?,
-            TimeSeriesValue::Int(name, value) => buffer
-                .column_i64(name.as_str(), value.to_owned())
-                .map_err(|err| AppError::DatabaseError(format!("{}", err)))?,
-            TimeSeriesValue::String(name, value) => buffer
-                .column_str(name.as_str(), value)
-                .map_err(|err| AppError::DatabaseError(format!("{}", err)))?,
-            TimeSeriesValue::Symbol(name, value) => buffer
-                .symbol(name.as_str(), value.as_str())
-                .map_err(|err| AppError::DatabaseError(format!("{}", err)))?,
-        };
-        Ok(())
-    }
-
-    fn is_symbol(&self) -> bool {
-        matches!(self, TimeSeriesValue::Symbol(_, _))
-    }
-}
-
-#[derive(Clone, Debug)]
-pub enum Timestamp {
-    SysTime(std::time::SystemTime),
-}
-
-impl Timestamp {
-    fn apply(&self, buffer: &mut Buffer) -> Result<(), AppError> {
-        match self {
-            Timestamp::SysTime(timestamp) => buffer
-                .at(timestamp.to_owned())
-                .map_err(|err| AppError::DatabaseError(format!("{}", err)))?,
-        };
-        Ok(())
-    }
+pub async fn save_timeseries_data(
+    timeseries_persistence: &mut TimeSeriesPersistence,
+    series_id: &str,
+    data_vec: Vec<TimeSeriesData>,
+) -> Result<(), AppError> {
+    timeseries_persistence.save(series_id, data_vec).await
 }
 
 impl TimeSeriesPersistence {

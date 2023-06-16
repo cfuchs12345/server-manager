@@ -5,13 +5,13 @@ mod notifications;
 mod persistence;
 mod plugins;
 mod servers;
-mod timeseries_persistence;
+mod timeseries;
 mod users;
 
 pub use model::migration::Migration;
 pub use model::Entry;
 pub use persistence::Persistence;
-pub use timeseries_persistence::TimeSeriesPersistence;
+pub use timeseries::TimeSeriesPersistence;
 
 pub use self::config::delete_dnsserver;
 pub use self::config::get_all_dnsservers;
@@ -70,12 +70,10 @@ pub use self::inmemory::insert_condition_result;
 pub use self::inmemory::set_config;
 pub use self::inmemory::set_crypto_key;
 
-use crate::models::error::AppError;
+pub use self::timeseries::get_timeseriesdb_config;
+pub use self::timeseries::save_timeseries_data;
 
-pub use self::timeseries_persistence::QuestDBConfig;
-pub use self::timeseries_persistence::TimeSeriesData;
-pub use self::timeseries_persistence::TimeSeriesValue;
-pub use self::timeseries_persistence::Timestamp;
+pub use crate::models::timeseries::TimeSeriesData;
 
 pub fn init_cache() {
     if let Ok(number) = plugins::init_cache() {
@@ -85,12 +83,4 @@ pub fn init_cache() {
 
 pub fn update_cache() {
     plugins::init_cache_silent();
-}
-
-pub async fn save_timeseries_data(
-    timeseries_persistence: &mut TimeSeriesPersistence,
-    series_id: &str,
-    data_vec: Vec<TimeSeriesData>,
-) -> Result<(), AppError> {
-    timeseries_persistence.save(series_id, data_vec).await
 }

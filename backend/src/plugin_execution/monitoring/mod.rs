@@ -30,27 +30,11 @@ pub async fn get_monitoring_data(
 
     log::trace!("querying monitoring data for {}", series_id);
 
-    let config = datastore::QuestDBConfig::new()?;
-
     let select = create_data_select(&monitoring, series_id, format!("{}", ipaddress).as_str());
 
     let query = vec![("query", select.as_str())];
 
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(1))
-        .build()?;
-
-    let result = client
-        .get(format!(
-            "http://{}:{}/exec",
-            config.get_host(),
-            config.get_http_port()
-        ))
-        .query(&query)
-        .send()
-        .await?
-        .text()
-        .await?;
+    let result = common::execute_timeseries_db_query(&query).await?;
 
     log::trace!("response from db: {}", result);
 

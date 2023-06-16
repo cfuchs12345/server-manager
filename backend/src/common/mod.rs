@@ -23,6 +23,7 @@ pub use crypt::verify_password;
 pub use http_functions::execute_http_request;
 #[cfg(all(target_os = "linux"))]
 pub use http_functions::execute_socket_request;
+pub use http_functions::execute_timeseries_db_query;
 
 pub use script_languages::script_match;
 pub use script_languages::script_process;

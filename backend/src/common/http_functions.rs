@@ -22,33 +22,6 @@ pub const DELETE: &str = "delete";
 #[cfg(all(target_os = "linux"))]
 const SOCKET_HTTP_POSTFIX: &str = "HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n";
 
-#[cfg(all(target_os = "linux"))]
-pub async fn execute_socket_request(
-    socket: &str,
-    url: &str,
-    method: &str,
-    headers: Option<Vec<(String, String)>>,
-    body: Option<String>,
-) -> Result<String, AppError> {
-    let header_map: http::HeaderMap = headers_to_map(headers)?;
-
-    log::debug!("executing http request {} on {}", method, url);
-
-    let socket_path = Path::new(socket);
-
-    let mut unix_stream = UnixStream::connect(socket_path)?;
-
-    let request_str = match method {
-        GET | POST | DELETE | PUT => {
-            format!("{} {} {}", method.to_uppercase(), url, SOCKET_HTTP_POSTFIX)
-        }
-        _ => format!("{} {} {}", GET.to_uppercase(), url, SOCKET_HTTP_POSTFIX), // default is also GET
-    };
-
-    write_request_and_shutdown(&mut unix_stream, request_str, header_map, body)?;
-    read_from_stream(&mut unix_stream)
-}
-
 /// Executes an http request on the given url using the given method.
 ///
 /// # Arguments
@@ -134,6 +107,80 @@ fn create_http_client() -> Result<reqwest::Client, AppError> {
         .map_err(AppError::from)
 }
 
+pub async fn execute_timeseries_db_query(query: &[(&str, &str)]) -> Result<String, AppError> {
+    let config = datastore::get_timeseriesdb_config()?;
+
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(1))
+        .build()?;
+
+    client
+        .get(format!(
+            "http://{}:{}/exec",
+            config.get_host(),
+            config.get_http_port()
+        ))
+        .query(query)
+        .send()
+        .await?
+        .text()
+        .await
+        .map_err(AppError::from)
+}
+
+fn headers_to_map(headers_opt: Option<Vec<(String, String)>>) -> Result<http::HeaderMap, AppError> {
+    let Some(headers) = headers_opt else {
+        return Ok(http::HeaderMap::new());
+    };
+
+    let mut header_map: http::HeaderMap = http::HeaderMap::new();
+
+    for header in headers {
+        let left_side_of_tuple = &header.0;
+
+        let res = left_side_of_tuple
+            .split_once('=')
+            .ok_or(AppError::InvalidArgument(
+                "header is invalid. Contains no equals sign".to_owned(),
+                Some(left_side_of_tuple.clone()),
+            ))?;
+
+        let name = http::header::HeaderName::from_lowercase(res.0.to_lowercase().as_bytes())?;
+        let value = http::header::HeaderValue::from_str(res.1)?;
+
+        header_map.insert(name, value);
+    }
+
+    Ok(header_map)
+}
+
+#[cfg(all(target_os = "linux"))]
+pub async fn execute_socket_request(
+    socket: &str,
+    url: &str,
+    method: &str,
+    headers: Option<Vec<(String, String)>>,
+    body: Option<String>,
+) -> Result<String, AppError> {
+    let header_map: http::HeaderMap = headers_to_map(headers)?;
+
+    log::debug!("executing http request {} on {}", method, url);
+
+    let socket_path = Path::new(socket);
+
+    let mut unix_stream = UnixStream::connect(socket_path)?;
+
+    let request_str = match method {
+        GET | POST | DELETE | PUT => {
+            format!("{} {} {}", method.to_uppercase(), url, SOCKET_HTTP_POSTFIX)
+        }
+        _ => format!("{} {} {}", GET.to_uppercase(), url, SOCKET_HTTP_POSTFIX), // default is also GET
+    };
+
+    write_request_and_shutdown(&mut unix_stream, request_str, header_map, body)?;
+    read_from_stream(&mut unix_stream)
+}
+
 #[cfg(all(target_os = "linux"))]
 fn write_request_and_shutdown(
     unix_stream: &mut UnixStream,
@@ -169,30 +216,4 @@ fn read_from_stream(unix_stream: &mut UnixStream) -> Result<String, AppError> {
         response
     );
     Ok(response)
-}
-
-fn headers_to_map(headers_opt: Option<Vec<(String, String)>>) -> Result<http::HeaderMap, AppError> {
-    let Some(headers) = headers_opt else {
-        return Ok(http::HeaderMap::new());
-    };
-
-    let mut header_map: http::HeaderMap = http::HeaderMap::new();
-
-    for header in headers {
-        let left_side_of_tuple = &header.0;
-
-        let res = left_side_of_tuple
-            .split_once('=')
-            .ok_or(AppError::InvalidArgument(
-                "header is invalid. Contains no equals sign".to_owned(),
-                Some(left_side_of_tuple.clone()),
-            ))?;
-
-        let name = http::header::HeaderName::from_lowercase(res.0.to_lowercase().as_bytes())?;
-        let value = http::header::HeaderValue::from_str(res.1)?;
-
-        header_map.insert(name, value);
-    }
-
-    Ok(header_map)
 }

@@ -7,11 +7,11 @@ use serde_json::Value;
 use crate::{
     commands::{self, CommandInput},
     common,
-    datastore::{self, TimeSeriesData, TimeSeriesValue},
     models::{
         error::AppError,
         plugin::data::DataDef,
         plugin::monitoring::{KeyValue, MonitioringDef},
+        TimeSeriesData, TimeSeriesValue, Timestamp,
     },
     plugin_execution,
 };
@@ -205,7 +205,7 @@ fn extract_monitoring_data(
                         value: value.ok_or(AppError::Unknown(
                             "Should acutally not happen since it is checked before".to_owned(),
                         ))?,
-                        timestamp: datastore::Timestamp::SysTime(SystemTime::now()),
+                        timestamp: Timestamp::SysTime(SystemTime::now()),
                     });
                 }
             }
