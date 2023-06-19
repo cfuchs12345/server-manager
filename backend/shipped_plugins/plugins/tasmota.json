@@ -107,6 +107,40 @@
           "value": "${params.protocol}://${IP}:${params.port}/cm?cmnd=Status"
         }
       ]
+    },
+    {
+      "id": "energy_today",
+      "name": "Energy Today",
+      "template": "tasmota/data_energy_today",
+      "description": "Power consumption of the Tasmota device",
+      "command": "http",
+      "args": [
+        {
+          "name": "method",
+          "value": "get"
+        },
+        {
+          "name": "url",
+          "value": "${params.protocol}://${IP}:${params.port}/cm?cmnd=EnergyToday"
+        }
+      ]
+    },
+    {
+      "id": "energy_total",
+      "name": "Energy Totoal",
+      "template": "tasmota/data_energy_total",
+      "description": "Power consumption of the Tasmota device",
+      "command": "http",
+      "args": [
+        {
+          "name": "method",
+          "value": "get"
+        },
+        {
+          "name": "url",
+          "value": "${params.protocol}://${IP}:${params.port}/cm?cmnd=EnergyTotal"
+        }
+      ]
     }
   ],
   "actions": [

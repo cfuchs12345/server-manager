@@ -1,8 +1,18 @@
 <hr>
 <h3>Information</h3>
-Device Name: {{this.Status.DeviceName}}<br>
-<br>
-Friendly Names:<br>
-{{#each this.Status.FriendlyName }}
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{this}}<br>
-{{/each}}    
+<table style="border: 0px;">
+    <tbody>
+        <tr>
+            <td style="width: 150px; text-align: right; margin: 5px;">Device Name:</td>
+            <td style="width: 200px; text-align: left; margin: 5px;"> {{this.Status.DeviceName}}</td>
+        </tr>
+        <tr>
+            <td style="width: 150px; text-align: right; margin: 5px;">Friendly Names:</td>
+            <td style="width: 200px; text-align: left; margin: 5px;">
+                {{#each this.Status.FriendlyName }}
+                {{this}}<br>
+                {{/each}}    
+            </td>
+        </tr>
+    </tbody>
+</table>

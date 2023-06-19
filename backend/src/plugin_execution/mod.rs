@@ -52,7 +52,7 @@ pub async fn execute_all_data_dependent(
     let mut notification_processor =
         NotificationProcessor::new(last_run, notification_interval, persistence);
 
-    log::debug!("relevant plugins for monitoring: {:?}", &relevant_plugins);
+    log::trace!("relevant plugins for monitoring: {:?}", &relevant_plugins);
 
     for server in servers {
         for plugin in &relevant_plugins {

@@ -24,7 +24,7 @@ enum Level {
 #[allow(dead_code)]
 #[derive(Debug)]
 pub enum AppError {
-    InvalidPassword(),
+    InvalidPassword,
     DNSServersNotConfigured(),
     ServerNotFound(String),
     FeatureNotFound(String, String),
@@ -61,7 +61,7 @@ pub struct AppErrorResponse {
 impl Display for AppError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AppError::InvalidPassword() => {
+            AppError::InvalidPassword => {
                 write!(f, "The password was invalid")
             }
             AppError::DNSServersNotConfigured() => {
@@ -319,7 +319,9 @@ impl From<actix_web::Error> for AppError {
 impl ResponseError for AppError {
     fn status_code(&self) -> StatusCode {
         match self {
-            Self::UnAuthorized => StatusCode::UNAUTHORIZED,
+            Self::UnAuthorized | Self::InvalidPassword | Self::UserNotFound(_) => {
+                StatusCode::UNAUTHORIZED
+            }
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }

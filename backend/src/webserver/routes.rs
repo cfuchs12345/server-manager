@@ -564,7 +564,7 @@ pub async fn authenticate(
             client_key: client_key.key,
         }))
     } else {
-        Err(AppError::InvalidPassword())
+        Err(AppError::InvalidPassword)
     }
 }
 

@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { Error } from './types';
 
-
 export enum Source {
   AuthenticationService,
   GeneralService,
@@ -17,7 +16,7 @@ export enum Source {
   ServerSubActionComponent,
   ServerFeaturesComponent,
   AutodiscoverServerModalComponent,
-  NotificationService
+  NotificationService,
 }
 
 @Injectable()
@@ -36,15 +35,21 @@ export class ErrorService {
   newError(
     source: Source,
     ipaddress: string | undefined = undefined,
-    error: any
+    error_object: any
   ) {
-    let text: string;
-    if (Object.hasOwn(error, 'error')) {
-      text = JSON.stringify(error.error);
-    } else if (Object.hasOwn(error, 'message')) {
-      text = JSON.stringify(error.message);
-    } else {
-      text = JSON.stringify(error);
+    let text: string = 'Unkown';
+    if (error_object) {
+      if (Object.hasOwn(error_object, 'error')) {
+        if (error_object.error && Object.hasOwn(error_object.error, 'error')) {
+          text = error_object.error.error;
+        } else {
+          text = error_object.error;
+        }
+      } else if (Object.hasOwn(error_object, 'message')) {
+        text = error_object.message;
+      } else {
+        text = JSON.stringify(error_object);
+      }
     }
 
     this.publishError(new Date(), source, ipaddress, text);
@@ -54,7 +59,7 @@ export class ErrorService {
     date: Date,
     source: Source,
     ipaddress: string | undefined,
-    errorMessage: string
+    errorMessage: any
   ) => {
     const key = source + '|' + errorMessage;
 

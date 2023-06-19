@@ -72,7 +72,7 @@ import { MainComponent } from './main/main.component';
 import { LoginComponent } from './login/login.component';
 import { RegisterComponent } from './register/register.component';
 import { TokenInterceptor } from './auth/token.interceptor';
-import { ErrorInterceptor } from './auth/error.interceptor';
+import { ErrorInterceptor } from './errors/error.interceptor';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { MonitoringSingleServerComponent } from './monitoring/single-server/monitoring-single-server.component';
 import { ConfigImExportDialog } from './configuration/general-configuration/dialogs/dialog-config-im-and-export';

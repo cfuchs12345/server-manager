@@ -1,7 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { ErrorService, Source } from 'src/app/services/errors/error.service';
+import { ErrorService } from 'src/app/services/errors/error.service';
 import { Subscription } from 'rxjs';
 import { Error } from 'src/app/services/errors/types';
+import { mapValuesToArray, sortByNumericField } from 'src/app/shared/utils';
 
 @Component({
   selector: 'app-error',
@@ -17,10 +18,7 @@ export class ErrorComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.subscriptionErrors = this.errorService.errors.subscribe((errors) => {
       if (errors) {
-        this.errors = [...errors.values()].sort(
-          (error1, error2) =>
-            error2.lastOccurrance.getTime() - error1.lastOccurrance.getTime()
-        );
+        this.errors = sortByNumericField(mapValuesToArray(errors), (error) => error.lastOccurrance.getTime() );
       } else {
         // clear messages when empty message received
         this.errors = [];
