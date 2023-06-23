@@ -5,7 +5,10 @@ use lazy_static::lazy_static;
 use regex::Regex;
 
 use crate::{
-    commands::{self, http::HttpCommandResult, replace, socket::SocketCommandResult, CommandInput},
+    commands::{
+        self, http::HttpCommandResult, kafka::KafkaCommandResult, replace,
+        socket::SocketCommandResult, CommandInput,
+    },
     datastore::{self},
     models::{
         error::AppError,
@@ -165,6 +168,7 @@ pub async fn execute_specific_data_query(
 
             responses.push((input, response));
         } else {
+            log::trace!("response: {}", response);
             responses.push((input, response));
         }
     }
@@ -174,6 +178,10 @@ pub async fn execute_specific_data_query(
 
 async fn execute_command(input: CommandInput, silent: &bool) -> Result<String, AppError> {
     let response = match input.get_name() {
+        commands::kafka::KAFKA => {
+            let result: KafkaCommandResult = commands::execute(input, silent).await?;
+            result.get_response()
+        }
         commands::socket::SOCKET => {
             let result: SocketCommandResult = commands::execute(input, silent).await?;
             result.get_response()
@@ -199,6 +207,18 @@ async fn get_command_inputs(
     let inputs = match data.command.as_str() {
         commands::socket::SOCKET => {
             commands::socket::make_command_input_from_data(
+                server,
+                crypto_key,
+                data,
+                action_params,
+                feature,
+                plugin,
+                silent,
+            )
+            .await?
+        }
+        commands::kafka::KAFKA => {
+            commands::kafka::make_command_input_from_data(
                 server,
                 crypto_key,
                 data,

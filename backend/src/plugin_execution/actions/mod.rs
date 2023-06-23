@@ -4,8 +4,8 @@ use futures::future::join_all;
 
 use crate::{
     commands::{
-        self, http::HttpCommandResult, ping::PingCommandResult, socket::SocketCommandResult,
-        wol::WolCommandResult,
+        self, http::HttpCommandResult, kafka::KafkaCommandResult, ping::PingCommandResult,
+        socket::SocketCommandResult, wol::WolCommandResult,
     },
     datastore,
     models::response::data_result::ConditionCheckResult,
@@ -93,6 +93,25 @@ pub async fn execute_action(
                 let res: PingCommandResult = commands::execute(input, silent).await?;
 
                 Ok(res.get_result())
+            }
+            commands::kafka::KAFKA => {
+                let inputs = commands::kafka::make_command_input_from_subaction(
+                    server,
+                    &crypto_key,
+                    plugin_action,
+                    action_params,
+                    feature,
+                    &plugin,
+                    silent,
+                )
+                .await?;
+
+                let mut results: Vec<KafkaCommandResult> = Vec::new();
+                for input in inputs {
+                    results.push(commands::execute(input, silent).await?);
+                }
+
+                Ok(results.iter().any(|r| !r.get_response().is_empty()))
             }
             y => {
                 log::error!("Unknown command {}", y);

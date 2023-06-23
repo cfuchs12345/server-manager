@@ -9,6 +9,7 @@ use crate::models::{error::AppError, server::Credential};
 
 mod common;
 pub mod http;
+pub mod kafka;
 pub mod ping;
 pub mod socket;
 pub mod wol;
@@ -26,6 +27,7 @@ fn get_command_list() -> Vec<Box<dyn Command + Sync + Send>> {
         Box::new(socket::SocketCommand::new()),
         Box::new(wol::WoLCommand::new()),
         Box::new(ping::PingCommand::new()),
+        Box::new(kafka::KafkaCommand::new()),
     ];
     list
 }

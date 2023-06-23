@@ -4,6 +4,7 @@ use rand::{rngs::OsRng, RngCore};
 pub mod clientkey;
 mod crypt;
 mod http_functions;
+mod kafka_functions;
 mod mail;
 mod onetimekey;
 mod script_languages;
@@ -24,6 +25,8 @@ pub use http_functions::execute_http_request;
 #[cfg(all(target_os = "linux"))]
 pub use http_functions::execute_socket_request;
 pub use http_functions::execute_timeseries_db_query;
+
+pub use kafka_functions::execute_kafka_request;
 
 pub use script_languages::script_match;
 pub use script_languages::script_process;

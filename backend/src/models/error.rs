@@ -33,6 +33,7 @@ pub enum AppError {
     ArgumentNotFound(String),
     CredentialNotFound(String),
     CommandNotFound(String),
+    CommunicationError(String),
     UnknownPlugin(String),
     UnknownPluginAction(String, String),
     UnknownPluginData(String, String),
@@ -63,6 +64,13 @@ impl Display for AppError {
         match self {
             AppError::InvalidPassword => {
                 write!(f, "The password was invalid")
+            }
+            AppError::CommunicationError(err) => {
+                write!(
+                    f,
+                    "An error occured while trying to communicate with another process: {}",
+                    err
+                )
             }
             AppError::DNSServersNotConfigured() => {
                 write!(
@@ -313,6 +321,12 @@ impl From<JobSchedulerError> for AppError {
 impl From<actix_web::Error> for AppError {
     fn from(err: actix_web::Error) -> Self {
         AppError::Unknown(format!("{}", err))
+    }
+}
+
+impl From<kafka::Error> for AppError {
+    fn from(err: kafka::Error) -> Self {
+        AppError::CommunicationError(format!("{}", err))
     }
 }
 
