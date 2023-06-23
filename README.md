@@ -127,10 +127,9 @@ Some notes:
 - [ ] maybe build an agent that can be installed on remote machines to get information from the OS or installations like Wireguard, that offer no direct API
 - [x] encrypt other passwords/credentials between frontend and backend
 - [x] Config Im- and Export with a password as encryption key for sensitive data
+- [x] maybe include Apache Kafka (for the transfer of data from remote agents) (can be used to execute commands on remote system or to gather data)
 
 ## Some more ideas which would result in a lot of work
-
-- [ ] maybe include Apache Kafka (for the transfer of data from remote agents)
 - [ ] an AI integration would be cool which learns based on gathered data when an event is critical or not (ie. do not warn, if a server is going down always at the same time)
 
 ## Screenshots
