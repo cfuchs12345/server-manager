@@ -1,0 +1,6 @@
+kafka-topics.sh --bootstrap-server localhost:9092 --create --if-not-exists --topic agent_commands
+kafka-topics.sh --bootstrap-server localhost:9092 --create --if-not-exists --topic agent_responses
+kafka-topics.sh --bootstrap-server localhost:9092 --create --if-not-exists --topic agent_errors
+kafka-topics.sh --bootstrap-server localhost:9092 --create --if-not-exists --topic agent_registration
+kafka-topics.sh --bootstrap-server localhost:9092 --create --if-not-exists --topic agent_heartbeat
+
