@@ -24,9 +24,8 @@
       "dom"
     ],
     "paths" : {
-      "crypto": ["./node_modules/crypto-browserify"],
-      "stream": ["./node_modules/stream-browserify"],
-    }
+    },
+    "typeRoots": [ "./src/global_types/index.d.ts"],
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

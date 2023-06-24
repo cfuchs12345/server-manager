@@ -17,6 +17,8 @@ use crate::models::error::AppError;
 
 pub type Aes256Gcm16 = AesGcm<Aes256, U16>;
 
+const ROUNDS: u32 = 10000;
+
 pub fn get_random_key32() -> Result<String, AppError> {
     let mut arr = [0u8; 32];
     thread_rng().try_fill_bytes(&mut arr[..]).map_err(|err| {
@@ -50,7 +52,7 @@ pub fn aes_decrypt(to_decrypt: &str, secret: &str) -> Result<String, AppError> {
     let iv = &bytes[64..64 + 16];
     let text = &bytes[64 + 16..]; // including tag postfix
 
-    let key = pbkdf2_hmac_array::<Sha256, 32>(secret.as_bytes(), salt, 100000);
+    let key = pbkdf2_hmac_array::<Sha256, 32>(secret.as_bytes(), salt, ROUNDS);
 
     let cipher =
         Aes256Gcm16::new_from_slice(&key).map_err(|e| AppError::Unknown(format!("{}", e)))?;
@@ -74,7 +76,7 @@ pub fn aes_encrypt(to_encrypt: &str, secret: &str) -> Result<String, AppError> {
     let mut salt = [0_u8; 64];
     OsRng.fill_bytes(&mut salt);
 
-    let key = pbkdf2_hmac_array::<Sha256, 32>(secret.as_bytes(), &salt, 100000);
+    let key = pbkdf2_hmac_array::<Sha256, 32>(secret.as_bytes(), &salt, ROUNDS);
 
     let cipher =
         Aes256Gcm16::new_from_slice(&key).map_err(|e| AppError::Unknown(format!("{}", e)))?;

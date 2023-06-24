@@ -1,63 +1,110 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+
+import cryptoRandomString from 'crypto-random-string';
+
 import {
-  randomBytes,
-  pbkdf2Sync,
-  createCipheriv,
-  createDecipheriv,
-} from 'crypto';
+  AES,
+  SHA256,
+  PBKDF2,
+  Hex,
+  Utf8,
+  Latin1,
+  mode,
+  pad,
+  formatter,
+} from 'jscrypto/es6';
+
 import { Buffer } from 'buffer';
 import { OneTimeKey } from '../auth/types';
 
 window.Buffer = window.Buffer || Buffer;
 
-const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
 const SALT_LENGTH = 64;
 const TAG_LENGTH = 16;
-
-const SHA = 'sha256';
 const BASE64 = 'base64';
-const UTF8 = 'utf8';
+const ROUNDS = 10000;
 
 @Injectable()
 export class EncryptionService {
   constructor(private http: HttpClient) {}
 
-  private getKey(salt: Buffer, secret: string) {
-    return pbkdf2Sync(secret, salt, 100000, 32, SHA);
-  }
+  encrypt = (plainText: string, secret: string): String => {
+    const iv_hex = Hex.parse(cryptoRandomString({ length: IV_LENGTH * 2 }));
+    const salt_hex = Hex.parse(cryptoRandomString({ length: SALT_LENGTH * 2 }));
 
-  encrypt(plainText: string, secret: string) {
-    const iv = randomBytes(IV_LENGTH);
-    const salt = randomBytes(SALT_LENGTH);
-    const key = this.getKey(salt, secret);
-    const cipher = createCipheriv(ALGORITHM, key, iv);
-    const encrypted = Buffer.concat([
-      cipher.update(String(plainText), UTF8),
-      cipher.final(),
-    ]);
+    const key = PBKDF2.getKey(Utf8.parse(secret), salt_hex, {
+      keySize: 256 / 32,
+      iterations: ROUNDS,
+      Hasher: SHA256,
+    });
 
-    const tag = cipher.getAuthTag();
-    return Buffer.concat([salt, iv, encrypted, tag]).toString(BASE64);
-  }
-
-  decrypt(cipherText: string, secret: string) {
-    const stringValue = Buffer.from(cipherText, BASE64);
-    const salt = stringValue.subarray(0, SALT_LENGTH);
-    const iv = stringValue.subarray(SALT_LENGTH, SALT_LENGTH + IV_LENGTH);
-    const encrypted = stringValue.subarray(
-      SALT_LENGTH + IV_LENGTH,
-      -TAG_LENGTH
+    const encrypted = AES.encrypt(plainText, key, {
+      iv: iv_hex,
+      mode: mode.GCM,
+      padding: pad.NoPadding,
+    });
+    var autTag = mode.GCM.mac(
+      AES,
+      key,
+      iv_hex,
+      undefined,
+      encrypted.cipherText,
+      TAG_LENGTH
     );
-    const tag = stringValue.subarray(-TAG_LENGTH);
-    const key = this.getKey(salt, secret);
-    const decipher = createDecipheriv(ALGORITHM, key, iv);
 
-    decipher.setAuthTag(tag);
-    return decipher.update(encrypted) + decipher.final(UTF8);
-  }
+    if (!encrypted.cipherText || !autTag) {
+      return '';
+    }
+
+    const txt = Buffer.concat([
+      salt_hex.toUint8Array(),
+      iv_hex.toUint8Array(),
+      encrypted.cipherText.toUint8Array(),
+      autTag.toUint8Array(),
+    ]).toString(BASE64);
+
+    return txt;
+  };
+
+  decrypt = (cipherText: string, secret: string): string => {
+    const stringValue = Buffer.from(cipherText, BASE64).toString('hex');
+
+    const salt = stringValue.slice(0, SALT_LENGTH * 2);
+    const iv = stringValue.slice(
+      SALT_LENGTH * 2,
+      (SALT_LENGTH + IV_LENGTH) * 2
+    );
+
+    const encrypted = stringValue.slice(
+      (SALT_LENGTH + IV_LENGTH) * 2,
+      -TAG_LENGTH * 2
+    );
+    const tag = stringValue.slice(-TAG_LENGTH * 2);
+
+    const key = PBKDF2.getKey(secret, Hex.parse(salt), {
+      keySize: 256 / 32,
+      iterations: ROUNDS,
+      Hasher: SHA256,
+    });
+
+    const decrypted = AES.decrypt(
+      {
+        cipherText: Hex.parse(encrypted),
+        formatter: formatter.OpenSSLFormatter,
+      },
+      key,
+      {
+        iv: Hex.parse(iv),
+        mode: mode.GCM,
+        padding: pad.NoPadding,
+      }
+    );
+
+    return decrypted.toString(Latin1);
+  };
 
   makeSecret = (uid: string, otk: string): string => {
     const fp = uid.length > 5 ? uid.slice(uid.length - 5, uid.length) : uid;
