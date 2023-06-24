@@ -3,7 +3,6 @@ import {
   FormBuilder,
   FormControl,
   FormGroup,
-  ValidatorFn,
   Validators,
 } from '@angular/forms';
 import { Subscription } from 'rxjs';
@@ -19,7 +18,6 @@ import {
   Feature,
   Param,
   Server,
-  ServerFeature,
 } from 'src/app/services/servers/types';
 
 @Component({
