@@ -50,13 +50,7 @@ pub fn aes_decrypt(to_decrypt: &str, secret: &str) -> Result<String, AppError> {
     let iv = &bytes[64..64 + 16];
     let text = &bytes[64 + 16..]; // including tag postfix
 
-    log::info!("salt : {}", String::from_utf8(salt.to_vec()).unwrap());
-    log::info!("iv : {}", String::from_utf8(iv.to_vec()).unwrap());
-    log::info!("text : {}", String::from_utf8(text.to_vec()).unwrap());
-
     let key = pbkdf2_hmac_array::<Sha256, 32>(secret.as_bytes(), salt, 100000);
-
-    log::info!("key: {}", encode_base64(&key));
 
     let cipher =
         Aes256Gcm16::new_from_slice(&key).map_err(|e| AppError::Unknown(format!("{}", e)))?;
@@ -67,10 +61,7 @@ pub fn aes_decrypt(to_decrypt: &str, secret: &str) -> Result<String, AppError> {
         Ok(decrypted) => {
             Ok(String::from_utf8(decrypted).map_err(|e| AppError::Unknown(format!("{}", e)))?)
         }
-        Err(_err) => {
-            log::error!("{:?}", _err);
-            Err(AppError::DecryptionError)
-        }
+        Err(_err) => Err(AppError::DecryptionError),
     }
 }
 #[logfn(err = "Error", fmt = "aes_encrypt: {:?}")]

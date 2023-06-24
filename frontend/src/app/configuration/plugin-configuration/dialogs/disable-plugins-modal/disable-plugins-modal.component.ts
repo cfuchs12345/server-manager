@@ -10,7 +10,7 @@ import { Plugin } from 'src/app/services/plugins/types';
   styleUrls: ['./disable-plugins-modal.component.scss'],
 })
 export class DisablePluginsModalComponent implements OnInit, OnDestroy {
-  buttonTextDisablePlugins: string = 'Disable Plugins';
+  buttonTextDisablePlugins:string = "Disable Plugins";
 
   selectAll: boolean = false;
 
@@ -36,21 +36,15 @@ export class DisablePluginsModalComponent implements OnInit, OnDestroy {
       }
     );
 
-    this.subscriptionDisabledPlugins = this.servicePlugins
-      .loadDisabledPlugins()
-      .subscribe({
-        next: (disabledPlugins) => {
-          if (disabledPlugins) {
-            this.disabledPlugins = disabledPlugins;
-          } else {
-            this.disabledPlugins = [];
-          }
-        },
-        complete: () => {
-          setTimeout(() => {
-            this.subscriptionDisabledPlugins?.unsubscribe();
-          }, 50);
-        },
+    this.subscriptionDisabledPlugins =
+      this.servicePlugins.disabledPlugins.subscribe((disabledPlugins) => {
+        if (disabledPlugins) {
+          this.disabledPlugins = disabledPlugins;
+        } else {
+          this.disabledPlugins = [];
+        }
+        // immediately unsubscribe. We only want the initial list here
+        this.subscriptionDisabledPlugins?.unsubscribe();
       });
 
     this.servicePlugins.loadPlugins();
@@ -65,33 +59,33 @@ export class DisablePluginsModalComponent implements OnInit, OnDestroy {
     }
   }
 
-  isDisabled = (id: string): boolean => {
+
+  isDisabled = (id: string):boolean => {
     return this.disabledPlugins.indexOf(id) >= 0;
-  };
+  }
 
   disablePlugins = () => {
     this.servicePlugins.disablePlugins(this.disabledPlugins);
-  };
+  }
 
   onClickSelectPlugin = (plugin: Plugin) => {
-    if (this.isDisabled(plugin.id)) {
-      this.disabledPlugins = this.disabledPlugins.filter(
-        (str) => str !== plugin.id
-      );
-    } else {
+    if( this.isDisabled(plugin.id)) {
+      this.disabledPlugins = this.disabledPlugins.filter( (str) => str !== plugin.id);
+    }
+    else {
       this.disabledPlugins.push(plugin.id);
     }
-  };
+  }
 
   onClickSelectAll = () => {
-    const list: string[] = [];
+    const list:string[] = [];
     this.selectAll = !this.selectAll;
 
-    if (this.selectAll) {
-      for (const plugin of this.plugins) {
+    if( this.selectAll ) {
+      for( const plugin of this.plugins) {
         list.push(plugin.id);
       }
     }
     this.disabledPlugins = list;
-  };
+  }
 }

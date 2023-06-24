@@ -3,8 +3,10 @@ import {
   FormBuilder,
   FormControl,
   FormGroup,
+  ValidatorFn,
   Validators,
 } from '@angular/forms';
+import { error } from 'console';
 import { Subscription } from 'rxjs';
 import { PluginService } from 'src/app/services/plugins/plugin.service';
 import {
@@ -17,7 +19,8 @@ import {
   Credential,
   Feature,
   Param,
-  Server
+  Server,
+  ServerFeature,
 } from 'src/app/services/servers/types';
 
 @Component({
