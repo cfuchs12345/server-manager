@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
 import { Subscription } from 'rxjs';
 
@@ -13,7 +13,7 @@ import { MessageDialogComponent } from '../ui/message_dialog/message-dialog.comp
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.scss'],
 })
-export class RegisterComponent implements OnInit, OnDestroy {
+export class RegisterComponent  {
   userIdLabel: string = 'User Id';
   useridPlaceholder: string = '';
   userIdHint: string = '';
@@ -45,45 +45,6 @@ export class RegisterComponent implements OnInit, OnDestroy {
     private dialog: MatDialog
   ) {}
 
-  ngOnInit(): void {
-    this.initialPasswordSubscription =
-      this.userService.initialPassword.subscribe((passwd) => {
-        if (passwd) {
-          this.userService.confirmInitialPasswordReceived();
-
-          if (passwd.password) {
-            this.dialog
-              .open(MessageDialogComponent, {
-                data: {
-                  title: 'Initial Password',
-                  message:
-                    'The initial password for user ' +
-                    passwd.user_id +
-                    ' is: "' +
-                    passwd.password +
-                    '"',
-                },
-              })
-              .afterClosed()
-              .subscribe((any) => {
-                setTimeout(() => {
-                  this.router.navigate(['/login']);
-                }, 50);
-              });
-          } else {
-            setTimeout(() => {
-              this.router.navigate(['/login']);
-            }, 50);
-          }
-        }
-      });
-  }
-
-  ngOnDestroy(): void {
-    if (this.initialPasswordSubscription) {
-      this.initialPasswordSubscription.unsubscribe();
-    }
-  }
 
   getPasswordMessage = (): string => {
     return '';
@@ -110,10 +71,43 @@ export class RegisterComponent implements OnInit, OnDestroy {
       this.email !== null &&
       this.email.value !== null
     ) {
-      this.userService.saveUser(
+      this.initialPasswordSubscription = this.userService.saveUser(
         new User(this.userId.value, this.fullName.value, this.email.value),
         true
-      );
+      )
+        .subscribe({
+          next: (userInitialPassword) => {
+            if (userInitialPassword.password) {
+              this.dialog
+                .open(MessageDialogComponent, {
+                  data: {
+                    title: 'Initial Password',
+                    message:
+                      'The initial password for user ' +
+                      userInitialPassword.user_id +
+                      ' is: "' +
+                      userInitialPassword.password +
+                      '"',
+                  },
+                })
+                .afterClosed()
+                .subscribe((any) => {
+                  setTimeout(() => {
+                    this.router.navigate(['/login']);
+                  }, 50);
+                });
+            } else {
+              setTimeout(() => {
+                this.router.navigate(['/login']);
+              }, 50);
+            }
+          },
+          complete: () => {
+            this.initialPasswordSubscription?.unsubscribe();
+          }
+          });
+
+
     }
   };
 }

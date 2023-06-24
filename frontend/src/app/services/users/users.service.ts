@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { User, UserInitialPassword } from './types';
 import { ErrorService, Source } from '../errors/error.service';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable, catchError, map, tap, throwError } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
 import { EncryptionService } from '../encryption/encryption.service';
 import { OneTimeKey } from '../auth/types';
@@ -10,16 +10,12 @@ import { OneTimeKey } from '../auth/types';
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private _users = new BehaviorSubject<User[]>([]);
-  private _initialPassword = new BehaviorSubject<
-    UserInitialPassword | null | undefined
-  >(undefined);
 
   private dataStore: { users: User[] } = {
     users: [],
   };
 
   readonly users = this._users.asObservable();
-  readonly initialPassword = this._initialPassword.asObservable();
 
   constructor(
     private http: HttpClient,
@@ -36,35 +32,26 @@ export class UserService {
         this.errorService.newError(Source.UserService, undefined, err);
       },
       complete: () => {
-        this.publishUsers();
+        setTimeout(this.publishUsers, 50);
       },
     });
   };
 
-  saveUser = (user: User, firstUser: boolean) => {
+  saveUser = (user: User, firstUser: boolean) : Observable<UserInitialPassword> => {
     const body = JSON.stringify(user);
 
     const url = firstUser ? '/backend_nt/users_first' : '/backend/users';
 
-    this.http
-      .post<string | undefined | null>(url, body, {
+    return this.http
+      .post<string | null>(url, body, {
         headers: defaultHeadersForJSON(),
       })
-      .subscribe({
-        next: (response) => {
-          this.dataStore.users.push(user);
-
-          this._initialPassword.next(
-            new UserInitialPassword(user.user_id, response)
-          );
-        },
-        error: (err: any) => {
-          this.errorService.newError(Source.UserService, user.user_id, err);
-        },
-        complete: () => {
-          setTimeout(this.publishUsers, 500);
-        },
-      });
+      .pipe(
+        tap( (response) =>  this.dataStore.users.push(user) ),
+        map( (response) => new UserInitialPassword(user.user_id, response)),
+        catchError( (err) => {this.errorService.newError(Source.UserService, user.user_id, err);  return throwError( () => err);}),
+        tap( (reponse) => setTimeout(this.publishUsers, 50) )
+      );
   };
 
   deleteUsers = (usersToDelete: User[]) => {
@@ -87,7 +74,7 @@ export class UserService {
             if (
               usersToDelete[usersToDelete.length - 1].user_id === user.user_id
             ) {
-              setTimeout(this.publishUsers, 500);
+              setTimeout(this.publishUsers, 50);
             }
           },
         });
@@ -123,10 +110,6 @@ export class UserService {
         },
         complete: () => {},
       });
-  };
-
-  confirmInitialPasswordReceived = () => {
-    this._initialPassword.next(undefined);
   };
 
   private publishUsers = () => {

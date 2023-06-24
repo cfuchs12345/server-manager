@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, OnChanges } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { Subscription } from 'rxjs';
-import { User, UserInitialPassword } from 'src/app/services/users/types';
+import { User } from 'src/app/services/users/types';
 import { UserService } from 'src/app/services/users/users.service';
 import { ConfirmDialogComponent } from 'src/app/ui/confirm-dialog/confirm-dialog.component';
 import { MessageDialogComponent } from 'src/app/ui/message_dialog/message-dialog.component';
@@ -60,23 +60,6 @@ export class ConfigureUsersModalComponent
         this.users = [];
       }
     });
-    this.initialPasswordSubscription =
-      this.userService.initialPassword.subscribe((passwd) => {
-        if (passwd) {
-          this.userService.confirmInitialPasswordReceived();
-          this.dialog.open(MessageDialogComponent, {
-            data: {
-              title: 'Initial Password',
-              message:
-                'The initial password for user ' +
-                passwd.user_id +
-                ' is: "' +
-                passwd.password +
-                '"',
-            },
-          });
-        }
-      });
     this.userService.loadUsers();
   }
 
@@ -94,9 +77,29 @@ export class ConfigureUsersModalComponent
       this.fullName.value !== null &&
       this.email.value !== null
     ) {
-      this.userService.saveUser(
+      this.initialPasswordSubscription = this.userService.saveUser(
         new User(this.userId.value, this.fullName.value, this.email.value)
-      ,false);
+      ,false).subscribe({
+        next: (userInitialPassword) => {
+          if (userInitialPassword.password) {
+            this.dialog
+              .open(MessageDialogComponent, {
+                data: {
+                  title: 'Initial Password',
+                  message:
+                    'The initial password for user ' +
+                    userInitialPassword.user_id +
+                    ' is: "' +
+                    userInitialPassword.password +
+                    '"',
+                },
+              });
+          }
+        },
+        complete: () => {
+          this.initialPasswordSubscription?.unsubscribe();
+        }
+        });
     }
   };
 

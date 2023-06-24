@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Param, Plugin, PluginsAction } from './types';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable, catchError, throwError } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
 import { ErrorService, Source } from '../errors/error.service';
 
@@ -10,14 +10,11 @@ import { ErrorService, Source } from '../errors/error.service';
 })
 export class PluginService {
   private _plugins = new BehaviorSubject<Plugin[]>([]);
-  private _disabledPlugins = new BehaviorSubject<string[]>([]);
-  private dataStore: { plugins: Plugin[]; disabledPlugins: string[] } = {
+  private dataStore: { plugins: Plugin[] } = {
     plugins: [],
-    disabledPlugins: [],
   };
 
   readonly plugins = this._plugins.asObservable();
-  readonly disabledPlugins = this._disabledPlugins.asObservable();
 
   constructor(private http: HttpClient, private errorService: ErrorService) {}
 
@@ -35,20 +32,15 @@ export class PluginService {
     });
   };
 
-  loadDisabledPlugins = async () => {
-    this.http
+  loadDisabledPlugins = (): Observable<string[]> => {
+    return this.http
       .get<string[]>('/backend/plugins/actions?query=disabled')
-      .subscribe({
-        next: (idList) => {
-          this.dataStore.disabledPlugins = idList;
-        },
-        error: (err: any) => {
+      .pipe(
+        catchError((err) => {
           this.errorService.newError(Source.PluginService, undefined, err);
-        },
-        complete: () => {
-          this.publishDisabledPlugins();
-        },
-      });
+          return throwError( () => err);
+        })
+      );
   };
 
   disablePlugins = async (ids: string[]) => {
@@ -72,9 +64,6 @@ export class PluginService {
       });
   };
 
-  private publishDisabledPlugins = () => {
-    this._disabledPlugins.next(this.dataStore.disabledPlugins.slice());
-  };
 
   private publishPlugins = () => {
     this._plugins.next(this.dataStore.plugins.slice());

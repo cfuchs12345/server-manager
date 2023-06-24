@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ErrorService } from 'src/app/services/errors/error.service';
-import { Subscription } from 'rxjs';
+import { Subscription, concatMap, map, reduce, tap } from 'rxjs';
 
 @Component({
   selector: 'app-errors-list',
@@ -16,21 +16,29 @@ export class ErrorsListComponent implements OnInit, OnDestroy {
   constructor(private errorService: ErrorService) {}
 
   ngOnInit(): void {
-    this.subscriptionErrors = this.errorService.errors.subscribe((errors) => {
-      if (errors) {
-        var count = 0;
-        for (let [i, error] of errors.entries()) {
-          count += error.count;
-        }
-        if (this.errorCount < count) {
-          setTimeout(this.flashErrorList, 0);
-        }
+    this.subscriptionErrors = this.errorService.errors
+      .pipe(
+        map((errors) => {
+          if (errors) {
+            var count = 0;
+            for (let [i, error] of errors.entries()) {
+              count += error.count;
+            }
+            return count;
+          } else {
+            // clear messages when empty message received
+            return 0;
+          }
+        }),
+        tap((count) => {
+          if (this.errorCount < count) {
+            setTimeout(this.flashErrorList, 0);
+          }
+        })
+      )
+      .subscribe((count) => {
         this.errorCount = count;
-      } else {
-        // clear messages when empty message received
-        this.errorCount = 0;
-      }
-    });
+      });
   }
   ngOnDestroy(): void {
     if (this.subscriptionErrors) {
