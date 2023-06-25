@@ -5,7 +5,7 @@ use dotenv::dotenv;
 use errors::Error;
 use kafka::{consumer::Consumer, producer::Record};
 use non_system_commands::NonSystemCommands;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 mod common;
 mod errors;
@@ -14,7 +14,6 @@ mod kafka_connectivity;
 mod non_system_commands;
 mod system_commands;
 mod systeminfo;
-
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Envelope {
@@ -57,7 +56,11 @@ fn main() {
 }
 
 fn register_agent(registration_topic: &str, brokers: &[String]) {
-    send_response(common::CLIENT_ID.to_owned().as_str(), registration_topic, brokers);
+    send_response(
+        common::CLIENT_ID.to_owned().as_str(),
+        registration_topic,
+        brokers,
+    );
 }
 
 fn start_listening(
@@ -75,7 +78,7 @@ fn start_listening(
 
     loop {
         con_opt = get_consumer_with_retry(con_opt, brokers, topic, group, duration);
-        
+
         let mut val = con_opt.lock().unwrap();
 
         let con = val.as_mut().unwrap();
@@ -103,19 +106,18 @@ fn start_listening(
 
             drop(val);
             con_opt.lock().unwrap().take();
-            
             continue;
         };
     }
 }
 
 fn get_consumer_with_retry(
-    con:  Mutex<Option<Consumer>>,
+    con: Mutex<Option<Consumer>>,
     brokers: &[String],
     topic: &str,
     group: &str,
     duration: std::time::Duration,
-) ->  Mutex<Option<Consumer>> {
+) -> Mutex<Option<Consumer>> {
     let option = con.lock().unwrap();
 
     if option.is_none() {
@@ -125,7 +127,7 @@ fn get_consumer_with_retry(
 
                 common::sleep(duration);
                 continue;
-            };            
+            };
             return Mutex::new(Some(consumer));
         }
     }
@@ -186,17 +188,16 @@ fn send_response_envelope(envelope: Envelope, topic: &str, error_topic: &str, br
     send_response(response.as_str(), topic, brokers);
 }
 
-fn send_response(response: &str, topic: &str,brokers: &[String]) {
+fn send_response(response: &str, topic: &str, brokers: &[String]) {
     loop {
         let Ok(mut producer) = kafka_connectivity::get_producer(brokers) else {
             common::sleep(common::FIVE_SECS);
             continue;
         };
         let key: &String = &common::CLIENT_ID;
-        
 
         println!("message {}", response);
-        
+
         let Ok(_) = producer.send(&Record::from_key_value(topic, key.to_owned(), response)) else {
             common::sleep(common::FIVE_SECS);
             continue;
