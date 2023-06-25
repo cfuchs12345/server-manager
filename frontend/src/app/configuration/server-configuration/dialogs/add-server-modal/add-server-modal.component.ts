@@ -6,14 +6,11 @@ import {
   ValidatorFn,
   Validators,
 } from '@angular/forms';
-import { MatDialog } from '@angular/material/dialog';
 import { Subscription } from 'rxjs';
 import { PluginService } from 'src/app/services/plugins/plugin.service';
 import { Plugin } from 'src/app/services/plugins/types';
 import { ServerService } from 'src/app/services/servers/server.service';
 import { Feature, Server, ServerFeature } from 'src/app/services/servers/types';
-import { ConfirmDialogComponent } from 'src/app/ui/confirm-dialog/confirm-dialog.component';
-import { ServerAddressType } from 'src/types/ServerAddress';
 import { Validator } from 'ip-num/Validator';
 
 @Component({
@@ -46,8 +43,7 @@ export class AddServerModalComponent implements OnInit {
 
   constructor(
     private serverService: ServerService,
-    private pluginService: PluginService,
-    private dialog: MatDialog
+    private pluginService: PluginService
   ) {}
 
   ngOnInit(): void {
