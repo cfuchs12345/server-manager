@@ -1,0 +1,103 @@
+pipeline {
+    agent {label 'rust-slave'}
+
+    parameters {
+        string(
+        name: "CLEAN_UP", 
+        defaultValue: 'false', 
+        description: 'Do cleanup before build')
+    }
+    options {
+        copyArtifactPermission('docker/Docker-Server-Manager');
+    }
+    stages {
+        stage('Init') {
+            steps {
+                sh "rustup default stable"
+            }
+        }
+        stage('checkout') {
+            steps {
+                echo 'cleaning WS'
+                cleanWs()
+                
+                echo 'checkout'
+                checkout scm
+            }
+        }
+        stage('Clean') {
+             when {
+                expression { params.CLEAN_UP != 'false' }
+            }
+            steps {
+                dir('kafka-agent') {
+                    sh "cargo clean"
+                    sh "cargo clean --release"
+                }
+            }
+        }
+        stage('Build') {
+            steps {
+                dir('kafka-agent') {
+                    sh "cargo build --release"
+                }
+            }
+        }
+        stage('Test') {
+            steps {
+                dir('kafka-agent') {
+                    sh "cargo test"
+                }
+            }
+        }
+        stage('Clippy') {
+            steps {
+                dir('kafka-agent') {
+                    sh "cargo clippy --all"
+                }
+            }
+        }
+        stage('Rustfmt') {
+            steps {
+                dir('kafka-agent') {
+                    // The build will fail if rustfmt thinks any changes are
+                    // required.
+                    sh "cargo fmt --all"
+                }
+            }
+        }
+        stage('Doc') {
+            steps {
+                dir('kafka-agent') {
+                    sh "cargo doc"
+                    // We run a python `SimpleHTTPServer` against
+                    // /var/lib/jenkins/jobs/<repo>/branches/master/javadoc to
+                    // display our docs
+                    step([$class: 'JavadocArchiver',
+                        javadocDir: 'target/doc',
+                        keepAll: false])
+                }
+            }
+        }
+        stage("Create Artifact") {
+            steps {
+                sh "mkdir -p target/zipfile_content"
+                echo "copying resources for zip file into target/zipfile_content"
+                sh 'cp kafka-agent/target/release/kafka-agent target/zipfile_content'
+                sh 'cp kafka-agent/.env.example target/zipfile_content'
+                echo "creating zip file"
+                zip zipFile: "target/server-manager-agent.zip", archive: true, dir: "target/zipfile_content", overwrite: true
+            }
+        }
+    }
+    post{
+        always{
+            archiveArtifacts artifacts: 'target/server-manager-agent.zip', fingerprint: true
+
+            emailext body: "Build '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
+            recipientProviders: [developers(), requestor()],
+            subject: "jenkins build:${currentBuild.currentResult}: ${env.JOB_NAME}",
+            to: 'christopher@christopherfuchs.de'
+        }
+    }
+}
