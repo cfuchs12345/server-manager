@@ -78,7 +78,7 @@ fn start_listening(
         
         let mut val = con_opt.lock().unwrap();
 
-        let mut con = val.as_mut().unwrap();
+        let con = val.as_mut().unwrap();
 
         let Ok(mss) = &mut con.poll() else {
             println!("Could not poll for messages. Retry in {:?}", duration);
@@ -96,7 +96,7 @@ fn start_listening(
             for m in ms.messages() {
                 handle_message(m, response_topic, brokers, error_topic);
             }
-            consume_messageset(&mut con, ms);
+            consume_messageset(con, ms);
         }
         let Ok(_) = con.commit_consumed() else {
             println!("Could not commit messages");
