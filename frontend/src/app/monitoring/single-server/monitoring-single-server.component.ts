@@ -15,6 +15,7 @@ import {
   TimeSeriesResponse,
 } from 'src/app/services/monitoring/types';
 import { Server } from 'src/app/services/servers/types';
+import { sortByString } from 'src/app/shared/utils';
 import { ChartData, ChartDataList } from 'src/types/ChartData';
 
 @Component({
@@ -172,8 +173,7 @@ export class MonitoringSingleServerComponent
 
   getSeriesIds = (): string[] => {
     const array = [...this.chartDataList.list.map((cd) => cd.name)];
-
-    array.sort((a, b) => a.localeCompare(b));
+    sortByString(array, (str) => str);
 
     return array;
   };

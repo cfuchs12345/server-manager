@@ -9,6 +9,7 @@ import { EncryptionService } from '../encryption/encryption.service';
 
 import { NGXLogger } from 'ngx-logger';
 import { AuthenticationService } from '../auth/authentication.service';
+import { sortByIpAddress } from 'src/app/shared/utils';
 
 @Injectable({
   providedIn: 'root',
@@ -169,23 +170,8 @@ export class ServerService {
   };
 
   private publishServers = () => {
-    this.dataStore.servers.sort(this.compareServers);
-    this._servers.next(this.dataStore.servers.slice());
-  };
+    sortByIpAddress(this.dataStore.servers, (server) => server.ipaddress);
 
-  private compareServers = (a: Server, b: Server): number => {
-    const numA = Number(
-      a.ipaddress
-        .split('.')
-        .map((num, idx) => parseInt(num) * Math.pow(2, (3 - idx) * 8))
-        .reduce((a, v) => ((a += v), a), 0)
-    );
-    const numB = Number(
-      b.ipaddress
-        .split('.')
-        .map((num, idx) => parseInt(num) * Math.pow(2, (3 - idx) * 8))
-        .reduce((a, v) => ((a += v), a), 0)
-    );
-    return numA - numB;
+    this._servers.next(this.dataStore.servers.slice());
   };
 }
