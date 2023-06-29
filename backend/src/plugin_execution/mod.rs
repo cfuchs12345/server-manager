@@ -20,7 +20,6 @@ pub use monitoring::get_monitoring_data;
 
 use crate::common;
 use crate::datastore;
-use crate::datastore::Persistence;
 use crate::models::error::AppError;
 use crate::models::plugin::common::Script;
 use crate::models::plugin::Plugin;
@@ -32,7 +31,6 @@ pub fn pre_or_post_process(response: &str, script: &Script) -> Result<String, Ap
 }
 
 pub async fn execute_all_data_dependent(
-    persistence: &Persistence,
     silent: &bool,
     last_run: Option<Instant>,
     monitoring_interval: Duration,
@@ -49,8 +47,7 @@ pub async fn execute_all_data_dependent(
         .collect();
 
     let mut monitoring_processor = MonitoringProcessor::new(last_run, monitoring_interval);
-    let mut notification_processor =
-        NotificationProcessor::new(last_run, notification_interval, persistence);
+    let mut notification_processor = NotificationProcessor::new(last_run, notification_interval);
 
     log::trace!("relevant plugins for monitoring: {:?}", &relevant_plugins);
 

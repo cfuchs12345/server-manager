@@ -2,7 +2,7 @@ use std::{collections::HashMap, vec};
 
 use crate::models::{error::AppError, plugin::notification::Notification};
 
-use super::{Entry, Persistence};
+use super::{persistence, Entry};
 
 const TABLE: &str = "notifications";
 
@@ -44,30 +44,26 @@ fn notifications_to_entry(notifications: &[Notification]) -> Result<Option<Entry
 }
 
 pub async fn insert_or_update_notifications(
-    persistence: &Persistence,
     notifications: &[Notification],
 ) -> Result<bool, AppError> {
     let mut updated = false;
 
     for notification in notifications {
-        let existing: Vec<Notification> = get_existing(persistence, notification).await?;
+        let existing: Vec<Notification> = get_existing(notification).await?;
 
         let vec = vec![notification.to_owned()];
 
         if existing.is_empty() {
-            updated |= insert_notifications(persistence, vec.as_slice()).await?;
+            updated |= insert_notifications(vec.as_slice()).await?;
         } else {
-            updated |= update_notifications(persistence, vec.as_slice()).await?;
+            updated |= update_notifications(vec.as_slice()).await?;
         }
     }
     Ok(updated)
 }
 
-async fn get_existing(
-    persistence: &Persistence,
-    notification: &Notification,
-) -> Result<Vec<Notification>, AppError> {
-    let existing = match get_notification(persistence, &notification.ipaddress).await {
+async fn get_existing(notification: &Notification) -> Result<Vec<Notification>, AppError> {
+    let existing = match get_notification(&notification.ipaddress).await {
         Ok(existing) => existing,
         Err(err) => match err {
             AppError::DataNotFound(_) => Vec::new(),
@@ -80,24 +76,18 @@ async fn get_existing(
     Ok(existing)
 }
 
-pub async fn insert_notifications(
-    persistence: &Persistence,
-    notifications: &[Notification],
-) -> Result<bool, AppError> {
+pub async fn insert_notifications(notifications: &[Notification]) -> Result<bool, AppError> {
     if let Some(entry) = notifications_to_entry(notifications)? {
-        let count = persistence.insert(TABLE, entry).await?;
+        let count = persistence::insert(TABLE, entry).await?;
         Ok(count > 0)
     } else {
         Ok(true)
     }
 }
 
-pub async fn update_notifications(
-    persistence: &Persistence,
-    notifications: &[Notification],
-) -> Result<bool, AppError> {
+pub async fn update_notifications(notifications: &[Notification]) -> Result<bool, AppError> {
     if let Some(entry) = notifications_to_entry(notifications)? {
-        let result = persistence.update(TABLE, entry).await?;
+        let result = persistence::update(TABLE, entry).await?;
 
         Ok(result > 0)
     } else {
@@ -105,28 +95,20 @@ pub async fn update_notifications(
     }
 }
 
-pub async fn delete_notification(
-    persistence: &Persistence,
-    ipaddress: &str,
-) -> Result<bool, AppError> {
-    let result = persistence.delete(TABLE, ipaddress).await?;
+pub async fn delete_notification(ipaddress: &str) -> Result<bool, AppError> {
+    let result = persistence::delete(TABLE, ipaddress).await?;
 
     Ok(result > 0)
 }
 
-pub async fn get_all_notifications(
-    persistence: &Persistence,
-) -> Result<HashMap<String, Vec<Notification>>, AppError> {
-    let notification_entries = persistence.get_all(TABLE, Some("key")).await?;
+pub async fn get_all_notifications() -> Result<HashMap<String, Vec<Notification>>, AppError> {
+    let notification_entries = persistence::get_all(TABLE, Some("key")).await?;
 
     entries_to_notifications(notification_entries)
 }
 
-pub async fn get_notification(
-    persistence: &Persistence,
-    ipaddress: &str,
-) -> Result<Vec<Notification>, AppError> {
-    match persistence.get(TABLE, ipaddress).await? {
+pub async fn get_notification(ipaddress: &str) -> Result<Vec<Notification>, AppError> {
+    match persistence::get(TABLE, ipaddress).await? {
         Some(entry) => entry_to_notifications(&entry),
         None => Err(AppError::DataNotFound(ipaddress.to_owned())),
     }

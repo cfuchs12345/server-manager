@@ -3,7 +3,7 @@ use crate::{
     models::{error::AppError, users::User},
 };
 
-use super::{persistence::Persistence, Entry};
+use super::{persistence, Entry};
 
 const TABLE: &str = "users";
 
@@ -27,32 +27,32 @@ fn user_to_entry(user: &User) -> Result<Entry, AppError> {
     })
 }
 
-pub async fn insert_user(persistence: &Persistence, user: &User) -> Result<bool, AppError> {
-    let result = persistence.insert(TABLE, user_to_entry(user)?).await?;
+pub async fn insert_user(user: &User) -> Result<bool, AppError> {
+    let result = persistence::insert(TABLE, user_to_entry(user)?).await?;
 
     Ok(result > 0)
 }
 
-pub async fn update_user(persistence: &Persistence, user: &User) -> Result<bool, AppError> {
-    let result = persistence.update(TABLE, user_to_entry(user)?).await?;
+pub async fn update_user(user: &User) -> Result<bool, AppError> {
+    let result = persistence::update(TABLE, user_to_entry(user)?).await?;
 
     Ok(result > 0)
 }
 
-pub async fn delete_user(persistence: &Persistence, user_id: &str) -> Result<bool, AppError> {
-    let result = persistence.delete(TABLE, user_id).await?;
+pub async fn delete_user(user_id: &str) -> Result<bool, AppError> {
+    let result = persistence::delete(TABLE, user_id).await?;
 
     Ok(result > 0)
 }
 
-pub async fn get_all_users(persistence: &Persistence) -> Result<Vec<User>, AppError> {
-    let user_entries = persistence.get_all(TABLE, Some("key")).await?;
+pub async fn get_all_users() -> Result<Vec<User>, AppError> {
+    let user_entries = persistence::get_all(TABLE, Some("key")).await?;
 
     entries_to_users(user_entries)
 }
 
-pub async fn get_user(persistence: &Persistence, user_id: &str) -> Result<User, AppError> {
-    match persistence.get(TABLE, user_id).await? {
+pub async fn get_user(user_id: &str) -> Result<User, AppError> {
+    match persistence::get(TABLE, user_id).await? {
         Some(entry) => entry_to_user(&entry),
         None => Err(AppError::UserNotFound(user_id.to_owned())),
     }

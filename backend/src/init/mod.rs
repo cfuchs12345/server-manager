@@ -5,7 +5,6 @@ mod template_engine;
 use config::Config;
 use std::path::Path;
 
-use crate::datastore::Persistence;
 use crate::datastore::{self, TimeSeriesPersistence};
 use crate::migrations;
 use crate::models::error::AppError;
@@ -26,30 +25,28 @@ pub async fn start() -> Result<(), AppError> {
     migrations::execute_pre_db_startup_migrations(&neccessary_migrations)?;
 
     let app_data = create_common_app_data()?;
-    one_time_post_db_startup(&app_data).await?;
+    one_time_post_db_startup().await?;
 
-    migrations::execute_post_db_startup_migrations(&neccessary_migrations, &app_data).await?;
-    migrations::save_migration(&neccessary_migrations, &app_data.app_data_persistence).await?;
+    migrations::execute_post_db_startup_migrations(&neccessary_migrations).await?;
+    migrations::save_migration(&neccessary_migrations).await?;
 
-    init_server_list(&app_data.app_data_persistence).await?;
-    init_config_post_db(&app_data.app_data_persistence).await?;
+    init_server_list().await?;
+    init_config_post_db().await?;
 
     webserver::start_webserver(bind_address, app_data).await
 }
 
-async fn init_server_list(persistence: &Persistence) -> Result<(), AppError> {
-    let servers = datastore::get_all_servers(persistence, false).await?;
+async fn init_server_list() -> Result<(), AppError> {
+    let servers = datastore::get_all_servers(false).await?;
 
     datastore::cache_servers(servers)
 }
 
 fn create_common_app_data() -> Result<AppData, AppError> {
-    let persistence = futures::executor::block_on(Persistence::get_instance())?;
     let timeseries_persistence = futures::executor::block_on(create_timeseries_persistence())?;
     let template_engine = template_engine::create_templateengine()?;
 
     Ok(AppData {
-        app_data_persistence: persistence,
         app_data_timeseries_persistence: timeseries_persistence,
         app_data_template_engine: template_engine,
     })
@@ -66,8 +63,8 @@ fn one_time_init() -> Result<(), AppError> {
 }
 /* The methods called here should only do it's job once, like initializing the encryption key and so on
  */
-pub async fn one_time_post_db_startup(data: &AppData) -> Result<(), AppError> {
-    datastore::insert_new_encryption_key(&data.app_data_persistence).await?;
+pub async fn one_time_post_db_startup() -> Result<(), AppError> {
+    datastore::insert_new_encryption_key().await?;
 
     Ok(())
 }
@@ -88,9 +85,8 @@ fn init_config() -> Result<(), AppError> {
     Ok(())
 }
 
-async fn init_config_post_db(persistence: &Persistence) -> Result<(), AppError> {
-    let crypto_key = persistence
-        .get("encryption", "default")
+async fn init_config_post_db() -> Result<(), AppError> {
+    let crypto_key = datastore::get_encryption_key()
         .await?
         .ok_or(AppError::Unknown(
             "Cryto key not found in database".to_owned(),

@@ -10,7 +10,7 @@ use crate::datastore;
 use crate::models::error::AppError;
 use crate::models::plugin::Plugin;
 
-use super::persistence::Persistence;
+use super::persistence;
 use super::Entry;
 
 const TABLE_PLUGIN_CONFIG: &str = "plugin_config";
@@ -115,8 +115,8 @@ pub async fn load_plugin(
     }
 }
 
-pub async fn get_disabled_plugins(persistence: &Persistence) -> Result<Vec<String>, AppError> {
-    match persistence.get(TABLE_PLUGIN_CONFIG, "disabled_ids").await {
+pub async fn get_disabled_plugins() -> Result<Vec<String>, AppError> {
+    match persistence::get(TABLE_PLUGIN_CONFIG, "disabled_ids").await {
         Ok(res) => match res {
             Some(entry) => Ok(entry.value.split(',').map(|e| e.to_string()).collect()),
             None => Ok(Vec::new()),
@@ -125,24 +125,17 @@ pub async fn get_disabled_plugins(persistence: &Persistence) -> Result<Vec<Strin
     }
 }
 
-pub async fn disable_plugins(
-    persistence: &Persistence,
-    plugin_ids: Vec<String>,
-) -> Result<bool, AppError> {
-    match persistence
-        .delete(TABLE_PLUGIN_CONFIG, "disabled_ids")
-        .await
-    {
+pub async fn disable_plugins(plugin_ids: Vec<String>) -> Result<bool, AppError> {
+    match persistence::delete(TABLE_PLUGIN_CONFIG, "disabled_ids").await {
         Ok(_res) => {
-            match persistence
-                .insert(
-                    TABLE_PLUGIN_CONFIG,
-                    Entry {
-                        key: "disabled_ids".to_string(),
-                        value: plugin_ids.join(",").to_string(),
-                    },
-                )
-                .await
+            match persistence::insert(
+                TABLE_PLUGIN_CONFIG,
+                Entry {
+                    key: "disabled_ids".to_string(),
+                    value: plugin_ids.join(",").to_string(),
+                },
+            )
+            .await
             {
                 Ok(_res) => Ok(true),
                 Err(err) => Err(err),
@@ -152,11 +145,8 @@ pub async fn disable_plugins(
     }
 }
 
-pub async fn is_plugin_disabled(
-    plugin_id: &str,
-    persistence: &Persistence,
-) -> Result<bool, AppError> {
-    match persistence.get(TABLE_PLUGIN_CONFIG, "disabled_ids").await {
+pub async fn is_plugin_disabled(plugin_id: &str) -> Result<bool, AppError> {
+    match persistence::get(TABLE_PLUGIN_CONFIG, "disabled_ids").await {
         Ok(res) => {
             match res {
                 Some(entry) => {

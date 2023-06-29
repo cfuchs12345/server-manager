@@ -11,13 +11,13 @@ mod users;
 use lazy_static::lazy_static;
 pub use model::migration::Migration;
 pub use model::Entry;
-pub use persistence::Persistence;
 pub use timeseries::TimeSeriesPersistence;
 
 pub use std::sync::atomic::{AtomicBool, Ordering};
 
 pub use self::config::delete_dnsserver;
 pub use self::config::get_all_dnsservers;
+pub use self::config::get_encryption_key;
 pub use self::config::insert_dnsserver;
 pub use self::config::insert_new_encryption_key;
 pub use self::config::upate_dnsserver;
@@ -72,6 +72,8 @@ pub use self::inmemory::get_status;
 pub use self::inmemory::insert_condition_result;
 pub use self::inmemory::set_config;
 pub use self::inmemory::set_crypto_key;
+
+pub use self::persistence::save_migrations;
 
 pub use self::timeseries::get_timeseriesdb_config;
 pub use self::timeseries::save_timeseries_data;

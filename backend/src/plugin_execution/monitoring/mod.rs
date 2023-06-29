@@ -128,9 +128,9 @@ impl MonitoringProcessor {
             map: HashMap::new(),
             time_reached: last_run.is_none()
                 || last_run
-                    .unwrap()
+                    .expect("error")
                     .checked_add(interval)
-                    .unwrap()
+                    .expect("error")
                     .lt(&Instant::now()),
         }
     }

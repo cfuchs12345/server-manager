@@ -3,8 +3,7 @@ use std::time::{Duration, Instant};
 
 use crate::{
     commands::CommandInput,
-    common,
-    datastore::{self, Persistence},
+    common, datastore,
     models::{
         error::AppError,
         plugin::{
@@ -17,20 +16,18 @@ use crate::{
 
 pub struct NotificationProcessor {
     map: HashMap<String, Vec<Notification>>,
-    peristence: Persistence,
     time_reached: bool,
 }
 
 impl NotificationProcessor {
-    pub fn new(last_run: Option<Instant>, interval: Duration, peristence: &Persistence) -> Self {
+    pub fn new(last_run: Option<Instant>, interval: Duration) -> Self {
         NotificationProcessor {
             map: HashMap::new(),
-            peristence: peristence.to_owned(),
             time_reached: last_run.is_none()
                 || last_run
-                    .unwrap()
+                    .expect("error")
                     .checked_add(interval)
-                    .unwrap()
+                    .expect("error")
                     .lt(&Instant::now()),
         }
     }
@@ -39,7 +36,7 @@ impl NotificationProcessor {
         let values: Vec<Notification> = self.map.values().flat_map(|v| v.to_owned()).collect();
         log::debug!("notifications to persist: {:?}", values);
 
-        datastore::insert_or_update_notifications(&self.peristence, &values).await?;
+        datastore::insert_or_update_notifications(&values).await?;
         Ok(())
     }
 

@@ -55,12 +55,12 @@ lazy_static! {
 }
 
 pub async fn subscribe() -> Receiver<Event> {
-    BUS.lock().unwrap().0.subscribe()
+    BUS.lock().expect("could not lock bus").0.subscribe()
 }
 
 pub fn publish(event: Event) -> Result<usize, AppError> {
     BUS.lock()
-        .unwrap()
+        .expect("Could not publish event since bus could not be locked")
         .0
         .send(event)
         .map_err(|err| AppError::CannotBroadcastEvent(format!("{:?}", err)))
@@ -73,14 +73,28 @@ pub fn handle_object_action(
     log::trace!("current {:?} old {:?}", current, old);
 
     let event = if current.is_none() && old.is_some() {
-        Some(Event::new(EventType::Delete, &*old.unwrap())?)
+        Some(Event::new(
+            EventType::Delete,
+            &*old.expect("could not get option value"),
+        )?)
     } else if current.is_some() && old.is_none() {
-        Some(Event::new(EventType::Insert, &*current.unwrap())?)
+        Some(Event::new(
+            EventType::Insert,
+            &*current.expect("could not get option value"),
+        )?)
     } else if key_values_are_different(
-        current.as_ref().unwrap().get_key_values(),
-        old.as_ref().unwrap().get_key_values(),
+        current
+            .as_ref()
+            .expect("could not get option value")
+            .get_key_values(),
+        old.as_ref()
+            .expect("could not get option value")
+            .get_key_values(),
     ) {
-        Some(Event::new(EventType::Update, &*current.unwrap())?)
+        Some(Event::new(
+            EventType::Update,
+            &*current.expect("could not get option value"),
+        )?)
     } else {
         None
     };
@@ -100,7 +114,10 @@ fn key_values_are_different(
     for (k, v) in &current_map {
         let old = old_map.get(k);
 
-        if old.is_none() || v != old.unwrap() || v.different(old.unwrap()) {
+        if old.is_none()
+            || v != old.expect("could not get option value")
+            || v.different(old.expect("could not get option value"))
+        {
             return true;
         }
     }

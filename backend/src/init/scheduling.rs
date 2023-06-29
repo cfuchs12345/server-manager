@@ -7,7 +7,7 @@ use tokio_cron_scheduler::{Job, JobScheduler};
 
 use crate::{
     common,
-    datastore::{self, Persistence},
+    datastore::{self},
     models::error::AppError,
     other_functions,
 };
@@ -78,25 +78,22 @@ async fn schedule_monitoring(scheduler: &JobScheduler) -> Result<(), AppError> {
             Box::pin(async {
                 let intervals = get_intervals();
 
-                if let Ok(persistence) = Persistence::get_instance().await {
-                    match crate::plugin_execution::execute_all_data_dependent(
-                        &persistence,
-                        &true,
-                        get_last_run("schedule_monitoring").await,
-                        Duration::from_secs(intervals.0),
-                        Duration::from_secs(intervals.1),
-                    )
-                    .await
-                    {
-                        Ok(_) => {
-                            LAST_RUN
-                                .write()
-                                .await
-                                .insert("schedule_monitoring".to_owned(), Instant::now());
-                        }
-                        Err(err) => {
-                            log::error!("error while executing schedule_monitoring: {}", err);
-                        }
+                match crate::plugin_execution::execute_all_data_dependent(
+                    &true,
+                    get_last_run("schedule_monitoring").await,
+                    Duration::from_secs(intervals.0),
+                    Duration::from_secs(intervals.1),
+                )
+                .await
+                {
+                    Ok(_) => {
+                        LAST_RUN
+                            .write()
+                            .await
+                            .insert("schedule_monitoring".to_owned(), Instant::now());
+                    }
+                    Err(err) => {
+                        log::error!("error while executing schedule_monitoring: {}", err);
                     }
                 }
             })

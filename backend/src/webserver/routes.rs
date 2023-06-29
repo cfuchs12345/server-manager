@@ -35,12 +35,11 @@ use sqlx::types::chrono::NaiveDateTime;
 
 #[post("/networks/actions")]
 pub async fn post_networks_action(
-    data: web::Data<AppData>,
     query: web::Json<NetworksAction>,
 ) -> Result<HttpResponse, AppError> {
     let params_map = QueryParamsAsMap::from(query.params.clone());
 
-    let dns_server_result = datastore::get_all_dnsservers(&data.app_data_persistence).await;
+    let dns_server_result = datastore::get_all_dnsservers().await;
 
     match query.action_type {
         NetworkActionType::AutoDiscover => {
@@ -78,8 +77,8 @@ pub async fn post_networks_action(
 }
 
 #[get("/servers")]
-pub async fn get_servers(data: web::Data<AppData>) -> Result<HttpResponse, AppError> {
-    let servers = datastore::get_all_servers(&data.app_data_persistence, true).await?;
+pub async fn get_servers() -> Result<HttpResponse, AppError> {
+    let servers = datastore::get_all_servers(true).await?;
 
     // client doesn't need to know the credentials and or parameters normally
     // only if a user wants to configure a feature, the information is required on the client side
@@ -90,18 +89,14 @@ pub async fn get_servers(data: web::Data<AppData>) -> Result<HttpResponse, AppEr
 }
 
 #[post("/servers")]
-pub async fn post_servers(
-    data: web::Data<AppData>,
-    query: web::Json<Server>,
-) -> Result<HttpResponse, AppError> {
-    datastore::insert_server(&data.app_data_persistence, &query.0).await?;
+pub async fn post_servers(query: web::Json<Server>) -> Result<HttpResponse, AppError> {
+    datastore::insert_server(&query.0).await?;
 
     Ok(HttpResponse::Ok().finish())
 }
 
 #[post("/servers/actions")]
 pub async fn post_servers_actions(
-    data: web::Data<AppData>,
     query: web::Json<ServersAction>,
 ) -> Result<HttpResponse, AppError> {
     let params_map = QueryParamsAsMap::from(query.params.clone());
@@ -128,11 +123,9 @@ pub async fn post_servers_actions(
             Ok(HttpResponse::Ok().json(list))
         }
         ServersActionType::FeatureScan => {
-            let servers = datastore::get_all_servers(&data.app_data_persistence, true).await?;
+            let servers = datastore::get_all_servers(true).await?;
 
-            let upnp_activated = !datastore::is_plugin_disabled("upnp", &data.app_data_persistence)
-                .await
-                .unwrap_or(true);
+            let upnp_activated = !datastore::is_plugin_disabled("upnp").await.unwrap_or(true);
 
             let list =
                 plugin_execution::discover_features_of_all_servers(servers, upnp_activated, &true)
@@ -156,7 +149,7 @@ pub async fn post_servers_by_ipaddress_action(
         return Err(AppError::InvalidArgument("ipaddress".to_owned(), None));
     };
 
-    let server = datastore::get_server(&data.app_data_persistence, &ipaddress).await?;
+    let server = datastore::get_server(&ipaddress).await?;
 
     let crypto_key = datastore::get_crypto_key()?;
 
@@ -221,11 +214,8 @@ pub async fn post_servers_by_ipaddress_action(
 }
 
 #[put("/servers/{ipaddress}")]
-pub async fn put_servers_by_ipaddress(
-    data: web::Data<AppData>,
-    query: web::Json<Server>,
-) -> Result<HttpResponse, AppError> {
-    datastore::update_server(&data.app_data_persistence, &query.0).await?;
+pub async fn put_servers_by_ipaddress(query: web::Json<Server>) -> Result<HttpResponse, AppError> {
+    datastore::update_server(&query.0).await?;
 
     Ok(HttpResponse::Ok().finish())
 }
@@ -234,7 +224,6 @@ pub async fn put_servers_by_ipaddress(
 #[logfn(err = "Error", fmt = "Could not get server: {:?}")]
 pub async fn get_servers_by_ipaddress(
     session: Session,
-    data: web::Data<AppData>,
     path: web::Path<String>,
     query: web::Query<std::collections::HashMap<String, String>>,
 ) -> Result<HttpResponse, AppError> {
@@ -247,7 +236,7 @@ pub async fn get_servers_by_ipaddress(
             "expected parameter full_data but it is missing".to_owned(),
         ))?
         .parse()?;
-    let server = datastore::get_server(&data.app_data_persistence, &ipaddress).await?;
+    let server = datastore::get_server(&ipaddress).await?;
 
     if full_data {
         let client_key = ClientKey::get_from_session(session)?.ok_or(AppError::Unknown(
@@ -266,27 +255,22 @@ pub async fn get_servers_by_ipaddress(
 
 #[delete("/servers/{ipaddress}")]
 pub async fn delete_servers_by_ipaddress(
-    data: web::Data<AppData>,
     path: web::Path<String>,
 ) -> Result<HttpResponse, AppError> {
     let ipaddress = path.into_inner().parse()?;
 
-    datastore::delete_server(&data.app_data_persistence, &ipaddress).await?;
+    datastore::delete_server(&ipaddress).await?;
 
     Ok(HttpResponse::Ok().finish())
 }
 
 #[get("/plugins")]
-pub async fn get_plugins(
-    _data: web::Data<AppData>,
-    _req: HttpRequest,
-) -> Result<HttpResponse, AppError> {
+pub async fn get_plugins(_req: HttpRequest) -> Result<HttpResponse, AppError> {
     Ok(HttpResponse::Ok().json(datastore::get_all_plugins()?))
 }
 
 #[get("/plugins/actions")]
 pub async fn get_plugins_actions(
-    data: web::Data<AppData>,
     query: web::Query<std::collections::HashMap<String, String>>,
 ) -> Result<HttpResponse, AppError> {
     let params = query.into_inner();
@@ -297,9 +281,7 @@ pub async fn get_plugins_actions(
 
     match query_value.as_str() {
         "disabled" => {
-            let persistence = &data.app_data_persistence;
-
-            let list = datastore::get_disabled_plugins(persistence).await?;
+            let list = datastore::get_disabled_plugins().await?;
 
             Ok(HttpResponse::Ok().json(list))
         }
@@ -312,23 +294,17 @@ pub async fn get_plugins_actions(
 
 #[put("/plugins/actions")]
 pub async fn put_plugins_actions(
-    data: web::Data<AppData>,
     query: web::Json<PluginsAction>,
 ) -> Result<HttpResponse, AppError> {
     let action = query.into_inner();
     let params_map = QueryParamsAsMap::from(action.params);
 
-    let persistence = &data.app_data_persistence;
-
-    let res = datastore::disable_plugins(
-        persistence,
-        params_map
-            .get_split_by("ids", ",")
-            .ok_or(AppError::UnsupportedURLParameter(
-                "ids".to_owned(),
-                params_map.get("ids").map(|v| v.to_owned()),
-            ))?,
-    )
+    let res = datastore::disable_plugins(params_map.get_split_by("ids", ",").ok_or(
+        AppError::UnsupportedURLParameter(
+            "ids".to_owned(),
+            params_map.get("ids").map(|v| v.to_owned()),
+        ),
+    )?)
     .await?;
 
     match res {
@@ -338,41 +314,29 @@ pub async fn put_plugins_actions(
 }
 
 #[post("/configurations/dnsservers")]
-pub async fn post_dnsservers(
-    data: web::Data<AppData>,
-    query: web::Json<DNSServer>,
-) -> Result<HttpResponse, AppError> {
-    let persistence = &data.app_data_persistence;
-
+pub async fn post_dnsservers(query: web::Json<DNSServer>) -> Result<HttpResponse, AppError> {
     let server = query.into_inner();
 
-    datastore::insert_dnsserver(persistence, &server).await?;
+    datastore::insert_dnsserver(&server).await?;
     Ok(HttpResponse::Ok().finish())
 }
 
 #[get("/systeminformation/dnsservers")]
-pub async fn get_system_dnsservers(_data: web::Data<AppData>) -> Result<HttpResponse, AppError> {
+pub async fn get_system_dnsservers() -> Result<HttpResponse, AppError> {
     Ok(HttpResponse::Ok().json(systeminfo::get_systenms_dns_servers()?))
 }
 
 #[get("/configurations/dnsservers")]
-pub async fn get_dnsservers(data: web::Data<AppData>) -> Result<HttpResponse, AppError> {
-    let persistence = &data.app_data_persistence;
-
-    let list = datastore::get_all_dnsservers(persistence).await?;
+pub async fn get_dnsservers() -> Result<HttpResponse, AppError> {
+    let list = datastore::get_all_dnsservers().await?;
     Ok(HttpResponse::Ok().json(list))
 }
 
 #[delete("/configurations/dnsservers/{ipaddress}")]
-pub async fn delete_dnsservers(
-    data: web::Data<AppData>,
-    path: web::Path<String>,
-) -> Result<HttpResponse, AppError> {
-    let persistence = &data.app_data_persistence;
-
+pub async fn delete_dnsservers(path: web::Path<String>) -> Result<HttpResponse, AppError> {
     let ipaddress = path.into_inner().parse()?;
 
-    datastore::delete_dnsserver(persistence, &ipaddress).await?;
+    datastore::delete_dnsserver(&ipaddress).await?;
     Ok(HttpResponse::Ok().finish())
 }
 
@@ -391,53 +355,44 @@ pub async fn get_smtp_config_valid() -> Result<HttpResponse, AppError> {
 }
 
 #[get("/users")]
-pub async fn get_users(data: web::Data<AppData>) -> Result<HttpResponse, AppError> {
-    let result = datastore::get_all_users(&data.app_data_persistence).await?;
+pub async fn get_users() -> Result<HttpResponse, AppError> {
+    let result = datastore::get_all_users().await?;
 
     Ok(HttpResponse::Ok().json(result))
 }
 
 #[get("/users/exist")]
-pub async fn get_users_exist(data: web::Data<AppData>) -> Result<HttpResponse, AppError> {
-    let result = datastore::get_all_users(&data.app_data_persistence).await?;
+pub async fn get_users_exist() -> Result<HttpResponse, AppError> {
+    let result = datastore::get_all_users().await?;
 
     Ok(HttpResponse::Ok().json(!result.is_empty()))
 }
 
 #[post("/users")]
-pub async fn post_user(
-    data: web::Data<AppData>,
-    query: web::Json<User>,
-) -> Result<HttpResponse, AppError> {
-    save_user_common(data, query).await
+pub async fn post_user(query: web::Json<User>) -> Result<HttpResponse, AppError> {
+    save_user_common(query).await
 }
 
 #[post("/users_first")]
-pub async fn post_first_user(
-    data: web::Data<AppData>,
-    query: web::Json<User>,
-) -> Result<HttpResponse, AppError> {
-    let result = datastore::get_all_users(&data.app_data_persistence).await?;
+pub async fn post_first_user(query: web::Json<User>) -> Result<HttpResponse, AppError> {
+    let result = datastore::get_all_users().await?;
 
     if !result.is_empty() {
         log::error!("Called function that is used for initial user save that allows and update without authorization. However, there are already users. So this is not the initial user creation.");
         Ok(HttpResponse::Unauthorized().finish())
     } else {
-        save_user_common(data, query).await
+        save_user_common(query).await
     }
 }
 
-async fn save_user_common(
-    data: web::Data<AppData>,
-    query: web::Json<User>,
-) -> Result<HttpResponse, AppError> {
+async fn save_user_common(query: web::Json<User>) -> Result<HttpResponse, AppError> {
     let initial_password = common::generate_short_random_string();
     let password_hash = common::hash_password(initial_password.as_str())?;
 
     let mut user = query.0;
     user.update_password_hash(password_hash);
 
-    let update_result = datastore::insert_user(&data.app_data_persistence, &user).await?;
+    let update_result = datastore::insert_user(&user).await?;
 
     if update_result {
         if common::is_smtp_config_valid()? {
@@ -472,20 +427,16 @@ async fn save_user_common(
 }
 
 #[delete("/users/{user_id}")]
-pub async fn delete_user(
-    data: web::Data<AppData>,
-    path: web::Path<String>,
-) -> Result<HttpResponse, AppError> {
+pub async fn delete_user(path: web::Path<String>) -> Result<HttpResponse, AppError> {
     let user_id = path.into_inner();
 
-    datastore::delete_user(&data.app_data_persistence, &user_id).await?;
+    datastore::delete_user(&user_id).await?;
 
     Ok(HttpResponse::Ok().finish())
 }
 
 #[put("/user/{user_id}/changepassword")]
 pub async fn put_user_changepassword(
-    data: web::Data<AppData>,
     req: HttpRequest,
     query: web::Json<PasswordChange>,
 ) -> Result<HttpResponse, AppError> {
@@ -500,7 +451,7 @@ pub async fn put_user_changepassword(
 
     let decrypted_old = common::aes_decrypt(&query.old_password, secret.as_str())?;
 
-    let mut user = datastore::get_user(&data.app_data_persistence, query.user_id.as_str()).await?;
+    let mut user = datastore::get_user(query.user_id.as_str()).await?;
 
     let password_check_result = user.check_password(&decrypted_old)?;
 
@@ -509,7 +460,7 @@ pub async fn put_user_changepassword(
 
         user.update_password_hash(common::hash_password(decrypted_new.as_str())?);
 
-        let user_updated = datastore::update_user(&data.app_data_persistence, &user).await?;
+        let user_updated = datastore::update_user(&user).await?;
 
         if user_updated {
             HttpResponse::Ok().finish();
@@ -529,11 +480,7 @@ pub async fn get_one_time_key() -> Result<HttpResponse, AppError> {
 }
 
 #[post("users/authenticate")]
-pub async fn authenticate(
-    session: Session,
-    data: web::Data<AppData>,
-    req: HttpRequest,
-) -> Result<HttpResponse, AppError> {
+pub async fn authenticate(session: Session, req: HttpRequest) -> Result<HttpResponse, AppError> {
     let headers = req.headers();
     let auth_header = headers
         .get(header::AUTHORIZATION)
@@ -552,7 +499,7 @@ pub async fn authenticate(
 
     let decrypted = common::aes_decrypt(&auth_values.1, secret.as_str())?;
 
-    let user = datastore::get_user(&data.app_data_persistence, user_id.as_str()).await?;
+    let user = datastore::get_user(user_id.as_str()).await?;
 
     let password_check_result = user.check_password(&decrypted)?;
 
@@ -575,7 +522,6 @@ pub async fn authenticate(
 
 #[get("monitoring/ids")]
 async fn get_monitoring_ids(
-    data: web::Data<AppData>,
     query: web::Query<std::collections::HashMap<String, String>>,
 ) -> Result<HttpResponse, AppError> {
     let ipaddress_param = query
@@ -583,7 +529,7 @@ async fn get_monitoring_ids(
         .ok_or(AppError::MissingURLParameter("ipaddress".to_owned()))?;
 
     let ipaddress = ipaddress_param.parse::<IpAddr>()?;
-    let server = datastore::get_server(&data.app_data_persistence, &ipaddress).await?;
+    let server = datastore::get_server(&ipaddress).await?;
 
     let mut names: Vec<String> = Vec::new();
 
@@ -607,7 +553,6 @@ async fn get_monitoring_ids(
 
 #[get("monitoring/data")]
 async fn get_monitoring_data(
-    _data: web::Data<AppData>,
     query: web::Query<std::collections::HashMap<String, String>>,
 ) -> Result<HttpResponse, AppError> {
     //nm=true
@@ -629,31 +574,26 @@ async fn get_monitoring_data(
 
 #[get("notifications")]
 async fn get_notifications(
-    data: web::Data<AppData>,
     _query: web::Query<std::collections::HashMap<String, String>>,
 ) -> Result<HttpResponse, AppError> {
-    let notifications: Vec<Notification> =
-        datastore::get_all_notifications(&data.app_data_persistence)
-            .await?
-            .values()
-            .flat_map(|v| v.to_owned())
-            .collect();
+    let notifications: Vec<Notification> = datastore::get_all_notifications()
+        .await?
+        .values()
+        .flat_map(|v| v.to_owned())
+        .collect();
 
     Ok(HttpResponse::Ok().json(notifications))
 }
 
 #[get("configuration")]
-async fn get_config(data: web::Data<AppData>, req: HttpRequest) -> Result<HttpResponse, AppError> {
+async fn get_config(req: HttpRequest) -> Result<HttpResponse, AppError> {
     let decrypted_password = get_decrypted_password_from_header(req).await?;
 
-    Ok(HttpResponse::Ok().json(
-        datastore::export_config(&data.app_data_persistence, decrypted_password.as_str()).await?,
-    ))
+    Ok(HttpResponse::Ok().json(datastore::export_config(decrypted_password.as_str()).await?))
 }
 
 #[post("configuration")]
 async fn post_config(
-    data: web::Data<AppData>,
     query: web::Json<Configuration>,
     req: HttpRequest,
 ) -> Result<HttpResponse, AppError> {
@@ -661,15 +601,7 @@ async fn post_config(
 
     let config = query.into_inner();
 
-    Ok(HttpResponse::Ok().json(
-        datastore::import_config(
-            &data.app_data_persistence,
-            config,
-            true,
-            &decrypted_password,
-        )
-        .await?,
-    ))
+    Ok(HttpResponse::Ok().json(datastore::import_config(config, true, &decrypted_password).await?))
 }
 
 #[get("events")]

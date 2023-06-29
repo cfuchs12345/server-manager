@@ -3,13 +3,12 @@ use std::{collections::HashMap, path::Path};
 
 use crate::{
     common,
-    datastore::{self, Migration, Persistence},
+    datastore::{self, Migration},
     models::{
         error::AppError,
         plugin::Plugin,
         server::{Credential, Feature, Server},
     },
-    webserver::AppData,
 };
 
 #[derive(PartialEq, Eq, Debug)]
@@ -47,27 +46,24 @@ pub fn do_db_location_migration() -> std::result::Result<u64, AppError> {
     std::fs::copy(old_path, new_path).map_err(|e| AppError::Unknown(format!("{}", e)))
 }
 
-pub async fn save_migration(
-    neccessary_migrations: &[MigrationTypes],
-    persistence: &Persistence,
-) -> Result<(), AppError> {
+pub async fn save_migration(neccessary_migrations: &[MigrationTypes]) -> Result<(), AppError> {
     let migrations: Vec<Migration> = neccessary_migrations
         .iter()
         .map(|mig| Migration::new(mig.to_string().as_str()))
         .collect();
-    persistence.save_migrations(migrations).await?;
+    datastore::save_migrations(migrations).await?;
     Ok(())
 }
 
-pub async fn do_encryption_migration(data: &AppData) -> std::result::Result<(), AppError> {
-    let servers = datastore::get_all_servers(&data.app_data_persistence, false).await?;
+pub async fn do_encryption_migration() -> std::result::Result<(), AppError> {
+    let servers = datastore::get_all_servers(false).await?;
 
     let plugins_map = datastore::get_all_plugins_map()?;
 
     if !servers.is_empty() {
         let servers_data_to_encrypt = get_servers_needing_encryption(servers, &plugins_map)?;
 
-        let crypto_key_entry = get_default_encryption_key(data).await?;
+        let crypto_key_entry = get_default_encryption_key().await?;
 
         for server in servers_data_to_encrypt {
             let mut s = server.to_owned();
@@ -112,16 +108,14 @@ pub async fn do_encryption_migration(data: &AppData) -> std::result::Result<(), 
                 feature.credentials = new_credentials;
             }
 
-            update_server(&s, &data.app_data_persistence)?;
+            update_server(&s)?;
         }
     }
     Ok(())
 }
 
-async fn get_default_encryption_key(data: &AppData) -> Result<datastore::Entry, AppError> {
-    let crypto_key_entry = data
-        .app_data_persistence
-        .get("encryption", "default")
+async fn get_default_encryption_key() -> Result<datastore::Entry, AppError> {
+    let crypto_key_entry = datastore::get_encryption_key()
         .await?
         .ok_or_else(|| AppError::DataNotFound("encryption/default".to_string()))?;
     Ok(crypto_key_entry)
@@ -140,8 +134,8 @@ fn get_servers_needing_encryption(
     Ok(list)
 }
 
-fn update_server(server: &Server, persistence: &Persistence) -> Result<(), AppError> {
-    futures::executor::block_on(datastore::update_server(persistence, server))?;
+fn update_server(server: &Server) -> Result<(), AppError> {
+    futures::executor::block_on(datastore::update_server(server))?;
     Ok(())
 }
 
@@ -188,10 +182,9 @@ pub fn execute_pre_db_startup_migrations(
 
 pub async fn execute_post_db_startup_migrations(
     neccessary_migrations: &[MigrationTypes],
-    data: &AppData,
 ) -> Result<(), AppError> {
     if neccessary_migrations.contains(&MigrationTypes::Encryption) {
-        do_encryption_migration(data).await?;
+        do_encryption_migration().await?;
     }
 
     Ok(())
