@@ -25,6 +25,7 @@ pub async fn start() -> Result<(), AppError> {
     migrations::execute_pre_db_startup_migrations(&neccessary_migrations)?;
 
     let app_data = create_common_app_data()?;
+    datastore::init_db();
     one_time_post_db_startup().await?;
 
     migrations::execute_post_db_startup_migrations(&neccessary_migrations).await?;

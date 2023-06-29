@@ -73,6 +73,7 @@ pub use self::inmemory::insert_condition_result;
 pub use self::inmemory::set_config;
 pub use self::inmemory::set_crypto_key;
 
+pub use self::persistence::init_db;
 pub use self::persistence::save_migrations;
 
 pub use self::timeseries::get_timeseriesdb_config;
