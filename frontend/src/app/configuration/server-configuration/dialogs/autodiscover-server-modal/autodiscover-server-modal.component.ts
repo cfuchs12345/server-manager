@@ -96,8 +96,6 @@ export class AutodiscoverServerModalComponent implements OnInit, OnDestroy {
   }
 
   getErrorMessageNetworkMask = () => {
-    console.log(this.formControlNetworkmask.errors);
-
     if (this.formControlNetworkmask.hasError('required')) {
       return 'You must enter a value';
     }

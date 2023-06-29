@@ -72,7 +72,6 @@ export class AddServerModalComponent implements OnInit {
   }
 
   getIPAddressErrorMessage() {
-    console.log(this.ipaddress.errors);
     if (this.ipaddress.hasError('required')) {
       return 'You must enter a value';
     }
