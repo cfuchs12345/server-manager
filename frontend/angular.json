@@ -37,7 +37,7 @@
              "node_modules/apexcharts/dist/apexcharts.min.js"
             ],
             "allowedCommonJsDependencies": [
-              "buffer",
+              "buffer/",
               "apexcharts"
             ]
           },

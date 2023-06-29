@@ -16,16 +16,18 @@ import {
   formatter,
 } from 'jscrypto/es6';
 
-import { Buffer } from 'buffer';
+
 import { OneTimeKey } from '../auth/types';
 
-window.Buffer = window.Buffer || Buffer;
+var Buffer = require('buffer/').Buffer
 
 const IV_LENGTH = 16;
 const SALT_LENGTH = 64;
 const TAG_LENGTH = 16;
 const BASE64 = 'base64';
 const ROUNDS = 10000;
+
+
 
 @Injectable()
 export class EncryptionService {
