@@ -9,6 +9,7 @@ import { ServerDiscoveryService } from 'src/app/services/servers/server-discover
 import { GeneralService } from 'src/app/services/general/general.service';
 import { DNSServer } from 'src/app/services/general/types';
 import { ErrorService, Source } from 'src/app/services/errors/error.service';
+import { RxwebValidators, IpVersion } from '@rxweb/reactive-form-validators';
 
 @Component({
   selector: 'app-autodiscover-server-modal',
@@ -22,10 +23,10 @@ export class AutodiscoverServerModalComponent implements OnInit, OnDestroy {
   inputHintNetworkmask: string = 'Enter the network using CIDR notatation';
   inputExampleNetworkmask: string = 'Example: 192.168.178.0/24';
   inputPlaceholderNetworkmask: string = 'xxx.xxx.xxx.xxx/xx';
-  inputPatternNetworkmask: string = '^([0-9]{1,3}.){3}[0-9]{1,3}/([0-9]|[1-2][0-9]|3[0-2])$';
+
   formControlNetworkmask = new FormControl('', [
     Validators.required,
-    Validators.pattern(this.inputPatternNetworkmask),
+    RxwebValidators.ip({version:IpVersion.AnyOne,isCidr:true})
   ]);
   loading: boolean = false;
 
@@ -95,10 +96,12 @@ export class AutodiscoverServerModalComponent implements OnInit, OnDestroy {
   }
 
   getErrorMessageNetworkMask = () => {
+    console.log(this.formControlNetworkmask.errors);
+
     if (this.formControlNetworkmask.hasError('required')) {
       return 'You must enter a value';
     }
-    return this.formControlNetworkmask.hasError('pattern')
+    return this.formControlNetworkmask.hasError('ip')
       ? 'The network mask format is not correct'
       : 'Unknown error';
   };

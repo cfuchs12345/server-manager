@@ -6,12 +6,12 @@ import {
   ValidatorFn,
   Validators,
 } from '@angular/forms';
+import { RxwebValidators, IpVersion } from '@rxweb/reactive-form-validators';
 import { Subscription } from 'rxjs';
 import { PluginService } from 'src/app/services/plugins/plugin.service';
 import { Plugin } from 'src/app/services/plugins/types';
 import { ServerService } from 'src/app/services/servers/server.service';
 import { Feature, Server, ServerFeature } from 'src/app/services/servers/types';
-import { Validator } from 'ip-num/Validator';
 
 @Component({
   selector: 'app-add-server-modal',
@@ -26,7 +26,10 @@ export class AddServerModalComponent implements OnInit {
   nameHint: string = '';
   buttonTextAddServer: string = 'Add Server';
   name = new FormControl('', []);
-  ipaddress = new FormControl('', [Validators.required, ipValidator()]);
+  ipaddress = new FormControl('', [
+    Validators.required,
+    RxwebValidators.ip({ version: IpVersion.AnyOne }),
+  ]);
 
   buttonTextAddFeature = 'Add Feature';
 
@@ -69,6 +72,7 @@ export class AddServerModalComponent implements OnInit {
   }
 
   getIPAddressErrorMessage() {
+    console.log(this.ipaddress.errors);
     if (this.ipaddress.hasError('required')) {
       return 'You must enter a value';
     }
@@ -133,13 +137,4 @@ export class AddServerModalComponent implements OnInit {
   private isFeatureAlreadySet(id: string, features: Feature[]) {
     return features.filter((feature) => feature.id === id).length > 0;
   }
-}
-
-export function ipValidator(): ValidatorFn {
-  return (control: AbstractControl): ValidationErrors | null => {
-    let [validv4, errv4] = Validator.isValidIPv4String(control.value);
-    let [validv6, errv6] = Validator.isValidIPv6String(control.value);
-
-    return !validv4 && !validv6 ? { ip: { value: 'invalid address' } } : null;
-  };
 }

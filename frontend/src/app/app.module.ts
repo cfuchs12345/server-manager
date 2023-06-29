@@ -79,6 +79,8 @@ import { ConfigImExportDialog } from './configuration/general-configuration/dial
 import { ConfigImExportModalComponent } from './configuration/general-configuration/dialogs/config-im-export-modal/config-im-export-modal.component';
 import { ErrorSourceNamePipe } from './shared/error-enum-name.pipe';
 import { LoggerModule, NgxLoggerLevel } from 'ngx-logger';
+import { StoreModule } from '@ngrx/store';
+import { reducers, metaReducers } from './reducers';
 
 @NgModule({
   declarations: [
@@ -164,6 +166,9 @@ import { LoggerModule, NgxLoggerLevel } from 'ngx-logger';
       serverLoggingUrl: '/api/logs',
       level: NgxLoggerLevel.DEBUG,
       serverLogLevel: NgxLoggerLevel.ERROR,
+    }),
+    StoreModule.forRoot(reducers, {
+      metaReducers
     }),
   ],
   providers: [
