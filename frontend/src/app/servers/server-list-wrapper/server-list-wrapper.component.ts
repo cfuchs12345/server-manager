@@ -44,15 +44,11 @@ export class ServerListWrapperComponent implements OnInit, OnDestroy {
     );
     setTimeout(this.pluginService.loadPlugins, 0);
     setTimeout(this.serverService.listServers,0);
-    setTimeout( () => {this.statusService.listServerStatus(this.servers)}, 0);
+    setTimeout( () => {this.statusService.listAllServerStatus()}, 0);
     setTimeout(this.serverActionService.listActionCheckResults, 0);
     setTimeout(this.notificationService.listNotifications, 0);
 
-    setInterval(() => {
-      if (this.servers) {
-        this.statusService.listServerStatus(this.servers);
-      }
-    }, 10000);
+
 
     setInterval(() => {
       if (this.servers) {

@@ -4,16 +4,17 @@ import {
   Input,
   OnDestroy
 } from '@angular/core';
-import { Subscription, filter, map } from 'rxjs';
+import { Subscription, filter } from 'rxjs';
 import { GUIAction } from 'src/app/services/general/types';
 import { ImageCache } from 'src/app/services/cache/image-cache.service';
 import {
   Server,
   Status,
 } from 'src/app/services/servers/types';
-import { ServerStatusService } from 'src/app/services/servers/server-status.service';
 import { PluginService } from 'src/app/services/plugins/plugin.service';
 import { Plugin } from 'src/app/services/plugins/types';
+import { Store } from '@ngrx/store';
+import { selectStatusByIpAddress } from 'src/app/state/selectors/status.selectors';
 
 @Component({
   selector: 'app-server-action-list',
@@ -31,28 +32,23 @@ export class ServerActionListComponent implements OnInit, OnDestroy {
   private pluginSubscription : Subscription | undefined = undefined;
   constructor(
     private imageCache: ImageCache,
-        private serverStatusService: ServerStatusService,
+      private store: Store,
         private pluginService: PluginService
   ) {}
 
   ngOnInit(): void {
+    if( this.server ) {
+      this.serverStatusSubscription = this.store.select(selectStatusByIpAddress(this.server.ipaddress)).subscribe((status) => {
+        this.status = status;
+      });
+    }
+
+
     this.pluginSubscription = this.pluginService.plugins.pipe(
       filter( plugins => this.filter(plugins))
     ).subscribe( plugins => this.plugins = plugins);
 
-    this.serverStatusSubscription = this.serverStatusService.serversStatus
-      .pipe(
-        //tap( (status) => console.log("before filter " + status.length)),
-        map((status) => {
-          return status.filter(
-            (s) => this.server && s.ipaddress === this.server.ipaddress
-          );
-        })
-        //tap( (status) => console.log( "after filter " + status.length)),
-      )
-      .subscribe((status) => {
-        this.status = status.find((el) => el !== undefined);
-      });
+
     this.getActionsForServer();
   }
 

@@ -39,7 +39,7 @@ export class ServersAction {
 export class Status {
   constructor(
     public ipaddress: string,
-    public is_running: boolean | undefined = undefined
+    public is_running: boolean
   ) {}
 }
 

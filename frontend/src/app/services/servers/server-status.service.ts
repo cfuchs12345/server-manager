@@ -1,34 +1,37 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, filter } from 'rxjs';
+import { filter } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
-import { Server, ServersAction } from './types';
+import { ServersAction } from './types';
 
 import { Status } from './types';
 import { ErrorService, Source } from '../errors/error.service';
 import { EventService } from '../events/event.service';
 import { Event } from '../events/types';
 import { NGXLogger } from 'ngx-logger';
+import { addMany, upsertOne } from 'src/app/state/actions/server-status.action.types';
+import { Store } from '@ngrx/store';
+import { Update } from '@ngrx/entity';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ServerStatusService {
-  private _serverStatus = new BehaviorSubject<Status[]>([]);
-
-  readonly serversStatus = this._serverStatus.asObservable();
-
-  constructor(private http: HttpClient, private errorService: ErrorService, private eventService: EventService, private logger: NGXLogger) {
+  constructor(private store: Store, private http: HttpClient, private errorService: ErrorService, private eventService: EventService, private logger: NGXLogger) {
 
     this.eventService.eventSubject.pipe(
       filter( (event: Event) => { return event.object_type === 'Status'; })
     )
     .subscribe( (event: Event) => {
-      this.logger.info("event ", event);
+      const newStatus: Status = JSON.parse(event.value);
+
+      if( newStatus ) {
+        this.store.dispatch(upsertOne({status: newStatus}));
+      }
     });
   }
 
-  listServerStatus = (servers: Server[]) => {
+  listAllServerStatus = () => {
     const action = new ServersAction('Status', []);
     const body = JSON.stringify(action);
 
@@ -38,7 +41,7 @@ export class ServerStatusService {
       })
       .subscribe({
         next: (statusList) => {
-          this.publishServerStatus(statusList);
+          this.store.dispatch(addMany({status: statusList}));
         },
         error: (err: any) => {
           if (err) {
@@ -53,7 +56,35 @@ export class ServerStatusService {
       });
   };
 
-  private publishServerStatus = (list: Status[]) => {
-    this._serverStatus.next(list);
-  };
+  getServerStatus = (ipaddress: string) => {
+    const action = new ServersAction('Status', []);
+    const body = JSON.stringify(action);
+
+    this.http
+      .post<Status>(`/servers/${ipaddress}/actions`, body, {
+        headers: defaultHeadersForJSON(),
+      })
+      .subscribe({
+        next: (status) => {
+          /*const statusUpdate: Update<Status> = {
+            id: status.ipaddress,
+            changes: { is_running: status.is_running }
+          };
+          this.store.dispatch(updateOne({status: statusUpdate}));*/
+
+          this.store.dispatch(upsertOne({status: status}));
+        },
+        error: (err: any) => {
+          if (err) {
+            this.errorService.newError(
+              Source.ServerStatusService,
+              undefined,
+              err
+            );
+          }
+        },
+        complete: () => {},
+      });
+  }
+
 }

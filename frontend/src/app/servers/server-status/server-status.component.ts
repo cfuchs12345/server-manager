@@ -1,6 +1,7 @@
 import { Component, OnInit, Input } from '@angular/core';
-import { Subscription, map } from 'rxjs';
-import { ServerStatusService } from 'src/app/services/servers/server-status.service';
+import { Store } from '@ngrx/store';
+import { Subscription } from 'rxjs';
+import { selectStatusByIpAddress } from 'src/app/state/selectors/status.selectors';
 import { Server, Status } from 'src/app/services/servers/types';
 
 @Component({
@@ -14,20 +15,14 @@ export class ServerStatusComponent implements OnInit {
 
   private serverStatusSubscription: Subscription | undefined = undefined;
 
-  constructor(private serverStatusService: ServerStatusService) {}
+  constructor(private store: Store) {}
 
   ngOnInit(): void {
-    this.serverStatusSubscription = this.serverStatusService.serversStatus
-      .pipe(
-        map((status) => {
-          return status.filter(
-            (s) => this.server && s.ipaddress === this.server.ipaddress
-          );
-        })
-      )
-      .subscribe((status) => {
-        this.status = status.find((el) => el !== undefined);
+    if( this.server ) {
+      this.serverStatusSubscription = this.store.select(selectStatusByIpAddress(this.server.ipaddress)).subscribe((status) => {
+        this.status = status;
       });
+    }
   }
 
   ngOnDestroy(): void {
@@ -37,7 +32,7 @@ export class ServerStatusComponent implements OnInit {
   }
 
   isRunning = (): boolean => {
-    if (this.status && this.status.is_running) {
+    if (this.status) {
       return this.status.is_running;
     }
     return false;

@@ -80,7 +80,7 @@ import { ConfigImExportModalComponent } from './configuration/general-configurat
 import { ErrorSourceNamePipe } from './shared/error-enum-name.pipe';
 import { LoggerModule, NgxLoggerLevel } from 'ngx-logger';
 import { StoreModule } from '@ngrx/store';
-import { reducers, metaReducers } from './reducers';
+import { reducers, metaReducers } from './state/reducers';
 
 @NgModule({
   declarations: [
