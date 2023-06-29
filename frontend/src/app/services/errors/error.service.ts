@@ -17,6 +17,7 @@ export enum Source {
   ServerFeaturesComponent,
   AutodiscoverServerModalComponent,
   NotificationService,
+  EventService
 }
 
 @Injectable()

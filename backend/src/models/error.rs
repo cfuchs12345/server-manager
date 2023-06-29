@@ -52,6 +52,7 @@ pub enum AppError {
     Suppressed(String),
     ScriptError(String),
     NokOKResponse(StatusCode, String),
+    CannotBroadcastEvent(String),
 }
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
@@ -153,6 +154,9 @@ impl Display for AppError {
                 "Response was no OK or ACCEPTED but {} and response '{}'",
                 statuscode, response
             ),
+            AppError::CannotBroadcastEvent(err) => {
+                write!(f, "Could not broardcast event '{}'", err)
+            }
         }
     }
 }

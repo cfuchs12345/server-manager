@@ -8,10 +8,13 @@ mod servers;
 mod timeseries;
 mod users;
 
+use lazy_static::lazy_static;
 pub use model::migration::Migration;
 pub use model::Entry;
 pub use persistence::Persistence;
 pub use timeseries::TimeSeriesPersistence;
+
+pub use std::sync::atomic::{AtomicBool, Ordering};
 
 pub use self::config::delete_dnsserver;
 pub use self::config::get_all_dnsservers;
@@ -75,6 +78,10 @@ pub use self::timeseries::save_timeseries_data;
 
 pub use crate::models::timeseries::TimeSeriesData;
 
+lazy_static! {
+    static ref STATUS_INITIAL_STATE: AtomicBool = AtomicBool::new(true);
+}
+
 pub fn init_cache() {
     if let Ok(number) = plugins::init_cache() {
         log::debug!("Loaded {} plugins into cache", number);
@@ -83,4 +90,12 @@ pub fn init_cache() {
 
 pub fn update_cache() {
     plugins::init_cache_silent();
+}
+
+pub fn get_status_cache_initial() -> bool {
+    STATUS_INITIAL_STATE.load(Ordering::Relaxed)
+}
+
+pub fn set_status_cache_initialized() {
+    STATUS_INITIAL_STATE.swap(false, Ordering::Relaxed);
 }

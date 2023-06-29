@@ -1,5 +1,9 @@
+use futures_util::StreamExt;
 use log_derive::logfn;
+
+use std::convert::Infallible;
 use std::net::IpAddr;
+use std::time::Duration;
 use std::vec;
 
 use crate::common::{ClientKey, OneTimeKey};
@@ -20,11 +24,12 @@ use crate::models::server::Server;
 use crate::models::token::UserToken;
 use crate::models::users::User;
 use crate::webserver::appdata::AppData;
-use crate::{common, other_functions};
+use crate::{common, event_handling, other_functions};
 use crate::{datastore, other_functions::systeminfo, plugin_execution};
 use actix_session::Session;
-use actix_web::delete;
+use actix_web::{delete, Responder};
 use actix_web::{get, post, put, web, HttpRequest, HttpResponse};
+use actix_web_lab::sse;
 use http::{header, HeaderName, HeaderValue};
 use sqlx::types::chrono::NaiveDateTime;
 
@@ -665,6 +670,18 @@ async fn post_config(
         )
         .await?,
     ))
+}
+
+#[get("events")]
+async fn get_events_from_stream() -> impl Responder {
+    let event_subscriber = event_handling::subscribe().await;
+    let stream = tokio_stream::wrappers::BroadcastStream::new(event_subscriber);
+
+    let mapped = stream.map(|val| {
+        Ok::<_, Infallible>(sse::Event::Data(sse::Data::new_json(val.unwrap()).unwrap()))
+    });
+
+    sse::Sse::from_stream(mapped).with_keep_alive(Duration::from_secs(5))
 }
 
 async fn get_decrypted_password_from_header(req: HttpRequest) -> Result<String, AppError> {

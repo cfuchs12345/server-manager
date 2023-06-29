@@ -7,6 +7,7 @@ import { Server } from 'src/app/services/servers/types';
 import { ImageCache } from 'src/app/services/cache/image-cache.service';
 import { ServerActionService } from 'src/app/services/servers/server-action.service';
 import { NotificationService } from 'src/app/services/notifications/notifications.service';
+import { EventService } from 'src/app/services/events/event.service';
 
 @Component({
   selector: 'app-server-list-wrapper',
@@ -25,6 +26,7 @@ export class ServerListWrapperComponent implements OnInit, OnDestroy {
     private statusService: ServerStatusService,
     private serverActionService: ServerActionService,
     private notificationService: NotificationService,
+    private eventService: EventService,
     private imageCache: ImageCache
   ) {}
 

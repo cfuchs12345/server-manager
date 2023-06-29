@@ -26,12 +26,6 @@ pub struct NotificationDef {
     pub notification_level: Level,
 }
 
-impl NotificationDef {
-    pub fn get_id(&self) -> String {
-        self.id.clone()
-    }
-}
-
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Notification {
     pub ipaddress: String,

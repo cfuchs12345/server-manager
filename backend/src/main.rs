@@ -1,6 +1,7 @@
 mod commands;
 mod common;
 mod datastore;
+mod event_handling;
 mod init;
 mod migrations;
 mod models;

@@ -1,8 +1,5 @@
-use config::Config;
-use lazy_static::lazy_static;
-use std::{collections::HashMap, net::IpAddr, sync::RwLock};
-
 use crate::{
+    event_handling::{self},
     models::response::{data_result::ConditionCheckResult, status::Status},
     models::{
         error::AppError,
@@ -10,6 +7,9 @@ use crate::{
         server::Server,
     },
 };
+use config::Config;
+use lazy_static::lazy_static;
+use std::{collections::HashMap, net::IpAddr, sync::RwLock};
 
 use crate::models::token::TokenInfo;
 
@@ -183,12 +183,20 @@ pub fn add_server(server: &Server) -> Result<(), AppError> {
     Ok(())
 }
 
-pub fn cache_status(status: &[Status]) -> Result<(), AppError> {
+pub fn cache_status(status: &[Status], initial: bool) -> Result<(), AppError> {
     let mut cache = SERVER_STATUS_CACHE
         .write()
         .map_err(|err| AppError::Unknown(format!("Could not get write lock. Error: {}", err)))?;
     for s in status {
-        cache.insert(s.ipaddress, s.to_owned());
+        let existing = cache.insert(s.ipaddress, s.clone());
+
+        if !initial {
+            // Box::new(v) as _    ==>   https://stackoverflow.com/questions/69500407/trait-object-causing-type-mismatch
+            event_handling::handle_object_action(
+                Some(Box::new(s.to_owned())),
+                existing.map(|v| Box::new(v) as _),
+            )?;
+        }
     }
     Ok(())
 }
