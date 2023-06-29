@@ -24,8 +24,7 @@
       "dom"
     ],
     "paths" : {
-    },
-    "typeRoots": [ "./src/global_types/index.d.ts", "node_modules/@types"]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
