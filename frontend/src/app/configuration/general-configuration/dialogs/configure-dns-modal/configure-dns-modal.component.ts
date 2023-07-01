@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { Subscription } from 'rxjs';
@@ -12,21 +12,21 @@ import { ServerAddressType } from 'src/types/ServerAddress';
   templateUrl: './configure-dns-modal.component.html',
   styleUrls: ['./configure-dns-modal.component.scss']
 })
-export class ConfigureDnsModalComponent implements OnInit, OnDestroy, OnChanges {
-  buttonTextAddDNSServer: string = 'Add DNS Server';
-  buttonTextDeleteDNSServers: string = 'Delete DNS Servers';
+export class ConfigureDnsModalComponent implements OnInit, OnDestroy {
+  buttonTextAddDNSServer = 'Add DNS Server';
+  buttonTextDeleteDNSServers = 'Delete DNS Servers';
 
-  ipplaceholder: string = 'xxx.xxx.xxx.xxx';
-  ipAddressLabel: string = 'IP Address';
-  ipaddressHint: string = 'Example: 192.168.178.111';
+  ipplaceholder = 'xxx.xxx.xxx.xxx';
+  ipAddressLabel = 'IP Address';
+  ipaddressHint = 'Example: 192.168.178.111';
   ipaddress = new FormControl('', [
     Validators.required,
     Validators.pattern(ServerAddressType.IPV4),
   ]);
 
-  portplaceholder: number = 53;
-  portLabel: string = 'Port';
-  portHint: string = 'Port is normally 53 for DNS servers';
+  portplaceholder = 53;
+  portLabel = 'Port';
+  portHint = 'Port is normally 53 for DNS servers';
   port = new FormControl('53', [Validators.required, Validators.pattern("\\d+")]);
 
 
@@ -39,7 +39,7 @@ export class ConfigureDnsModalComponent implements OnInit, OnDestroy, OnChanges 
   dnsserversSubscription: Subscription | undefined = undefined;
   systemDnsserverSubscription: Subscription | undefined = undefined;
 
-  selectAll: boolean = false;
+  selectAll = false;
 
 
 
@@ -47,7 +47,7 @@ export class ConfigureDnsModalComponent implements OnInit, OnDestroy, OnChanges 
   }
 
   ngOnInit(): void {
-    this.systemDnsserverSubscription = this.configService.systemDNSServers.subscribe( (systemDNSServers) => {
+    this.systemDnsserverSubscription = this.configService.listSystemDNSServers().subscribe( (systemDNSServers) => {
       if( systemDNSServers ) {
         this.systemDNSServers = systemDNSServers;
       }
@@ -56,7 +56,7 @@ export class ConfigureDnsModalComponent implements OnInit, OnDestroy, OnChanges 
       }
     });
 
-    this.dnsserversSubscription = this.configService.dnsServers.subscribe((dnsservers) => {
+    this.dnsserversSubscription = this.configService.listDNSServers().subscribe((dnsservers) => {
       if (dnsservers) {
         this.dnsservers = dnsservers;
       } else {
@@ -64,9 +64,6 @@ export class ConfigureDnsModalComponent implements OnInit, OnDestroy, OnChanges 
         this.dnsservers = [];
       }
     });
-
-    this.configService.listDNSServers();
-    this.configService.listSystemDNSServers();
 
     setTimeout( () => {
       if( this.dnsservers.length === 0 && this.systemDNSServers.length !== 0) {
@@ -76,8 +73,6 @@ export class ConfigureDnsModalComponent implements OnInit, OnDestroy, OnChanges 
     },1000);
   }
 
-  ngOnChanges(): void {
-  }
 
   ngOnDestroy(): void {
     if(this.dnsserversSubscription) {
@@ -101,7 +96,7 @@ export class ConfigureDnsModalComponent implements OnInit, OnDestroy, OnChanges 
   }
 
   private showSystemDNSSuggestionDialog() {
-    var dns_text = this.systemDNSServers.map((dnsserver) => " - " + dnsserver.ipaddress).join("<br>");
+    const dns_text = this.systemDNSServers.map((dnsserver) => " - " + dnsserver.ipaddress).join("<br>");
     const systemDNSDialog = this.dialog.open(ConfirmDialogComponent, {
       data: {
         title: 'Use found System DNS Servers',

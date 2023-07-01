@@ -1,9 +1,7 @@
 import {
   Component,
   Input,
-  OnInit,
   OnChanges,
-  SimpleChanges,
   ViewChild,
 } from '@angular/core';
 
@@ -15,7 +13,7 @@ import { ChartData, ChartOptions } from 'src/types/ChartData';
   templateUrl: './line-chart.component.html',
   styleUrls: ['./line-chart.component.scss'],
 })
-export class LineChartComponent implements OnInit, OnChanges {
+export class LineChartComponent implements OnChanges {
   @Input() series_id: string | undefined;
   @Input() chartData: ChartData | undefined;
 
@@ -65,7 +63,7 @@ export class LineChartComponent implements OnInit, OnChanges {
     };
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
+  ngOnChanges(): void {
     if (!this.series_id || !this.chartData) {
       return;
     }
@@ -97,6 +95,4 @@ export class LineChartComponent implements OnInit, OnChanges {
       }
     }
   }
-
-  ngOnInit(): void {}
 }

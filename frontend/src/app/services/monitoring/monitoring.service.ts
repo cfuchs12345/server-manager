@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { BehaviorSubject } from 'rxjs';
+import { Observable, map, catchError, throwError } from 'rxjs';
 import { ErrorService, Source } from '../errors/error.service';
 import { Server } from '../servers/types';
 import { TimeSeriesIds, TimeSeriesResponse } from './types';
@@ -9,38 +9,28 @@ import { TimeSeriesIds, TimeSeriesResponse } from './types';
   providedIn: 'root',
 })
 export class MonitoringService {
-  private _data = new BehaviorSubject<TimeSeriesResponse | undefined>(
-    undefined
-  );
-  private _monitoringSeriesData = new BehaviorSubject<
-    TimeSeriesIds | undefined
-  >(undefined);
-
-  readonly data = this._data.asObservable();
-  readonly monitoringIds = this._monitoringSeriesData.asObservable();
-
   constructor(private http: HttpClient, private errorService: ErrorService) {}
 
-  getMonitoringIds = (server: Server) => {
+  getMonitoringIds = (server: Server): Observable<TimeSeriesIds> => {
     const options = server
       ? { params: new HttpParams().set('ipaddress', server.ipaddress) }
       : {};
 
-    this.http.get<string[]>('/backend/monitoring/ids', options).subscribe({
-      next: (ids) => {
-        setTimeout(() => {
-          this.publishMonitoringSeriesData(
-            new TimeSeriesIds(server.ipaddress, ids)
-          );
-        }, 100);
-      },
-      error: (err: any) => {
+    return this.http.get<string[]>('/backend/monitoring/ids', options).pipe(
+      map( (ids) => {
+        return new TimeSeriesIds(server.ipaddress, ids);
+      }),
+      catchError((err) => {
         this.errorService.newError(Source.MonitoringService, undefined, err);
-      },
-    });
+        return throwError(() => err);
+      })
+    );
   };
 
-  loadMonitoringData = (server: Server, series_id: string) => {
+  loadMonitoringData = (
+    server: Server,
+    series_id: string
+  ): Observable<TimeSeriesResponse> => {
     const options = server
       ? {
           params: new HttpParams()
@@ -49,29 +39,13 @@ export class MonitoringService {
         }
       : {};
 
-    this.http
+    return this.http
       .get<TimeSeriesResponse>('/backend/monitoring/data', options)
-      .subscribe({
-        next: (response) => {
-          setTimeout(() => {
-            this.publisMonitoringhData(response);
-          }, 100);
-        },
-        error: (err: any) => {
+      .pipe(
+        catchError((err) => {
           this.errorService.newError(Source.MonitoringService, undefined, err);
-        },
-      });
-  };
-
-  private publisMonitoringhData = (data: TimeSeriesResponse) => {
-    if (data) {
-      this._data.next(data);
-    }
-  };
-
-  private publishMonitoringSeriesData = (data: TimeSeriesIds) => {
-    if (data) {
-      this._monitoringSeriesData.next(data);
-    }
+          return throwError(() => err);
+        })
+      );
   };
 }

@@ -6,13 +6,19 @@ pub mod monitoring;
 pub mod notification;
 pub mod sub_action;
 
+use std::{collections::HashMap, fmt::Debug};
+
 use serde::{Deserialize, Serialize};
+
+use crate::event_handling::{EventSource, ObjectType, Value};
 
 use self::{
     action::ActionDef, data::DataDef, detection::DetectionDef, notification::NotificationDef,
 };
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq)]
+use super::error::AppError;
+
+#[derive(Serialize, Deserialize, Clone, Eq)]
 pub struct Plugin {
     pub id: String,
     pub name: String,
@@ -32,15 +38,48 @@ pub struct Plugin {
     pub actions: Vec<ActionDef>,
 }
 
+impl Plugin {
+    pub fn find_action(&self, action_id: &str) -> Option<&ActionDef> {
+        self.actions.iter().find(|plugin| plugin.id == action_id)
+    }
+}
+
+impl Debug for Plugin {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Plugin")
+            .field("id", &self.id)
+            .field("name", &self.name)
+            .finish()
+    }
+}
+
 impl PartialEq for Plugin {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
     }
 }
 
-impl Plugin {
-    pub fn find_action(&self, action_id: &str) -> Option<&ActionDef> {
-        self.actions.iter().find(|plugin| plugin.id == action_id)
+impl EventSource for Plugin {
+    fn get_object_type(&self) -> ObjectType {
+        ObjectType::Plugin
+    }
+
+    fn get_event_key_name(&self) -> String {
+        "id".to_owned()
+    }
+
+    fn get_event_key(&self) -> String {
+        self.id.to_owned()
+    }
+
+    fn get_event_value(&self) -> Result<String, AppError> {
+        Ok("".to_owned())
+    }
+
+    fn get_key_values(&self) -> HashMap<String, Value> {
+        let mut kv = HashMap::new();
+        kv.insert("name".to_owned(), Value::String(self.name.to_string()));
+        kv
     }
 }
 

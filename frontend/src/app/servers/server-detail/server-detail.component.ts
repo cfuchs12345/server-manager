@@ -7,7 +7,7 @@ import {
   SimpleChanges,
 } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { Subscription, map } from 'rxjs';
+import { NGXLogger } from 'ngx-logger';
 import { ServerDataService } from 'src/app/services/servers/server-data.service';
 import {
   ConditionCheckResult,
@@ -24,15 +24,15 @@ const action_regex = /\[\[Action.*\]\]/g;
 })
 export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
   @Input() server: Server | undefined = undefined;
-  @Input() showDetail: boolean = false;
-  @Input() turnDetail: boolean = false;
+  @Input() showDetail = false;
+  @Input() turnDetail = false;
 
   dataResults: DataResult[] | undefined = undefined;
-  dataResultSubscription: Subscription | undefined = undefined;
 
   innerHtml: SafeHtml;
 
   constructor(
+    private logger: NGXLogger,
     private sanitizer: DomSanitizer,
     private serverDataService: ServerDataService
   ) {
@@ -40,18 +40,7 @@ export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.dataResultSubscription = this.serverDataService.dataResults
-      .pipe(
-        map((data) => {
-          return data.filter(
-            (d) => this.server && d.ipaddress === this.server.ipaddress
-          );
-        })
-      )
-      .subscribe((result) => {
-        this.dataResults = result;
-        setTimeout(this.formatData, 100);
-      });
+    this.queryData('ngOnInit');
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -59,9 +48,7 @@ export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
       if (Object.hasOwn(changes, propName)) {
         switch (propName) {
           case 'showDetail': {
-            if (this.server && this.showDetail && !this.turnDetail) {
-              this.serverDataService.queryData(this.server);
-            }
+            this.queryData('ngOnChanges');
             break;
           }
         }
@@ -69,9 +56,19 @@ export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-  ngOnDestroy(): void {
-    if (this.dataResultSubscription) {
-      this.dataResultSubscription.unsubscribe();
+  ngOnDestroy(): void {}
+
+  private queryData(source: string) {
+    if (this.server && this.showDetail && !this.turnDetail) {
+      this.logger.trace('querying data for server ', source, this.server);
+
+      const subscription = this.serverDataService
+        .queryData(this.server)
+        .subscribe((result) => {
+          this.dataResults = result;
+          setTimeout(this.formatData, 100);
+          subscription.unsubscribe();
+        });
     }
   }
 
@@ -81,7 +78,7 @@ export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     if (this.dataResults) {
-      var concatString = this.dataResults.map((d) => d.result).join('');
+      let concatString = this.dataResults.map((d) => d.result).join('');
       concatString = this.replaceSubActions(concatString);
       this.innerHtml = this.sanitizer.bypassSecurityTrustHtml(concatString);
     }
@@ -94,7 +91,7 @@ export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
       return input;
     }
 
-    var map: Map<string, GUISubAction> = this.generateSubActions(groups);
+    const map: Map<string, GUISubAction> = this.generateSubActions(groups);
 
     return this.replaceActionsInHTML(input, map);
   };
@@ -103,7 +100,7 @@ export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
     input: string,
     map: Map<string, GUISubAction>
   ): string => {
-    var output = input;
+    let output = input;
     for (const entry of map.entries()) {
       const to_replace = entry[0];
       const subAction = entry[1];
@@ -122,8 +119,8 @@ export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
     }
     const conditionCheckResults = this.getConditionCheckResults();
 
-    var map: Map<string, GUISubAction> = new Map();
-    for (var group of groups) {
+    const map: Map<string, GUISubAction> = new Map();
+    for (const group of groups) {
       map.set(
         group,
         new GUISubAction(this.server.ipaddress, group, conditionCheckResults)
@@ -133,7 +130,7 @@ export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
   };
 
   getConditionCheckResults = (): ConditionCheckResult[] => {
-    var list: ConditionCheckResult[] = [];
+    const list: ConditionCheckResult[] = [];
 
     if (!this.dataResults) {
       return list;
@@ -146,7 +143,7 @@ export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
 }
 
 class GUISubAction {
-  private conditionMet: boolean = false;
+  private conditionMet = false;
   private feature_id: string | undefined;
   private action_id: string | undefined;
   private action_name: string | undefined;
@@ -172,15 +169,21 @@ class GUISubAction {
   }
 
   checkCondition = (conditionCheckResults: ConditionCheckResult[]): boolean => {
-    const found = conditionCheckResults.find(
-      (res) =>
-        res.ipaddress === this.ipaddress &&
-        res.feature_id === this.feature_id &&
-        res.action_id === this.action_id &&
-        res.action_params === this.action_params
+    const foundResultByIp = conditionCheckResults.find(
+      (res) => res.ipaddress === this.ipaddress
     );
 
-    return found !== undefined && found.result;
+    if (foundResultByIp !== undefined) {
+      const foundSubResult = foundResultByIp.subresults.find(
+        (res) =>
+          res.feature_id === this.feature_id &&
+          res.action_id === this.action_id &&
+          res.action_params === this.action_params
+      );
+
+      return foundSubResult !== undefined && foundSubResult.result;
+    }
+    return false;
   };
 
   find = (split: string[], to_find: string): string | undefined => {
@@ -194,7 +197,7 @@ class GUISubAction {
 
   generateUIElement = (): string => {
     if (this.conditionMet) {
-      let inner: string = '';
+      let inner = '';
 
       if (this.action_image && this.action_image !== '') {
         return (
@@ -243,12 +246,16 @@ class GUISubAction {
 
   updateStatusFromResults(subActionCheckResult: ConditionCheckResult[]) {
     for (var c of subActionCheckResult) {
-      if (
-        c.feature_id === this.feature_id &&
-        c.action_id === this.action_id &&
-        c.ipaddress === this.ipaddress
-      ) {
-        this.conditionMet = c.result;
+      if( c.ipaddress == this.ipaddress) {
+        const foundSubResult = c.subresults.find( (sr) => {
+          sr.feature_id === this.feature_id &&
+          sr.action_id === this.action_id &&
+          c.ipaddress === this.ipaddress
+        });
+
+        if( foundSubResult !== undefined) {
+          this.conditionMet = foundSubResult.result;
+        }
       }
     }
   }

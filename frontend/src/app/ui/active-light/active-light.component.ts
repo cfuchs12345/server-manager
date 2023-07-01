@@ -6,7 +6,6 @@ import { Component, Input } from '@angular/core';
   styleUrls: ['./active-light.component.scss'],
 })
 export class ActiveLightComponent {
-  @Input() isActive: boolean = false;
+  @Input() isActive = false;
 
-  constructor() {}
 }

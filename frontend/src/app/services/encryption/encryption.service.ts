@@ -19,7 +19,7 @@ import {
 
 import { OneTimeKey } from '../auth/types';
 
-var Buffer = require('buffer/').Buffer
+const Buffer = require('buffer/').Buffer
 
 const IV_LENGTH = 16;
 const SALT_LENGTH = 64;
@@ -33,7 +33,7 @@ const ROUNDS = 10000;
 export class EncryptionService {
   constructor(private http: HttpClient) {}
 
-  encrypt = (plainText: string, secret: string): String => {
+  encrypt = (plainText: string, secret: string): string => {
     const iv_hex = Hex.parse(cryptoRandomString({ length: IV_LENGTH * 2 }));
     const salt_hex = Hex.parse(cryptoRandomString({ length: SALT_LENGTH * 2 }));
 
@@ -48,7 +48,7 @@ export class EncryptionService {
       mode: mode.GCM,
       padding: pad.NoPadding,
     });
-    var autTag = mode.GCM.mac(
+    const autTag = mode.GCM.mac(
       AES,
       key,
       iv_hex,

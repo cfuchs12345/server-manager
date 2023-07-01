@@ -17,27 +17,27 @@ import { UserService } from 'src/app/services/users/users.service';
   styleUrls: ['./change-password-modal.component.scss'],
 })
 export class ChangePasswordModalComponent {
-  buttonText: string = 'Change the password';
+  buttonText = 'Change the password';
 
-  oldPasswordLabel: string = 'Old Password';
-  oldPasswordPlaceholder: string = '';
-  oldPasswordHint: string = 'Please enter your current password';
+  oldPasswordLabel = 'Old Password';
+  oldPasswordPlaceholder = '';
+  oldPasswordHint = 'Please enter your current password';
   oldPassword = new FormControl('', [
     Validators.required,
     Validators.minLength(6),
   ]);
 
-  newPasswordLabel: string = 'New Password';
-  newPasswordPlaceholder: string = '';
-  newPasswordHint: string = 'Please enter your new password';
+  newPasswordLabel = 'New Password';
+  newPasswordPlaceholder = '';
+  newPasswordHint = 'Please enter your new password';
   newPassword = new FormControl('', [
     Validators.required,
     Validators.minLength(6),
   ]);
 
-  confirmNewPasswordLabel: string = 'Confirm new Password';
-  confirmNewPasswordPlaceholder: string = '';
-  confirmNewPasswordHint: string =
+  confirmNewPasswordLabel = 'Confirm new Password';
+  confirmNewPasswordPlaceholder = '';
+  confirmNewPasswordHint =
     'Please enter your new password again to avoid typos';
   confirmNewPassword = new FormControl('', [
     Validators.required,
@@ -84,7 +84,6 @@ export class ChangePasswordModalComponent {
           );
         }
       },
-      error: (err) => {},
       complete: () => {
         if( subscriptionOTK ) {
           subscriptionOTK.unsubscribe();

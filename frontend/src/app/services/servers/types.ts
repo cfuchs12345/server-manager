@@ -37,10 +37,7 @@ export class ServersAction {
 }
 
 export class Status {
-  constructor(
-    public ipaddress: string,
-    public is_running: boolean
-  ) {}
+  constructor(public ipaddress: string, public is_running: boolean) {}
 }
 
 export class ServerFeature {
@@ -66,8 +63,7 @@ export class Server {
     public ipaddress: string,
     public name: string,
     public dnsname: string = '',
-    public features: Feature[] = [],
-    public selected = false
+    public features: Feature[] = []
   ) {}
 }
 
@@ -105,6 +101,12 @@ export class SubActionConditionCheck {
 export class ConditionCheckResult {
   constructor(
     public ipaddress: string,
+    public subresults: ConditionCheckSubResult[]
+  ) {}
+}
+
+export class ConditionCheckSubResult {
+  constructor(
     public action_id: string,
     public action_params: string,
     public feature_id: string,
@@ -115,7 +117,7 @@ export class ConditionCheckResult {
 // util methods for those types
 
 export const getIpAddressesFromServers = (servers: Server[]) => {
-  var ipaddresses: string[] = [];
+  const ipaddresses: string[] = [];
   servers.forEach((server) => {
     ipaddresses.push(server.ipaddress);
   });

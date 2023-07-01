@@ -1,6 +1,13 @@
-use std::net::IpAddr;
+use std::{collections::HashMap, fmt::Debug, net::IpAddr};
 
 use serde::{Deserialize, Serialize};
+
+use crate::{
+    common,
+    event_handling::{EventSource, ObjectType, Value},
+};
+
+use super::error::AppError;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq)]
 pub struct Server {
@@ -50,7 +57,36 @@ impl Server {
     }
 }
 
-#[derive(Default, Debug, Clone, Serialize, Deserialize, Eq)]
+impl EventSource for Server {
+    fn get_object_type(&self) -> ObjectType {
+        ObjectType::Server
+    }
+
+    fn get_event_key_name(&self) -> String {
+        common::IPADDRESS.to_owned()
+    }
+
+    fn get_event_key(&self) -> String {
+        format!("{:?}", self.ipaddress)
+    }
+
+    fn get_event_value(&self) -> Result<String, AppError> {
+        serde_json::to_string(self).map_err(AppError::from)
+    }
+
+    fn get_key_values(&self) -> HashMap<String, Value> {
+        let mut kv = HashMap::new();
+        kv.insert("name".to_owned(), Value::String(self.name.clone()));
+        kv.insert("dnsname".to_owned(), Value::String(self.dnsname.clone()));
+        kv.insert(
+            "features".to_owned(),
+            Value::String(format!("{:?}", self.features)),
+        );
+        kv
+    }
+}
+
+#[derive(Default, Clone, Serialize, Deserialize, Eq)]
 pub struct Feature {
     pub id: String,
     #[serde(default)]
@@ -64,6 +100,12 @@ pub struct Feature {
 impl PartialEq for Feature {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
+    }
+}
+
+impl Debug for Feature {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Feature").field("id", &self.id).finish()
     }
 }
 

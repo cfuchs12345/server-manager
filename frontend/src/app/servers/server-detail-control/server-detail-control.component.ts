@@ -11,7 +11,7 @@ export class ServerDetailControlComponent {
 
   @Input() server: Server | undefined = undefined;
 
-  showBack: boolean = false;
+  showBack = false;
 
   constructor() {}
 

@@ -10,7 +10,7 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
    styles: ['::ng-deep .mat-mdc-dialog-content { max-height: 1000vh;}']
 })
 export class AddServerDialog {
-  title: string = 'Add Server / Feature to Server';
+  title = 'Add Server / Feature to Server';
 }
 
 export const dialogSettings = () => {

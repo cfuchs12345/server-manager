@@ -1,7 +1,6 @@
 
 import { createFeatureSelector, createSelector } from '@ngrx/store';
-import {adapter, State}  from '../reducers/server-status.reducers';
-import { Status } from 'src/app/services/servers/types';
+import {adapter, State}  from '../reducers/status.reducers';
 
 
 // get the selectors
@@ -13,30 +12,22 @@ const {
 } = adapter.getSelectors();
 
 
-// select the array of users
-
-
-
-export const selectStatusById = (ipaddress: string) =>
-  createSelector(selectAll, (status) => status.find( s => s.ipaddress === ipaddress));
-
-
-export const selectServerStatusState = createFeatureSelector<State>('status');
+export const selectStatusState = createFeatureSelector<State>('status');
 
   export const selectAllServerStatus = createSelector(
-    selectServerStatusState,
+    selectStatusState,
     selectAll
   );
 
 
   export const selectStatus = createSelector(
-    selectServerStatusState,
+    selectStatusState,
     selectAll
   );
 
 
 
   export const  selectStatusByIpAddress = (ipaddress: string) => createSelector(
-    selectServerStatusState,
+    selectStatusState,
     (state: State) => state.entities[ipaddress]
   );

@@ -8,8 +8,8 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   styleUrls: ['./confirm-dialog.component.scss'],
 })
 export class ConfirmDialogComponent {
-  buttonTextConfirm: string = 'Confirm';
-  buttonTextCancel: string = 'Cancel';
+  buttonTextConfirm = 'Confirm';
+  buttonTextCancel = 'Cancel';
 
   constructor(
     public dialogRef: MatDialogRef<ConfirmDialogComponent>,

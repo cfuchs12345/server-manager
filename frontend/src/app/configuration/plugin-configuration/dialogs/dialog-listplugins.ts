@@ -14,7 +14,7 @@ import { Plugin } from "src/app/services/plugins/types";
   styles: ['::ng-deep .mat-mdc-dialog-content { max-height: 1000vh;}']
 })
 export class ListPluginsDialog {
-  title: string = 'List Plugins';
+  title = 'List Plugins';
 }
 
 export const dialogSettings = () => {

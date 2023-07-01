@@ -50,6 +50,8 @@ pub const SUB_IDENTIFIER_2: &str = "Sub_Identifier2";
 pub const VALUE: &str = "Value";
 pub const TIMESTAMP: &str = "timestamp";
 
+pub const IPADDRESS: &str = "ipaddress";
+
 pub static DB_FILENAME: &str = "./external_files/server-manager.db";
 
 pub fn generate_long_random_string() -> String {

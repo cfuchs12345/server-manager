@@ -25,7 +25,7 @@ pub async fn start() -> Result<(), AppError> {
     migrations::execute_pre_db_startup_migrations(&neccessary_migrations)?;
 
     let app_data = create_common_app_data()?;
-    datastore::init_db();
+    datastore::init_db().await?;
     one_time_post_db_startup().await?;
 
     migrations::execute_post_db_startup_migrations(&neccessary_migrations).await?;
@@ -40,7 +40,8 @@ pub async fn start() -> Result<(), AppError> {
 async fn init_server_list() -> Result<(), AppError> {
     let servers = datastore::get_all_servers(false).await?;
 
-    datastore::cache_servers(servers)
+    datastore::cache_servers(servers)?;
+    Ok(())
 }
 
 fn create_common_app_data() -> Result<AppData, AppError> {

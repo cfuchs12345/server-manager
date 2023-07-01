@@ -51,7 +51,7 @@ describe('ServerServiceService', () => {
 
     const ipaddress = testServer.ipaddress;
 
-    let obs = service.getServer(ipaddress, false);
+    const obs = service.getServer(ipaddress, false);
     obs.subscribe( {
       next(value) {
           expect(value).toBeTruthy();

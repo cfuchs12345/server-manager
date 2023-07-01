@@ -1,52 +1,74 @@
 import { Injectable } from '@angular/core';
 import { Param, Plugin, PluginsAction } from './types';
+import { filter } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
 import { ErrorService, Source } from '../errors/error.service';
+import { Store } from '@ngrx/store';
+import { addMany as addManyPlugins, removeAll as removeAllPlugins } from 'src/app/state/actions/plugin.action';
+import { addMany as addManyDisabledPlugins, removeAll as removeAllDisabledPlugins } from 'src/app/state/actions/disabled_plugin.action';
+import { EventService } from '../events/event.service';
+import { Event } from '../events/types';
 
 @Injectable({
   providedIn: 'root',
 })
 export class PluginService {
-  private _plugins = new BehaviorSubject<Plugin[]>([]);
-  private _disabledPlugins = new BehaviorSubject<string[]>([]);
-  private dataStore: { plugins: Plugin[]; disabledPlugins: string[] } = {
-    plugins: [],
-    disabledPlugins: [],
-  };
-
-  readonly plugins = this._plugins.asObservable();
-  readonly disabledPlugins = this._disabledPlugins.asObservable();
-
-  constructor(private http: HttpClient, private errorService: ErrorService) {}
+  constructor(
+    private store: Store,
+    private http: HttpClient,
+    private errorService: ErrorService,
+    private eventService: EventService
+  ) {
+    this.eventService.eventSubject
+      .pipe(
+        filter((event: Event) => {
+          return (
+            event.object_type === 'Plugin' ||
+            event.object_type === 'DisabledPlugins'
+          );
+        })
+      )
+      .subscribe((event: Event) => {
+        if (event.object_type === 'Plugin') {
+            this.store.dispatch( removeAllPlugins() );
+            this.loadPlugins();
+        }
+        else if (event.object_type === 'DisabledPlugins') {
+          this.store.dispatch( removeAllDisabledPlugins() );
+          this.loadDisabledPlugins();
+        }
+      });
+  }
 
   loadPlugins = async () => {
-    this.http.get<Plugin[]>('/backend/plugins').subscribe({
+    const subscription = this.http.get<Plugin[]>('/backend/plugins').subscribe({
       next: (loadedPlugins) => {
-        this.dataStore.plugins = loadedPlugins;
+        this.store.dispatch(addManyPlugins({ plugins: loadedPlugins }));
       },
       error: (err: any) => {
         this.errorService.newError(Source.PluginService, undefined, err);
       },
       complete: () => {
-        this.publishPlugins();
+        subscription.unsubscribe();
       },
     });
   };
 
   loadDisabledPlugins = async () => {
-    this.http
+    const subscription = this.http
       .get<string[]>('/backend/plugins/actions?query=disabled')
       .subscribe({
-        next: (idList) => {
-          this.dataStore.disabledPlugins = idList;
+        next: (disabledPlugins) => {
+          this.store.dispatch(
+            addManyDisabledPlugins({ disabled_plugins: disabledPlugins })
+          );
         },
         error: (err: any) => {
           this.errorService.newError(Source.PluginService, undefined, err);
         },
         complete: () => {
-          this.publishDisabledPlugins();
+          subscription.unsubscribe();
         },
       });
   };
@@ -66,21 +88,7 @@ export class PluginService {
         error: (err: any) => {
           this.errorService.newError(Source.PluginService, undefined, err);
         },
-        complete: () => {
-          this.loadDisabledPlugins();
-        },
+        complete: () => {},
       });
-  };
-
-  private publishDisabledPlugins = () => {
-    this._disabledPlugins.next(this.dataStore.disabledPlugins.slice());
-  };
-
-  private publishPlugins = () => {
-    this._plugins.next(this.dataStore.plugins.slice());
-  };
-
-  getPlugin = (id: string): Plugin | undefined => {
-    return this.dataStore.plugins.find((p) => p.id === id);
   };
 }

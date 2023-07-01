@@ -23,13 +23,13 @@ import {
   styleUrls: ['./general-configuration.component.scss'],
 })
 export class GeneralConfigurationComponent {
-  title: string = 'General Configuration';
-  description: string = 'Configure User Permissions and so on.';
+  title = 'General Configuration';
+  description = 'Configure User Permissions and so on.';
 
-  buttonTextManageDNSServers: string = 'DNS Servers';
-  buttonTextManageUsers: string = 'Users';
-  buttonTextChangePassword: string = 'Change your password';
-  buttonTextImExportConfig: string = 'Import/Export of Config';
+  buttonTextManageDNSServers = 'DNS Servers';
+  buttonTextManageUsers = 'Users';
+  buttonTextChangePassword = 'Change your password';
+  buttonTextImExportConfig = 'Import/Export of Config';
 
   constructor(private dialog: MatDialog) {}
 

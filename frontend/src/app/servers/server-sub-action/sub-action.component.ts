@@ -4,6 +4,8 @@ import { ConfirmDialogComponent } from 'src/app/ui/confirm-dialog/confirm-dialog
 import { ServerActionService } from 'src/app/services/servers/server-action.service';
 import { PluginService } from 'src/app/services/plugins/plugin.service';
 import { ErrorService, Source } from 'src/app/services/errors/error.service';
+import { Store } from '@ngrx/store';
+import { selectPluginById } from 'src/app/state/selectors/plugin.selectors';
 
 @Component({
   selector: 'app-server-sub-action',
@@ -12,6 +14,7 @@ import { ErrorService, Source } from 'src/app/services/errors/error.service';
 })
 export class ServerSubActionComponent {
   constructor(
+    private store: Store,
     private serverActionService: ServerActionService,
     private errorService: ErrorService,
     private pluginCache: PluginService,
@@ -50,26 +53,35 @@ export class ServerSubActionComponent {
     action_params: string,
     ipaddress: string
   ) => {
-    const plugin = this.pluginCache.getPlugin(feature_id);
-
-    if (plugin) {
-      const action = plugin.actions.find((a) => a.id === action_id);
-      if (action) {
-        if (action.needs_confirmation) {
-          const message =
-            "Do you want to execute the Action '" +
-            action_name +
-            "' on server with IP " +
-            ipaddress +
-            '?';
-          const confirmDialog = this.dialog.open(ConfirmDialogComponent, {
-            data: {
-              title: 'Confirm Action',
-              message,
-            },
-          });
-          confirmDialog.afterClosed().subscribe((result) => {
-            if (result === true) {
+    const subscription = this.store.select(selectPluginById(feature_id)).subscribe(
+      (plugin) => {
+        if (plugin) {
+          const action = plugin.actions.find((a) => a.id === action_id);
+          if (action) {
+            if (action.needs_confirmation) {
+              const message =
+                "Do you want to execute the Action '" +
+                action_name +
+                "' on server with IP " +
+                ipaddress +
+                '?';
+              const confirmDialog = this.dialog.open(ConfirmDialogComponent, {
+                data: {
+                  title: 'Confirm Action',
+                  message,
+                },
+              });
+              confirmDialog.afterClosed().subscribe((result) => {
+                if (result === true) {
+                  this.serverActionService.executeAction(
+                    feature_id,
+                    action_id,
+                    ipaddress,
+                    action_params
+                  );
+                }
+              });
+            } else {
               this.serverActionService.executeAction(
                 feature_id,
                 action_id,
@@ -77,36 +89,31 @@ export class ServerSubActionComponent {
                 action_params
               );
             }
-          });
+          } else {
+            this.errorService.newError(
+              Source.ServerSubActionComponent,
+              ipaddress,
+              'Could not execute sub-action ' +
+                action_id +
+                ' since plugin ' +
+                feature_id +
+                " doesn't contain such an action"
+            );
+          }
         } else {
-          this.serverActionService.executeAction(
-            feature_id,
-            action_id,
+          this.errorService.newError(
+            Source.ServerSubActionComponent,
             ipaddress,
-            action_params
+            'Could not execute sub-action ' +
+              action_id +
+              ' since plugin ' +
+              feature_id +
+              ' is not known'
           );
         }
-      } else {
-        this.errorService.newError(
-          Source.ServerSubActionComponent,
-          ipaddress,
-          'Could not execute sub-action ' +
-            action_id +
-            ' since plugin ' +
-            feature_id +
-            " doesn't contain such an action"
-        );
+        subscription.unsubscribe();
       }
-    } else {
-      this.errorService.newError(
-        Source.ServerSubActionComponent,
-        ipaddress,
-        'Could not execute sub-action ' +
-          action_id +
-          ' since plugin ' +
-          feature_id +
-          ' is not known'
-      );
-    }
+    );
+
   };
 }

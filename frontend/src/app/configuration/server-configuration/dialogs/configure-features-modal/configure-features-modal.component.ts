@@ -5,8 +5,8 @@ import {
   FormGroup,
   Validators,
 } from '@angular/forms';
+import { Store } from '@ngrx/store';
 import { Subscription } from 'rxjs';
-import { PluginService } from 'src/app/services/plugins/plugin.service';
 import {
   CredentialDefinition,
   ParamDefinition,
@@ -19,6 +19,8 @@ import {
   Param,
   Server,
 } from 'src/app/services/servers/types';
+import { selectAllPlugins } from 'src/app/state/selectors/plugin.selectors';
+import { selectAllServers } from 'src/app/state/selectors/server.selectors';
 
 @Component({
   selector: 'app-configure-features-modal',
@@ -28,8 +30,8 @@ import {
 export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
   buttonTextSaveFeatureSettings = 'Save Feature Settings';
 
-  showPasswordCredentials: Map<String, boolean> = new Map();
-  passwordCredentials: Map<String, boolean> = new Map();
+  showPasswordCredentials: Map<string, boolean> = new Map();
+  passwordCredentials: Map<string, boolean> = new Map();
 
   form: FormGroup;
 
@@ -52,16 +54,17 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
   subscriptionPlugins: Subscription | undefined = undefined;
 
   constructor(
+    private store: Store,
     private serverService: ServerService,
-    private pluginService: PluginService,
     private formBuilder: FormBuilder
   ) {
     this.form = formBuilder.group({});
   }
 
   ngOnInit(): void {
-    this.subscriptionServers = this.serverService.servers.subscribe(
-      (servers) => {
+    this.subscriptionServers = this.store
+      .select(selectAllServers)
+      .subscribe((servers) => {
         if (servers) {
           this.servers = servers.filter(
             (server) => server.features && server.features.length > 0
@@ -70,15 +73,13 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
           // clear messages when empty message received
           this.servers = [];
         }
-      }
-    );
+      });
 
-    this.subscriptionPlugins = this.pluginService.plugins.subscribe(
-      (plugins) => {
+    this.subscriptionPlugins = this.store
+      .select(selectAllPlugins)
+      .subscribe((plugins) => {
         this.plugins = plugins;
-      }
-    );
-    this.pluginService.loadPlugins();
+      });
   }
 
   ngOnDestroy(): void {
@@ -264,7 +265,7 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
     const map = new Map();
 
     Object.keys(this.form.controls).forEach((key) => {
-      var control = this.form.controls[key];
+      const control = this.form.controls[key];
 
       if (key.startsWith(prefix)) {
         map.set(key.replace(prefix, ''), control.value);

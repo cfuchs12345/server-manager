@@ -4,12 +4,14 @@ import { ServerService } from '../../../../services/servers/server.service';
 import { HostInformation, Server } from '../../../../services/servers/types';
 import { MatDialogRef } from '@angular/material/dialog';
 import { AutoDiscoveryDialog } from '../dialog-autodiscover';
-import { Subscription } from 'rxjs';
+import { Subscription, filter } from 'rxjs';
 import { ServerDiscoveryService } from 'src/app/services/servers/server-discovery.service';
 import { GeneralService } from 'src/app/services/general/general.service';
 import { DNSServer } from 'src/app/services/general/types';
 import { ErrorService, Source } from 'src/app/services/errors/error.service';
 import { RxwebValidators, IpVersion } from '@rxweb/reactive-form-validators';
+import { Store } from '@ngrx/store';
+import { selectAllServers } from 'src/app/state/selectors/server.selectors';
 
 @Component({
   selector: 'app-autodiscover-server-modal',
@@ -17,18 +19,18 @@ import { RxwebValidators, IpVersion } from '@rxweb/reactive-form-validators';
   styleUrls: ['./autodiscover-server-modal.component.scss'],
 })
 export class AutodiscoverServerModalComponent implements OnInit, OnDestroy {
-  buttonTextStart: string = 'Start';
-  buttonTextWorking: string = 'Working...';
-  buttonTextSaveServer: string = 'Save Servers';
-  inputHintNetworkmask: string = 'Enter the network using CIDR notatation';
-  inputExampleNetworkmask: string = 'Example: 192.168.178.0/24';
-  inputPlaceholderNetworkmask: string = 'xxx.xxx.xxx.xxx/xx';
+  buttonTextStart = 'Start';
+  buttonTextWorking = 'Working...';
+  buttonTextSaveServer = 'Save Servers';
+  inputHintNetworkmask = 'Enter the network using CIDR notatation';
+  inputExampleNetworkmask = 'Example: 192.168.178.0/24';
+  inputPlaceholderNetworkmask = 'xxx.xxx.xxx.xxx/xx';
 
   formControlNetworkmask = new FormControl('', [
     Validators.required,
-    RxwebValidators.ip({version:IpVersion.AnyOne,isCidr:true})
+    RxwebValidators.ip({ version: IpVersion.AnyOne, isCidr: true }),
   ]);
-  loading: boolean = false;
+  loading = false;
 
   displayedColumns = ['selected', 'ipaddress', 'dnsname', 'running'];
 
@@ -37,63 +39,49 @@ export class AutodiscoverServerModalComponent implements OnInit, OnDestroy {
   dnsservers: DNSServer[] = [];
 
   subscriptionServers: Subscription | undefined = undefined;
-  subscriptionDNSServers: Subscription | undefined = undefined;
   subscriptionExistingServers: Subscription | undefined = undefined;
 
   constructor(
+    private store: Store,
     private serverService: ServerService,
     private discoverService: ServerDiscoveryService,
     private generalService: GeneralService,
     private errorService: ErrorService,
     private ref: MatDialogRef<AutoDiscoveryDialog>
-  ) {
-  }
+  ) {}
 
   ngOnInit(): void {
-    this.subscriptionDNSServers = this.generalService.dnsServers.subscribe((dnsservers) => {
-      this.dnsservers = dnsservers;
-    });
+    this.loadDNSServers();
 
-    this.subscriptionServers = this.discoverService.discoveredServers.subscribe((servers) => {
-      if (servers) {
-        let retained_list = servers.filter(  s => !this.existing_servers.find( e => e.ipaddress === s.ipaddress)  );
-
-        for (let i = 0; i < retained_list.length; i++) {
-          retained_list[i].selected = true;
-        }
-        this.servers = retained_list;
-      } else {
-        // clear messages when empty message received
-        this.servers = [];
-      }
-      this.loading = false;
-    });
-    this.subscriptionExistingServers = this.serverService.servers.subscribe((servers) =>{
-      this.existing_servers = servers;
-    });
-    this.generalService.listDNSServers();
-    this.serverService.listServers();
+    this.subscriptionExistingServers = this.store
+      .select(selectAllServers)
+      .subscribe((servers) => {
+        this.existing_servers = servers;
+      });
   }
 
+  private loadDNSServers() {
+    const subscriptionDNSServers = this.generalService
+      .listDNSServers()
+      .subscribe((dnsservers) => {
+        this.dnsservers = dnsservers;
+        subscriptionDNSServers.unsubscribe();
+      });
+  }
 
   // doesn't seem to work when written as arrow function!?
   ngOnDestroy(): void {
-    if( this.subscriptionServers) {
+    if (this.subscriptionServers) {
       this.subscriptionServers.unsubscribe();
     }
-    if( this.subscriptionDNSServers ) {
-      this.subscriptionDNSServers.unsubscribe();
-    }
-    if( this.subscriptionExistingServers ) {
+    if (this.subscriptionExistingServers) {
       this.subscriptionExistingServers.unsubscribe();
     }
   }
 
-
-
   serversFound = (): boolean => {
     return this.servers.length > 0;
-  }
+  };
 
   getErrorMessageNetworkMask = () => {
     if (this.formControlNetworkmask.hasError('required')) {
@@ -105,22 +93,46 @@ export class AutodiscoverServerModalComponent implements OnInit, OnDestroy {
   };
 
   onClickAutoDiscover = () => {
-    if( !this.dnsservers || this.dnsservers.length == 0 ) {
-      this.errorService.newError(Source.AutodiscoverServerModalComponent, undefined, "Cannot run autodovery. No DNS Server configured.");
+    if (!this.dnsservers || this.dnsservers.length == 0) {
+      this.errorService.newError(
+        Source.AutodiscoverServerModalComponent,
+        undefined,
+        'Cannot run autodovery. No DNS Server configured.'
+      );
       return;
     }
     const value = this.formControlNetworkmask.getRawValue();
 
     if (value != null) {
       this.loading = true;
-      this.discoverService.autoDiscoverServers(value, true);
+      this.discoverService
+        .autoDiscoverServers(value, true)
+        .subscribe((servers) => {
+          this.servers = servers.filter(
+            (s) => this.runningOrHasName(s) && !this.alreadyExists(s)
+          );
+          this.servers.forEach((s) => (s.selected = true));
+
+          this.loading = false;
+        });
     }
   };
 
+  alreadyExists = (hi: HostInformation): boolean => {
+    return (
+      this.existing_servers.find((e) => e.ipaddress === hi.ipaddress) !==
+      undefined
+    );
+  };
+
+  runningOrHasName = (hi: HostInformation): boolean => {
+    return hi.is_running || hi.dnsname.length > 0;
+  };
+
   onClickSaveServers = () => {
-    var serversToSave: Server[] = [];
+    const serversToSave: Server[] = [];
     for (let i = 0; i < this.servers.length; i++) {
-      var server = this.servers[i];
+      const server = this.servers[i];
 
       if (server.selected) {
         serversToSave.push(
@@ -129,7 +141,6 @@ export class AutodiscoverServerModalComponent implements OnInit, OnDestroy {
       }
     }
     this.serverService.saveServers(serversToSave);
-    setTimeout(this.serverService.listServers, 20);
     this.ref.close();
   };
 

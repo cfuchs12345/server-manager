@@ -1,4 +1,12 @@
-import { Component, OnInit, Input, OnDestroy, OnChanges } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  Input,
+  OnDestroy,
+  OnChanges,
+  SimpleChanges,
+  ChangeDetectorRef
+} from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { Subscription, map } from 'rxjs';
 import { GUIAction } from 'src/app/services/general/types';
@@ -9,6 +17,7 @@ import {
 } from 'src/app/services/servers/types';
 import { ConfirmDialogComponent } from 'src/app/ui/confirm-dialog/confirm-dialog.component';
 import { ServerActionService } from 'src/app/services/servers/server-action.service';
+import { NGXLogger } from 'ngx-logger';
 
 @Component({
   selector: 'app-server-action',
@@ -19,44 +28,46 @@ export class ServerActionComponent implements OnInit, OnDestroy, OnChanges {
   @Input() server: Server | undefined = undefined;
   @Input() guiAction: GUIAction | undefined = undefined;
   @Input() status: Status | undefined = undefined;
+  @Input() conditionCheckResult: ConditionCheckResult | undefined = undefined;
 
-  allDependenciesMet: boolean = false;
-
-  private conditionCheckResult: ConditionCheckResult | undefined = undefined;
-
-  private serverActionCheckSubscription: Subscription | undefined = undefined;
+  allDependenciesMet = false;
 
   constructor(
     private serverActionService: ServerActionService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private logger: NGXLogger,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-    this.serverActionService.actionConditionChecks
-      .pipe(
-        map((status) =>
-          status.filter((status) => this.isCheckResultRequired(status))
-        )
-      )
-      .subscribe((checkResults) => {
-        this.conditionCheckResult = checkResults.find((res) => res);
-        this.allDependenciesMet =
-          this.conditionCheckResult !== undefined &&
-          this.conditionCheckResult?.result;
-      });
   }
 
-  ngOnChanges(): void {
-    this.allDependenciesMet =
-      this.conditionCheckResult !== undefined &&
-      this.conditionCheckResult.result;
-  }
+  ngOnChanges(changes: SimpleChanges): void {
+    const old = this.allDependenciesMet;
+    this.allDependenciesMet = this.allDependenciesMetCheck();
 
-  ngOnDestroy(): void {
-    if (this.serverActionCheckSubscription) {
-      this.serverActionCheckSubscription.unsubscribe();
+    if( old !== this.allDependenciesMet ) {
+        this.cdr.detectChanges();
     }
   }
+
+  allDependenciesMetCheck = (): boolean => {
+    if (
+      this.guiAction !== undefined &&
+      this.conditionCheckResult &&
+      this.server &&
+      this.conditionCheckResult.ipaddress === this.server.ipaddress
+    ) {
+      const foundSubResult = this.conditionCheckResult.subresults.find(
+        (sr) => sr.feature_id === this.guiAction?.feature.id && sr.action_id === this.guiAction.action.id
+      );
+
+      return foundSubResult !== undefined ? foundSubResult.result : false;
+    }
+    return false;
+  };
+
+  ngOnDestroy(): void {}
 
   onClickAction() {
     if (!this.server || !this.guiAction) {
@@ -92,14 +103,5 @@ export class ServerActionComponent implements OnInit, OnDestroy, OnChanges {
         this.server.ipaddress
       );
     }
-  }
-
-  private isCheckResultRequired(result: ConditionCheckResult): boolean {
-    return (
-      this.server !== undefined &&
-      this.server.ipaddress === result.ipaddress &&
-      this.guiAction?.feature.id === result.feature_id &&
-      this.guiAction.action.id === result.action_id
-    );
   }
 }

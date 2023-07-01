@@ -4,14 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     commands::ping::PingCommandResult,
-    event_handling::{
-        types::{EventSource, Value},
-        ObjectType,
-    },
+    common,
+    event_handling::{EventSource, ObjectType, Value},
     models::error::AppError,
 };
-
-const IPADDRESS: &str = "ipaddress";
 
 #[derive(Debug, Serialize, Deserialize, Eq, Clone)]
 pub struct Status {
@@ -49,7 +45,7 @@ impl EventSource for Status {
     }
 
     fn get_event_key_name(&self) -> String {
-        IPADDRESS.to_owned()
+        common::IPADDRESS.to_owned()
     }
 
     fn get_event_key(&self) -> String {

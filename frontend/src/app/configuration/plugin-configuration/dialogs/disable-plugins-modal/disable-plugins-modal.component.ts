@@ -1,8 +1,11 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
+import { Store } from '@ngrx/store';
 import { Subscription } from 'rxjs';
 import { PluginService } from 'src/app/services/plugins/plugin.service';
 import { Plugin } from 'src/app/services/plugins/types';
+import { selectAllDisabledPlugins } from 'src/app/state/selectors/disabled_plugin.selectors';
+import { selectAllPlugins } from 'src/app/state/selectors/plugin.selectors';
 
 @Component({
   selector: 'app-disable-plugins-modal',
@@ -10,9 +13,9 @@ import { Plugin } from 'src/app/services/plugins/types';
   styleUrls: ['./disable-plugins-modal.component.scss'],
 })
 export class DisablePluginsModalComponent implements OnInit, OnDestroy {
-  buttonTextDisablePlugins:string = "Disable Plugins";
+  buttonTextDisablePlugins = "Disable Plugins";
 
-  selectAll: boolean = false;
+  selectAll = false;
 
   displayedColumns: string[] = ['disable', 'name'];
 
@@ -22,10 +25,10 @@ export class DisablePluginsModalComponent implements OnInit, OnDestroy {
   subscriptionPlugins: Subscription | undefined = undefined;
   subscriptionDisabledPlugins: Subscription | undefined = undefined;
 
-  constructor(private servicePlugins: PluginService) {}
+  constructor(private store: Store, private servicePlugins: PluginService) {}
 
   ngOnInit() {
-    this.subscriptionPlugins = this.servicePlugins.plugins.subscribe(
+    this.subscriptionPlugins = this.store.select(selectAllPlugins).subscribe(
       (plugins) => {
         if (plugins) {
           this.plugins = plugins;
@@ -37,17 +40,13 @@ export class DisablePluginsModalComponent implements OnInit, OnDestroy {
     );
 
     this.subscriptionDisabledPlugins =
-      this.servicePlugins.disabledPlugins.subscribe((disabledPlugins) => {
+      this.store.select(selectAllDisabledPlugins).subscribe((disabledPlugins) => {
         if (disabledPlugins) {
           this.disabledPlugins = disabledPlugins;
         } else {
           this.disabledPlugins = [];
         }
-        // immediately unsubscribe. We only want the initial list here
-        this.subscriptionDisabledPlugins?.unsubscribe();
       });
-
-    this.servicePlugins.loadPlugins();
   }
 
   ngOnDestroy(): void {

@@ -32,7 +32,7 @@ export class UserService {
       next: (loadedUsers) => {
         this.dataStore.users = loadedUsers;
       },
-      error: (err: any) => {
+      error: (err) => {
         this.errorService.newError(Source.UserService, undefined, err);
       },
       complete: () => {
@@ -58,7 +58,7 @@ export class UserService {
             new UserInitialPassword(user.user_id, response)
           );
         },
-        error: (err: any) => {
+        error: (err) => {
           this.errorService.newError(Source.UserService, user.user_id, err);
         },
         complete: () => {
@@ -69,8 +69,8 @@ export class UserService {
 
   deleteUsers = (usersToDelete: User[]) => {
     for (const [i, user] of usersToDelete.entries()) {
-      this.http
-        .delete<any>('/backend/users/' + user.user_id, {
+      const subscription = this.http
+        .delete('/backend/users/' + user.user_id, {
           headers: defaultHeadersForJSON(),
         })
         .subscribe({
@@ -80,7 +80,7 @@ export class UserService {
             );
             this.dataStore.users.splice(indexToDelete, 1);
           },
-          error: (err: any) => {
+          error: (err) => {
             this.errorService.newError(Source.UserService, user.user_id, err);
           },
           complete: () => {
@@ -89,6 +89,8 @@ export class UserService {
             ) {
               setTimeout(this.publishUsers, 500);
             }
+
+            subscription.unsubscribe();
           },
         });
     }
@@ -112,16 +114,17 @@ export class UserService {
       'X-custom': `${otk.id}`,
     });
 
-    this.http
-      .put<any>('/backend/user/' + userId + '/changepassword', body, {
+    const subscription = this.http
+      .put('/backend/user/' + userId + '/changepassword', body, {
         headers: headers,
       })
       .subscribe({
-        next: (res) => {},
-        error: (err: any) => {
+        error: (err) => {
           this.errorService.newError(Source.UserService, userId, err);
         },
-        complete: () => {},
+        complete: () => {
+          subscription.unsubscribe();
+        },
       });
   };
 

@@ -9,7 +9,7 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
   </div>',
 })
 export class ConfigureFeaturesDialog {
-  title: string = 'Configure Features';
+  title = 'Configure Features';
 }
 
 export const dialogSettings = () => {

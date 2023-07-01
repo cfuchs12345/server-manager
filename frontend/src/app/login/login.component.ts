@@ -9,23 +9,23 @@ import { Router } from '@angular/router';
   styleUrls: ['./login.component.scss'],
 })
 export class LoginComponent {
-  userIdLabel: string = 'User Id';
-  userIdPlaceholder: string = '';
-  userIdHint: string = '';
+  userIdLabel = 'User Id';
+  userIdPlaceholder = '';
+  userIdHint = '';
   userId: FormControl = new FormControl('', [
     Validators.required,
     Validators.minLength(4),
   ]);
 
-  passwordLabel: string = 'Password';
-  passwordPlaceholder: string = '';
-  passwordHint: string = '';
+  passwordLabel = 'Password';
+  passwordPlaceholder = '';
+  passwordHint = '';
   password: FormControl = new FormControl('', [
     Validators.required,
     Validators.minLength(4),
   ]);
 
-  buttonTextLogin: string = 'Login';
+  buttonTextLogin = 'Login';
 
   form = new FormGroup({ userId: this.userId, password: this.password });
 

@@ -1,8 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Plugin } from '../../../../services/plugins/types';
-import { PluginService } from 'src/app/services/plugins/plugin.service';
-import { MatDialogRef } from '@angular/material/dialog';
 import { Subscription } from 'rxjs';
+import { Store } from '@ngrx/store';
+import { selectAllPlugins } from 'src/app/state/selectors/plugin.selectors';
 
 @Component({
   selector: 'app-list-plugins-modal',
@@ -15,10 +15,10 @@ export class ListPluginsModalComponent implements OnInit, OnDestroy {
   plugins: Plugin[] = [];
   subscriptionPlugins: Subscription | undefined = undefined;
 
-  constructor(private servicePlugins: PluginService) { }
+  constructor(private store: Store) { }
 
   ngOnInit() {
-    this.subscriptionPlugins = this.servicePlugins.plugins.subscribe(plugins => {
+    this.subscriptionPlugins = this.store.select(selectAllPlugins).subscribe(plugins => {
       if (plugins) {
         this.plugins = plugins;
       } else {
@@ -26,8 +26,6 @@ export class ListPluginsModalComponent implements OnInit, OnDestroy {
         this.plugins = [];
       }
     });
-
-    this.servicePlugins.loadPlugins();
   }
 
   ngOnDestroy(): void {

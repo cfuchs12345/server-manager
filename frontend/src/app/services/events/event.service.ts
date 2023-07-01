@@ -14,7 +14,6 @@ export class EventService {
   readonly eventSubject = this._eventSubject.asObservable();
 
   constructor(private errorService: ErrorService, private logger: NGXLogger) {
-    this.logger.info("EventService initialized");
     this.subscribeToEvents();
   }
 
@@ -22,10 +21,10 @@ export class EventService {
     const source = new EventSource('/backend_nt/events');
 
     source.addEventListener('message', (message) => {
-      let event: Event = JSON.parse(message.data);
+      const event: Event = JSON.parse(message.data);
 
       if (isType<Event>(event)) {
-        this.logger.info("event received: ", event);
+        this.logger.debug("event received: ", event);
         this._eventSubject.next(event);
       }
     });

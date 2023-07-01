@@ -15,11 +15,11 @@ import {
   styleUrls: ['./plugin-configuration.component.scss'],
 })
 export class PluginConfigurationComponent {
-  title: string = 'Plugin Configuration';
-  description: string = 'Configure Plugins.';
+  title = 'Plugin Configuration';
+  description = 'Configure Plugins.';
 
-  buttonTextManagePlugins: string = 'Manage Plugins';
-  buttonTextListPlugins: string = 'List Plugins';
+  buttonTextManagePlugins = 'Manage Plugins';
+  buttonTextListPlugins = 'List Plugins';
 
   constructor(private dialog: MatDialog) {}
 

@@ -8,7 +8,7 @@ import { Component } from '@angular/core';
   </div>',
 })
 export class ConfigureDNSDialog {
-  title: string = 'Configure DNS';
+  title = 'Configure DNS';
 }
 
 export const dialogSettings = () => {

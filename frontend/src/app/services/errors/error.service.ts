@@ -38,7 +38,7 @@ export class ErrorService {
     ipaddress: string | undefined = undefined,
     error_object: any
   ) {
-    let text: string = 'Unkown';
+    let text = 'Unkown';
     if (error_object) {
       if (Object.hasOwn(error_object, 'error')) {
         if (error_object.error && Object.hasOwn(error_object.error, 'error')) {
@@ -64,7 +64,7 @@ export class ErrorService {
   ) => {
     const key = source + '|' + errorMessage;
 
-    var error = this.dataStore.errors.get(key);
+    let error = this.dataStore.errors.get(key);
     if (!error) {
       error = new Error(source, ipaddress, errorMessage, date, 1);
       this.dataStore.errors.set(key, error);

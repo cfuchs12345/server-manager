@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ActiveLightComponent } from './active-light.component';
 
+/* eslint-disable */
 describe('AppActiveLightComponent', () => {
   let component: ActiveLightComponent;
   let fixture: ComponentFixture<ActiveLightComponent>;
@@ -25,7 +26,7 @@ describe('AppActiveLightComponent', () => {
     component.isActive = true;
     fixture.detectChanges();
 
-    let span: HTMLElement = fixture.nativeElement.querySelector('span');
+    const span: HTMLElement = fixture.nativeElement.querySelector('span');
 
     expect(span.className).toContain('active')
     expect(span.className).not.toContain('inactive');
@@ -35,7 +36,7 @@ describe('AppActiveLightComponent', () => {
     component.isActive = false;
     fixture.detectChanges();
 
-    let span: HTMLElement = fixture.nativeElement.querySelector('span');
+    const span: HTMLElement = fixture.nativeElement.querySelector('span');
 
     expect(span.className).toContain('inactive')
   })

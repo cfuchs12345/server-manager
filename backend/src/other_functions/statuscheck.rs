@@ -45,8 +45,7 @@ pub async fn status_check_all(silent: &bool) -> Result<(), AppError> {
 
     log::debug!("inserting {} status into cache", results_from_query.len());
 
-    datastore::cache_status(&results_from_query, datastore::get_status_cache_initial())?;
-    datastore::set_status_cache_initialized();
+    datastore::cache_status(&results_from_query)?;
 
     let data = models::status_list_to_timeseries_data_list(results_from_query);
 

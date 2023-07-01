@@ -6,7 +6,7 @@ import {
   OnChanges,
   SimpleChanges,
 } from '@angular/core';
-import { Subscription, filter, take } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { MonitoringService } from 'src/app/services/monitoring/monitoring.service';
 import {
   SUB_IDENTIFIER,
@@ -40,38 +40,28 @@ export class MonitoringSingleServerComponent
   constructor(private monitoringService: MonitoringService) {}
 
   ngOnInit(): void {
-    this.monitoringDataSubscription = this.monitoringService.data
-      .pipe(
-        filter((data) => data?.meta_data.ipaddress === this.server?.ipaddress)
-      )
-      .subscribe((data) => {
-        setTimeout(() => {
-          if (data) {
-            this.updateDataMap(data);
-          }
-        }, 0);
-      });
-    this.monitorinTimeSeriesSubscription = this.monitoringService.monitoringIds
-      .pipe(
-        filter(
-          (seriesData) => seriesData?.ipaddress === this.server?.ipaddress
-        ),
-        take(1)
-      )
-      .subscribe((seriesData) => {
-        this.seriesData = seriesData;
+    this.loadData();
+  }
 
-        setTimeout(() => {
-          if (this.server && this.seriesData) {
-            for (const seriesId of this.seriesData.seriesIds) {
-              this.monitoringService.loadMonitoringData(this.server, seriesId);
-            }
-          }
-        }, 0);
-      });
-
+  private loadData() {
     if (this.server) {
-      this.monitoringService.getMonitoringIds(this.server);
+      this.monitorinTimeSeriesSubscription = this.monitoringService
+        .getMonitoringIds(this.server)
+        .subscribe((seriesData) => {
+          this.seriesData = seriesData;
+
+          setTimeout(() => {
+            if (this.server && this.seriesData) {
+              for (const seriesId of this.seriesData.seriesIds) {
+                this.monitoringDataSubscription = this.monitoringService
+                  .loadMonitoringData(this.server, seriesId)
+                  .subscribe((data) => {
+                    this.updateDataMap(data);
+                  });
+              }
+            }
+          }, 0);
+        });
     }
   }
 
@@ -91,12 +81,7 @@ export class MonitoringSingleServerComponent
           case 'server':
             this.seriesData = undefined;
 
-            setTimeout(() => {
-              if (this.server) {
-                this.monitoringService.getMonitoringIds(this.server);
-              }
-            }, 300);
-            break;
+            this.loadData();
         }
       }
     }
@@ -211,7 +196,7 @@ export class MonitoringSingleServerComponent
     return key;
   };
 
-  getChartData = (seriesId: String): ChartData | undefined => {
+  getChartData = (seriesId: string): ChartData | undefined => {
     return this.chartDataList.list.find(
       (chartData: ChartData) => chartData.series_id === seriesId
     );

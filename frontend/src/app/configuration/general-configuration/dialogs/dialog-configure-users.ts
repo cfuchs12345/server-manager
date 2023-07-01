@@ -8,7 +8,7 @@ import { Component } from '@angular/core';
   </div>',
 })
 export class ConfigureUsersDialog {
-  title: string = 'Configure Users';
+  title = 'Configure Users';
 }
 
 export const dialogSettings = () => {

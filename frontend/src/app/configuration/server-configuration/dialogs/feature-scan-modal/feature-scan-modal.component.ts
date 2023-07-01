@@ -11,13 +11,13 @@ import { ServerDiscoveryService } from 'src/app/services/servers/server-discover
   styleUrls: ['./feature-scan-modal.component.scss'],
 })
 export class FeatureScanModalComponent implements OnInit, OnDestroy {
-  buttonTextScanFeature: string = 'Start';
-  buttonTextWorking: string = 'Working...';
-  buttonTextSaveServerFeatures: string = 'Save Features';
+  buttonTextScanFeature = 'Start';
+  buttonTextWorking = 'Working...';
+  buttonTextSaveServerFeatures = 'Save Features';
 
   displayedColumns = ['selected', 'ipaddress', 'features'];
 
-  isWorking: boolean = false;
+  isWorking = false;
 
   discoveredServerFeatures: ServerFeature[] = [];
   subscriptionDiscoveredServersFeatures: Subscription | undefined = undefined;
@@ -30,14 +30,6 @@ export class FeatureScanModalComponent implements OnInit, OnDestroy {
 
   // doesn't seem to work when written as arrow function!?
   ngOnInit(): void {
-    this.subscriptionDiscoveredServersFeatures = this.discoveryService.discoveredServerFeatures.subscribe(
-      (serverFeatures) => {
-        this.isWorking = false;
-        this.preSelectAllFeatures(serverFeatures);
-
-        this.discoveredServerFeatures = serverFeatures;
-      }
-    );
   }
 
   ngOnDestroy(): void {
@@ -63,7 +55,15 @@ export class FeatureScanModalComponent implements OnInit, OnDestroy {
 
   onClickScanFeature = () => {
     this.isWorking = true;
-    this.discoveryService.scanFeatureOfAllServers();
+    this.subscriptionDiscoveredServersFeatures = this.discoveryService.scanFeatureOfAllServers().subscribe(
+      (serverFeatures) => {
+        this.isWorking = false;
+        this.preSelectAllFeatures(serverFeatures);
+
+        this.discoveredServerFeatures = serverFeatures;
+        this.subscriptionDiscoveredServersFeatures?.unsubscribe();
+      }
+    );
   };
 
   onClickDeselectServer = (index: number) => {
@@ -76,9 +76,9 @@ export class FeatureScanModalComponent implements OnInit, OnDestroy {
 
     found_server_features.forEach( (found_server_feature, index) => {
 
-      let subscription = this.serverService.getServer(found_server_feature.ipaddress, true).subscribe({
+      const subscription = this.serverService.getServer(found_server_feature.ipaddress, true).subscribe({
         next: (server) => {
-          let updated: boolean = false;
+          let updated = false;
 
           found_server_feature.features.forEach( (found) => {
             const already_set = server.features.find((server_feature) => server_feature.id === found.id)

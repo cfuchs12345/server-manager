@@ -40,7 +40,7 @@
   <div fxFlex="100" class="formDiv">
     <mat-form-field  class="formElement">
       <mat-label>{{ ipAddressLabel }}</mat-label>
-      <input matInput [placeholder]="ipplaceholder" [formControl]="ipaddress" />
+      <input matInput [placeholder]="ipPlaceholder" [formControl]="ipaddress" />
       <mat-error *ngIf="ipaddress.invalid">{{
         getIPAddressErrorMessage()
       }}</mat-error>

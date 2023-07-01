@@ -1,51 +1,63 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { Observable, filter, tap } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
-
+import { addMany, removeOne, upsertOne } from 'src/app/state/actions/server.action';
 import { Server, Feature } from './types';
 import { ErrorService, Source } from '../errors/error.service';
 import { EncryptionService } from '../encryption/encryption.service';
 
 import { NGXLogger } from 'ngx-logger';
 import { AuthenticationService } from '../auth/authentication.service';
-import { sortByIpAddress } from 'src/app/shared/utils';
+import { EventService } from '../events/event.service';
+import { Event } from '../events/types';
+import { Store } from '@ngrx/store';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ServerService {
-  private _servers = new BehaviorSubject<Server[]>([]);
-  private dataStore: {
-    servers: Server[];
-  } = {
-    servers: [],
-  };
-
-  readonly servers = this._servers.asObservable();
+  lastLoad: Date | undefined;
 
   constructor(
     private logger: NGXLogger,
     private http: HttpClient,
+    private store: Store,
+    private eventService: EventService,
     private errorService: ErrorService,
     private encryptionService: EncryptionService,
     private authService: AuthenticationService
-  ) {}
+  ) {
+    this.eventService.eventSubject
+      .pipe(
+        filter((event: Event) => {
+          return event.object_type === 'Server';
+        })
+      )
+      .subscribe((event: Event) => {
+        if (event.event_type === 'Insert' || event.event_type === 'Update') {
+          const subscription = this.getServer(event.key, false).subscribe({
+            next: (server) => {
+              this.store.dispatch(upsertOne({server: server}));
+            },
+            complete: () => {
+              subscription.unsubscribe();
+            }
+          });
+        } else if (event.event_type === 'Delete') {
+          this.store.dispatch(removeOne({ipaddress: event.key}));
+        }
+      });
+  }
 
   deleteServers = (servers: Server[]) => {
     for (const [i, server] of servers.entries()) {
-      this.http
-        .delete<any>(`/backend/servers/${server.ipaddress}`, {
+      const subscription = this.http
+        .delete(`/backend/servers/${server.ipaddress}`, {
           headers: defaultHeadersForJSON(),
         })
         .subscribe({
-          next: (res) => {
-            const indexToDelete = this.dataStore.servers.findIndex(
-              (s) => s.ipaddress === server.ipaddress
-            );
-            this.dataStore.servers.splice(indexToDelete);
-          },
-          error: (err: any) => {
+          error: (err) => {
             this.errorService.newError(
               Source.ServerService,
               server.ipaddress,
@@ -53,26 +65,31 @@ export class ServerService {
             );
           },
           complete: () => {
-            if (servers[servers.length - 1].ipaddress === server.ipaddress) {
-              setTimeout(this.publishServers, 500);
-            }
+            subscription.unsubscribe();
           },
         });
     }
   };
 
   listServers = () => {
-    this.http.get<Server[]>('/backend/servers').subscribe({
-      next: (servers) => {
-        this.dataStore.servers = servers;
-      },
-      error: (err: any) => {
-        this.errorService.newError(Source.ServerService, undefined, err);
-      },
-      complete: () => {
-        setTimeout(this.publishServers, 500);
-      },
-    });
+    const subscription = this.http
+      .get<Server[]>('/backend/servers')
+      .pipe(
+        tap(() => {
+          this.lastLoad = new Date();
+        })
+      )
+      .subscribe({
+        next: (servers) => {
+          this.store.dispatch(addMany({servers: servers})); // add many
+        },
+        error: (err) => {
+          this.errorService.newError(Source.ServerService, undefined, err);
+        },
+        complete: () => {
+          subscription.unsubscribe();
+        },
+      });
   };
 
   getServer = (ipaddress: string, fullData: boolean): Observable<Server> => {
@@ -92,7 +109,7 @@ export class ServerService {
             server.features.forEach((feature: Feature) => {
               try {
                 this.decryptIfNecessary(feature);
-              } catch (err: any) {
+              } catch (err) {
                 this.logger.error(
                   'Could not decrypt credentials in server feature. Error was:',
                   err
@@ -131,20 +148,21 @@ export class ServerService {
     for (const [i, server] of servers.entries()) {
       const body = JSON.stringify(server);
 
-      this.http
-        .post<any>('/backend/servers', body, {
+      const subscription = this.http
+        .post('/backend/servers', body, {
           headers: defaultHeadersForJSON(),
         })
         .subscribe({
-          next: (res) => {},
-          error: (err: any) => {
+          error: (err) => {
             this.errorService.newError(
               Source.ServerService,
               server.ipaddress,
               err
             );
           },
-          complete: () => {},
+          complete: () => {
+            subscription.unsubscribe();
+          },
         });
     }
   };
@@ -152,26 +170,21 @@ export class ServerService {
   updateServer = (server: Server) => {
     const body = JSON.stringify(server);
 
-    this.http
-      .put<any>(`/backend/servers/${server.ipaddress}`, body, {
+    const subscription = this.http
+      .put(`/backend/servers/${server.ipaddress}`, body, {
         headers: defaultHeadersForJSON(),
       })
       .subscribe({
-        next: (res) => {},
-        error: (err: any) => {
+        error: (err) => {
           this.errorService.newError(
             Source.ServerService,
             server.ipaddress,
             err
           );
         },
-        complete: () => {},
+        complete: () => {
+          subscription.unsubscribe();
+        },
       });
-  };
-
-  private publishServers = () => {
-    sortByIpAddress(this.dataStore.servers, (server) => server.ipaddress);
-
-    this._servers.next(this.dataStore.servers.slice());
   };
 }

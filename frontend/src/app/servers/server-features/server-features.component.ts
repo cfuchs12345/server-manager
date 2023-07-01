@@ -1,9 +1,11 @@
 import { Component, Input, OnChanges, OnDestroy, OnInit } from '@angular/core';
+import { Store } from '@ngrx/store';
 import { Subscription, filter } from 'rxjs';
 import { ErrorService, Source } from 'src/app/services/errors/error.service';
 import { PluginService } from 'src/app/services/plugins/plugin.service';
 import { Plugin } from 'src/app/services/plugins/types';
 import { Server } from 'src/app/services/servers/types';
+import { selectAllPlugins } from 'src/app/state/selectors/plugin.selectors';
 
 @Component({
   selector: 'app-server-features',
@@ -19,12 +21,13 @@ export class ServerFeaturesComponent implements OnInit, OnDestroy, OnChanges {
   private pluginSubscription: Subscription | undefined = undefined;
 
   constructor(
+    private store: Store,
     private pluginService: PluginService,
     private errorService: ErrorService
   ) {}
 
   ngOnInit(): void {
-    this.pluginSubscription = this.pluginService.plugins
+    this.pluginSubscription = this.store.select(selectAllPlugins)
       .pipe(filter((plugins) => this.filter(plugins)))
       .subscribe((plugins) => (this.plugins = plugins));
 
@@ -51,9 +54,9 @@ export class ServerFeaturesComponent implements OnInit, OnDestroy, OnChanges {
       return [];
     }
 
-    var plugin_names: string[] = [];
+    const plugin_names: string[] = [];
     for (var feature of this.server.features) {
-      var plugin = this.plugins.find((p) => p.id === feature.id);
+      const plugin = this.plugins.find((p) => p.id === feature.id);
       if (plugin) {
         plugin_names.push(plugin.name);
       } else {

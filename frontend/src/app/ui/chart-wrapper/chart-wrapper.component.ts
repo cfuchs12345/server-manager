@@ -3,7 +3,6 @@ import {
   Input,
   Output,
   OnInit,
-  OnDestroy,
   OnChanges,
   SimpleChanges,
 } from '@angular/core';
@@ -14,7 +13,7 @@ import { ChartData } from 'src/types/ChartData';
   templateUrl: './chart-wrapper.component.html',
   styleUrls: ['./chart-wrapper.component.scss'],
 })
-export class ChartWrapperComponent implements OnInit, OnDestroy, OnChanges {
+export class ChartWrapperComponent implements OnInit, OnChanges {
   @Input() series_id: string | undefined;
   @Input() chartData: ChartData | undefined;
   @Input() chartTypes: Map<string, string> = new Map();
@@ -26,7 +25,7 @@ export class ChartWrapperComponent implements OnInit, OnDestroy, OnChanges {
   ngOnInit(): void {
     this.updateDataToShow();
   }
-  ngOnDestroy(): void {}
+
   ngOnChanges(changes: SimpleChanges): void {
     for (const propName in changes) {
       if (Object.hasOwn(changes, propName)) {
@@ -93,7 +92,7 @@ export class ChartWrapperComponent implements OnInit, OnDestroy, OnChanges {
     chartData: ChartData,
     selectedGraphs: string[]
   ): { name: string; data: number[][] }[] => {
-    let series: { name: string; data: number[][] }[] = [];
+    const series: { name: string; data: number[][] }[] = [];
     for (const selectedGraph of selectedGraphs) {
       const found = chartData.series.find(
         (value) => value.name === selectedGraph

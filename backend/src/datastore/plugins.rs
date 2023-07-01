@@ -6,9 +6,10 @@ use log::debug;
 use std::collections::HashMap;
 use std::{fs::File, io::BufReader};
 
-use crate::datastore;
+use crate::event_handling::{ListSource, ObjectType};
 use crate::models::error::AppError;
 use crate::models::plugin::Plugin;
+use crate::{datastore, event_handling};
 
 use super::persistence;
 use super::Entry;
@@ -126,6 +127,11 @@ pub async fn get_disabled_plugins() -> Result<Vec<String>, AppError> {
 }
 
 pub async fn disable_plugins(plugin_ids: Vec<String>) -> Result<bool, AppError> {
+    let existing = match persistence::get(TABLE_PLUGIN_CONFIG, "disabled_ids").await? {
+        Some(entry) => entry.value.split(',').map(|e| e.to_string()).collect(),
+        None => Vec::new(),
+    };
+
     match persistence::delete(TABLE_PLUGIN_CONFIG, "disabled_ids").await {
         Ok(_res) => {
             match persistence::insert(
@@ -137,7 +143,13 @@ pub async fn disable_plugins(plugin_ids: Vec<String>) -> Result<bool, AppError> 
             )
             .await
             {
-                Ok(_res) => Ok(true),
+                Ok(_res) => {
+                    event_handling::handle_list_change(
+                        ListSource::new(ObjectType::DisabledPlugins, plugin_ids),
+                        ListSource::new(ObjectType::DisabledPlugins, existing),
+                    )?;
+                    Ok(true)
+                }
                 Err(err) => Err(err),
             }
         }

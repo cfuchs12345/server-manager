@@ -1,3 +1,5 @@
+use std::{collections::HashMap, net::IpAddr};
+
 use futures::future::join_all;
 
 use crate::{
@@ -11,7 +13,10 @@ use crate::{
         },
         server::{Feature, Server},
     },
-    models::{response::data_result::ConditionCheckResult, response::status::Status},
+    models::{
+        response::data_result::ConditionCheckResult,
+        response::{data_result::ConditionCheckSubResult, status::Status},
+    },
     other_functions,
     plugin_execution::data,
 };
@@ -37,27 +42,26 @@ pub async fn check_condition_for_action_met(
     if feature.is_none() || action.is_none() {
         return Ok(ConditionCheckResult {
             ipaddress: server.ipaddress,
-            result: false,
-            action_id: "".to_string(),
-            feature_id: "".to_string(),
-            action_params: "".to_string(),
+            subresults: vec![ConditionCheckSubResult {
+                result: false,
+                action_id: "".to_string(),
+                feature_id: "".to_string(),
+                action_params: "".to_string(),
+            }],
         });
     }
 
-    let plugin_res =
-        datastore::get_plugin(feature.as_ref().expect("Could not get ref").id.as_str())?;
-
-    if plugin_res.is_none() {
+    let Some(plugin) = datastore::get_plugin(feature.as_ref().expect("Could not get ref").id.as_str())? else {
         return Ok(ConditionCheckResult {
-            action_id: action.expect("checked before").id,
-            action_params: action_params.unwrap_or_default(),
-            feature_id: feature.expect("checked before").id,
             ipaddress: server.ipaddress,
-            result: false,
+            subresults: vec![ConditionCheckSubResult {
+                action_id: action.expect("checked before").id,
+                action_params: action_params.unwrap_or_default(),
+                feature_id: feature.expect("checked before").id,
+                result: false,
+            }],
         });
-    }
-
-    let plugin = plugin_res.expect("checked before");
+    };
 
     let status: Vec<Status> =
         other_functions::statuscheck::status_check(vec![server.ipaddress], true)
@@ -90,11 +94,13 @@ pub async fn check_condition_for_action_met(
     if !result {
         // check if status dependency already failed - early exit
         return Ok(ConditionCheckResult {
-            action_id: action.expect("checked before").id,
-            action_params: action_params.unwrap_or_default(),
-            feature_id: feature.expect("checked before").id,
             ipaddress: server.ipaddress,
-            result: false,
+            subresults: vec![ConditionCheckSubResult {
+                action_id: action.expect("checked before").id,
+                action_params: action_params.unwrap_or_default(),
+                feature_id: feature.expect("checked before").id,
+                result: false,
+            }],
         });
     }
 
@@ -149,11 +155,13 @@ pub async fn check_condition_for_action_met(
     };
 
     Ok(ConditionCheckResult {
-        action_id: action.as_ref().expect("Could not get ref").id.clone(),
-        action_params: action_params.unwrap_or_default(),
-        feature_id: feature.expect("checked before").id,
         ipaddress: server.ipaddress,
-        result,
+        subresults: vec![ConditionCheckSubResult {
+            action_id: action.as_ref().expect("Could not get ref").id.clone(),
+            action_params: action_params.unwrap_or_default(),
+            feature_id: feature.expect("checked before").id,
+            result,
+        }],
     })
 }
 
@@ -218,7 +226,23 @@ pub async fn check_all_action_conditions<'l>(
         .map(move |r| r.as_ref().expect("Could not get ref").to_owned())
         .collect();
 
-    Ok(vec)
+    let merged = merge_condition_check_results(vec);
+
+    Ok(merged)
+}
+
+fn merge_condition_check_results(vec: Vec<ConditionCheckResult>) -> Vec<ConditionCheckResult> {
+    let mut map: HashMap<IpAddr, ConditionCheckResult> = HashMap::new();
+
+    for ccr in vec {
+        if let Some(existing) = map.get_mut(&ccr.ipaddress) {
+            existing.subresults.extend(ccr.subresults);
+        } else {
+            map.insert(ccr.ipaddress, ccr);
+        }
+    }
+
+    Vec::from_iter(map.values().cloned())
 }
 
 fn response_data_match(dependency: &DependsDef, input: Option<String>) -> Result<bool, AppError> {

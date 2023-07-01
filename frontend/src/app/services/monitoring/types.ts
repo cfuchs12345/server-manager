@@ -6,9 +6,9 @@ export const SUB_IDENTIFIER2 = 'Sub_Identifier2';
 export class TimeSeriesQuery {
   constructor(
     public servers: Server[],
-    public period_from: Number,
+    public period_from: number,
     public period_from_unit: string,
-    public period_to: Number,
+    public period_to: number,
     public period_to_unit: string
   ) {}
 }

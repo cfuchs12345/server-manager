@@ -10,7 +10,7 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
    styles: ['::ng-deep .mat-mdc-dialog-content { max-height: 1000vh;}']
 })
 export class DeleteServerDialog {
-  title: string = 'Delete Server / Feature from Server';
+  title = 'Delete Server / Feature from Server';
 }
 
 export const dialogSettings = () => {

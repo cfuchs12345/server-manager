@@ -8,7 +8,7 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./errors-list.component.scss'],
 })
 export class ErrorsListComponent implements OnInit, OnDestroy {
-  errorCount: number = 0;
+  errorCount = 0;
   classes: string[] = [];
 
   private subscriptionErrors: Subscription | undefined = undefined;
@@ -18,8 +18,8 @@ export class ErrorsListComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.subscriptionErrors = this.errorService.errors.subscribe((errors) => {
       if (errors) {
-        var count = 0;
-        for (let [i, error] of errors.entries()) {
+        let count = 0;
+        for (const [i, error] of errors.entries()) {
           count += error.count;
         }
         if (this.errorCount < count) {

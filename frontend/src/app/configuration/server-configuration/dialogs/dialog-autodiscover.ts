@@ -10,7 +10,7 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
   styles: ['::ng-deep .mat-mdc-dialog-content { max-height: 1000vh;}'],
 })
 export class AutoDiscoveryDialog {
-  title: string = 'Autodiscovery';
+  title = 'Autodiscovery';
 }
 
 export const dialogSettings = () => {

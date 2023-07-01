@@ -7,7 +7,10 @@ import { Server } from 'src/app/services/servers/types';
 import { ImageCache } from 'src/app/services/cache/image-cache.service';
 import { ServerActionService } from 'src/app/services/servers/server-action.service';
 import { NotificationService } from 'src/app/services/notifications/notifications.service';
-import { EventService } from 'src/app/services/events/event.service';
+
+import { Store } from '@ngrx/store';
+import { selectAllServers } from 'src/app/state/selectors/server.selectors';
+import { selectAllPlugins } from 'src/app/state/selectors/plugin.selectors';
 
 @Component({
   selector: 'app-server-list-wrapper',
@@ -21,46 +24,32 @@ export class ServerListWrapperComponent implements OnInit, OnDestroy {
   servers: Server[] = [];
 
   constructor(
+    private store: Store,
     private serverService: ServerService,
     private pluginService: PluginService,
     private statusService: ServerStatusService,
     private serverActionService: ServerActionService,
     private notificationService: NotificationService,
-    private eventService: EventService,
     private imageCache: ImageCache
   ) {}
 
   ngOnInit(): void {
-    this.serverSubscription = this.serverService.servers.subscribe(
-      (servers) => {
+    this.serverSubscription = this.store
+      .select(selectAllServers)
+      .subscribe((servers) => {
         this.servers = servers;
-      }
-    );
+      });
 
-    this.pluginSubscription = this.pluginService.plugins.subscribe(
+    this.pluginSubscription = this.store.select(selectAllPlugins).subscribe(
       (plugins) => {
         this.imageCache.init(plugins);
       }
     );
     setTimeout(this.pluginService.loadPlugins, 0);
-    setTimeout(this.serverService.listServers,0);
-    setTimeout( () => {this.statusService.listAllServerStatus()}, 0);
+    setTimeout(this.serverService.listServers, 0);
+    setTimeout(this.statusService.listAllServerStatus, 0);
     setTimeout(this.serverActionService.listActionCheckResults, 0);
     setTimeout(this.notificationService.listNotifications, 0);
-
-
-
-    setInterval(() => {
-      if (this.servers) {
-        this.serverActionService.listActionCheckResults();
-      }
-    }, 10000);
-
-    setInterval(() => {
-      if (this.servers) {
-        this.notificationService.listNotifications();
-      }
-    }, 30000);
   }
 
   ngOnDestroy(): void {

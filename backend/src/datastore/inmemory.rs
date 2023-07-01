@@ -157,7 +157,12 @@ pub fn cache_servers(servers: Vec<Server>) -> Result<(), AppError> {
         .map_err(|err| AppError::Unknown(format!("Could not get write lock. Error: {}", err)))?;
 
     for server in servers {
-        cache.insert(server.ipaddress, server);
+        let existing = cache.insert(server.ipaddress, server.clone());
+
+        event_handling::handle_object_change(
+            Some(Box::new(server.to_owned())),
+            existing.map(|old_server| Box::new(old_server) as _),
+        )?;
     }
     Ok(())
 }
@@ -170,7 +175,14 @@ pub fn remove_server(ipaddress: &IpAddr) -> Result<(), AppError> {
         .write()
         .map_err(|err| AppError::Unknown(format!("Could not get write lock. Error: {}", err)))?;
     cache.remove(ipaddress);
-    status_cache.remove(ipaddress);
+
+    let existing = status_cache.remove(ipaddress);
+
+    event_handling::handle_object_change(
+        None,
+        existing.map(|old_server| Box::new(old_server) as _),
+    )?;
+
     Ok(())
 }
 
@@ -179,24 +191,28 @@ pub fn add_server(server: &Server) -> Result<(), AppError> {
         .write()
         .map_err(|err| AppError::Unknown(format!("Could not get write lock. Error: {}", err)))?;
 
-    cache.insert(server.ipaddress, server.clone());
+    let existing = cache.insert(server.ipaddress, server.clone());
+
+    event_handling::handle_object_change(
+        Some(Box::new(server.to_owned())),
+        existing.map(|old_server| Box::new(old_server) as _),
+    )?;
+
     Ok(())
 }
 
-pub fn cache_status(status: &[Status], initial: bool) -> Result<(), AppError> {
+pub fn cache_status(status_list: &[Status]) -> Result<(), AppError> {
     let mut cache = SERVER_STATUS_CACHE
         .write()
         .map_err(|err| AppError::Unknown(format!("Could not get write lock. Error: {}", err)))?;
-    for s in status {
-        let existing = cache.insert(s.ipaddress, s.clone());
+    for status in status_list {
+        let existing = cache.insert(status.ipaddress, status.clone());
 
-        if !initial {
-            // Box::new(v) as _    ==>   https://stackoverflow.com/questions/69500407/trait-object-causing-type-mismatch
-            event_handling::handle_object_action(
-                Some(Box::new(s.to_owned())),
-                existing.map(|v| Box::new(v) as _),
-            )?;
-        }
+        // Box::new(v) as _    ==>   https://stackoverflow.com/questions/69500407/trait-object-causing-type-mismatch
+        event_handling::handle_object_change(
+            Some(Box::new(status.to_owned())),
+            existing.map(|old_status| Box::new(old_status) as _),
+        )?;
     }
     Ok(())
 }
@@ -217,12 +233,18 @@ pub fn get_all_condition_results() -> Result<Vec<ConditionCheckResult>, AppError
     Ok(cache.values().cloned().collect())
 }
 
-pub fn insert_condition_result(to_add: ConditionCheckResult) -> Result<(), AppError> {
+pub fn insert_condition_result(condition_result: ConditionCheckResult) -> Result<(), AppError> {
     let mut cache = SERVER_ACTION_CONDITION_RESULTS
         .write()
         .map_err(|err| AppError::Unknown(format!("Could not get write lock. Error: {}", err)))?;
 
-    cache.insert(to_add.clone().get_key(), to_add);
+    let existing = cache.insert(condition_result.clone().get_key(), condition_result.clone());
+
+    event_handling::handle_object_change(
+        Some(Box::new(condition_result)),
+        existing.map(|old_condition_result| Box::new(old_condition_result) as _),
+    )?;
+
     Ok(())
 }
 

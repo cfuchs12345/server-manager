@@ -1,17 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import {
-  AbstractControl,
   FormControl,
-  ValidationErrors,
-  ValidatorFn,
   Validators,
 } from '@angular/forms';
+import { Store } from '@ngrx/store';
 import { RxwebValidators, IpVersion } from '@rxweb/reactive-form-validators';
 import { Subscription } from 'rxjs';
-import { PluginService } from 'src/app/services/plugins/plugin.service';
 import { Plugin } from 'src/app/services/plugins/types';
 import { ServerService } from 'src/app/services/servers/server.service';
 import { Feature, Server, ServerFeature } from 'src/app/services/servers/types';
+import { selectAllPlugins } from 'src/app/state/selectors/plugin.selectors';
+import { selectAllServers } from 'src/app/state/selectors/server.selectors';
 
 @Component({
   selector: 'app-add-server-modal',
@@ -19,12 +18,12 @@ import { Feature, Server, ServerFeature } from 'src/app/services/servers/types';
   styleUrls: ['./add-server-modal.component.scss'],
 })
 export class AddServerModalComponent implements OnInit {
-  ipplaceholder: string = 'xxx.xxx.xxx.xxx or xxxx:xxxx...';
-  ipAddressLabel: string = 'IP Address';
-  ipaddressHint: string = 'Example: 192.168.178.111 or FE80::1';
-  nameLabel: string = 'Name';
-  nameHint: string = '';
-  buttonTextAddServer: string = 'Add Server';
+  ipPlaceholder = 'xxx.xxx.xxx.xxx or xxxx:xxxx...';
+  ipAddressLabel = 'IP Address';
+  ipaddressHint = 'Example: 192.168.178.111 or FE80::1';
+  nameLabel = 'Name';
+  nameHint = '';
+  buttonTextAddServer = 'Add Server';
   name = new FormControl('', []);
   ipaddress = new FormControl('', [
     Validators.required,
@@ -45,12 +44,12 @@ export class AddServerModalComponent implements OnInit {
   subscriptionPlugins: Subscription | undefined = undefined;
 
   constructor(
-    private serverService: ServerService,
-    private pluginService: PluginService
+    private store: Store,
+    private serverService: ServerService
   ) {}
 
   ngOnInit(): void {
-    this.subscriptionServers = this.serverService.servers.subscribe(
+    this.subscriptionServers = this.store.select(selectAllServers).subscribe(
       (servers) => {
         if (servers) {
           this.servers = servers;
@@ -61,14 +60,11 @@ export class AddServerModalComponent implements OnInit {
       }
     );
 
-    this.subscriptionPlugins = this.pluginService.plugins.subscribe(
+    this.subscriptionPlugins = this.store.select(selectAllPlugins).subscribe(
       (plugins) => {
         this.plugins = plugins;
       }
     );
-
-    this.serverService.listServers();
-    this.pluginService.loadPlugins();
   }
 
   getIPAddressErrorMessage() {
@@ -85,7 +81,6 @@ export class AddServerModalComponent implements OnInit {
       this.serverService.saveServers([
         new Server(this.ipaddress.value, this.name.value),
       ]);
-      this.serverService.listServers(); // this refreshes also the server list on the main screen
     }
   };
 
@@ -116,7 +111,6 @@ export class AddServerModalComponent implements OnInit {
           },
           error: (err) => {},
           complete: () => {
-            this.serverService.listServers();
           },
         });
     }

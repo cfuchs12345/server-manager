@@ -8,7 +8,7 @@ import { Component } from '@angular/core';
   </div>',
 })
 export class ConfigImExportDialog {
-  title: string = 'Import and Export of Configuration';
+  title = 'Import and Export of Configuration';
 }
 
 export const dialogSettings = () => {

@@ -10,7 +10,7 @@ import { MatDialogRef } from "@angular/material/dialog";
   styles: ['::ng-deep .mat-mdc-dialog-content { max-height: 1000vh;}']
 })
 export class DisablePluginsDialog {
-  title: string = 'Disable Plugins';
+  title = 'Disable Plugins';
 }
 
 export const dialogSettings = () => {

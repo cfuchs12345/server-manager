@@ -2,26 +2,23 @@ import {
   Component,
   ElementRef,
   OnDestroy,
-  OnInit,
   ViewChild,
 } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
-import { unsubscribe } from 'diagnostics_channel';
-import { Observable, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { ErrorService, Source } from 'src/app/services/errors/error.service';
 import { GeneralService } from 'src/app/services/general/general.service';
-import { Configuration } from 'src/app/services/general/types';
 
 @Component({
   selector: 'app-config-im-export-modal',
   templateUrl: './config-im-export-modal.component.html',
   styleUrls: ['./config-im-export-modal.component.scss'],
 })
-export class ConfigImExportModalComponent implements OnInit, OnDestroy {
+export class ConfigImExportModalComponent implements OnDestroy {
   @ViewChild('fileSelector') fileSelector: ElementRef<HTMLElement> | undefined;
 
   fileUrl: string | undefined;
-  uploadFileName: string = '';
+  uploadFileName = '';
 
   buttonTextGenerateDownloadLink = 'Generate File';
   buttonTextUploadFile = 'Upload Config';
@@ -43,8 +40,8 @@ export class ConfigImExportModalComponent implements OnInit, OnDestroy {
 
   file: File | undefined = undefined;
 
-  multiple: boolean = false;
-  accept: string = '';
+  multiple = false;
+  accept = '';
   configSubscription: Subscription | undefined | null = undefined;
 
   constructor(
@@ -52,7 +49,6 @@ export class ConfigImExportModalComponent implements OnInit, OnDestroy {
     private generalService: GeneralService
   ) {}
 
-  ngOnInit(): void {}
 
   ngOnDestroy(): void {
     this.unsubscribe();
@@ -84,7 +80,7 @@ export class ConfigImExportModalComponent implements OnInit, OnDestroy {
           const objectUrl = URL.createObjectURL(blob);
           this.fileUrl = objectUrl;
         },
-        error: (err: any) => {
+        error: (err) => {
           this.errorService.newError(Source.GeneralService, undefined, err);
         },
         complete: () => {
@@ -119,7 +115,10 @@ export class ConfigImExportModalComponent implements OnInit, OnDestroy {
       this.errorService.newError(Source.GeneralService, undefined, error);
     };
   };
-  getPasswordMessage = () => {};
+
+  getPasswordMessage = (): string => {
+    return "Password Error";
+  };
 
   onClickSelectFile() {
     if (this.fileSelector) {
@@ -134,7 +133,7 @@ export class ConfigImExportModalComponent implements OnInit, OnDestroy {
     const element = event.currentTarget as HTMLInputElement;
 
     if (element.files) {
-      let fileList: FileList = element.files;
+      const fileList: FileList = element.files;
 
       if (fileList[0]) {
         this.file = fileList[0];

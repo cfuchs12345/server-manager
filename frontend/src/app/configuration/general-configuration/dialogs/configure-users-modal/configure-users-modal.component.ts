@@ -1,8 +1,8 @@
-import { Component, OnInit, OnDestroy, OnChanges } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { Subscription } from 'rxjs';
-import { User, UserInitialPassword } from 'src/app/services/users/types';
+import { User } from 'src/app/services/users/types';
 import { UserService } from 'src/app/services/users/users.service';
 import { ConfirmDialogComponent } from 'src/app/ui/confirm-dialog/confirm-dialog.component';
 import { MessageDialogComponent } from 'src/app/ui/message_dialog/message-dialog.component';
@@ -13,29 +13,29 @@ import { MessageDialogComponent } from 'src/app/ui/message_dialog/message-dialog
   styleUrls: ['./configure-users-modal.component.scss'],
 })
 export class ConfigureUsersModalComponent
-  implements OnInit, OnDestroy, OnChanges
+  implements OnInit, OnDestroy
 {
-  buttonTextAdd: string = 'Add User';
-  buttonTextDelete: string = 'Delete User';
+  buttonTextAdd = 'Add User';
+  buttonTextDelete = 'Delete User';
 
-  userIdLabel: string = 'User Id';
-  useridPlaceholder: string = '';
-  userIdHint: string = '';
+  userIdLabel = 'User Id';
+  useridPlaceholder = '';
+  userIdHint = '';
 
   userId = new FormControl('', [Validators.required, Validators.minLength(4)]);
 
-  fullNameLabel: string = 'Full Name';
-  fullNamePlaceholder: string = '';
-  fullNameHint: string = '';
+  fullNameLabel = 'Full Name';
+  fullNamePlaceholder = '';
+  fullNameHint = '';
 
   fullName = new FormControl('', [
     Validators.required,
     Validators.minLength(4),
   ]);
 
-  emailLabel: string = 'E-Mail';
-  emailPlaceholder: string = '';
-  emailHint: string = 'An initial password will be send to this address';
+  emailLabel = 'E-Mail';
+  emailPlaceholder = '';
+  emailHint = 'An initial password will be send to this address';
 
   email = new FormControl('', [Validators.required, Validators.email]);
 
@@ -47,7 +47,7 @@ export class ConfigureUsersModalComponent
   usersSubscription: Subscription | undefined = undefined;
   initialPasswordSubscription: Subscription | undefined = undefined;
 
-  selectAll: boolean = false;
+  selectAll = false;
 
   constructor(private userService: UserService, private dialog: MatDialog) {}
 
@@ -79,8 +79,6 @@ export class ConfigureUsersModalComponent
       });
     this.userService.loadUsers();
   }
-
-  ngOnChanges(): void {}
 
   ngOnDestroy(): void {
     if (this.usersSubscription) {

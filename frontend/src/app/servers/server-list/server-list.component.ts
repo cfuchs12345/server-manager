@@ -3,8 +3,7 @@ import {
   Component,
   Input,
   OnChanges,
-  SimpleChanges,
-  ChangeDetectorRef,
+  SimpleChanges
 } from '@angular/core';
 import {
   animate,
@@ -50,10 +49,10 @@ export class ServerListComponent implements OnChanges {
   @Input() servers: Server[] = [];
 
   displayedColumns: string[] = initialDisplayedColumns.slice();
-  isColumnsMobile: boolean = false; // if true, less columns are displayed for smaller screens
+  isColumnsMobile = false; // if true, less columns are displayed for smaller screens
 
-  showDetail: boolean = false;
-  turnDetail: boolean = false;
+  showDetail = false;
+  turnDetail = false;
 
   dataSource = new MatTableDataSource();
   expandedElement: RowData | null = null;
@@ -63,8 +62,7 @@ export class ServerListComponent implements OnChanges {
   }
 
   constructor(
-    private authService: AuthenticationService,
-    private ref: ChangeDetectorRef
+    private authService: AuthenticationService
   ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -81,7 +79,7 @@ export class ServerListComponent implements OnChanges {
   }
 
   onClickExpandRow = (rowData: RowData) => {
-    let change = this.expandedElement !== rowData;
+    const change = this.expandedElement !== rowData;
 
     // same detail clicked again - will close the details, so we set the element to null
     if (!change) {
@@ -120,8 +118,8 @@ export class ServerListComponent implements OnChanges {
   }
 
   private toRowData = (servers: Server[]): RowData[] => {
-    var rowData: RowData[] = [];
-    for (var server of servers) {
+    const rowData: RowData[] = [];
+    for (const server of servers) {
       rowData.push(
         new RowData(server, server.ipaddress, server.name, server.dnsname)
       );

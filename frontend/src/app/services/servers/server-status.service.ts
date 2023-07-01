@@ -9,7 +9,7 @@ import { ErrorService, Source } from '../errors/error.service';
 import { EventService } from '../events/event.service';
 import { Event } from '../events/types';
 import { NGXLogger } from 'ngx-logger';
-import { addMany, upsertOne } from 'src/app/state/actions/server-status.action.types';
+import { addMany, upsertOne } from 'src/app/state/actions/status.action';
 import { Store } from '@ngrx/store';
 import { Update } from '@ngrx/entity';
 

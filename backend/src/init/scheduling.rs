@@ -1,3 +1,4 @@
+use std::sync::atomic::AtomicBool;
 use std::time::Instant;
 use std::{collections::HashMap, time::Duration};
 
@@ -40,8 +41,10 @@ pub async fn start_scheduled_jobs() -> Result<(), AppError> {
 
 async fn schedule_condition_checks(scheduler: &JobScheduler) -> Result<(), AppError> {
     scheduler
-        .add(Job::new_async("1/10 * * * * *", |_uuid, _l| {
+        .add(Job::new_async("1/20 * * * * *", |_uuid, _l| {
             Box::pin(async {
+                log::info!("condition_checks");
+
                 match crate::plugin_execution::check_main_action_conditions(&true).await {
                     Ok(_) => {}
                     Err(err) => {
@@ -62,6 +65,8 @@ async fn schedule_status_check(scheduler: &JobScheduler) -> Result<(), AppError>
     scheduler
         .add(Job::new_async("1/20 * * * * *", |_uuid, _l| {
             Box::pin(async {
+                log::info!("status_check");
+
                 other_functions::statuscheck::status_check_all(&true)
                     .await
                     .expect("Error during scheduled status check");
@@ -76,6 +81,8 @@ async fn schedule_monitoring(scheduler: &JobScheduler) -> Result<(), AppError> {
     scheduler
         .add(Job::new_async("1/20 * * * * *", |_uuid, _l| {
             Box::pin(async {
+                log::info!("status_monitoring");
+
                 let intervals = get_intervals();
 
                 match crate::plugin_execution::execute_all_data_dependent(

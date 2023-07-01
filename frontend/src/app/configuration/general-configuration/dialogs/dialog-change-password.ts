@@ -8,7 +8,7 @@ import { Component } from '@angular/core';
   </div>',
 })
 export class ChangePasswordDialog {
-  title: string = 'Change Password';
+  title = 'Change Password';
 }
 
 export const dialogSettings = () => {

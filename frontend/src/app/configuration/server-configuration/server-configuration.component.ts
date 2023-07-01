@@ -27,14 +27,14 @@ import { MatDialog } from '@angular/material/dialog';
   styleUrls: ['./server-configuration.component.scss'],
 })
 export class ServerConfigurationComponent {
-  title: string = 'Server Configuration';
-  description: string = 'Configure the list of available/known servers.';
+  title = 'Server Configuration';
+  description = 'Configure the list of available/known servers.';
 
-  buttonTextAutoDiscover: string = 'Autodiscovery';
-  buttonTextAddManually: string = 'Add Server/Feature';
-  buttonTextDelete: string = 'Delete Server/Feature';
-  buttonTextFeatureScan: string = 'Feature Scan';
-  buttonTextConfigureFeatures: string = 'Configure Features';
+  buttonTextAutoDiscover = 'Autodiscovery';
+  buttonTextAddManually = 'Add Server/Feature';
+  buttonTextDelete = 'Delete Server/Feature';
+  buttonTextFeatureScan = 'Feature Scan';
+  buttonTextConfigureFeatures = 'Configure Features';
 
   constructor(private dialog: MatDialog) {}
 

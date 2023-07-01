@@ -9,7 +9,7 @@ export class ChartDataList {
 }
 
 export class Series {
-  constructor(public name: string, data: number[][] ) {}
+  constructor(public name: string, public data: number[][] ) {}
 }
 
 export type ChartOptions = {

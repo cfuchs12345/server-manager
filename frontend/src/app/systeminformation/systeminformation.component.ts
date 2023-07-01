@@ -16,11 +16,9 @@ export class SystemInformationComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.systemInformationSubscription =
-      this.generalService.systemInformation.subscribe((info) => {
+      this.generalService.getSystemInformation().subscribe((info) => {
         this.systemInformation = info;
       });
-
-    this.generalService.getSystemInformation();
   }
   ngOnDestroy(): void {
     if (this.systemInformationSubscription) {

@@ -14,28 +14,28 @@ import { MessageDialogComponent } from '../ui/message_dialog/message-dialog.comp
   styleUrls: ['./register.component.scss'],
 })
 export class RegisterComponent implements OnInit, OnDestroy {
-  userIdLabel: string = 'User Id';
-  useridPlaceholder: string = '';
-  userIdHint: string = '';
+  userIdLabel = 'User Id';
+  useridPlaceholder = '';
+  userIdHint = '';
 
   userId = new FormControl('', [Validators.required, Validators.minLength(4)]);
 
-  fullNameLabel: string = 'Full Name';
-  fullNamePlaceholder: string = '';
-  fullNameHint: string = '';
+  fullNameLabel = 'Full Name';
+  fullNamePlaceholder = '';
+  fullNameHint = '';
 
   fullName = new FormControl('', [
     Validators.required,
     Validators.minLength(4),
   ]);
 
-  emailLabel: string = 'E-Mail';
-  emailPlaceholder: string = '';
-  emailHint: string = 'An initial password will be send to this address';
+  emailLabel = 'E-Mail';
+  emailPlaceholder = '';
+  emailHint = 'An initial password will be send to this address';
 
   email = new FormControl('', [Validators.required, Validators.email]);
 
-  buttonText: string = 'Save';
+  buttonText = 'Save';
 
   initialPasswordSubscription: Subscription | undefined = undefined;
 

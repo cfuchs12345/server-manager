@@ -18,31 +18,6 @@ import { NGXLogger } from 'ngx-logger';
   providedIn: 'root',
 })
 export class GeneralService {
-  private _configuration = new BehaviorSubject<Configuration | undefined>(
-    undefined
-  );
-  private _dnsServers = new BehaviorSubject<DNSServer[]>([]);
-  private _systemDNSServers = new BehaviorSubject<DNSServer[]>([]);
-  private _systemInformation = new BehaviorSubject<
-    SystemInformation | undefined
-  >(undefined);
-
-  private dataStore: {
-    configuration: Configuration | undefined;
-    dnsServers: DNSServer[];
-    systemDNSServers: DNSServer[];
-    systemInformation: SystemInformation | undefined;
-  } = {
-    configuration: undefined,
-    dnsServers: [],
-    systemDNSServers: [],
-    systemInformation: undefined,
-  };
-  readonly configuration = this._configuration.asObservable();
-  readonly dnsServers = this._dnsServers.asObservable();
-  readonly systemDNSServers = this._systemDNSServers.asObservable();
-  readonly systemInformation = this._systemInformation.asObservable();
-
   constructor(
     private http: HttpClient,
     private errorService: ErrorService,
@@ -53,7 +28,7 @@ export class GeneralService {
   saveDNSServer = (server: DNSServer) => {
     const body = JSON.stringify(server);
 
-    this.http
+    const subscriptipn =  this.http
       .post<boolean>('/backend/configurations/dnsservers', body, {
         headers: defaultHeadersForJSON(),
       })
@@ -63,16 +38,16 @@ export class GeneralService {
           this.errorService.newError(Source.GeneralService, undefined, err);
         },
         complete: () => {
-          setTimeout(this.listDNSServers, 200);
+          subscriptipn.unsubscribe();
         },
       });
   };
 
   deleteDNSServers = (servers: DNSServer[]) => {
-    for (var i = 0; i < servers.length; i++) {
+    for (let i = 0; i < servers.length; i++) {
       const server = servers[i];
 
-      this.http
+      const subscriptipn = this.http
         .delete<boolean>(
           '/backend/configurations/dnsservers/' + server.ipaddress
         )
@@ -82,53 +57,40 @@ export class GeneralService {
             this.errorService.newError(Source.GeneralService, undefined, err);
           },
           complete: () => {
-            if (i === servers.length) {
-              setTimeout(this.listDNSServers, 200);
-            }
+            subscriptipn.unsubscribe();
           },
         });
     }
   };
 
-  listDNSServers = () => {
-    this.http.get<DNSServer[]>('/backend/configurations/dnsservers').subscribe({
-      next: (res) => {
-        this.dataStore.dnsServers = res;
-        this._dnsServers.next(this.dataStore.dnsServers.slice());
-      },
-      error: (err: any) => {
+  listDNSServers = (): Observable<DNSServer[]> => {
+    return this.http.get<DNSServer[]>('/backend/configurations/dnsservers').pipe(
+      catchError((err) => {
         this.errorService.newError(Source.GeneralService, undefined, err);
-      },
-      complete: () => {},
-    });
+        return throwError(() => err);
+      })
+    );
   };
 
-  listSystemDNSServers = () => {
-    this.http
+  listSystemDNSServers = (): Observable<DNSServer[]> => {
+    return this.http
       .get<DNSServer[]>('/backend/systeminformation/dnsservers')
-      .subscribe({
-        next: (res) => {
-          this.dataStore.systemDNSServers = res;
-          this._systemDNSServers.next(this.dataStore.systemDNSServers.slice());
-        },
-        error: (err: any) => {
+      .pipe(
+
+        catchError((err) => {
           this.errorService.newError(Source.GeneralService, undefined, err);
-        },
-        complete: () => {},
-      });
+          return throwError(() => err);
+        })
+      );
   };
 
-  getSystemInformation = () => {
-    this.http.get<SystemInformation>('/backend/system/information').subscribe({
-      next: (res) => {
-        this.dataStore.systemInformation = res;
-        this._systemInformation.next(this.dataStore.systemInformation);
-      },
-      error: (err: any) => {
+  getSystemInformation = (): Observable<SystemInformation> => {
+    return this.http.get<SystemInformation>('/backend/system/information').pipe(
+      catchError((err) => {
         this.errorService.newError(Source.GeneralService, undefined, err);
-      },
-      complete: () => {},
-    });
+        return throwError(() => err);
+      })
+    );
   };
 
   uploadConfigFile = (config: Configuration, password: string) => {
@@ -161,7 +123,7 @@ export class GeneralService {
       'X-custom2': `${encrypted_password}`,
       'Content-Type': 'application/json',
     });
-    this.http
+    const subscription = this.http
       .post<boolean>('/backend/configuration', body, {
         headers: headers,
       })
@@ -173,7 +135,7 @@ export class GeneralService {
           this.errorService.newError(Source.GeneralService, undefined, err);
         },
         complete: () => {
-          setTimeout(this.listDNSServers, 200);
+          subscription.unsubscribe();
         },
       });
   };

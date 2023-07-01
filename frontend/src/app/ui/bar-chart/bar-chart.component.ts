@@ -1,7 +1,6 @@
 import {
   Component,
   Input,
-  OnInit,
   OnChanges,
   SimpleChanges,
   ViewChild,
@@ -15,7 +14,7 @@ import { ChartData, ChartOptions } from 'src/types/ChartData';
   templateUrl: './bar-chart.component.html',
   styleUrls: ['./bar-chart.component.scss'],
 })
-export class BarChartComponent implements OnInit, OnChanges {
+export class BarChartComponent implements OnChanges {
   @Input() series_id: string | undefined;
   @Input() chartData: ChartData | undefined;
 
@@ -63,7 +62,7 @@ export class BarChartComponent implements OnInit, OnChanges {
     };
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
+  ngOnChanges(): void {
     if (!this.series_id || !this.chartData) {
       return;
     }
@@ -95,6 +94,4 @@ export class BarChartComponent implements OnInit, OnChanges {
       }
     }
   }
-
-  ngOnInit(): void {}
 }

@@ -1,4 +1,4 @@
-import { createFeatureSelector, createReducer, createSelector, on } from '@ngrx/store';
+import {  createReducer,  on } from '@ngrx/store';
 import { Status } from '../../services/servers/types';
 import {
   addOne,
@@ -6,14 +6,13 @@ import {
   updateOne,
   removeOne,
   upsertOne
-} from 'src/app/state/actions/server-status.action.types';
+} from 'src/app/state/actions/status.action';
 import { EntityState, EntityAdapter, createEntityAdapter } from '@ngrx/entity';
 
-export interface State extends EntityState<Status> {}
+export type State = EntityState<Status>
 
 
 export function selectIpAddress(a: Status): string {
-  //In this case this would be optional since primary key is id
   return a.ipaddress;
 }
 
@@ -23,10 +22,10 @@ export const adapter: EntityAdapter<Status> =
     selectId: selectIpAddress,
   });
 
-export const initialServerStatusState: State = adapter.getInitialState({});
+export const initialStatusState: State = adapter.getInitialState({});
 
-export const serverStatusReducer  = createReducer(
-  initialServerStatusState,
+export const reducer  = createReducer(
+  initialStatusState,
 
   on(addOne, (state, { status }) => {
     return adapter.addOne(status, state);

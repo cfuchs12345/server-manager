@@ -8,7 +8,7 @@ import {
 } from '@angular/router';
 import { AuthenticationService } from '../services/auth/authentication.service';
 
-var usersExist = false;
+let usersExist = false;
 
 export const RegisterGuard: CanActivateFn = (
   next: ActivatedRouteSnapshot,
