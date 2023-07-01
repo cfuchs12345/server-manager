@@ -2,69 +2,77 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { User, UserInitialPassword } from './types';
 import { ErrorService, Source } from '../errors/error.service';
-import { BehaviorSubject } from 'rxjs';
+import { Observable, catchError, map, throwError, filter } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
 import { EncryptionService } from '../encryption/encryption.service';
 import { OneTimeKey } from '../auth/types';
+import { Store } from '@ngrx/store';
+import { removeOne, addMany } from 'src/app/state/actions/user.action';
+import { NGXLogger } from 'ngx-logger';
+import { EventService } from '../events/event.service';
+import { Event } from '../events/types';
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
-  private _users = new BehaviorSubject<User[]>([]);
-  private _initialPassword = new BehaviorSubject<
-    UserInitialPassword | null | undefined
-  >(undefined);
-
-  private dataStore: { users: User[] } = {
-    users: [],
-  };
-
-  readonly users = this._users.asObservable();
-  readonly initialPassword = this._initialPassword.asObservable();
-
   constructor(
+    private store: Store,
     private http: HttpClient,
     private errorService: ErrorService,
-    private encryptionService: EncryptionService
-  ) {}
+    private eventService: EventService,
+    private encryptionService: EncryptionService,
+    private logger: NGXLogger
+  ) {
+    this.eventService.eventSubject
+      .pipe(
+        filter((event: Event) => {
+          return event.object_type === 'User';
+        })
+      )
+      .subscribe((event: Event) => {
+        if (event.event_type === 'Insert' || event.event_type === 'Update') {
+            this.loadUsers();
+        } else if (event.event_type === 'Delete') {
+          this.store.dispatch(removeOne({user_id: event.key}));
+        }
+      });
+  }
 
   loadUsers = async () => {
-    this.http.get<User[]>('/backend/users').subscribe({
+    const subscription = this.http.get<User[]>('/backend/users').subscribe({
       next: (loadedUsers) => {
-        this.dataStore.users = loadedUsers;
+        this.store.dispatch(addMany({ users: loadedUsers}));
       },
       error: (err) => {
+        this.logger.error("error while loading users", err);
         this.errorService.newError(Source.UserService, undefined, err);
       },
       complete: () => {
-        this.publishUsers();
+        subscription.unsubscribe();
       },
     });
   };
 
-  saveUser = (user: User, firstUser: boolean) => {
+  saveUser = (
+    user: User,
+    firstUser: boolean
+  ): Observable<UserInitialPassword> => {
     const body = JSON.stringify(user);
 
     const url = firstUser ? '/backend_nt/users_first' : '/backend/users';
 
-    this.http
+    return this.http
       .post<string | undefined | null>(url, body, {
         headers: defaultHeadersForJSON(),
       })
-      .subscribe({
-        next: (response) => {
-          this.dataStore.users.push(user);
-
-          this._initialPassword.next(
-            new UserInitialPassword(user.user_id, response)
-          );
-        },
-        error: (err) => {
+      .pipe(
+        catchError((err) => {
           this.errorService.newError(Source.UserService, user.user_id, err);
-        },
-        complete: () => {
-          setTimeout(this.publishUsers, 500);
-        },
-      });
+          return throwError(() => err);
+        }),
+        map((response) => {
+          return new UserInitialPassword(user.user_id, response);
+        })
+      );
   };
 
   deleteUsers = (usersToDelete: User[]) => {
@@ -74,22 +82,13 @@ export class UserService {
           headers: defaultHeadersForJSON(),
         })
         .subscribe({
-          next: (res) => {
-            const indexToDelete = this.dataStore.users.findIndex(
-              (u) => u.user_id === user.user_id
-            );
-            this.dataStore.users.splice(indexToDelete, 1);
+          next: () => {
+           this.store.dispatch(removeOne( { user_id: user.user_id} ));
           },
           error: (err) => {
             this.errorService.newError(Source.UserService, user.user_id, err);
           },
           complete: () => {
-            if (
-              usersToDelete[usersToDelete.length - 1].user_id === user.user_id
-            ) {
-              setTimeout(this.publishUsers, 500);
-            }
-
             subscription.unsubscribe();
           },
         });
@@ -126,13 +125,5 @@ export class UserService {
           subscription.unsubscribe();
         },
       });
-  };
-
-  confirmInitialPasswordReceived = () => {
-    this._initialPassword.next(undefined);
-  };
-
-  private publishUsers = () => {
-    this._users.next(this.dataStore.users.slice());
   };
 }

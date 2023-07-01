@@ -1,6 +1,11 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 
-use crate::common;
+use crate::{
+    common,
+    event_handling::{EventSource, ObjectType, Value},
+};
 
 use super::error::AppError;
 
@@ -46,5 +51,37 @@ impl User {
 
     pub fn check_password(&self, password_to_check: &str) -> Result<bool, AppError> {
         common::verify_password(password_to_check, self.password_hash.as_str())
+    }
+}
+
+impl EventSource for User {
+    fn get_object_type(&self) -> ObjectType {
+        ObjectType::User
+    }
+
+    fn get_event_key_name(&self) -> String {
+        "user_id".to_string()
+    }
+
+    fn get_event_key(&self) -> String {
+        self.user_id.to_owned()
+    }
+
+    fn get_event_value(&self) -> Result<String, AppError> {
+        Ok(self.user_id.to_owned())
+    }
+
+    fn get_key_values(&self) -> HashMap<String, Value> {
+        let mut kv = HashMap::new();
+        kv.insert(
+            "password_hash".to_owned(),
+            Value::String("password_hash".to_owned()),
+        );
+        kv.insert("email".to_owned(), Value::String("email".to_owned()));
+        kv.insert(
+            "full_name".to_owned(),
+            Value::String("full_name".to_owned()),
+        );
+        kv
     }
 }

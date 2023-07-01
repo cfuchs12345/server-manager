@@ -20,6 +20,7 @@ pub enum ObjectType {
     DisabledPlugins,
     ConditionCheckResult,
     Notification,
+    User,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

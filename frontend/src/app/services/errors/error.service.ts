@@ -31,7 +31,6 @@ export class ErrorService {
     errors: new Map(),
   };
 
-  constructor() {}
 
   newError(
     source: Source,

@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { PluginService } from 'src/app/services/plugins/plugin.service';
 import { ServerStatusService } from 'src/app/services/servers/server-status.service';
 import { ServerService } from 'src/app/services/servers/server.service';
-import { Subscription } from 'rxjs';
+import { Subscription, Observable} from 'rxjs';
 import { Server } from 'src/app/services/servers/types';
 import { ImageCache } from 'src/app/services/cache/image-cache.service';
 import { ServerActionService } from 'src/app/services/servers/server-action.service';
@@ -11,6 +11,7 @@ import { NotificationService } from 'src/app/services/notifications/notification
 import { Store } from '@ngrx/store';
 import { selectAllServers } from 'src/app/state/selectors/server.selectors';
 import { selectAllPlugins } from 'src/app/state/selectors/plugin.selectors';
+import { Plugin } from 'src/app/services/plugins/types';
 
 @Component({
   selector: 'app-server-list-wrapper',
@@ -21,7 +22,8 @@ export class ServerListWrapperComponent implements OnInit, OnDestroy {
   private serverSubscription: Subscription | undefined = undefined;
   private pluginSubscription: Subscription | undefined = undefined;
 
-  servers: Server[] = [];
+  servers$: Observable<Server[]>;
+  plugins$: Observable<Plugin[]>;
 
   constructor(
     private store: Store,
@@ -31,20 +33,15 @@ export class ServerListWrapperComponent implements OnInit, OnDestroy {
     private serverActionService: ServerActionService,
     private notificationService: NotificationService,
     private imageCache: ImageCache
-  ) {}
+  ) {
+    this.servers$ = this.store.select(selectAllServers);
+    this.plugins$ = this.store
+      .select(selectAllPlugins);
+
+    this.plugins$.subscribe((plugins) => this.imageCache.init(plugins));
+  }
 
   ngOnInit(): void {
-    this.serverSubscription = this.store
-      .select(selectAllServers)
-      .subscribe((servers) => {
-        this.servers = servers;
-      });
-
-    this.pluginSubscription = this.store.select(selectAllPlugins).subscribe(
-      (plugins) => {
-        this.imageCache.init(plugins);
-      }
-    );
     setTimeout(this.pluginService.loadPlugins, 0);
     setTimeout(this.serverService.listServers, 0);
     setTimeout(this.statusService.listAllServerStatus, 0);

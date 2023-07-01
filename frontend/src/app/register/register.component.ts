@@ -1,6 +1,5 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
-import { Subscription } from 'rxjs';
 
 import { Router } from '@angular/router';
 import { UserService } from '../services/users/users.service';
@@ -13,7 +12,7 @@ import { MessageDialogComponent } from '../ui/message_dialog/message-dialog.comp
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.scss'],
 })
-export class RegisterComponent implements OnInit, OnDestroy {
+export class RegisterComponent {
   userIdLabel = 'User Id';
   useridPlaceholder = '';
   userIdHint = '';
@@ -37,7 +36,6 @@ export class RegisterComponent implements OnInit, OnDestroy {
 
   buttonText = 'Save';
 
-  initialPasswordSubscription: Subscription | undefined = undefined;
 
   constructor(
     private userService: UserService,
@@ -45,45 +43,6 @@ export class RegisterComponent implements OnInit, OnDestroy {
     private dialog: MatDialog
   ) {}
 
-  ngOnInit(): void {
-    this.initialPasswordSubscription =
-      this.userService.initialPassword.subscribe((passwd) => {
-        if (passwd) {
-          this.userService.confirmInitialPasswordReceived();
-
-          if (passwd.password) {
-            this.dialog
-              .open(MessageDialogComponent, {
-                data: {
-                  title: 'Initial Password',
-                  message:
-                    'The initial password for user ' +
-                    passwd.user_id +
-                    ' is: "' +
-                    passwd.password +
-                    '"',
-                },
-              })
-              .afterClosed()
-              .subscribe((any) => {
-                setTimeout(() => {
-                  this.router.navigate(['/login']);
-                }, 50);
-              });
-          } else {
-            setTimeout(() => {
-              this.router.navigate(['/login']);
-            }, 50);
-          }
-        }
-      });
-  }
-
-  ngOnDestroy(): void {
-    if (this.initialPasswordSubscription) {
-      this.initialPasswordSubscription.unsubscribe();
-    }
-  }
 
   getPasswordMessage = (): string => {
     return '';
@@ -110,10 +69,38 @@ export class RegisterComponent implements OnInit, OnDestroy {
       this.email !== null &&
       this.email.value !== null
     ) {
-      this.userService.saveUser(
+      const subscription = this.userService.saveUser(
         new User(this.userId.value, this.fullName.value, this.email.value),
         true
-      );
+      ).subscribe((passwd) => {
+        if (passwd) {
+          if (passwd.password) {
+            this.dialog
+              .open(MessageDialogComponent, {
+                data: {
+                  title: 'Initial Password',
+                  message:
+                    'The initial password for user ' +
+                    passwd.user_id +
+                    ' is: "' +
+                    passwd.password +
+                    '"',
+                },
+              })
+              .afterClosed()
+              .subscribe(() => {
+                setTimeout(() => {
+                  this.router.navigate(['/login']);
+                }, 50);
+              });
+          } else {
+            setTimeout(() => {
+              this.router.navigate(['/login']);
+            }, 50);
+          }
+        }
+        subscription.unsubscribe();
+      });
     }
   };
 }

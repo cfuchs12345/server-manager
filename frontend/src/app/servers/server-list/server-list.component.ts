@@ -2,8 +2,7 @@ import {
   HostListener,
   Component,
   Input,
-  OnChanges,
-  SimpleChanges
+  OnInit
 } from '@angular/core';
 import {
   animate,
@@ -16,6 +15,7 @@ import { MatTableDataSource } from '@angular/material/table';
 import { RowData } from 'src/app/services/general/types';
 import { Server } from 'src/app/services/servers/types';
 import { AuthenticationService } from 'src/app/services/auth/authentication.service';
+import { Observable } from 'rxjs';
 
 const initialDisplayedColumns: string[] = [
   'icons',
@@ -45,8 +45,8 @@ const displayedColumnForMobilesPhones: string[] = [
     ]),
   ],
 })
-export class ServerListComponent implements OnChanges {
-  @Input() servers: Server[] = [];
+export class ServerListComponent implements OnInit {
+  @Input() servers$: Observable<Server[]> | undefined;
 
   displayedColumns: string[] = initialDisplayedColumns.slice();
   isColumnsMobile = false; // if true, less columns are displayed for smaller screens
@@ -65,18 +65,14 @@ export class ServerListComponent implements OnChanges {
     private authService: AuthenticationService
   ) {}
 
-  ngOnChanges(changes: SimpleChanges): void {
-    for (const propName in changes) {
-      if (Object.hasOwn(changes, propName)) {
-        switch (propName) {
-          case 'servers': {
-            this.dataSource.data = this.toRowData(this.servers);
-            break;
-          }
-        }
-      }
+  ngOnInit(): void {
+    if(this.servers$) {
+      this.servers$.subscribe( (servers) => this.dataSource.data = this.toRowData(servers))
     }
   }
+
+
+
 
   onClickExpandRow = (rowData: RowData) => {
     const change = this.expandedElement !== rowData;

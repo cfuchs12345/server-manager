@@ -1,20 +1,20 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
-import { Subscription } from 'rxjs';
+import { Store } from '@ngrx/store';
+import { Subscription, Observable } from 'rxjs';
 import { User } from 'src/app/services/users/types';
 import { UserService } from 'src/app/services/users/users.service';
 import { ConfirmDialogComponent } from 'src/app/ui/confirm-dialog/confirm-dialog.component';
 import { MessageDialogComponent } from 'src/app/ui/message_dialog/message-dialog.component';
+import { selectAllUsers } from 'src/app/state/selectors/user.selectors';
 
 @Component({
   selector: 'app-configure-users-modal',
   templateUrl: './configure-users-modal.component.html',
   styleUrls: ['./configure-users-modal.component.scss'],
 })
-export class ConfigureUsersModalComponent
-  implements OnInit, OnDestroy
-{
+export class ConfigureUsersModalComponent implements OnDestroy {
   buttonTextAdd = 'Add User';
   buttonTextDelete = 'Delete User';
 
@@ -41,6 +41,7 @@ export class ConfigureUsersModalComponent
 
   displayedColumns = ['delete', 'user_id', 'full_name'];
 
+  users$: Observable<User[]>;
   users: User[] = [];
 
   selectedUsers: string[] = [];
@@ -49,34 +50,10 @@ export class ConfigureUsersModalComponent
 
   selectAll = false;
 
-  constructor(private userService: UserService, private dialog: MatDialog) {}
+  constructor(private store: Store, private userService: UserService, private dialog: MatDialog) {
+    this.users$ = this.store.select(selectAllUsers);
+    this.users$.subscribe( (users) => this.users = users);
 
-  ngOnInit(): void {
-    this.usersSubscription = this.userService.users.subscribe((users) => {
-      if (users) {
-        this.users = users;
-      } else {
-        // clear messages when empty message received
-        this.users = [];
-      }
-    });
-    this.initialPasswordSubscription =
-      this.userService.initialPassword.subscribe((passwd) => {
-        if (passwd) {
-          this.userService.confirmInitialPasswordReceived();
-          this.dialog.open(MessageDialogComponent, {
-            data: {
-              title: 'Initial Password',
-              message:
-                'The initial password for user ' +
-                passwd.user_id +
-                ' is: "' +
-                passwd.password +
-                '"',
-            },
-          });
-        }
-      });
     this.userService.loadUsers();
   }
 
@@ -92,9 +69,31 @@ export class ConfigureUsersModalComponent
       this.fullName.value !== null &&
       this.email.value !== null
     ) {
-      this.userService.saveUser(
-        new User(this.userId.value, this.fullName.value, this.email.value)
-      ,false);
+      this.userService
+        .saveUser(
+          new User(this.userId.value, this.fullName.value, this.email.value),
+          false
+        )
+        .subscribe((response) => {
+          if (response) {
+            if (response.password !== null) {
+              this.dialog.open(MessageDialogComponent, {
+                data: {
+                  title: 'Initial Password',
+                  message:
+                    'The initial password for user ' +
+                    response.user_id +
+                    ' is: "' +
+                    response.password +
+                    '"',
+                },
+              });
+            }
+            else {
+              // sent by mail
+            }
+          }
+        });
     }
   };
 
@@ -144,7 +143,7 @@ export class ConfigureUsersModalComponent
   onClickSelectAll = () => {
     this.selectAll = !this.selectAll;
 
-    if (this.selectAll && this.users) {
+    if (this.selectAll) {
       this.selectedUsers = this.users.map((user) => user.user_id);
     } else {
       this.selectedUsers = [];

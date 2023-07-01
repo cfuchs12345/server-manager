@@ -5,10 +5,7 @@ import {adapter, State}  from '../reducers/server.reducers';
 
 // get the selectors
 const {
-  selectIds,
-  selectEntities,
   selectAll,
-  selectTotal,
 } = adapter.getSelectors();
 
 
@@ -18,6 +15,11 @@ export const selectServerState = createFeatureSelector<State>('server');
   export const selectAllServers = createSelector(
     selectServerState,
     selectAll
+  );
+
+  export const selectAllServersWithFeatures = createSelector(
+    selectAllServers,
+    (servers) => servers.filter( (server) => server.features && server.features.length > 0)
   );
 
 

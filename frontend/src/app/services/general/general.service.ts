@@ -1,12 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import {
-  Observable,
-  BehaviorSubject,
-  catchError,
-  throwError,
-  mergeMap,
-} from 'rxjs';
+import { Observable, catchError, throwError, mergeMap } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
 import { Configuration, DNSServer, SystemInformation } from './types';
 import { ErrorService, Source } from '../errors/error.service';
@@ -28,13 +22,12 @@ export class GeneralService {
   saveDNSServer = (server: DNSServer) => {
     const body = JSON.stringify(server);
 
-    const subscriptipn =  this.http
+    const subscriptipn = this.http
       .post<boolean>('/backend/configurations/dnsservers', body, {
         headers: defaultHeadersForJSON(),
       })
       .subscribe({
-        next: (res) => {},
-        error: (err: any) => {
+        error: (err) => {
           this.errorService.newError(Source.GeneralService, undefined, err);
         },
         complete: () => {
@@ -52,8 +45,7 @@ export class GeneralService {
           '/backend/configurations/dnsservers/' + server.ipaddress
         )
         .subscribe({
-          next: (res) => {},
-          error: (err: any) => {
+          error: (err) => {
             this.errorService.newError(Source.GeneralService, undefined, err);
           },
           complete: () => {
@@ -64,19 +56,20 @@ export class GeneralService {
   };
 
   listDNSServers = (): Observable<DNSServer[]> => {
-    return this.http.get<DNSServer[]>('/backend/configurations/dnsservers').pipe(
-      catchError((err) => {
-        this.errorService.newError(Source.GeneralService, undefined, err);
-        return throwError(() => err);
-      })
-    );
+    return this.http
+      .get<DNSServer[]>('/backend/configurations/dnsservers')
+      .pipe(
+        catchError((err) => {
+          this.errorService.newError(Source.GeneralService, undefined, err);
+          return throwError(() => err);
+        })
+      );
   };
 
   listSystemDNSServers = (): Observable<DNSServer[]> => {
     return this.http
       .get<DNSServer[]>('/backend/systeminformation/dnsservers')
       .pipe(
-
         catchError((err) => {
           this.errorService.newError(Source.GeneralService, undefined, err);
           return throwError(() => err);
@@ -94,22 +87,22 @@ export class GeneralService {
   };
 
   uploadConfigFile = (config: Configuration, password: string) => {
-    const ref = this;
-
     const subscriptionOTK = this.encryptionService
       .requestOneTimeKey()
       .subscribe({
-        next(otk) {
-          ref.upload(otk, config, password);
+        next: (otk) => {
+          this.upload(otk, config, password);
         },
-        error(err) {
-          ref.errorService.newError(Source.GeneralService, undefined, err);
+        error: (err) => {
+          this.errorService.newError(Source.GeneralService, undefined, err);
         },
-        complete() {
+        complete: () => {
           subscriptionOTK.unsubscribe();
         },
       });
   };
+
+
 
   upload = (otk: OneTimeKey, config: Configuration, password: string) => {
     const body = JSON.stringify(config);
@@ -131,7 +124,7 @@ export class GeneralService {
         next: (res) => {
           this.logger.debug(res);
         },
-        error: (err: any) => {
+        error: (err) => {
           this.errorService.newError(Source.GeneralService, undefined, err);
         },
         complete: () => {

@@ -6,7 +6,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { Store } from '@ngrx/store';
-import { Subscription } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import {
   CredentialDefinition,
   ParamDefinition,
@@ -20,7 +20,7 @@ import {
   Server,
 } from 'src/app/services/servers/types';
 import { selectAllPlugins } from 'src/app/state/selectors/plugin.selectors';
-import { selectAllServers } from 'src/app/state/selectors/server.selectors';
+import { selectAllServersWithFeatures } from 'src/app/state/selectors/server.selectors';
 
 @Component({
   selector: 'app-configure-features-modal',
@@ -45,13 +45,12 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
   credentialsFromPlugin: CredentialDefinition[] = [];
   credentialFromFeature: Credential[] = [];
 
-  servers: Server[] = [];
+  servers$: Observable<Server[]> | undefined;
   features: Feature[] = [];
-  plugins: Plugin[] = [];
+  plugins$: Observable<Plugin[]> | undefined;
 
-  subscriptionServers: Subscription | undefined = undefined;
-  subscriptionServerFullData: Subscription | undefined = undefined;
-  subscriptionPlugins: Subscription | undefined = undefined;
+  plugins: Plugin[] = [];
+  pluginsSubscription: Subscription | undefined;
 
   constructor(
     private store: Store,
@@ -62,37 +61,20 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.subscriptionServers = this.store
-      .select(selectAllServers)
-      .subscribe((servers) => {
-        if (servers) {
-          this.servers = servers.filter(
-            (server) => server.features && server.features.length > 0
-          );
-        } else {
-          // clear messages when empty message received
-          this.servers = [];
-        }
-      });
+    this.servers$ = this.store.select(selectAllServersWithFeatures);
+    this.plugins$ = this.store.select(selectAllPlugins);
 
-    this.subscriptionPlugins = this.store
-      .select(selectAllPlugins)
-      .subscribe((plugins) => {
-        this.plugins = plugins;
-      });
+    this.pluginsSubscription = this.plugins$.subscribe(
+      (plugins) => this.plugins = plugins
+    );
   }
 
   ngOnDestroy(): void {
-    if (this.subscriptionServers) {
-      this.subscriptionServers.unsubscribe();
-    }
-    if (this.subscriptionPlugins) {
-      this.subscriptionPlugins.unsubscribe();
-    }
-    if (this.subscriptionServerFullData) {
-      this.subscriptionServerFullData.unsubscribe();
+    if( this.pluginsSubscription) {
+      this.pluginsSubscription.unsubscribe();
     }
   }
+
 
   getCurrentParamValue = (name: string): string => {
     if (!this.paramsFromFeature) {
@@ -275,23 +257,22 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
   };
 
   onChangeServer = () => {
-    const ref = this;
-
     this.form = this.formBuilder.group({});
     if (this.selectedServer?.ipaddress) {
-      this.subscriptionServerFullData = this.serverService
+      const subscriptionServerFullData: Subscription = this.serverService
         .getServer(this.selectedServer?.ipaddress, true)
         .subscribe({
           next: (server) => {
             this.selectedServerFullData = server;
-            ref.features = ref.selectedServerFullData
-              ? ref.selectedServerFullData.features
+            this.features = this.selectedServerFullData
+              ? this.selectedServerFullData.features
               : [];
-            ref.resetSelections();
-            setTimeout(ref.createInputControls, 0);
+              this.resetSelections();
+            setTimeout(this.createInputControls, 0);
           },
-          error: (err) => {},
-          complete: () => {},
+          complete: () =>
+            subscriptionServerFullData.unsubscribe()
+          ,
         });
     }
   };

@@ -59,7 +59,7 @@
   </div>
 </div>
 <div fxLayout="row">
-  <table mat-table [dataSource]="users" class="mat-elevation-z8">
+  <table mat-table [dataSource]="users$" class="mat-elevation-z8">
     <ng-container matColumnDef="delete">
       <th mat-header-cell *matHeaderCellDef><span (click)="onClickSelectAll()"  style="cursor: pointer;">{{ selectAll ? '&#9745;' : '&#9744;'}}</span>&nbsp;&nbsp;Delete</th>
       <td mat-cell *matCellDef="let user">

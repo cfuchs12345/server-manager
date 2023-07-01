@@ -1,5 +1,5 @@
 use crate::{
-    common,
+    common, event_handling,
     models::{error::AppError, users::User},
 };
 
@@ -30,17 +30,27 @@ fn user_to_entry(user: &User) -> Result<Entry, AppError> {
 pub async fn insert_user(user: &User) -> Result<bool, AppError> {
     let result = persistence::insert(TABLE, user_to_entry(user)?).await?;
 
+    event_handling::handle_object_change(Some(Box::new(user.to_owned())), None)?;
+
     Ok(result > 0)
 }
 
 pub async fn update_user(user: &User) -> Result<bool, AppError> {
+    let old = get_user(user.get_user_id().as_str()).await?;
+
     let result = persistence::update(TABLE, user_to_entry(user)?).await?;
+
+    event_handling::handle_object_change(Some(Box::new(user.to_owned())), Some(Box::new(old)))?;
 
     Ok(result > 0)
 }
 
 pub async fn delete_user(user_id: &str) -> Result<bool, AppError> {
+    let old = get_user(user_id).await?;
+
     let result = persistence::delete(TABLE, user_id).await?;
+
+    event_handling::handle_object_change(None, Some(Box::new(old)))?;
 
     Ok(result > 0)
 }

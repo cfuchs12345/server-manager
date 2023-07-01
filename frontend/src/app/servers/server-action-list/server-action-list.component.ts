@@ -1,9 +1,18 @@
-import { Component, OnInit, Input, Output, OnDestroy,SimpleChanges } from '@angular/core';
-import { Subscription, filter, tap } from 'rxjs';
+import {
+  Component,
+  OnInit,
+  Input,
+  ChangeDetectorRef,
+  OnDestroy
+} from '@angular/core';
+import { Subscription, Observable, filter } from 'rxjs';
 import { GUIAction } from 'src/app/services/general/types';
 import { ImageCache } from 'src/app/services/cache/image-cache.service';
-import { ConditionCheckResult, Server, Status } from 'src/app/services/servers/types';
-import { PluginService } from 'src/app/services/plugins/plugin.service';
+import {
+  ConditionCheckResult,
+  Server,
+  Status,
+} from 'src/app/services/servers/types';
 import { Plugin } from 'src/app/services/plugins/types';
 import { Store } from '@ngrx/store';
 import { selectStatusByIpAddress } from 'src/app/state/selectors/status.selectors';
@@ -20,63 +29,65 @@ export class ServerActionListComponent implements OnInit, OnDestroy {
   @Input() server: Server | undefined = undefined;
   conditionCheckResult: ConditionCheckResult | undefined = undefined;
 
-
   guiActions: GUIAction[] = [];
   status: Status | undefined = undefined;
   private plugins: Plugin[] | undefined = undefined;
-
 
   private serverStatusSubscription: Subscription | undefined = undefined;
   private pluginSubscription: Subscription | undefined = undefined;
   private serverActionCheckSubscription: Subscription | undefined = undefined;
 
+  private conditions$:
+    | Observable<ConditionCheckResult | undefined>
+    | undefined = undefined;
+  private status$: Observable<Status | undefined> | undefined = undefined;
+  private plugins$: Observable<Plugin[]>;
+
   constructor(
     private store: Store,
     private imageCache: ImageCache,
-    private logger: NGXLogger
-  ) {}
+    private logger: NGXLogger,
+    private cdr: ChangeDetectorRef
+  ) {
+    this.plugins$ = this.store.select(selectAllPlugins);
+  }
 
   ngOnInit(): void {
-    if( this.server ) {
-    this.serverActionCheckSubscription = this.store
-      .select(selectConditionCheckResultByIpAddress(this.server.ipaddress))
-      .subscribe((checkResult) => {
+    if (this.server) {
+      this.conditions$ = this.store.select(
+        selectConditionCheckResultByIpAddress(this.server.ipaddress)
+      );
 
-        if (checkResult && this.isCheckResultRequired(checkResult)) {
-          this.conditionCheckResult = checkResult;
+      this.serverActionCheckSubscription = this.conditions$.subscribe(
+        (checkResult) => {
+          if (checkResult && this.isCheckResultRequired(checkResult)) {
+            this.conditionCheckResult = checkResult;
 
-          this.getActionsForServer();
+            this.getActionsForServer();
+          }
         }
+      );
+    }
+
+    if (this.server) {
+      this.status$ = this.store.select(
+        selectStatusByIpAddress(this.server.ipaddress)
+      );
+
+      this.serverStatusSubscription = this.status$.subscribe((status) => {
+        this.status = status;
+
+        this.getActionsForServer();
       });
     }
 
+    this.pluginSubscription = this.plugins$
+      .pipe(filter((plugins) => this.filter(plugins)))
+      .subscribe((plugins) => {
+        this.plugins = plugins;
 
-    if (this.server) {
-      this.serverStatusSubscription = this.store
-        .select(selectStatusByIpAddress(this.server.ipaddress))
-        .subscribe((status) => {
-          this.status = status;
-
-          this.getActionsForServer();
-        });
-    }
-
-    this.pluginSubscription = this.store
-      .select(selectAllPlugins)
-      .pipe(
-        filter((plugins) => this.filter(plugins)),
-        )
-      .subscribe(
-        (plugins) => {
-          this.plugins = plugins;
-
-          this.getActionsForServer();
-        }
-      );
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-
+        this.getActionsForServer();
+      });
   }
 
   ngOnDestroy(): void {
@@ -134,7 +145,9 @@ export class ServerActionListComponent implements OnInit, OnDestroy {
     );
   }
 
-  private isCheckResultRequired(result: ConditionCheckResult | undefined): boolean {
+  private isCheckResultRequired(
+    result: ConditionCheckResult | undefined
+  ): boolean {
     return (
       this.server !== undefined &&
       result !== undefined &&
