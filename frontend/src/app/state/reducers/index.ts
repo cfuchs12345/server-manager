@@ -12,6 +12,7 @@ import * as disabledPlugin from './disabled_plugin.reducers';
 import * as conditioncheckresult from './conditioncheckresult.reducers';
 import * as notification from './notification.reducers';
 import * as user from './user.reducers';
+import * as usertoken from './usertoken.reducers';
 import { NGXLogger } from 'ngx-logger';
 
 
@@ -22,7 +23,8 @@ export interface State {
   plugin: plugin.State,
   conditioncheckresult: conditioncheckresult.State,
   notification: notification.State,
-  user: user.State
+  user: user.State,
+  usertoken: usertoken.State
 }
 
 export const reducers: ActionReducerMap<State> = {
@@ -32,7 +34,8 @@ export const reducers: ActionReducerMap<State> = {
   plugin: plugin.reducer,
   conditioncheckresult: conditioncheckresult.reducer,
   notification: notification.reducer,
-  user: user.reducer
+  user: user.reducer,
+  usertoken: usertoken.reducer
 };
 
 

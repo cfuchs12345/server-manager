@@ -13,6 +13,7 @@ import { EventService } from '../events/event.service';
 import { Event } from '../events/types';
 import { Store } from '@ngrx/store';
 
+
 @Injectable({
   providedIn: 'root',
 })
@@ -131,7 +132,7 @@ export class ServerService {
     if (!feature.credentials.find((credential) => credential.encrypted)) {
       return;
     }
-    const key = this.authService.userToken?.client_key;
+    const key = this.authService.getUserToken()?.client_key;
 
     feature.credentials.forEach((credential) => {
       if (credential.encrypted && key) {

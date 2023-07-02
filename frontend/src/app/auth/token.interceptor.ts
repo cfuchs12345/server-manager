@@ -17,7 +17,7 @@ export class TokenInterceptor implements HttpInterceptor {
     next: HttpHandler
   ): Observable<HttpEvent<any>> {
     // add header with basic auth credentials if user is logged in and request is to the api url
-    const userToken = this.authenticationService.userToken;
+    const userToken = this.authenticationService.getUserToken();
 
     const isApiUrl = request.url.startsWith('/backend');
 

@@ -59,7 +59,7 @@ export class ErrorService {
     date: Date,
     source: Source,
     ipaddress: string | undefined,
-    errorMessage: any
+    errorMessage: string
   ) => {
     const key = source + '|' + errorMessage;
 

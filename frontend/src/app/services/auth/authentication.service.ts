@@ -1,18 +1,15 @@
 import { Injectable } from '@angular/core';
-import { Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { BehaviorSubject, Observable, throwError } from 'rxjs';
-import { catchError, map, mergeMap } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
+import { catchError, map, mergeMap, tap } from 'rxjs/operators';
 import { UserToken } from '../users/types';
 import { ErrorService, Source } from '../errors/error.service';
 import { EncryptionService } from '../encryption/encryption.service';
+import { Router } from '@angular/router';
 
 @Injectable({ providedIn: 'root' })
 export class AuthenticationService {
-  private _userTokenSubject: BehaviorSubject<UserToken | null> =
-    new BehaviorSubject<UserToken | null>(null);
-  public readonly userTokenSubject = this._userTokenSubject.asObservable();
-  public userToken: UserToken | undefined = undefined;
+  private userToken: UserToken | undefined = undefined;
 
   constructor(
     private router: Router,
@@ -51,22 +48,26 @@ export class AuthenticationService {
               return throwError(() => err);
             }),
             map((userToken) => {
-              this.userToken = userToken;
-              this._userTokenSubject.next(userToken);
               return userToken;
+            }),
+            tap( (userToken) => {
+              this.userToken = userToken;
             })
           );
       })
     );
   }
 
-  userExist = (): Observable<boolean> => {
-    return this.http.get<boolean>('/backend_nt/users/exist');
-  };
-
   logout = () => {
     this.userToken = undefined;
-    this._userTokenSubject.next(null);
     this.router.navigate(['/login']);
+  };
+
+  getUserToken = (): UserToken => {
+    return Object.assign([], this.userToken);
+  }
+
+  userExist = (): Observable<boolean> => {
+    return this.http.get<boolean>('/backend_nt/users/exist');
   };
 }

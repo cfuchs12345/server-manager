@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, pipe, catchError, throwError } from 'rxjs';
+import { Observable, catchError, throwError } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
 import { DataResult } from './types';
 
@@ -13,7 +13,7 @@ import { ErrorService, Source } from '../errors/error.service';
 export class ServerDataService {
   constructor(private http: HttpClient, private errorService: ErrorService) {}
 
-  queryData = (server: Server): Observable<DataResult[]>  => {
+  queryData = (server: Server): Observable<DataResult[]> => {
     const query = new ServerAction('QueryData');
 
     const body = JSON.stringify(query);
@@ -34,7 +34,7 @@ export class ServerDataService {
             err.error
           );
           return throwError(() => err);
-        }),
+        })
       );
-  }
+  };
 }

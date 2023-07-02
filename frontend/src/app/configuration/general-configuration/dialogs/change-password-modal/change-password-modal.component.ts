@@ -68,16 +68,18 @@ export class ChangePasswordModalComponent {
   onClickChangePassword = () => {
     const subscriptionOTK = this.encryptionService.requestOneTimeKey().subscribe({
       next: (otk) => {
+        const token = this.authService.getUserToken();
+
         if (
           this.oldPassword.valid &&
           this.oldPassword.value &&
           this.newPassword.valid &&
           this.newPassword.value &&
           this.confirmNewPassword.valid &&
-          this.authService.userToken
+          token
         ) {
           this.userService.changePassword(
-            this.authService.userToken.user_id,
+            token.user_id,
             this.oldPassword.value,
             this.newPassword.value,
             otk
