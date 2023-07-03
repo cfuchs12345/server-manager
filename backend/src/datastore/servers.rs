@@ -46,8 +46,8 @@ pub async fn insert_server(server: &Server) -> Result<bool, AppError> {
         crypto_key.as_str(),
     )?;
 
-    inmemory::add_server(&encrypted_server)?;
     let result = persistence::insert(TABLE, server_to_entry(&encrypted_server)?).await?;
+    inmemory::add_server(&encrypted_server)?;
 
     Ok(result > 0)
 }
@@ -62,15 +62,15 @@ pub async fn update_server(server: &Server) -> Result<bool, AppError> {
         crypto_key.as_str(),
     )?;
 
-    inmemory::add_server(&encrypted_server)?;
     let result = persistence::update(TABLE, server_to_entry(&encrypted_server)?).await?;
+    inmemory::add_server(&encrypted_server)?;
 
     Ok(result > 0)
 }
 
 pub async fn delete_server(ipaddress: &IpAddr) -> Result<bool, AppError> {
-    inmemory::remove_server(ipaddress)?;
     let result = persistence::delete(TABLE, format!("{}", ipaddress).as_str()).await?;
+    inmemory::remove_server(ipaddress)?;
 
     Ok(result > 0)
 }

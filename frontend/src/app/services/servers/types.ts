@@ -63,7 +63,8 @@ export class Server {
     public ipaddress: string,
     public name: string,
     public dnsname: string = '',
-    public features: Feature[] = []
+    public features: Feature[] = [],
+    public isPreliminary: boolean = false
   ) {}
 }
 

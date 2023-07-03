@@ -4,16 +4,18 @@ import { isType } from 'src/app/shared/utils';
 import { ErrorService, Source } from '../errors/error.service';
 import { NGXLogger } from 'ngx-logger';
 import { Subject } from 'rxjs';
+import { ToasterPopupGenerator } from './toaster_messages';
 
 @Injectable({
   providedIn: 'root',
 })
 export class EventService {
+
   private _eventSubject = new Subject<Event>();
 
   readonly eventSubject = this._eventSubject.asObservable();
 
-  constructor(private errorService: ErrorService, private logger: NGXLogger) {
+  constructor(private errorService: ErrorService, private logger: NGXLogger, private toasterMessage: ToasterPopupGenerator) {
     this.subscribeToEvents();
   }
 
@@ -25,7 +27,10 @@ export class EventService {
 
       if (isType<Event>(event)) {
         this.logger.debug("event received: ", event);
+
         this._eventSubject.next(event);
+
+        this.toasterMessage.handleEvent(event);
       }
     });
 

@@ -229,9 +229,7 @@ pub async fn get_servers_by_ipaddress(
 
     let full_data: bool = params
         .get("full_data")
-        .ok_or(AppError::MissingURLParameter(
-            "expected parameter full_data but it is missing".to_owned(),
-        ))?
+        .ok_or(AppError::MissingURLParameter("full_data".to_owned()))?
         .parse()?;
     let server = datastore::get_server(&ipaddress).await?;
 

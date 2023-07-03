@@ -97,6 +97,7 @@ pub fn get_event_for_object_change(
             &*current.expect("could not get option value"),
         )?)
     } else {
+        log::debug!("Did not handle object change {:?} {:?}", current, old);
         None
     };
 

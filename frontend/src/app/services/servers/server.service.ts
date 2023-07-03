@@ -2,7 +2,11 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, filter, tap } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
-import { addMany, removeOne, upsertOne } from 'src/app/state/actions/server.action';
+import {
+  addMany,
+  removeOne,
+  upsertOne,
+} from 'src/app/state/actions/server.action';
 import { Server, Feature } from './types';
 import { ErrorService, Source } from '../errors/error.service';
 import { EncryptionService } from '../encryption/encryption.service';
@@ -12,7 +16,6 @@ import { AuthenticationService } from '../auth/authentication.service';
 import { EventService } from '../events/event.service';
 import { Event } from '../events/types';
 import { Store } from '@ngrx/store';
-
 
 @Injectable({
   providedIn: 'root',
@@ -39,14 +42,14 @@ export class ServerService {
         if (event.event_type === 'Insert' || event.event_type === 'Update') {
           const subscription = this.getServer(event.key, false).subscribe({
             next: (server) => {
-              this.store.dispatch(upsertOne({server: server}));
+              this.store.dispatch(upsertOne({ server: server }));
             },
             complete: () => {
               subscription.unsubscribe();
-            }
+            },
           });
         } else if (event.event_type === 'Delete') {
-          this.store.dispatch(removeOne({ipaddress: event.key}));
+          this.store.dispatch(removeOne({ ipaddress: event.key }));
         }
       });
   }
@@ -82,7 +85,7 @@ export class ServerService {
       )
       .subscribe({
         next: (servers) => {
-          this.store.dispatch(addMany({servers: servers})); // add many
+          this.store.dispatch(addMany({ servers: servers })); // add many
         },
         error: (err) => {
           this.errorService.newError(Source.ServerService, undefined, err);
@@ -94,14 +97,9 @@ export class ServerService {
   };
 
   getServer = (ipaddress: string, fullData: boolean): Observable<Server> => {
-    const options = fullData
-      ? {
-          params: new HttpParams().set(
-            'full_data',
-            fullData ? 'true' : 'false'
-          ),
-        }
-      : {};
+    const options = {
+      params: new HttpParams().set('full_data', fullData ? 'true' : 'false'),
+    };
 
     return this.http.get<Server>(`/backend/servers/${ipaddress}`, options).pipe(
       tap((server) => {
@@ -154,6 +152,12 @@ export class ServerService {
           headers: defaultHeadersForJSON(),
         })
         .subscribe({
+          next: () => {
+            const preLimServerUpdate = Object.assign({}, server);
+            preLimServerUpdate.isPreliminary = true;
+
+            this.store.dispatch(upsertOne({ server: preLimServerUpdate }));
+          },
           error: (err) => {
             this.errorService.newError(
               Source.ServerService,

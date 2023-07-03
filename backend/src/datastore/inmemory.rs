@@ -174,13 +174,17 @@ pub fn remove_server(ipaddress: &IpAddr) -> Result<(), AppError> {
     let mut status_cache = SERVER_STATUS_CACHE
         .write()
         .map_err(|err| AppError::Unknown(format!("Could not get write lock. Error: {}", err)))?;
-    cache.remove(ipaddress);
-
-    let existing = status_cache.remove(ipaddress);
+    let existing = cache.remove(ipaddress);
+    let existing_status = status_cache.remove(ipaddress); // also remove the status entry from the cache
 
     event_handling::handle_object_change(
         None,
         existing.map(|old_server| Box::new(old_server) as _),
+    )?;
+
+    event_handling::handle_object_change(
+        None,
+        existing_status.map(|old_status| Box::new(old_status) as _),
     )?;
 
     Ok(())
