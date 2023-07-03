@@ -163,9 +163,7 @@ import { reducers, metaReducers } from './state/reducers';
     MatTooltipModule,
     NgApexchartsModule,
     LoggerModule.forRoot({
-      serverLoggingUrl: '/api/logs',
-      level: NgxLoggerLevel.DEBUG,
-      serverLogLevel: NgxLoggerLevel.ERROR,
+      level: NgxLoggerLevel.DEBUG
     }),
     StoreModule.forRoot(reducers, {
       metaReducers
