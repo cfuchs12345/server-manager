@@ -162,10 +162,7 @@ pub async fn post_servers_by_ipaddress_action(
         ServerActionType::Status => {
             let list = other_functions::statuscheck::status_check(vec![ipaddress], false).await?;
 
-            Ok(HttpResponse::Ok().json(list.first().unwrap_or(&Status {
-                ipaddress,
-                is_running: false,
-            })))
+            Ok(HttpResponse::Ok().json(list.first().unwrap_or(&Status::error(ipaddress))))
         }
         ServerActionType::ExecuteFeatureAction => {
             let params_map = QueryParamsAsMap::from(query.params.clone());

@@ -1,7 +1,5 @@
 use std::{collections::HashMap, net::IpAddr};
 
-use std::time::{Duration, Instant};
-
 use crate::{
     commands::CommandInput,
     common,
@@ -119,24 +117,17 @@ fn enrich_response(
 
 pub struct MonitoringProcessor {
     map: HashMap<String, Vec<TimeSeriesData>>,
-    time_reached: bool,
 }
 
 impl MonitoringProcessor {
-    pub fn new(last_run: Option<Instant>, interval: Duration) -> Self {
+    pub fn new() -> Self {
         MonitoringProcessor {
             map: HashMap::new(),
-            time_reached: last_run.is_none()
-                || last_run
-                    .expect("error")
-                    .checked_add(interval)
-                    .expect("error")
-                    .lt(&Instant::now()),
         }
     }
 
     pub fn is_relevant_data_for_processing(&self, data: &DataDef) -> bool {
-        !data.monitoring.is_empty() || !self.time_reached
+        !data.monitoring.is_empty()
     }
 
     pub async fn process(

@@ -4,8 +4,6 @@ mod discovery;
 mod monitoring;
 mod notifications;
 
-use std::time::{Duration, Instant};
-
 pub use discovery::auto_discover_servers_in_network;
 pub use discovery::discover_features;
 pub use discovery::discover_features_of_all_servers;
@@ -30,12 +28,7 @@ pub fn pre_or_post_process(response: &str, script: &Script) -> Result<String, Ap
     common::script_process(script, response)
 }
 
-pub async fn execute_all_data_dependent(
-    silent: &bool,
-    last_run: Option<Instant>,
-    monitoring_interval: Duration,
-    notification_interval: Duration,
-) -> Result<(), AppError> {
+pub async fn execute_all_data_dependent(silent: &bool) -> Result<(), AppError> {
     let servers = datastore::get_all_servers_from_cache()?;
     let plugins = datastore::get_all_plugins()?;
     let crypto_key = datastore::get_crypto_key()?;
@@ -46,8 +39,8 @@ pub async fn execute_all_data_dependent(
         .map(|p| p.to_owned())
         .collect();
 
-    let mut monitoring_processor = MonitoringProcessor::new(last_run, monitoring_interval);
-    let mut notification_processor = NotificationProcessor::new(last_run, notification_interval);
+    let mut monitoring_processor = MonitoringProcessor::new();
+    let mut notification_processor = NotificationProcessor::new();
 
     log::trace!("relevant plugins for monitoring: {:?}", &relevant_plugins);
 

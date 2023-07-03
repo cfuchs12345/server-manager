@@ -13,12 +13,30 @@ use crate::{
 pub struct Status {
     pub is_running: bool,
     pub ipaddress: IpAddr,
+    pub error: bool,
 }
 
 impl Status {
     pub fn new(ipaddress: IpAddr) -> Self {
         Status {
             is_running: false,
+            error: false,
+            ipaddress,
+        }
+    }
+
+    pub fn new_with_running(ipaddress: IpAddr, is_running: bool) -> Self {
+        Status {
+            is_running,
+            error: false,
+            ipaddress,
+        }
+    }
+
+    pub fn error(ipaddress: IpAddr) -> Self {
+        Status {
+            is_running: false,
+            error: true,
             ipaddress,
         }
     }
@@ -32,10 +50,7 @@ impl PartialEq for Status {
 
 impl From<PingCommandResult> for Status {
     fn from(res: PingCommandResult) -> Self {
-        Status {
-            is_running: res.get_result(),
-            ipaddress: res.get_ipaddress(),
-        }
+        Status::new_with_running(res.get_ipaddress(), res.get_result())
     }
 }
 

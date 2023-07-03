@@ -1,7 +1,5 @@
 use std::{collections::HashMap, net::IpAddr};
 
-use futures::future::join_all;
-
 use crate::{
     common, datastore,
     models::{
@@ -170,8 +168,8 @@ pub async fn check_all_action_conditions<'l>(
     crypto_key: &str,
     check_type: CheckType,
     silent: &bool,
-) -> Result<Vec<ConditionCheckResult>, AppError> {
-    let mut tasks = Vec::new();
+) -> Result<(), AppError> {
+    let mut vec = Vec::new();
 
     for feature in server.clone().features {
         let plugin_res = datastore::get_plugin(feature.id.as_str())?;
@@ -203,32 +201,29 @@ pub async fn check_all_action_conditions<'l>(
 
                 let silent = silent.to_owned();
 
-                tasks.push(tokio::spawn(async move {
-                    check_condition_for_action_met(
-                        server_clone,
-                        Some(feature_clone),
-                        Some(action_clone),
-                        None,
-                        crypto_key_clone,
-                        &silent,
-                    )
-                    .await
-                }));
+                let cr = check_condition_for_action_met(
+                    server_clone,
+                    Some(feature_clone),
+                    Some(action_clone),
+                    None,
+                    crypto_key_clone,
+                    &silent,
+                )
+                .await?;
+
+                vec.push(cr);
             }
         }
     }
-    let result = join_all(tasks).await;
-    log::debug!("Number of results is {}", result.len());
 
-    let vec: Vec<ConditionCheckResult> = result
-        .iter()
-        .map(|r| r.as_ref().expect("Could not get ref"))
-        .map(move |r| r.as_ref().expect("Could not get ref").to_owned())
-        .collect();
-
+    log::debug!("Number of results is {}", vec.len());
     let merged = merge_condition_check_results(vec);
+    log::debug!("Number of results after merge is {}", merged.len());
 
-    Ok(merged)
+    for cr in merged {
+        datastore::insert_condition_result(cr)?;
+    }
+    Ok(())
 }
 
 fn merge_condition_check_results(vec: Vec<ConditionCheckResult>) -> Vec<ConditionCheckResult> {

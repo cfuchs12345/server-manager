@@ -1,5 +1,6 @@
 mod conditions;
 
+use chrono::Utc;
 use futures::future::join_all;
 
 use crate::{
@@ -191,24 +192,43 @@ pub async fn check_action_conditions(
     Ok(vec)
 }
 
-pub async fn check_main_action_conditions(silent: &bool) -> Result<(), AppError> {
+pub async fn check_main_action_conditions(silent: bool) -> Result<(), AppError> {
     let servers = datastore::get_all_servers_from_cache()?;
     let crypto_key = datastore::get_crypto_key()?;
 
-    let mut vec: Vec<ConditionCheckResult> = Vec::new();
+    let mut tasks = Vec::new();
     for server in servers {
-        let mut res = conditions::check_all_action_conditions(
-            server,
-            &crypto_key,
-            CheckType::OnlyMainFeatures,
-            silent,
-        )
-        .await?;
-        vec.append(&mut res);
+        let crypto_key = crypto_key.clone();
+
+        tasks.push(tokio::spawn(async move {
+            let start = Utc::now();
+            let ip = server.ipaddress;
+
+            match conditions::check_all_action_conditions(
+                server,
+                &crypto_key,
+                CheckType::OnlyMainFeatures,
+                &silent,
+            )
+            .await
+            {
+                Ok(_res) => {
+                    let end = Utc::now();
+
+                    log::debug!(
+                        "status check for server {:?} took {}",
+                        ip,
+                        end.signed_duration_since(start).num_seconds()
+                    );
+                }
+                Err(err) => {
+                    log::error!("Error during status check: {}", err);
+                }
+            }
+        }));
     }
 
-    for result in vec {
-        datastore::insert_condition_result(result)?;
-    }
+    join_all(tasks).await;
+
     Ok(())
 }

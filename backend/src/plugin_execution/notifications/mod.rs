@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::time::{Duration, Instant};
 
 use crate::{
     commands::CommandInput,
@@ -16,19 +15,12 @@ use crate::{
 
 pub struct NotificationProcessor {
     map: HashMap<String, Vec<Notification>>,
-    time_reached: bool,
 }
 
 impl NotificationProcessor {
-    pub fn new(last_run: Option<Instant>, interval: Duration) -> Self {
+    pub fn new() -> Self {
         NotificationProcessor {
             map: HashMap::new(),
-            time_reached: last_run.is_none()
-                || last_run
-                    .expect("error")
-                    .checked_add(interval)
-                    .expect("error")
-                    .lt(&Instant::now()),
         }
     }
 
@@ -41,7 +33,7 @@ impl NotificationProcessor {
     }
 
     pub fn is_relevant_data_for_processing(&self, data: &DataDef, plugin: &Plugin) -> bool {
-        if plugin.notifications.is_empty() || !self.time_reached {
+        if plugin.notifications.is_empty() {
             return false;
         }
 

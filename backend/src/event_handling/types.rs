@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Debug, hash::Hash};
+use std::{collections::HashMap, fmt::Debug};
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

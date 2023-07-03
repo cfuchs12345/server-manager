@@ -35,7 +35,7 @@ impl Command for KafkaCommand {
         let response_topic = input.find_param("response_topic")?;
         let timeout = input
             .find_single_arg("timeout")
-            .unwrap_or(input.find_param("timeout").unwrap_or("15"));
+            .unwrap_or(input.find_param("timeout").unwrap_or("5"));
 
         let normal_and_masked_command: (String, String) = replace::replace(command, input)?;
 

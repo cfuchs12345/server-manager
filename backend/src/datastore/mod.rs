@@ -8,7 +8,6 @@ mod servers;
 mod timeseries;
 mod users;
 
-use lazy_static::lazy_static;
 pub use model::migration::Migration;
 pub use model::Entry;
 pub use timeseries::TimeSeriesPersistence;

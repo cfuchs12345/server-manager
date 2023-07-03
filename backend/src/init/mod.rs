@@ -1,3 +1,4 @@
+mod background_processes;
 mod files;
 mod scheduling;
 mod template_engine;
@@ -15,6 +16,7 @@ pub static ENV_FILENAME: &str = "./external_files/.env";
 
 pub async fn start() -> Result<(), AppError> {
     scheduling::start_scheduled_jobs().await?;
+
     one_time_init()?;
     load_env_file();
     init_config()?;
@@ -34,6 +36,7 @@ pub async fn start() -> Result<(), AppError> {
     init_server_list().await?;
     init_config_post_db().await?;
 
+    background_processes::start_background_prcesses().await?;
     webserver::start_webserver(bind_address, app_data).await
 }
 
