@@ -29,6 +29,13 @@ impl User {
         }
     }
 
+    pub fn copy_no_passwd(&self) -> Self {
+        User {
+            password_hash: "".to_owned(),
+            ..self.clone()
+        }
+    }
+
     pub fn update_password_hash(&mut self, password_hash: String) {
         self.password_hash = password_hash;
     }

@@ -19,8 +19,8 @@ import {
   Param,
   Server,
 } from 'src/app/services/servers/types';
-import { selectAllPlugins } from 'src/app/state/selectors/plugin.selectors';
-import { selectAllServersWithFeatures } from 'src/app/state/selectors/server.selectors';
+import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
+import { selectAllServersWithFeatures } from 'src/app/state/server/server.selectors';
 
 @Component({
   selector: 'app-configure-features-modal',

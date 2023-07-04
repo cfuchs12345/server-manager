@@ -15,6 +15,7 @@ use crate::{
 pub struct DataResult {
     #[serde(default = "default_ipaddress")]
     pub ipaddress: IpAddr,
+    pub data_id: String,
     pub result: String,
     pub check_results: Vec<ConditionCheckResult>,
 }
@@ -23,6 +24,7 @@ pub struct DataResult {
 pub struct ConditionCheckResult {
     #[serde(default = "default_ipaddress")]
     pub ipaddress: IpAddr,
+    pub data_id: String,
     pub subresults: Vec<ConditionCheckSubResult>,
 }
 
@@ -46,11 +48,11 @@ impl EventSource for ConditionCheckResult {
     }
 
     fn get_event_key_name(&self) -> String {
-        IPADDRESS.to_owned()
+        format!("{}_{}", IPADDRESS, "data_id")
     }
 
     fn get_event_key(&self) -> String {
-        format!("{:?}", self.ipaddress)
+        format!("{:?}_{:?}", self.ipaddress, self.data_id)
     }
 
     fn get_event_value(&self) -> Result<String, AppError> {

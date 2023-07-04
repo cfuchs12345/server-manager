@@ -31,6 +31,7 @@ use super::CheckType;
 
 pub async fn check_condition_for_action_met(
     server: Server,
+    data_id: String,
     feature: Option<Feature>,
     action: Option<ActionDef>,
     action_params: Option<String>,
@@ -40,6 +41,7 @@ pub async fn check_condition_for_action_met(
     if feature.is_none() || action.is_none() {
         return Ok(ConditionCheckResult {
             ipaddress: server.ipaddress,
+            data_id,
             subresults: vec![ConditionCheckSubResult {
                 result: false,
                 action_id: "".to_string(),
@@ -51,7 +53,8 @@ pub async fn check_condition_for_action_met(
 
     let Some(plugin) = datastore::get_plugin(feature.as_ref().expect("Could not get ref").id.as_str())? else {
         return Ok(ConditionCheckResult {
-            ipaddress: server.ipaddress,
+            ipaddress: server.ipaddress,            
+            data_id,
             subresults: vec![ConditionCheckSubResult {
                 action_id: action.expect("checked before").id,
                 action_params: action_params.unwrap_or_default(),
@@ -93,6 +96,7 @@ pub async fn check_condition_for_action_met(
         // check if status dependency already failed - early exit
         return Ok(ConditionCheckResult {
             ipaddress: server.ipaddress,
+            data_id,
             subresults: vec![ConditionCheckSubResult {
                 action_id: action.expect("checked before").id,
                 action_params: action_params.unwrap_or_default(),
@@ -154,6 +158,7 @@ pub async fn check_condition_for_action_met(
 
     Ok(ConditionCheckResult {
         ipaddress: server.ipaddress,
+        data_id,
         subresults: vec![ConditionCheckSubResult {
             action_id: action.as_ref().expect("Could not get ref").id.clone(),
             action_params: action_params.unwrap_or_default(),
@@ -203,6 +208,7 @@ pub async fn check_all_action_conditions<'l>(
 
                 let cr = check_condition_for_action_met(
                     server_clone,
+                    "".to_owned(),
                     Some(feature_clone),
                     Some(action_clone),
                     None,
@@ -217,27 +223,13 @@ pub async fn check_all_action_conditions<'l>(
     }
 
     log::debug!("Number of results is {}", vec.len());
-    let merged = merge_condition_check_results(vec);
+    let merged = super::merge_condition_check_results(vec);
     log::debug!("Number of results after merge is {}", merged.len());
 
     for cr in merged {
         datastore::insert_condition_result(cr)?;
     }
     Ok(())
-}
-
-fn merge_condition_check_results(vec: Vec<ConditionCheckResult>) -> Vec<ConditionCheckResult> {
-    let mut map: HashMap<IpAddr, ConditionCheckResult> = HashMap::new();
-
-    for ccr in vec {
-        if let Some(existing) = map.get_mut(&ccr.ipaddress) {
-            existing.subresults.extend(ccr.subresults);
-        } else {
-            map.insert(ccr.ipaddress, ccr);
-        }
-    }
-
-    Vec::from_iter(map.values().cloned())
 }
 
 fn response_data_match(dependency: &DependsDef, input: Option<String>) -> Result<bool, AppError> {

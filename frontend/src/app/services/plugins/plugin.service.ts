@@ -5,8 +5,8 @@ import { HttpClient } from '@angular/common/http';
 import { defaultHeadersForJSON } from '../common';
 import { ErrorService, Source } from '../errors/error.service';
 import { Store } from '@ngrx/store';
-import { addMany as addManyPlugins, removeAll as removeAllPlugins } from 'src/app/state/actions/plugin.action';
-import { addMany as addManyDisabledPlugins, removeAll as removeAllDisabledPlugins } from 'src/app/state/actions/disabled_plugin.action';
+import { addMany as addManyPlugins, removeAll as removeAllPlugins } from 'src/app/state/plugin/plugin.actions';
+import { addMany as addManyDisabledPlugins, removeAll as removeAllDisabledPlugins } from 'src/app/state/disabledplugin/disabled_plugin.actions';
 import { EventService } from '../events/event.service';
 import { Event } from '../events/types';
 

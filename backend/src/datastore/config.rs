@@ -88,7 +88,7 @@ pub async fn insert_new_encryption_key() -> Result<u64, AppError> {
 pub async fn export_config(password_for_encryption: &str) -> Result<Configuration, AppError> {
     let dns_servers = super::get_all_dnsservers().await?;
     let encrypted_users =
-        super::encrypt_users(super::get_all_users().await?, password_for_encryption)?;
+        super::encrypt_users(super::get_all_users(true).await?, password_for_encryption)?;
     let disabled_plugins = super::get_disabled_plugins().await?;
     let re_encrypted_servers = super::re_encrypt_servers(
         super::get_all_servers(false).await?,
@@ -148,7 +148,7 @@ pub async fn import_config(
 }
 
 async fn user_exists(user: &User) -> Result<bool, AppError> {
-    let existing_users = super::get_all_users().await?;
+    let existing_users = super::get_all_users(false).await?;
 
     Ok(existing_users
         .iter()

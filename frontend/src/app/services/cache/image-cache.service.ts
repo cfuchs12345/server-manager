@@ -75,8 +75,6 @@ export class ImageCache {
           });
 
           map.set(plugin.id, actionMap);
-        } else {
-          alert(JSON.stringify(plugin.actions));
         }
       });
     }

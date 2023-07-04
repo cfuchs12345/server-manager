@@ -55,10 +55,23 @@ pub async fn delete_user(user_id: &str) -> Result<bool, AppError> {
     Ok(result > 0)
 }
 
-pub async fn get_all_users() -> Result<Vec<User>, AppError> {
+pub async fn get_all_users(include_passwordhash: bool) -> Result<Vec<User>, AppError> {
     let user_entries = persistence::get_all(TABLE, Some("key")).await?;
 
-    entries_to_users(user_entries)
+    entries_to_users(user_entries).map(|users| remove_passwords(include_passwordhash, users))
+}
+
+fn remove_passwords(include_passwordhash: bool, users: Vec<User>) -> Vec<User> {
+    users
+        .iter()
+        .map(|u| {
+            if !include_passwordhash {
+                u.copy_no_passwd()
+            } else {
+                u.clone()
+            }
+        })
+        .collect()
 }
 
 pub async fn get_user(user_id: &str) -> Result<User, AppError> {

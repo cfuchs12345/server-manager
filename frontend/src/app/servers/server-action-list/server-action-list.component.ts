@@ -15,9 +15,9 @@ import {
 } from 'src/app/services/servers/types';
 import { Plugin } from 'src/app/services/plugins/types';
 import { Store } from '@ngrx/store';
-import { selectStatusByIpAddress } from 'src/app/state/selectors/status.selectors';
-import { selectAllPlugins } from 'src/app/state/selectors/plugin.selectors';
-import { selectConditionCheckResultByIpAddress } from 'src/app/state/selectors/conditioncheckresult.selectors';
+import { selectStatusByIpAddress } from 'src/app/state/status/status.selectors';
+import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
+import { selectConditionCheckResultByKey } from 'src/app/state/conditioncheckresult/conditioncheckresult.selectors';
 import { NGXLogger } from 'ngx-logger';
 
 @Component({
@@ -55,7 +55,7 @@ export class ServerActionListComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     if (this.server) {
       this.conditions$ = this.store.select(
-        selectConditionCheckResultByIpAddress(this.server.ipaddress)
+        selectConditionCheckResultByKey(this.server.ipaddress + "_") // data_id is empty - ends with _
       );
 
       this.serverActionCheckSubscription = this.conditions$.subscribe(

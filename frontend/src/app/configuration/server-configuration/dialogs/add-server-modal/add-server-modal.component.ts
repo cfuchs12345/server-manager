@@ -9,8 +9,8 @@ import { Subscription } from 'rxjs';
 import { Plugin } from 'src/app/services/plugins/types';
 import { ServerService } from 'src/app/services/servers/server.service';
 import { Feature, Server, ServerFeature } from 'src/app/services/servers/types';
-import { selectAllPlugins } from 'src/app/state/selectors/plugin.selectors';
-import { selectAllServers } from 'src/app/state/selectors/server.selectors';
+import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
+import { selectAllServers } from 'src/app/state/server/server.selectors';
 
 @Component({
   selector: 'app-add-server-modal',

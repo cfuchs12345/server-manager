@@ -6,7 +6,7 @@ import {
   updateOne,
   removeOne,
   upsertOne
-} from 'src/app/state/actions/server.action';
+} from 'src/app/state/server/server.actions';
 import { EntityState, EntityAdapter, createEntityAdapter } from '@ngrx/entity';
 import  {ipToNumber} from 'src/app/shared/utils';
 

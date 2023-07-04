@@ -63,7 +63,6 @@ import { ErrorsListComponent } from './errors/errors-list/errors-list.component'
 import { ErrorComponent } from './errors/error/error.component';
 import { ErrorService } from './services/errors/error.service';
 import { EncryptionService } from './services/encryption/encryption.service';
-import { CacheService } from './services/cache/cache.service';
 import { ImageCache } from './services/cache/image-cache.service';
 import { ServerFeaturesComponent } from './servers/server-features/server-features.component';
 import { ServerSubActionComponent } from './servers/server-sub-action/sub-action.component';
@@ -80,8 +79,11 @@ import { ConfigImExportModalComponent } from './configuration/general-configurat
 import { ErrorSourceNamePipe } from './shared/error-enum-name.pipe';
 import { LoggerModule, NgxLoggerLevel } from 'ngx-logger';
 import { StoreModule } from '@ngrx/store';
-import { reducers, metaReducers } from './state/reducers';
+import { reducers, metaReducers } from './state';
 import { ToastrModule } from 'ngx-toastr';
+import { EffectsModule } from '@ngrx/effects';
+import { HydrationEffects } from './state/hydration/hydration.effects';
+import { GlobalEffects } from './state/global.effects';
 
 @NgModule({
   declarations: [
@@ -140,7 +142,7 @@ import { ToastrModule } from 'ngx-toastr';
     BarChartComponent,
     ChartWrapperComponent,
     MonitoringSingleServerComponent,
-    ConfigImExportDialog,
+    ConfigImExportDialog
   ],
   imports: [
     AppRoutingModule,
@@ -170,11 +172,11 @@ import { ToastrModule } from 'ngx-toastr';
     StoreModule.forRoot(reducers, {
       metaReducers
     }),
+    EffectsModule.forRoot([HydrationEffects, GlobalEffects]),
   ],
   providers: [
     ErrorService,
     EncryptionService,
-    CacheService,
     ImageCache,
     { provide: Window, useValue: window },
     { provide: HTTP_INTERCEPTORS, useClass: TokenInterceptor, multi: true },

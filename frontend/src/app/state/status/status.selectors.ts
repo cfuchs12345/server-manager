@@ -1,6 +1,6 @@
 
 import { createFeatureSelector, createSelector } from '@ngrx/store';
-import {adapter, State}  from '../reducers/status.reducers';
+import {adapter, State}  from './status.reducers';
 
 
 // get the selectors

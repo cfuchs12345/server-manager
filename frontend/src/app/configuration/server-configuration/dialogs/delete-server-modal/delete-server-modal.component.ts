@@ -8,7 +8,7 @@ import { ConfirmDialogComponent } from 'src/app/ui/confirm-dialog/confirm-dialog
 import { ServerAddressType } from 'src/types/ServerAddress';
 import { DeleteServerDialog } from '../dialog-delete-server';
 import { Store } from '@ngrx/store';
-import { selectAllServers, selectServerByIpAddress } from 'src/app/state/selectors/server.selectors';
+import { selectAllServers, selectServerByIpAddress } from 'src/app/state/server/server.selectors';
 
 @Component({
   selector: 'app-delete-server-modal',

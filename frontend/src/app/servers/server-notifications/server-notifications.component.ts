@@ -1,15 +1,15 @@
-import { Component, OnInit, Input, OnDestroy, OnChanges } from '@angular/core';
+import { Component, OnInit, Input, OnDestroy } from '@angular/core';
 import { Server } from 'src/app/services/servers/types';
 import { Notification } from 'src/app/services/notifications/types';
 import { Subscription, map } from 'rxjs';
 import { Store } from '@ngrx/store';
-import { selectAllNotification } from 'src/app/state/selectors/notification.selectors';
+import { selectAllNotification } from 'src/app/state/notification/notification.selectors';
 @Component({
   selector: 'app-server-notifications',
   templateUrl: './server-notifications.component.html',
   styleUrls: ['./server-notifications.component.scss'],
 })
-export class ServerNotificationComponent implements OnInit, OnDestroy, OnChanges {
+export class ServerNotificationComponent implements OnInit, OnDestroy {
   @Input() server: Server | undefined = undefined;
 
   notifications: Notification[] | undefined;
@@ -30,8 +30,6 @@ export class ServerNotificationComponent implements OnInit, OnDestroy, OnChanges
     });
   }
 
-  ngOnChanges(): void {
-  }
 
   ngOnDestroy(): void {
     if( this.subscription ) {

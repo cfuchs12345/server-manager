@@ -351,14 +351,14 @@ pub async fn get_smtp_config_valid() -> Result<HttpResponse, AppError> {
 
 #[get("/users")]
 pub async fn get_users() -> Result<HttpResponse, AppError> {
-    let result = datastore::get_all_users().await?;
+    let result = datastore::get_all_users(false).await?;
 
     Ok(HttpResponse::Ok().json(result))
 }
 
 #[get("/users/exist")]
 pub async fn get_users_exist() -> Result<HttpResponse, AppError> {
-    let result = datastore::get_all_users().await?;
+    let result = datastore::get_all_users(false).await?;
 
     Ok(HttpResponse::Ok().json(!result.is_empty()))
 }
@@ -370,7 +370,7 @@ pub async fn post_user(query: web::Json<User>) -> Result<HttpResponse, AppError>
 
 #[post("/users_first")]
 pub async fn post_first_user(query: web::Json<User>) -> Result<HttpResponse, AppError> {
-    let result = datastore::get_all_users().await?;
+    let result = datastore::get_all_users(false).await?;
 
     if !result.is_empty() {
         log::error!("Called function that is used for initial user save that allows and update without authorization. However, there are already users. So this is not the initial user creation.");

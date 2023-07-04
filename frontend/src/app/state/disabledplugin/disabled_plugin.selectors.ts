@@ -1,6 +1,6 @@
 
 import { createFeatureSelector, createSelector } from '@ngrx/store';
-import {adapter, State}  from '../reducers/disabled_plugin.reducers';
+import {adapter, State}  from './disabled_plugin.reducers';
 
 
 

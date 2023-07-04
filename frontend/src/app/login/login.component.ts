@@ -2,6 +2,8 @@ import { Component } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { AuthenticationService } from '../services/auth/authentication.service';
 import { Router } from '@angular/router';
+import { Store } from '@ngrx/store';
+import * as GlobalActions from '../state/global.actions';
 
 @Component({
   selector: 'app-login',
@@ -30,6 +32,7 @@ export class LoginComponent {
   form = new FormGroup({ userId: this.userId, password: this.password });
 
   constructor(
+    private store: Store,
     private authService: AuthenticationService,
     private router: Router
   ) {}
@@ -70,12 +73,15 @@ export class LoginComponent {
     const subscription = this.authService
       .login(this.userId.value, this.password.value)
       .subscribe({
-        next: (result) => {
-          if (result && result.token) {
+        next: (userToken) => {
+          this.store.dispatch(GlobalActions.init({userToken: userToken}));
+
+
+          if (userToken && userToken.token) {
             this.router.navigate(['/home']);
           }
         },
-        error: (err: any) => {
+        error: () => {
           this.form.setErrors({
             wrongLogin: 'User Id and/or password is incorrect',
           });

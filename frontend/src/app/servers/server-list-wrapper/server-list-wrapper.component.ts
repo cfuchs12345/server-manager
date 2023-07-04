@@ -9,8 +9,8 @@ import { ServerActionService } from 'src/app/services/servers/server-action.serv
 import { NotificationService } from 'src/app/services/notifications/notifications.service';
 
 import { Store } from '@ngrx/store';
-import { selectAllServers } from 'src/app/state/selectors/server.selectors';
-import { selectAllPlugins } from 'src/app/state/selectors/plugin.selectors';
+import { selectAllServers } from 'src/app/state/server/server.selectors';
+import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
 import { Plugin } from 'src/app/services/plugins/types';
 
 @Component({
@@ -42,11 +42,12 @@ export class ServerListWrapperComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    /*
     setTimeout(this.pluginService.loadPlugins, 0);
     setTimeout(this.serverService.listServers, 0);
     setTimeout(this.statusService.listAllServerStatus, 0);
     setTimeout(this.serverActionService.listActionCheckResults, 0);
-    setTimeout(this.notificationService.listNotifications, 0);
+    setTimeout(this.notificationService.listNotifications, 0);*/
   }
 
   ngOnDestroy(): void {

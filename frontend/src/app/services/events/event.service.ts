@@ -26,7 +26,7 @@ export class EventService {
       const event: Event = JSON.parse(message.data);
 
       if (isType<Event>(event)) {
-        this.logger.debug("event received: ", event);
+        this.logger.trace("event received: ", event);
 
         this._eventSubject.next(event);
 

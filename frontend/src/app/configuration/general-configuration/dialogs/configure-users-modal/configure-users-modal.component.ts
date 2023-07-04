@@ -7,7 +7,7 @@ import { User } from 'src/app/services/users/types';
 import { UserService } from 'src/app/services/users/users.service';
 import { ConfirmDialogComponent } from 'src/app/ui/confirm-dialog/confirm-dialog.component';
 import { MessageDialogComponent } from 'src/app/ui/message_dialog/message-dialog.component';
-import { selectAllUsers } from 'src/app/state/selectors/user.selectors';
+import { selectAllUsers } from 'src/app/state/user/user.selectors';
 
 @Component({
   selector: 'app-configure-users-modal',
@@ -54,7 +54,7 @@ export class ConfigureUsersModalComponent implements OnDestroy {
     this.users$ = this.store.select(selectAllUsers);
     this.users$.subscribe( (users) => this.users = users);
 
-    this.userService.loadUsers();
+    this.userService.listUsers();
   }
 
   ngOnDestroy(): void {

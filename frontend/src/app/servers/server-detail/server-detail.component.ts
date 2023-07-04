@@ -1,8 +1,6 @@
 import {
   Component,
   Input,
-  OnInit,
-  OnDestroy,
   OnChanges,
   SimpleChanges,
 } from '@angular/core';
@@ -22,7 +20,7 @@ const action_regex = /\[\[Action.*\]\]/g;
   templateUrl: './server-detail.component.html',
   styleUrls: ['./server-detail.component.scss'],
 })
-export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
+export class ServerDetailComponent implements OnChanges {
   @Input() server: Server | undefined = undefined;
   @Input() showDetail = false;
   @Input() turnDetail = false;
@@ -39,10 +37,6 @@ export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
     this.innerHtml = sanitizer.bypassSecurityTrustHtml('');
   }
 
-  ngOnInit(): void {
-    this.queryData('ngOnInit');
-  }
-
   ngOnChanges(changes: SimpleChanges): void {
     for (const propName in changes) {
       if (Object.hasOwn(changes, propName)) {
@@ -56,8 +50,6 @@ export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-  ngOnDestroy(): void {}
-
   private queryData(source: string) {
     if (this.server && this.showDetail && !this.turnDetail) {
       this.logger.trace('querying data for server ', source, this.server);
@@ -66,7 +58,7 @@ export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
         .queryData(this.server)
         .subscribe((result) => {
           this.dataResults = result;
-          setTimeout(this.formatData, 100);
+          setTimeout(this.formatData, 0);
           subscription.unsubscribe();
         });
     }
@@ -78,6 +70,7 @@ export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     if (this.dataResults) {
+      console.log("dataResults", this.dataResults);
       let concatString = this.dataResults.map((d) => d.result).join('');
       concatString = this.replaceSubActions(concatString);
       this.innerHtml = this.sanitizer.bypassSecurityTrustHtml(concatString);
@@ -170,7 +163,7 @@ class GUISubAction {
 
   checkCondition = (conditionCheckResults: ConditionCheckResult[]): boolean => {
     const foundResultByIp = conditionCheckResults.find(
-      (res) => res.ipaddress === this.ipaddress
+      (res) => res.ipaddress === this.ipaddress && res.data_id === this.data_id
     );
 
     if (foundResultByIp !== undefined) {
@@ -243,20 +236,4 @@ class GUISubAction {
     }
     return '';
   };
-
-  updateStatusFromResults(subActionCheckResult: ConditionCheckResult[]) {
-    for (var c of subActionCheckResult) {
-      if( c.ipaddress == this.ipaddress) {
-        const foundSubResult = c.subresults.find( (sr) => {
-          sr.feature_id === this.feature_id &&
-          sr.action_id === this.action_id &&
-          c.ipaddress === this.ipaddress
-        });
-
-        if( foundSubResult !== undefined) {
-          this.conditionMet = foundSubResult.result;
-        }
-      }
-    }
-  }
 }

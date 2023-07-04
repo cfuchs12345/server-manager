@@ -7,7 +7,7 @@ import { defaultHeadersForJSON } from '../common';
 import { EncryptionService } from '../encryption/encryption.service';
 import { OneTimeKey } from '../auth/types';
 import { Store } from '@ngrx/store';
-import { removeOne, addMany } from 'src/app/state/actions/user.action';
+import { removeOne, addMany } from 'src/app/state/user/user.actions';
 import { NGXLogger } from 'ngx-logger';
 import { EventService } from '../events/event.service';
 import { Event } from '../events/types';
@@ -30,20 +30,20 @@ export class UserService {
       )
       .subscribe((event: Event) => {
         if (event.event_type === 'Insert' || event.event_type === 'Update') {
-            this.loadUsers();
+          this.listUsers();
         } else if (event.event_type === 'Delete') {
-          this.store.dispatch(removeOne({user_id: event.key}));
+          this.store.dispatch(removeOne({ user_id: event.key }));
         }
       });
   }
 
-  loadUsers = async () => {
+  listUsers = async () => {
     const subscription = this.http.get<User[]>('/backend/users').subscribe({
-      next: (loadedUsers) => {
-        this.store.dispatch(addMany({ users: loadedUsers}));
+      next: (users) => {
+        this.store.dispatch(addMany({ users }));
       },
       error: (err) => {
-        this.logger.error("error while loading users", err);
+        this.logger.error('error while loading users', err);
         this.errorService.newError(Source.UserService, undefined, err);
       },
       complete: () => {
@@ -76,14 +76,14 @@ export class UserService {
   };
 
   deleteUsers = (usersToDelete: User[]) => {
-    for (const [i, user] of usersToDelete.entries()) {
+    for (const [, user] of usersToDelete.entries()) {
       const subscription = this.http
         .delete('/backend/users/' + user.user_id, {
           headers: defaultHeadersForJSON(),
         })
         .subscribe({
           next: () => {
-           this.store.dispatch(removeOne( { user_id: user.user_id} ));
+            this.store.dispatch(removeOne({ user_id: user.user_id }));
           },
           error: (err) => {
             this.errorService.newError(Source.UserService, user.user_id, err);

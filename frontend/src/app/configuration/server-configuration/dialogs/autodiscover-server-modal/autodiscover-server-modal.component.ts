@@ -11,7 +11,7 @@ import { DNSServer } from 'src/app/services/general/types';
 import { ErrorService, Source } from 'src/app/services/errors/error.service';
 import { RxwebValidators, IpVersion } from '@rxweb/reactive-form-validators';
 import { Store } from '@ngrx/store';
-import { selectAllServers } from 'src/app/state/selectors/server.selectors';
+import { selectAllServers } from 'src/app/state/server/server.selectors';
 
 @Component({
   selector: 'app-autodiscover-server-modal',

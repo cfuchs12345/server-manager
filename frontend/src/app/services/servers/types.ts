@@ -85,6 +85,7 @@ export class ServerAction {
 export class DataResult {
   constructor(
     public ipaddress: string,
+    public data_id: string,
     public result: string,
     public check_results: ConditionCheckResult[]
   ) {}
@@ -102,6 +103,7 @@ export class SubActionConditionCheck {
 export class ConditionCheckResult {
   constructor(
     public ipaddress: string,
+    public data_id: string = "",
     public subresults: ConditionCheckSubResult[]
   ) {}
 }

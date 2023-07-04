@@ -6,7 +6,7 @@ import {
   updateOne,
   removeOne,
   upsertOne
-} from 'src/app/state/actions/status.action';
+} from 'src/app/state/status/status.actions';
 import { EntityState, EntityAdapter, createEntityAdapter } from '@ngrx/entity';
 
 export type State = EntityState<Status>

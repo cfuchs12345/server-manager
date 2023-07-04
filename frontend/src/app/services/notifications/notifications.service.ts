@@ -4,7 +4,7 @@ import {
   addMany,
   removeOne,
   upsertOne,
-} from 'src/app/state/actions/notification.action';
+} from 'src/app/state/notification/notification.actions';
 import { Notification } from './types';
 import { Observable, filter, tap } from 'rxjs';
 import { ErrorService, Source } from '../errors/error.service';

@@ -1,21 +1,21 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, filter, tap } from 'rxjs';
+import { Observable, filter, map, of, switchMap, tap } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
 import {
   addMany,
   removeOne,
   upsertOne,
-} from 'src/app/state/actions/server.action';
-import { Server, Feature } from './types';
+} from 'src/app/state/server/server.actions';
+import { Server } from './types';
 import { ErrorService, Source } from '../errors/error.service';
 import { EncryptionService } from '../encryption/encryption.service';
 
-import { NGXLogger } from 'ngx-logger';
-import { AuthenticationService } from '../auth/authentication.service';
 import { EventService } from '../events/event.service';
 import { Event } from '../events/types';
 import { Store } from '@ngrx/store';
+import { selectToken } from 'src/app/state/usertoken/usertoken.selectors';
+import { UserToken } from '../users/types';
 
 @Injectable({
   providedIn: 'root',
@@ -23,15 +23,17 @@ import { Store } from '@ngrx/store';
 export class ServerService {
   lastLoad: Date | undefined;
 
+  userToken$: Observable<UserToken | undefined>;
+
   constructor(
-    private logger: NGXLogger,
-    private http: HttpClient,
     private store: Store,
+    private http: HttpClient,
     private eventService: EventService,
     private errorService: ErrorService,
     private encryptionService: EncryptionService,
-    private authService: AuthenticationService
   ) {
+    this.userToken$ = this.store.select(selectToken());
+
     this.eventService.eventSubject
       .pipe(
         filter((event: Event) => {
@@ -55,7 +57,7 @@ export class ServerService {
   }
 
   deleteServers = (servers: Server[]) => {
-    for (const [i, server] of servers.entries()) {
+    for (const [, server] of servers.entries()) {
       const subscription = this.http
         .delete(`/backend/servers/${server.ipaddress}`, {
           headers: defaultHeadersForJSON(),
@@ -101,50 +103,46 @@ export class ServerService {
       params: new HttpParams().set('full_data', fullData ? 'true' : 'false'),
     };
 
-    return this.http.get<Server>(`/backend/servers/${ipaddress}`, options).pipe(
-      tap((server) => {
-        if (fullData) {
-          if (server.features) {
-            server.features.forEach((feature: Feature) => {
-              try {
-                this.decryptIfNecessary(feature);
-              } catch (err) {
-                this.logger.error(
-                  'Could not decrypt credentials in server feature. Error was:',
-                  err
-                );
-                this.errorService.newError(
-                  Source.ServerService,
-                  ipaddress,
-                  err
-                );
-              }
-            });
-          }
+    return this.http
+      .get<Server>(`/backend/servers/${ipaddress}`, options)
+      .pipe(
+        switchMap(
+          (server, ): Observable<Server> =>
+            fullData ? this.decryptIfNecessary(server) : of(server)
+        )
+      );
+  };
+
+  private decryptIfNecessary = (server: Server): Observable<Server> => {
+    return this.userToken$.pipe(
+      map((userToken) => {
+        if (!userToken || !userToken.token) {
+          return server;
         }
+        const key = userToken.client_key;
+
+        for (const feature of server.features) {
+          if (!feature.credentials.find((credential) => credential.encrypted)) {
+            return server;
+          }
+
+          feature.credentials.forEach((credential) => {
+            if (credential.encrypted && key) {
+              credential.encrypted = !credential.encrypted;
+              credential.value = this.encryptionService.decrypt(
+                credential.value,
+                key
+              );
+            }
+          });
+        }
+        return server;
       })
     );
   };
 
-  private decryptIfNecessary = (feature: Feature) => {
-    if (!feature.credentials.find((credential) => credential.encrypted)) {
-      return;
-    }
-    const key = this.authService.getUserToken()?.client_key;
-
-    feature.credentials.forEach((credential) => {
-      if (credential.encrypted && key) {
-        credential.encrypted = !credential.encrypted;
-        credential.value = this.encryptionService.decrypt(
-          credential.value,
-          key
-        );
-      }
-    });
-  };
-
   saveServers = (servers: Server[]) => {
-    for (const [i, server] of servers.entries()) {
+    for (const [, server] of servers.entries()) {
       const body = JSON.stringify(server);
 
       const subscription = this.http

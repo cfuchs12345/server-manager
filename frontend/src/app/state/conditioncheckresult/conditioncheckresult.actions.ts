@@ -12,7 +12,7 @@ export const CONDITIONCHECKRES_INSERT_OR_UPDATE_ACTION = '[ConditionCheckResult]
 export const updateOne = createAction(CONDITIONCHECKRES_UPDATE_ACTION, props<{ result: Update<ConditionCheckResult> }>());
 export const addOne = createAction(CONDITIONCHECKRES_INSERT_ACTION, props<{ result: ConditionCheckResult }>());
 export const addMany = createAction(CONDITIONCHECKRES_INSERT_MANY_ACTION, props<{ results: ConditionCheckResult[] }>());
-export const removeOne = createAction(CONDITIONCHECKRES_DELETE_ACTION, props<{ ipaddress: string }>());
+export const removeOne = createAction(CONDITIONCHECKRES_DELETE_ACTION, props<{ key: string }>());
 
 
 export const upsertOne = createAction(CONDITIONCHECKRES_INSERT_OR_UPDATE_ACTION, props<{ result: ConditionCheckResult }>());

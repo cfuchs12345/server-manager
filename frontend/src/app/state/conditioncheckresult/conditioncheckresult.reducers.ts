@@ -1,25 +1,25 @@
 import {  createReducer,  on } from '@ngrx/store';
-import { ConditionCheckResult, Status } from '../../services/servers/types';
+import { ConditionCheckResult } from '../../services/servers/types';
 import {
   addOne,
   addMany,
   updateOne,
   removeOne,
   upsertOne
-} from 'src/app/state/actions/conditioncheckresult.action';
+} from 'src/app/state/conditioncheckresult/conditioncheckresult.actions';
 import { EntityState, EntityAdapter, createEntityAdapter } from '@ngrx/entity';
 
 export type State = EntityState<ConditionCheckResult>
 
 
-export function selectIpAddress(a: ConditionCheckResult): string {
-  return a.ipaddress;
+export function selectIpAddressAndDataId(a: ConditionCheckResult): string {
+  return a.ipaddress + "_" + a.data_id;
 }
 
 
 export const adapter: EntityAdapter<ConditionCheckResult> =
   createEntityAdapter<ConditionCheckResult>({
-    selectId: selectIpAddress,
+    selectId: selectIpAddressAndDataId,
   });
 
 export const initialStatusState: State = adapter.getInitialState({});
@@ -35,8 +35,8 @@ export const reducer  = createReducer(
     return adapter.addMany(results, state);
   }),
 
-  on(removeOne, (state, { ipaddress }) => {
-    return adapter.removeOne(ipaddress, state);
+  on(removeOne, (state, { key }) => {
+    return adapter.removeOne(key, state);
   }),
 
   on(updateOne, (state, { result }) => {

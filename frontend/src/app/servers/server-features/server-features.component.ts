@@ -5,7 +5,7 @@ import { ErrorService, Source } from 'src/app/services/errors/error.service';
 import { PluginService } from 'src/app/services/plugins/plugin.service';
 import { Plugin } from 'src/app/services/plugins/types';
 import { Server } from 'src/app/services/servers/types';
-import { selectAllPlugins } from 'src/app/state/selectors/plugin.selectors';
+import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
 
 @Component({
   selector: 'app-server-features',

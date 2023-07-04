@@ -6,9 +6,13 @@ import {
   FormGroup,
   Validators,
 } from '@angular/forms';
+import { Store } from '@ngrx/store';
+import { Observable } from 'rxjs';
 import { AuthenticationService } from 'src/app/services/auth/authentication.service';
 import { EncryptionService } from 'src/app/services/encryption/encryption.service';
+import { UserToken } from 'src/app/services/users/types';
 import { UserService } from 'src/app/services/users/users.service';
+import { selectToken } from 'src/app/state/usertoken/usertoken.selectors';
 
 
 @Component({
@@ -46,12 +50,17 @@ export class ChangePasswordModalComponent {
 
   form: FormGroup = new FormGroup({});
 
+  userToken$: Observable<UserToken | undefined >;
+
   constructor(
+    private store: Store,
     private userService: UserService,
     private authService: AuthenticationService,
     private encryptionService: EncryptionService,
     private formBuilder: FormBuilder
   ) {
+    this.userToken$ = this.store.select(selectToken());
+
     this.form = this.formBuilder.group({
       oldPassword: this.oldPassword,
       newPassword: this.newPassword,
@@ -68,23 +77,24 @@ export class ChangePasswordModalComponent {
   onClickChangePassword = () => {
     const subscriptionOTK = this.encryptionService.requestOneTimeKey().subscribe({
       next: (otk) => {
-        const token = this.authService.getUserToken();
+        this.userToken$.subscribe( (token) => {
+          if (
+            this.oldPassword.valid &&
+            this.oldPassword.value &&
+            this.newPassword.valid &&
+            this.newPassword.value &&
+            this.confirmNewPassword.valid &&
+            token
+          ) {
+            this.userService.changePassword(
+              token.user_id,
+              this.oldPassword.value,
+              this.newPassword.value,
+              otk
+            );
+          }
+        });
 
-        if (
-          this.oldPassword.valid &&
-          this.oldPassword.value &&
-          this.newPassword.valid &&
-          this.newPassword.value &&
-          this.confirmNewPassword.valid &&
-          token
-        ) {
-          this.userService.changePassword(
-            token.user_id,
-            this.oldPassword.value,
-            this.newPassword.value,
-            otk
-          );
-        }
       },
       complete: () => {
         if( subscriptionOTK ) {

@@ -1,14 +1,10 @@
 import {
   Component,
-  OnInit,
   Input,
-  OnDestroy,
   OnChanges,
-  SimpleChanges,
   ChangeDetectorRef
 } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { Subscription, map } from 'rxjs';
 import { GUIAction } from 'src/app/services/general/types';
 import {
   ConditionCheckResult,
@@ -24,7 +20,7 @@ import { NGXLogger } from 'ngx-logger';
   templateUrl: './server-action.component.html',
   styleUrls: ['./server-action.component.scss'],
 })
-export class ServerActionComponent implements OnInit, OnDestroy, OnChanges {
+export class ServerActionComponent implements OnChanges {
   @Input() server: Server | undefined = undefined;
   @Input() guiAction: GUIAction | undefined = undefined;
   @Input() status: Status | undefined = undefined;
@@ -39,10 +35,7 @@ export class ServerActionComponent implements OnInit, OnDestroy, OnChanges {
     private cdr: ChangeDetectorRef
   ) {}
 
-  ngOnInit(): void {
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
+  ngOnChanges(): void {
     const old = this.allDependenciesMet;
     this.allDependenciesMet = this.allDependenciesMetCheck();
 
@@ -67,7 +60,6 @@ export class ServerActionComponent implements OnInit, OnDestroy, OnChanges {
     return false;
   };
 
-  ngOnDestroy(): void {}
 
   onClickAction() {
     if (!this.server || !this.guiAction) {

@@ -1,7 +1,7 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { Subscription } from 'rxjs';
-import { selectStatusByIpAddress } from 'src/app/state/selectors/status.selectors';
+import { selectStatusByIpAddress } from 'src/app/state/status/status.selectors';
 import { Server, Status } from 'src/app/services/servers/types';
 
 @Component({

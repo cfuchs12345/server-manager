@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Plugin } from '../../../../services/plugins/types';
 import { Subscription } from 'rxjs';
 import { Store } from '@ngrx/store';
-import { selectAllPlugins } from 'src/app/state/selectors/plugin.selectors';
+import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
 
 @Component({
   selector: 'app-list-plugins-modal',

@@ -8,7 +8,7 @@ import {
   addMany,
   removeOne,
   upsertOne,
-} from 'src/app/state/actions/conditioncheckresult.action';
+} from 'src/app/state/conditioncheckresult/conditioncheckresult.actions';
 import { Param, ServerAction, Feature } from './types';
 import { ErrorService, Source } from '../errors/error.service';
 import { NGXLogger } from 'ngx-logger';
@@ -38,7 +38,7 @@ export class ServerActionService {
 
           this.store.dispatch(upsertOne({ result: result }));
         } else if (event.event_type === 'Delete') {
-          this.store.dispatch(removeOne({ ipaddress: event.key }));
+          this.store.dispatch(removeOne({ key: event.key }));
         }
       });
   }

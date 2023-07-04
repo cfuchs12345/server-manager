@@ -23,5 +23,5 @@ export const ipToNumber = (ipaddress: string): number => {
         .reduce((a, v) => ((a += v), a), 0);
 }
 
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const isType = <Type>(thing: any): thing is Type => true;

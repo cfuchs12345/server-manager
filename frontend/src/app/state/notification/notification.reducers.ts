@@ -6,7 +6,7 @@ import {
   updateOne,
   removeOne,
   upsertOne
-} from 'src/app/state/actions/notification.action';
+} from 'src/app/state/notification/notification.actions';
 import { EntityState, EntityAdapter, createEntityAdapter } from '@ngrx/entity';
 import { Notification } from 'src/app/services/notifications/types';
 

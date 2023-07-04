@@ -5,7 +5,7 @@ import { ServerActionService } from 'src/app/services/servers/server-action.serv
 import { PluginService } from 'src/app/services/plugins/plugin.service';
 import { ErrorService, Source } from 'src/app/services/errors/error.service';
 import { Store } from '@ngrx/store';
-import { selectPluginById } from 'src/app/state/selectors/plugin.selectors';
+import { selectPluginById } from 'src/app/state/plugin/plugin.selectors';
 
 @Component({
   selector: 'app-server-sub-action',
@@ -17,9 +17,7 @@ export class ServerSubActionComponent {
     private store: Store,
     private serverActionService: ServerActionService,
     private errorService: ErrorService,
-    private pluginCache: PluginService,
     private dialog: MatDialog,
-    private window: Window,
     private zone: NgZone
   ) {
     if (!window.MyServerManagerNS.executeSubAction) {
@@ -53,7 +51,9 @@ export class ServerSubActionComponent {
     action_params: string,
     ipaddress: string
   ) => {
-    const subscription = this.store.select(selectPluginById(feature_id)).subscribe(
+    const pluginById$ = this.store.select(selectPluginById(feature_id));
+
+    pluginById$.subscribe(
       (plugin) => {
         if (plugin) {
           const action = plugin.actions.find((a) => a.id === action_id);
@@ -111,8 +111,8 @@ export class ServerSubActionComponent {
               ' is not known'
           );
         }
-        subscription.unsubscribe();
       }
+
     );
 
   };

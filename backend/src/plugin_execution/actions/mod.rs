@@ -1,5 +1,7 @@
 mod conditions;
 
+use std::{collections::HashMap, net::IpAddr};
+
 use chrono::Utc;
 use futures::future::join_all;
 
@@ -132,6 +134,7 @@ pub async fn execute_action(
 
 pub async fn check_action_conditions(
     server: Server,
+    data_id: String,
     sub_actions: Vec<SubAction>,
     crypto_key: String,
     silent: &bool,
@@ -155,6 +158,7 @@ pub async fn check_action_conditions(
         if plugin.is_none() {
             continue;
         }
+        let data_id = data_id.clone();
         let silent = silent.to_owned();
         let crypto_key = crypto_key.clone();
         let server = server.clone();
@@ -163,6 +167,7 @@ pub async fn check_action_conditions(
         tasks.push(tokio::spawn(async move {
             conditions::check_condition_for_action_met(
                 server.clone(),
+                data_id,
                 feature,
                 plugin
                     .expect("should not happen - checked before")
@@ -231,4 +236,18 @@ pub async fn check_main_action_conditions(silent: bool) -> Result<(), AppError> 
     join_all(tasks).await;
 
     Ok(())
+}
+
+pub fn merge_condition_check_results(vec: Vec<ConditionCheckResult>) -> Vec<ConditionCheckResult> {
+    let mut map: HashMap<IpAddr, ConditionCheckResult> = HashMap::new();
+
+    for ccr in vec {
+        if let Some(existing) = map.get_mut(&ccr.ipaddress) {
+            existing.subresults.extend(ccr.subresults);
+        } else {
+            map.insert(ccr.ipaddress, ccr);
+        }
+    }
+
+    Vec::from_iter(map.values().cloned())
 }

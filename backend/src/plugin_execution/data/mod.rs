@@ -87,6 +87,7 @@ pub async fn execute_data_query(
                     let actions = extract_actions(&replaced)?;
                     let check_results = actions::check_action_conditions(
                         server.clone(),
+                        data.id.clone(),
                         actions,
                         crypto_key.clone(),
                         silent,
@@ -95,8 +96,9 @@ pub async fn execute_data_query(
 
                     results.push(DataResult {
                         ipaddress: server.ipaddress,
+                        data_id: data.id.clone(),
                         result: replaced,
-                        check_results,
+                        check_results: super::merge_condition_check_results(check_results),
                     });
                 }
             }

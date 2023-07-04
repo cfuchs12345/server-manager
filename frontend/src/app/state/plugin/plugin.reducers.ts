@@ -6,7 +6,7 @@ import {
   removeOne,
   removeAll,
   upsertOne
-} from 'src/app/state/actions/plugin.action';
+} from 'src/app/state/plugin/plugin.actions';
 import { EntityState, EntityAdapter, createEntityAdapter } from '@ngrx/entity';
 import { Plugin } from 'src/app/services/plugins/types';
 

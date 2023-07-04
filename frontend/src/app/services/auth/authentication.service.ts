@@ -1,25 +1,36 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError, map, mergeMap, tap } from 'rxjs/operators';
+import { Observable, throwError, take } from 'rxjs';
+import { catchError, mergeMap, tap } from 'rxjs/operators';
 import { UserToken } from '../users/types';
 import { ErrorService, Source } from '../errors/error.service';
 import { EncryptionService } from '../encryption/encryption.service';
 import { Router } from '@angular/router';
+import { Store } from '@ngrx/store';
+import { selectToken } from 'src/app/state/usertoken/usertoken.selectors';
+import * as GlobalActions from '../../../app/state/global.actions';
+import { upsertOneExist } from 'src/app/state/user/user.actions';
+import { selectUserExistByKey } from 'src/app/state/user/user.selectors';
 
 @Injectable({ providedIn: 'root' })
 export class AuthenticationService {
-  private userToken: UserToken | undefined = undefined;
+  userToken$: Observable<UserToken | undefined>;
+  userExist$: Observable<boolean | undefined>;
 
   constructor(
+    private store: Store,
     private router: Router,
     private http: HttpClient,
     private errorService: ErrorService,
     private encryptionService: EncryptionService
-  ) {}
+  ) {
+    this.userToken$ = store.select(selectToken());
+    this.userExist$ = store.select(selectUserExistByKey());
+  }
 
   login(userId: string, password: string): Observable<UserToken> {
     return this.encryptionService.requestOneTimeKey().pipe(
+      take(1),
       mergeMap((otk) => {
         const secret = this.encryptionService.makeSecret(userId, otk.key);
         const encrypted_password = this.encryptionService.encrypt(
@@ -39,6 +50,7 @@ export class AuthenticationService {
             headers: headers,
           })
           .pipe(
+            take(1),
             catchError((err) => {
               this.errorService.newError(
                 Source.AuthenticationService,
@@ -46,12 +58,6 @@ export class AuthenticationService {
                 err
               );
               return throwError(() => err);
-            }),
-            map((userToken) => {
-              return userToken;
-            }),
-            tap( (userToken) => {
-              this.userToken = userToken;
             })
           );
       })
@@ -59,15 +65,19 @@ export class AuthenticationService {
   }
 
   logout = () => {
-    this.userToken = undefined;
+    this.userToken$.pipe(take(1)).subscribe((token) => {
+      if (token) {
+        this.store.dispatch(GlobalActions.logout({ userToken: token }));
+      }
+    });
+
     this.router.navigate(['/login']);
   };
 
-  getUserToken = (): UserToken => {
-    return Object.assign([], this.userToken);
-  }
-
   userExist = (): Observable<boolean> => {
-    return this.http.get<boolean>('/backend_nt/users/exist');
+    return this.http.get<boolean>('/backend_nt/users/exist')
+    .pipe(
+      tap((result) => this.store.dispatch(upsertOneExist({exist: result})))
+    );
   };
 }

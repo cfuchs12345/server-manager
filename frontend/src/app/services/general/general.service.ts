@@ -122,7 +122,7 @@ export class GeneralService {
       })
       .subscribe({
         next: (res) => {
-          this.logger.debug(res);
+          this.logger.trace(res);
         },
         error: (err) => {
           this.errorService.newError(Source.GeneralService, undefined, err);
