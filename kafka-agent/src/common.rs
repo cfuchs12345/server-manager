@@ -25,5 +25,12 @@ pub fn sleep(duration: Duration) {
 }
 
 pub fn get_env_var(name: &str) -> String {
-    std::env::var(name).unwrap()
+    match std::env::var(name) {
+        Ok(value) => value,
+        Err(_) => {
+            let message = format!("env var {} not set. Please check that the .env file is present and contains the setting {}", name, name);
+            println!("{}", message);
+            panic!("{}", message);
+        }
+    }
 }
