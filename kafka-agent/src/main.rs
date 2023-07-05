@@ -85,7 +85,6 @@ fn start_listening(
 
         let Ok(mss) = &mut con.poll() else {
             println!("Could not poll for messages. Retry in {:?}", duration);
-            
             common::sleep(duration);
             continue;
         };
