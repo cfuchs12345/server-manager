@@ -110,15 +110,19 @@ fn parse_xml_input_as_upnp_device_fct(
             .as_str()
             .ok_or(RenderError::new("Could not get string from value"))?;
 
-        let device = upnp::parse_upnp_description(xml).unwrap_or({
-            log::error!(
-                "Could not parse incoming string as UPnP root device. string was: {} ",
-                xml
-            );
-            upnp::DeviceRoot::new()
-        });
-
-        log::debug!("Converted incoming data to {:?}", device);
+        let device = match upnp::parse_upnp_description(xml) {
+            Ok(device) => {
+                log::trace!("Converted incoming data to {:?}", device);
+                device
+            }
+            Err(err) => {
+                log::error!(
+                    "Could not parse incoming string as UPnP root device. error: {:?} string was: {} ", err,
+                    xml
+                );
+                upnp::DeviceRoot::new()
+            }
+        };
 
         let mut ctx = ctx.clone();
         match ctx.data_mut() {
