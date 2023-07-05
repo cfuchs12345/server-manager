@@ -1,5 +1,6 @@
 use std::sync::Mutex;
 
+use chrono::DateTime;
 use chrono::Utc;
 use lazy_static::lazy_static;
 
@@ -21,6 +22,16 @@ const MESSAGE_BUFFER_SIZE: usize = 50;
 lazy_static! {
     static ref BUS: Mutex<(Sender<Event>, Receiver<Event>)> =
         Mutex::new(broadcast::channel(MESSAGE_BUFFER_SIZE));
+}
+
+pub fn publish_refresh_event(
+    occurrence_datetime: DateTime<Utc>,
+    current: Box<dyn EventSource>,
+) -> Result<(), AppError> {
+    let event = object_action::get_event_for_refresh(occurrence_datetime, current)?;
+
+    publish(event)?;
+    Ok(())
 }
 
 pub fn handle_object_change(

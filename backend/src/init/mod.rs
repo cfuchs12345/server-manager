@@ -12,6 +12,8 @@ use crate::models::error::AppError;
 use crate::webserver;
 use crate::webserver::AppData;
 
+pub use background_processes::register_poll_message_callback;
+
 pub static ENV_FILENAME: &str = "./external_files/.env";
 
 pub async fn start() -> Result<(), AppError> {

@@ -69,13 +69,9 @@ pub async fn do_encryption_migration() -> std::result::Result<(), AppError> {
             let mut s = server.to_owned();
 
             for mut feature in &mut s.features {
-                let plugin =
-                    plugins_map
-                        .get(&feature.id.clone())
-                        .ok_or(AppError::UnknownPlugin(format!(
-                            "plugin {} not found",
-                            feature.id
-                        )))?;
+                let plugin = plugins_map
+                    .get(&feature.id.clone())
+                    .ok_or(AppError::UnknownPlugin(feature.id.to_owned()))?;
 
                 let mut new_credentials: Vec<Credential> = Vec::new();
                 for credential in &feature.credentials {

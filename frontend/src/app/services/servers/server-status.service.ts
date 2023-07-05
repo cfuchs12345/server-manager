@@ -11,7 +11,6 @@ import { Event } from '../events/types';
 import { NGXLogger } from 'ngx-logger';
 import { addMany, upsertOne } from 'src/app/state/status/status.actions';
 import { Store } from '@ngrx/store';
-import { Update } from '@ngrx/entity';
 
 @Injectable({
   providedIn: 'root',
@@ -43,7 +42,7 @@ export class ServerStatusService {
         next: (statusList) => {
           this.store.dispatch(addMany({status: statusList}));
         },
-        error: (err: any) => {
+        error: (err) => {
           if (err) {
             this.errorService.newError(
               Source.ServerStatusService,
@@ -51,8 +50,7 @@ export class ServerStatusService {
               err
             );
           }
-        },
-        complete: () => {},
+        }
       });
   };
 
@@ -74,7 +72,7 @@ export class ServerStatusService {
 
           this.store.dispatch(upsertOne({status: status}));
         },
-        error: (err: any) => {
+        error: (err) => {
           if (err) {
             this.errorService.newError(
               Source.ServerStatusService,
@@ -82,8 +80,7 @@ export class ServerStatusService {
               err
             );
           }
-        },
-        complete: () => {},
+        }
       });
   }
 

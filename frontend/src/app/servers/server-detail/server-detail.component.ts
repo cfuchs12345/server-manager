@@ -70,7 +70,6 @@ export class ServerDetailComponent implements OnChanges {
     }
 
     if (this.dataResults) {
-      console.log("dataResults", this.dataResults);
       let concatString = this.dataResults.map((d) => d.result).join('');
       concatString = this.replaceSubActions(concatString);
       this.innerHtml = this.sanitizer.bypassSecurityTrustHtml(concatString);

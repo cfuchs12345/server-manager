@@ -39,9 +39,8 @@ pub async fn execute_data_query(
     let mut results: Vec<DataResult> = vec![];
 
     for feature in &server.features {
-        let plugin = datastore::get_plugin(feature.id.as_str())?.ok_or(AppError::UnknownPlugin(
-            format!("Plugin {} not found", feature.id),
-        ))?;
+        let plugin = datastore::get_plugin(feature.id.as_str())?
+            .ok_or(AppError::UnknownPlugin(feature.id.clone()))?;
 
         for data in &plugin.data {
             log::debug!("Plugin data execute {} {}", plugin.id, data.id);

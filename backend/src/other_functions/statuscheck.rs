@@ -37,7 +37,6 @@ pub async fn status_check_all(silent: &bool) -> Result<(), AppError> {
                         Ok(_) => {}
                         Err(err) => log::error!("Could not chache status. Error was: {}", err),
                     }
-
                     status
                 }
                 Err(err) => {

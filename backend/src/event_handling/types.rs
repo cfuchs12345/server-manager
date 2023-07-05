@@ -10,6 +10,7 @@ pub enum EventType {
     Insert,
     Update,
     Delete,
+    Refresh,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -41,7 +41,7 @@ export class ServerService {
         })
       )
       .subscribe((event: Event) => {
-        if (event.event_type === 'Insert' || event.event_type === 'Update') {
+        if (event.event_type === 'Insert' || event.event_type === 'Update' || event.event_type === 'Refresh') {
           const subscription = this.getServer(event.key, false).subscribe({
             next: (server) => {
               this.store.dispatch(upsertOne({ server: server }));

@@ -46,7 +46,7 @@ impl Command for KafkaCommand {
             topic,
             response_topic,
             normal_and_masked_command.0.as_str(),
-            Duration::seconds(timeout.parse()?),
+            chrono::Duration::seconds(timeout.parse()?),
         )
         .await?;
 

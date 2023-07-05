@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Subject } from 'rxjs';
 import { Error } from './types';
+import { NGXLogger } from 'ngx-logger';
 
 export enum Source {
   AuthenticationService,
@@ -22,15 +23,10 @@ export enum Source {
 
 @Injectable()
 export class ErrorService {
-  private _errors = new BehaviorSubject<Map<string, Error>>(new Map());
+  private _errors = new Subject<Error>();
   readonly errors = this._errors.asObservable();
 
-  private dataStore: {
-    errors: Map<string, Error>;
-  } = {
-    errors: new Map(),
-  };
-
+  constructor(private logger: NGXLogger) {}
 
   newError(
     source: Source,
@@ -51,26 +47,9 @@ export class ErrorService {
         text = JSON.stringify(error_object);
       }
     }
+    const error = new Error(source, ipaddress, text, new Date());
 
-    this.publishError(new Date(), source, ipaddress, text);
+    this.logger.trace("error", error);
+    this._errors.next(error);
   }
-
-  private publishError = (
-    date: Date,
-    source: Source,
-    ipaddress: string | undefined,
-    errorMessage: string
-  ) => {
-    const key = source + '|' + errorMessage;
-
-    let error = this.dataStore.errors.get(key);
-    if (!error) {
-      error = new Error(source, ipaddress, errorMessage, date, 1);
-      this.dataStore.errors.set(key, error);
-    } else {
-      error.increment();
-      error.setLastOccurrance(date);
-    }
-    this._errors.next(this.dataStore.errors);
-  };
 }

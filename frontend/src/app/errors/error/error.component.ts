@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ErrorService } from 'src/app/services/errors/error.service';
 import { Subscription } from 'rxjs';
 import { Error } from 'src/app/services/errors/types';
-import { mapValuesToArray, sortByNumericField } from 'src/app/shared/utils';
+import { sortByNumericField } from 'src/app/shared/utils';
 
 @Component({
   selector: 'app-error',
@@ -16,13 +16,18 @@ export class ErrorComponent implements OnInit, OnDestroy {
   constructor(private errorService: ErrorService) {}
 
   ngOnInit(): void {
-    this.subscriptionErrors = this.errorService.errors.subscribe((errors) => {
-      if (errors) {
-        this.errors = sortByNumericField(mapValuesToArray(errors), (error) => error.lastOccurrance.getTime() );
+    this.subscriptionErrors = this.errorService.errors.subscribe((error) => {
+      const found = this.errors.find(
+        (existing) => this.key(existing) === this.key(error)
+      );
+
+      if (found) {
+        found.setLastOccurrance(error.lastOccurrance);
+        found.increment();
       } else {
-        // clear messages when empty message received
-        this.errors = [];
+        this.errors.push(error);
       }
+      this.sort();
     });
   }
   ngOnDestroy(): void {
@@ -30,4 +35,16 @@ export class ErrorComponent implements OnInit, OnDestroy {
       this.subscriptionErrors.unsubscribe();
     }
   }
+
+  sort = () => {
+    if (this.errors) {
+      this.errors = sortByNumericField(this.errors, (error) =>
+        error.lastOccurrance.getTime()
+      );
+    }
+  };
+
+  key = (error: Error): string => {
+    return error.source + '|' + error.errorMessage;
+  };
 }

@@ -16,20 +16,8 @@ export class ErrorsListComponent implements OnInit, OnDestroy {
   constructor(private errorService: ErrorService) {}
 
   ngOnInit(): void {
-    this.subscriptionErrors = this.errorService.errors.subscribe((errors) => {
-      if (errors) {
-        let count = 0;
-        for (const [i, error] of errors.entries()) {
-          count += error.count;
-        }
-        if (this.errorCount < count) {
-          setTimeout(this.flashErrorList, 0);
-        }
-        this.errorCount = count;
-      } else {
-        // clear messages when empty message received
-        this.errorCount = 0;
-      }
+    this.subscriptionErrors = this.errorService.errors.subscribe(() => {
+      this.errorCount = this.errorCount + 1;
     });
   }
   ngOnDestroy(): void {

@@ -63,6 +63,15 @@ fn diff_lists(
     Ok(res)
 }
 
+pub fn get_event_for_refresh(
+    occurrence_datetime: DateTime<Utc>,
+    current: Box<dyn EventSource>,
+) -> Result<Event, AppError> {
+    log::debug!("refresh {:?} ", current);
+
+    Event::new_from_event_source(occurrence_datetime, EventType::Refresh, &*current)
+}
+
 pub fn get_event_for_object_change(
     occurrence_datetime: DateTime<Utc>,
     current: Option<Box<dyn EventSource>>,
