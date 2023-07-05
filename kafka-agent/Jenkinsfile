@@ -14,6 +14,10 @@ pipeline {
         stage('Init') {
             steps {
                 sh "rustup default stable"
+                // show version of Rust
+                sh "rustup -V"
+                // check for available updates
+                sh "rustup check"
             }
         }
         stage('checkout') {
