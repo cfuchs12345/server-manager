@@ -51,7 +51,7 @@ pub async fn check_condition_for_action_met(
 
     let Some(plugin) = datastore::get_plugin(feature.as_ref().expect("Could not get ref").id.as_str())? else {
         return Ok(ConditionCheckResult {
-            ipaddress: server.ipaddress,            
+            ipaddress: server.ipaddress,
             data_id,
             subresults: vec![ConditionCheckSubResult {
                 action_id: action.expect("checked before").id,
