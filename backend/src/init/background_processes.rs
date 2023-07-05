@@ -51,7 +51,7 @@ impl ProcessExecution {
     pub fn set_end(&mut self, end: DateTime<Utc>) {
         self.end = Some(end);
 
-        log::info!(
+        log::debug!(
             "{}: started {:?} at {} ended at {}. Took {} seconds",
             thread::current().name().unwrap_or_default(),
             self.process_type,
@@ -66,7 +66,7 @@ impl ProcessExecution {
         self.start = Some(start);
         self.end = None;
 
-        log::info!(
+        log::debug!(
             "{}: started {:?} at {}",
             thread::current().name().unwrap_or_default(),
             self.process_type,
@@ -123,7 +123,6 @@ impl ProcessExecutions {
 }
 
 pub async fn start_background_prcesses() -> Result<(), AppError> {
-    println!("start_background_prcesses");
     start_condition_checks().await;
     start_status_checks().await;
     start_monitoring().await;
@@ -273,7 +272,7 @@ async fn post_function_exec(process_type: &ProcessType, delay: bool) {
     lock.set_end(process_type);
     drop(lock);
 
-    if (delay) {
+    if delay {
         if time_taken < 5 {
             sleep(Duration::from_secs(5 - time_taken)).await; // if processes are really fast, we delay them up to 5 seconds
         } else {
