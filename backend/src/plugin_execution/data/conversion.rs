@@ -19,6 +19,11 @@ pub fn convert_result_string_to_html(
 ) -> Result<String, AppError> {
     log::debug!("Data input is: {}", input);
 
+    if input.is_empty() {
+        log::debug!("No output to convert");
+        return Ok("".to_owned());
+    }
+
     let data_value = create_data_input_structure(data, input)?;
 
     format_data_with_template_engine(data_value, template_engine, template)

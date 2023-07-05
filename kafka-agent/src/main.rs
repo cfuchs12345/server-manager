@@ -85,7 +85,7 @@ fn start_listening(
 
         let Ok(mss) = &mut con.poll() else {
             println!("Could not poll for messages. Retry in {:?}", duration);
-
+            
             common::sleep(duration);
             continue;
         };
@@ -192,6 +192,7 @@ fn send_response(response: &str, topic: &str, brokers: &[String]) {
     loop {
         let Ok(mut producer) = kafka_connectivity::get_producer(brokers) else {
             common::sleep(common::FIVE_SECS);
+            println!("Could not create message producer. Retrying");
             continue;
         };
         let key: &String = &common::CLIENT_ID;
@@ -199,6 +200,7 @@ fn send_response(response: &str, topic: &str, brokers: &[String]) {
         println!("message {}", response);
 
         let Ok(_) = producer.send(&Record::from_key_value(topic, key.to_owned(), response)) else {
+            println!("Could not send message. Retrying");
             common::sleep(common::FIVE_SECS);
             continue;
         };
