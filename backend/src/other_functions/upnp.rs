@@ -172,7 +172,7 @@ pub async fn upnp_discover(
 pub async fn parse_device_info_from_location(
     server_features_with_upnp: Vec<FeaturesOfServer>,
     plugin: &Plugin,
-) -> Vec<FeaturesOfServer> {
+) -> Result<Vec<FeaturesOfServer>, AppError> {
     let clone = server_features_with_upnp.clone();
     for fos in server_features_with_upnp {
         match fos.features.iter().find(|f| f.id == plugin.id) {
@@ -202,7 +202,7 @@ pub async fn parse_device_info_from_location(
                                     fos.ipaddress
                                 );
 
-                                parse_upnp_description(text.as_str());
+                                parse_upnp_description(text.as_str())?;
                             }
                             Err(err) => {
                                 log::error!("Error while doing http request on location {} of UPnP device {}. Error {}", location_param.value.clone(), fos.ipaddress, err);
@@ -220,7 +220,7 @@ pub async fn parse_device_info_from_location(
         }
     }
 
-    clone
+    Ok(clone)
 }
 
 pub fn parse_upnp_description(text: &str) -> Result<DeviceRoot, AppError> {

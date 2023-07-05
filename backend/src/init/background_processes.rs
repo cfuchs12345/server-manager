@@ -2,7 +2,7 @@ use std::{collections::HashMap, thread, time::Duration};
 
 use chrono::prelude::*;
 
-use futures_util::{Future, FutureExt};
+use futures_util::Future;
 use lazy_static::lazy_static;
 use tokio::{
     runtime::{Builder, Runtime},
@@ -12,11 +12,13 @@ use tokio::{
 
 use crate::models::error::AppError;
 
+type PollFunction = fn(&str) -> ();
+
 lazy_static! {
     static ref EXECUTIONS: RwLock<ProcessExecutions> = RwLock::new(ProcessExecutions {
         executions: HashMap::new()
     });
-    static ref MESSAGE_POLL_CALLBACKS: RwLock<HashMap<String, fn(&str) -> ()>> =
+    static ref MESSAGE_POLL_CALLBACKS: RwLock<HashMap<String, PollFunction>> =
         RwLock::new(HashMap::new());
 }
 
@@ -207,7 +209,7 @@ fn new_tokio_runtime(thread_name: &str, worker_count: usize) -> Runtime {
     rt
 }
 
-pub async fn register_poll_message_callback(new_callback: fn(&str) -> (), topic: &str) {
+pub async fn register_poll_message_callback(new_callback: PollFunction, topic: &str) {
     let mut callbacks = MESSAGE_POLL_CALLBACKS.write().await;
     callbacks.insert(topic.to_owned(), new_callback);
 }
