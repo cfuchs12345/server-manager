@@ -223,18 +223,9 @@ pub async fn parse_device_info_from_location(
     clone
 }
 
-pub fn parse_upnp_description(text: &str) -> Option<DeviceRoot> {
-    let device_res = from_str::<DeviceRoot>(text);
-    match device_res {
-        Ok(device) => {
-            log::debug!("parsed result {:?}", device);
-            Some(device)
-        }
-        Err(err) => {
-            println!("Could not parse XML {}. Error was {}", text, err);
-            None
-        }
-    }
+pub fn parse_upnp_description(text: &str) -> Result<DeviceRoot, AppError> {
+    from_str::<DeviceRoot>(text)
+        .map_err(|err| AppError::Unknown(format!("Could not parse XML. Error was: {:?}", err)))
 }
 
 #[cfg(test)]
@@ -269,7 +260,7 @@ mod tests {
         </device>
         </root>"#;
         let parsed = parse_upnp_description(text);
-        assert!(parsed.is_some());
+        assert!(parsed.is_ok());
         let unwrapped = parsed.expect("should not happen");
 
         assert_eq!(
