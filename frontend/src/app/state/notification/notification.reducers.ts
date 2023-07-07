@@ -1,5 +1,4 @@
 import {  createReducer,  on } from '@ngrx/store';
-import { Status } from '../../services/servers/types';
 import {
   addOne,
   addMany,
@@ -8,18 +7,18 @@ import {
   upsertOne
 } from 'src/app/state/notification/notification.actions';
 import { EntityState, EntityAdapter, createEntityAdapter } from '@ngrx/entity';
-import { Notification } from 'src/app/services/notifications/types';
+import { Notifications } from 'src/app/services/notifications/types';
 
-export type State = EntityState<Notification>
+export type State = EntityState<Notifications>
 
 
-export function selectIpAddress(a: Notification): string {
+export function selectIpAddress(a: Notifications): string {
   return a.ipaddress;
 }
 
 
-export const adapter: EntityAdapter<Notification> =
-  createEntityAdapter<Notification>({
+export const adapter: EntityAdapter<Notifications> =
+  createEntityAdapter<Notifications>({
     selectId: selectIpAddress,
   });
 
@@ -28,8 +27,8 @@ export const initialStatusState: State = adapter.getInitialState({});
 export const reducer  = createReducer(
   initialStatusState,
 
-  on(addOne, (state, { notification }) => {
-    return adapter.addOne(notification, state);
+  on(addOne, (state, { notifications }) => {
+    return adapter.addOne(notifications, state);
   }),
 
   on(addMany, (state, { notifications }) => {
@@ -40,11 +39,11 @@ export const reducer  = createReducer(
     return adapter.removeOne(ipaddress, state);
   }),
 
-  on(updateOne, (state, { notification }) => {
-    return adapter.updateOne(notification, state);
+  on(updateOne, (state, { notifications }) => {
+    return adapter.updateOne(notifications, state);
   }),
 
-  on(upsertOne, (state, { notification }) => {
-    return adapter.upsertOne(notification, state);
+  on(upsertOne, (state, { notifications }) => {
+    return adapter.upsertOne(notifications, state);
   })
 );

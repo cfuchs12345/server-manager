@@ -14,9 +14,11 @@ export class ErrorInterceptor implements HttpInterceptor {
   constructor(private authenticationService: AuthenticationService) {}
 
   intercept(
+    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
     request: HttpRequest<any>,
+    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
     next: HttpHandler
-  ): Observable<HttpEvent<any>> {
+  ): Observable<HttpEvent<any>> {// eslint-disable-line  @typescript-eslint/no-explicit-any
     return next.handle(request).pipe(
       catchError((err) => {
         if (err.status === 401) {

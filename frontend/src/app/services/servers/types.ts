@@ -64,7 +64,8 @@ export class Server {
     public name: string,
     public dnsname: string = '',
     public features: Feature[] = [],
-    public isPreliminary: boolean = false
+    public isPreliminary: boolean = false,
+    public change_flag: string = ""
   ) {}
 }
 

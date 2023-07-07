@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, OnDestroy } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { SafeHtml } from '@angular/platform-browser';
 import { ImageCache } from 'src/app/services/cache/image-cache.service';
 import { Server } from 'src/app/services/servers/types';
@@ -8,14 +8,10 @@ import { Server } from 'src/app/services/servers/types';
   templateUrl: './server-icon.component.html',
   styleUrls: ['./server-icon.component.scss'],
 })
-export class ServerIconComponent implements OnInit, OnDestroy {
+export class ServerIconComponent {
   @Input() server: Server | undefined = undefined;
 
   constructor(private imageCache: ImageCache) {}
-
-  ngOnInit(): void {}
-
-  ngOnDestroy(): void {}
 
   getServerIcon = (): SafeHtml | undefined => {
     if (!this.server) {

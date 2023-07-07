@@ -1,21 +1,20 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormControl, Validators } from '@angular/forms';
+import { Component, OnDestroy } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { Subscription } from 'rxjs';
+import { Observable } from 'rxjs';
 import { ServerService } from 'src/app/services/servers/server.service';
-import { Feature, Server, ServerFeature } from 'src/app/services/servers/types';
+import { Feature, Server } from 'src/app/services/servers/types';
 import { ConfirmDialogComponent } from 'src/app/ui/confirm-dialog/confirm-dialog.component';
-import { ServerAddressType } from 'src/types/ServerAddress';
 import { DeleteServerDialog } from '../dialog-delete-server';
 import { Store } from '@ngrx/store';
-import { selectAllServers, selectServerByIpAddress } from 'src/app/state/server/server.selectors';
+import { selectAllServers, selectAllServersWithFeatures } from 'src/app/state/server/server.selectors';
+import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
 
 @Component({
   selector: 'app-delete-server-modal',
   templateUrl: './delete-server-modal.component.html',
   styleUrls: ['./delete-server-modal.component.scss'],
 })
-export class DeleteServerModalComponent implements OnInit, OnDestroy {
+export class DeleteServerModalComponent implements OnDestroy {
   buttonTextDeleteServers = "Delete Server";
   buttonTextDeleteFeature = "Delete Feature";
 
@@ -26,39 +25,24 @@ export class DeleteServerModalComponent implements OnInit, OnDestroy {
   selectedServer: Server | undefined = undefined;
   selectedFeature: Feature | undefined = undefined;
 
-  servers: Server[] = [];
+  servers$: Observable<Server[]>;
+  serversWithFeatures$: Observable<Server[]>;
+
   selectedServers: Server[] = [];
-  serversWithFeatures: Server[] = [];
   features: Feature[] = [];
 
-  subscriptionServers: Subscription | undefined = undefined;
-
+  subscriptionHandler = new SubscriptionHandler(this);
 
   displayedColumns: string[] = ['delete', 'ipaddress', 'name'];
 
   constructor(private store: Store,private serverService: ServerService, private dialog: MatDialog, private ref: MatDialogRef<DeleteServerDialog>) {
+    this.servers$ = this.store.select(selectAllServers);
+    this.serversWithFeatures$ = this.store.select(selectAllServersWithFeatures);
   }
 
-  ngOnInit(): void {
-    this.loading = true;
-    this.subscriptionServers  = this.store.select(selectAllServers).subscribe(
-      (servers) => {
-        if (servers) {
-          this.servers = servers;
-          this.serversWithFeatures = servers.filter( (server) => server.features.length > 0);
-        } else {
-          // clear messages when empty message received
-          this.servers = [];
-        }
-        this.loading = false;
-      }
-    );
-  }
 
   ngOnDestroy(): void {
-    if( this.subscriptionServers ) {
-      this.subscriptionServers.unsubscribe();
-    }
+    this.subscriptionHandler.onDestroy();
   }
 
   serversSelected = (): number => {
@@ -75,7 +59,8 @@ export class DeleteServerModalComponent implements OnInit, OnDestroy {
     this.selectedServers.splice(0, this.selectedServers.length);
 
     if( this.selectAll ) {
-      this.selectedServers.push(...this.servers);
+      this.subscriptionHandler.subscription = this.servers$.subscribe( (servers) => this.selectedServers.push(... servers));
+
     }
   }
 
@@ -92,20 +77,14 @@ export class DeleteServerModalComponent implements OnInit, OnDestroy {
 
   removeFeatureFromServer = () => {
     if(this.selectedServer && this.selectedFeature) {
-      const ref = this;
-
       // cannot get it from store here, since we need the full data (features, credentials, params and so on)
-      this.serverService.getServer(this.selectedServer.ipaddress, true).subscribe({
+      this.subscriptionHandler.subscription = this.serverService.getServer(this.selectedServer.ipaddress, true).subscribe({
         next: (server) => {
-          const filteredFeatures = server.features.filter( (feature) => feature.id !== ref.selectedFeature?.id);
+          const filteredFeatures = server.features.filter( (feature) => feature.id !== this.selectedFeature?.id);
           server.features = filteredFeatures;
 
-          ref.serverService.updateServer(server);
+          this.serverService.updateServer(server);
         },
-        error: (err) => {
-        },
-        complete: () => {
-        }
       });
     }
   }
@@ -130,11 +109,8 @@ export class DeleteServerModalComponent implements OnInit, OnDestroy {
     this.features = this.selectedServer ? this.selectedServer.features : [];
   };
 
-  onChangeFeature = () => {
-  }
 
   isSelected = (server: Server) : boolean => {
     return this.selectedServers.find(s => s.ipaddress === server.ipaddress ) !== undefined;
   }
-
 }

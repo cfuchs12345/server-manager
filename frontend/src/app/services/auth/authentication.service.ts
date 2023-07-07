@@ -67,7 +67,7 @@ export class AuthenticationService {
   logout = () => {
     this.userToken$.pipe(take(1)).subscribe((token) => {
       if (token) {
-        this.store.dispatch(GlobalActions.logout({ userToken: token }));
+        this.store.dispatch(GlobalActions.logout({ userToken: token, logout: true }));
       }
     });
 

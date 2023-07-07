@@ -1,14 +1,13 @@
-import { Component, OnInit } from '@angular/core';
-import {
-  FormControl,
-  Validators,
-} from '@angular/forms';
+import { Component, OnDestroy } from '@angular/core';
+import { FormControl, Validators } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { RxwebValidators, IpVersion } from '@rxweb/reactive-form-validators';
-import { Subscription } from 'rxjs';
+import { Observable,  map, of } from 'rxjs';
+import { ErrorService } from 'src/app/services/errors/error.service';
 import { Plugin } from 'src/app/services/plugins/types';
 import { ServerService } from 'src/app/services/servers/server.service';
-import { Feature, Server, ServerFeature } from 'src/app/services/servers/types';
+import { Feature, Server } from 'src/app/services/servers/types';
+import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
 import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
 import { selectAllServers } from 'src/app/state/server/server.selectors';
 
@@ -17,7 +16,7 @@ import { selectAllServers } from 'src/app/state/server/server.selectors';
   templateUrl: './add-server-modal.component.html',
   styleUrls: ['./add-server-modal.component.scss'],
 })
-export class AddServerModalComponent implements OnInit {
+export class AddServerModalComponent implements OnDestroy {
   ipPlaceholder = 'xxx.xxx.xxx.xxx or xxxx:xxxx...';
   ipAddressLabel = 'IP Address';
   ipaddressHint = 'Example: 192.168.178.111 or FE80::1';
@@ -35,36 +34,26 @@ export class AddServerModalComponent implements OnInit {
   selectedServer: Server | undefined = undefined;
   selectedPlugin: Plugin | undefined = undefined;
 
-  servers: Server[] = [];
-  plugins: Plugin[] = [];
-  availablePlugins: Plugin[] = [];
+  servers$: Observable<Server[]>;
+  plugins$: Observable<Plugin[]>;
+
+  availablePlugins$: Observable<Plugin[]>;
   currentFeatures: Feature[] = [];
 
-  subscriptionServers: Subscription | undefined = undefined;
-  subscriptionPlugins: Subscription | undefined = undefined;
+  subscriptionHandler = new SubscriptionHandler(this);
 
   constructor(
     private store: Store,
-    private serverService: ServerService
-  ) {}
+    private serverService: ServerService,
+    private errorService: ErrorService
+  ) {
+    this.servers$ = this.store.select(selectAllServers);
+    this.plugins$ = this.store.select(selectAllPlugins);
+    this.availablePlugins$ = of();
+  }
 
-  ngOnInit(): void {
-    this.subscriptionServers = this.store.select(selectAllServers).subscribe(
-      (servers) => {
-        if (servers) {
-          this.servers = servers;
-        } else {
-          // clear messages when empty message received
-          this.servers = [];
-        }
-      }
-    );
-
-    this.subscriptionPlugins = this.store.select(selectAllPlugins).subscribe(
-      (plugins) => {
-        this.plugins = plugins;
-      }
-    );
+  ngOnDestroy(): void {
+    this.subscriptionHandler.onDestroy();
   }
 
   getIPAddressErrorMessage() {
@@ -77,40 +66,31 @@ export class AddServerModalComponent implements OnInit {
   }
 
   saveServer = () => {
-    if (this.ipaddress.value && this.name.value) {
+    if (this.ipaddress.value) {
       this.serverService.saveServers([
-        new Server(this.ipaddress.value, this.name.value),
+        new Server(this.ipaddress.value, this.name.value ? this.name.value: ''),
       ]);
     }
   };
 
   addFeatureToServer = () => {
-    const ref = this;
     if (this.selectedServer) {
-      this.serverService
+      this.subscriptionHandler.subscription = this.serverService
         .getServer(this.selectedServer.ipaddress, true)
         .subscribe({
           next: (server) => {
-            if (ref.selectedPlugin && ref.selectedServer) {
+            if (this.selectedPlugin && this.selectedServer) {
               const features = server.features;
               features.push(
                 new Feature(
-                  ref.selectedPlugin.id,
-                  ref.selectedPlugin.name,
+                  this.selectedPlugin.id,
+                  this.selectedPlugin.name,
                   [],
                   []
                 )
               );
-              const featureOfServer = new ServerFeature(
-                ref.selectedServer.ipaddress,
-                features,
-                true
-              );
               this.serverService.updateServer(server);
             }
-          },
-          error: (err) => {},
-          complete: () => {
           },
         });
     }
@@ -120,14 +100,11 @@ export class AddServerModalComponent implements OnInit {
     this.currentFeatures = this.selectedServer
       ? this.selectedServer.features
       : [];
-    this.availablePlugins = this.plugins.filter(
-      (plugin) => !this.isFeatureAlreadySet(plugin.id, this.currentFeatures)
+
+    this.availablePlugins$ = this.plugins$.pipe(
+      map((plugins) =>
+        plugins.filter((p) => !this.currentFeatures.find((f) => f.id === p.id))
+      )
     );
   };
-
-  onChangeFeature = () => {};
-
-  private isFeatureAlreadySet(id: string, features: Feature[]) {
-    return features.filter((feature) => feature.id === id).length > 0;
-  }
 }

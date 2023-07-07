@@ -1,14 +1,34 @@
-<div *ngFor="let notification of notifications">
-  <div *ngIf="notification.notification_level === 'Info'">
-    <img src="assets/svg/info-svgrepo-com.svg" alt="{{notification.notification_level}}" [matTooltip]="notification.message">
-  </div>
-  <div *ngIf="notification.notification_level === 'Warn'" >
-    <img src="assets/svg/warning-svgrepo-com.svg" alt="{{notification.notification_level}}" [matTooltip]="notification.message">
-  </div>
-  <div *ngIf="notification.notification_level === 'Error'">
-    <img src="assets/svg/error-svgrepo-com.svg" alt="{{notification.notification_level}}" [matTooltip]="notification.message">
-  </div>
-  <div *ngIf="notification.notification_level === 'Critical'">
-    <img src="assets/svg/error-crit-svgrepo-com.svg" alt="{{notification.notification_level}}" [matTooltip]="notification.message">
+<div *ngIf="notifications$ | async as notifications">
+  <div *ngIf="notifications.list">
+    <div *ngFor="let notification of notifications.list">
+      <div *ngIf="notification.notification_level === 'Info'">
+        <img
+          src="assets/svg/info-svgrepo-com.svg"
+          alt="{{ notification.notification_level }}"
+          [matTooltip]="notification.message"
+        />
+      </div>
+      <div *ngIf="notification.notification_level === 'Warn'">
+        <img
+          src="assets/svg/warning-svgrepo-com.svg"
+          alt="{{ notification.notification_level }}"
+          [matTooltip]="notification.message"
+        />
+      </div>
+      <div *ngIf="notification.notification_level === 'Error'">
+        <img
+          src="assets/svg/error-svgrepo-com.svg"
+          alt="{{ notification.notification_level }}"
+          [matTooltip]="notification.message"
+        />
+      </div>
+      <div *ngIf="notification.notification_level === 'Critical'">
+        <img
+          src="assets/svg/error-crit-svgrepo-com.svg"
+          alt="{{ notification.notification_level }}"
+          [matTooltip]="notification.message"
+        />
+      </div>
+    </div>
   </div>
 </div>

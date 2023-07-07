@@ -1,17 +1,14 @@
-use std::{
-    collections::HashMap,
-    net::{IpAddr, Ipv4Addr},
-};
+use std::net::{IpAddr, Ipv4Addr};
 
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    common::IPADDRESS,
-    event_handling::{EventSource, ObjectType, Value},
+    common::{hash_as_string, IPADDRESS},
+    event_handling::{EventSource, ObjectType},
     models::error::AppError,
 };
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, Hash)]
 pub struct DataResult {
     #[serde(default = "default_ipaddress")]
     pub ipaddress: IpAddr,
@@ -20,7 +17,7 @@ pub struct DataResult {
     pub check_results: Vec<ConditionCheckResult>,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, Hash)]
 pub struct ConditionCheckResult {
     #[serde(default = "default_ipaddress")]
     pub ipaddress: IpAddr,
@@ -28,7 +25,7 @@ pub struct ConditionCheckResult {
     pub subresults: Vec<ConditionCheckSubResult>,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, Hash)]
 pub struct ConditionCheckSubResult {
     pub feature_id: String,
     pub action_id: String,
@@ -59,17 +56,8 @@ impl EventSource for ConditionCheckResult {
         serde_json::to_string(self).map_err(AppError::from)
     }
 
-    fn get_key_values(&self) -> HashMap<String, Value> {
-        let mut kv = HashMap::new();
-        kv.insert(
-            "value".to_string(),
-            Value::String(
-                serde_json::to_string(self)
-                    .map_err(AppError::from)
-                    .expect(""),
-            ),
-        );
-        kv
+    fn get_change_flag(&self) -> String {
+        hash_as_string(self)
     }
 }
 

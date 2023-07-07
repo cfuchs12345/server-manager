@@ -55,26 +55,42 @@ export class GeneralService {
     }
   };
 
-  listDNSServers = (): Observable<DNSServer[]> => {
-    return this.http
+  listDNSServers = (callback: (dnsservers: DNSServer[]) => void) => {
+    const subscription = this.http
       .get<DNSServer[]>('/backend/configurations/dnsservers')
       .pipe(
         catchError((err) => {
           this.errorService.newError(Source.GeneralService, undefined, err);
           return throwError(() => err);
         })
-      );
+      )
+      .subscribe({
+        next: (value) => {
+          callback(value);
+        },
+        complete: () => {
+          subscription.unsubscribe();
+        },
+      });
   };
 
-  listSystemDNSServers = (): Observable<DNSServer[]> => {
-    return this.http
+  listSystemDNSServers = (callback: (dnsservers: DNSServer[]) => void) => {
+    const subscription = this.http
       .get<DNSServer[]>('/backend/systeminformation/dnsservers')
       .pipe(
         catchError((err) => {
           this.errorService.newError(Source.GeneralService, undefined, err);
           return throwError(() => err);
         })
-      );
+      )
+      .subscribe({
+        next: (value) => {
+          callback(value);
+        },
+        complete: () => {
+          subscription.unsubscribe();
+        },
+      });
   };
 
   getSystemInformation = (): Observable<SystemInformation> => {
@@ -101,8 +117,6 @@ export class GeneralService {
         },
       });
   };
-
-
 
   upload = (otk: OneTimeKey, config: Configuration, password: string) => {
     const body = JSON.stringify(config);

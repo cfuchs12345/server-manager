@@ -2,7 +2,6 @@ import { Component, NgZone } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from 'src/app/ui/confirm-dialog/confirm-dialog.component';
 import { ServerActionService } from 'src/app/services/servers/server-action.service';
-import { PluginService } from 'src/app/services/plugins/plugin.service';
 import { ErrorService, Source } from 'src/app/services/errors/error.service';
 import { Store } from '@ngrx/store';
 import { selectPluginById } from 'src/app/state/plugin/plugin.selectors';
@@ -29,6 +28,7 @@ export class ServerSubActionComponent {
         action_params: string,
         ipaddress: string
       ) => {
+        // eslint-disable-next-line  @rx-angular/no-zone-run-apis
         this.zone.run(() => {
           this.executeSubAction(
             feature_id,

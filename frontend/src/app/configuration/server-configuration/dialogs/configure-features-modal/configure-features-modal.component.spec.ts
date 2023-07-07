@@ -17,8 +17,11 @@ describe('ConfigureFeaturesModalComponent', () => {
   let component: ConfigureFeaturesModalComponent;
   let fixture: ComponentFixture<ConfigureFeaturesModalComponent>;
 
+    // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let serverService: ServerService;
+    // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let pluginService: PluginService;
+    // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let formBuilder: FormBuilder;
 
 
@@ -32,6 +35,8 @@ describe('ConfigureFeaturesModalComponent', () => {
 
     fixture = TestBed.createComponent(ConfigureFeaturesModalComponent);
     component = fixture.componentInstance;
+
+    // eslint-disable-next-line  @rx-angular/no-explicit-change-detection-apis
     fixture.detectChanges();
 
     serverService = TestBed.inject(ServerService);

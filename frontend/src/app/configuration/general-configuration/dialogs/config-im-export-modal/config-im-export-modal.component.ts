@@ -5,9 +5,9 @@ import {
   ViewChild,
 } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
-import { Subscription } from 'rxjs';
 import { ErrorService, Source } from 'src/app/services/errors/error.service';
 import { GeneralService } from 'src/app/services/general/general.service';
+import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
 
 @Component({
   selector: 'app-config-im-export-modal',
@@ -42,7 +42,7 @@ export class ConfigImExportModalComponent implements OnDestroy {
 
   multiple = false;
   accept = '';
-  configSubscription: Subscription | undefined | null = undefined;
+  subscriptionHandler = new SubscriptionHandler(this);
 
   constructor(
     private errorService: ErrorService,
@@ -51,17 +51,8 @@ export class ConfigImExportModalComponent implements OnDestroy {
 
 
   ngOnDestroy(): void {
-    this.unsubscribe();
+    this.subscriptionHandler.onDestroy();
   }
-
-  unsubscribe = () => {
-    if (
-      this.configSubscription
-    ) {
-      this.configSubscription.unsubscribe();
-      this.configSubscription = null;
-    }
-  };
 
   onClickGenerateDownloadLink = () => {
     this.fileUrl = undefined;
@@ -70,7 +61,7 @@ export class ConfigImExportModalComponent implements OnDestroy {
       return;
     }
 
-    this.configSubscription = this.generalService
+    this.subscriptionHandler.subscription = this.generalService
       .getConfig(this.password.value)
       .subscribe({
         next: (res) => {
@@ -82,9 +73,6 @@ export class ConfigImExportModalComponent implements OnDestroy {
         },
         error: (err) => {
           this.errorService.newError(Source.GeneralService, undefined, err);
-        },
-        complete: () => {
-          this.unsubscribe();
         },
       });
   };

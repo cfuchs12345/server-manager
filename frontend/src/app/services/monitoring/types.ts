@@ -39,7 +39,7 @@ export class TimeSeriesResponseData {
   constructor(
     public query: string,
     public columns: TimeSeriesResponseColumnMetaData[],
-    public dataset: any[][],
+    public dataset: [][],
     public count: number
   ) {}
 }

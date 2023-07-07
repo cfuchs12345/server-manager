@@ -14,7 +14,9 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 describe('FeatureScanModalComponent', () => {
   let component: FeatureScanModalComponent;
   let fixture: ComponentFixture<FeatureScanModalComponent>;
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let discoveryService: ServerDiscoveryService;
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let serverService: ServerService;
 
 
@@ -35,6 +37,7 @@ describe('FeatureScanModalComponent', () => {
 
     fixture = TestBed.createComponent(FeatureScanModalComponent);
     component = fixture.componentInstance;
+    // eslint-disable-next-line  @rx-angular/no-explicit-change-detection-apis
     fixture.detectChanges();
 
     discoveryService = TestBed.inject(ServerDiscoveryService);

@@ -8,6 +8,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('PluginService', () => {
   let service: PluginService;
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let errorService: ErrorService;
 
   beforeEach(() => {

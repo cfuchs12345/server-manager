@@ -11,6 +11,7 @@ export class MessageDialogComponent {
   constructor(
     public dialogRef: MatDialogRef<MessageDialogComponent>,
     private sanitizer: DomSanitizer,
+    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {}
 

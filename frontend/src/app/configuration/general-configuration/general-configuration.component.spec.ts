@@ -9,6 +9,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 describe('GeneralConfigurationComponent', () => {
   let component: GeneralConfigurationComponent;
   let fixture: ComponentFixture<GeneralConfigurationComponent>;
+
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let matDialog: MatDialog;
 
   beforeEach(async () => {
@@ -26,6 +28,8 @@ describe('GeneralConfigurationComponent', () => {
 
     fixture = TestBed.createComponent(GeneralConfigurationComponent);
     component = fixture.componentInstance;
+
+    // eslint-disable-next-line  @rx-angular/no-explicit-change-detection-apis
     fixture.detectChanges();
 
     matDialog = TestBed.inject(MatDialog);

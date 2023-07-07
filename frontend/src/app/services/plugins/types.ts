@@ -57,10 +57,6 @@ export class DetectionDefinition {
 }
 
 export class NotificationDefinition {
-  constructor(
-
-  ) {
-  }
 }
 
 export class Plugin {

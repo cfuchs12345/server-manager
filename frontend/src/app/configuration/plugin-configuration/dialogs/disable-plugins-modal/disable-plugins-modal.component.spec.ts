@@ -10,7 +10,9 @@ describe('DisablePluginsModalComponent', () => {
   let component: DisablePluginsModalComponent;
   let fixture: ComponentFixture<DisablePluginsModalComponent>;
 
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let pluginService: PluginService;
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let errorService: ErrorService;
 
   beforeEach(async () => {
@@ -23,6 +25,8 @@ describe('DisablePluginsModalComponent', () => {
 
     fixture = TestBed.createComponent(DisablePluginsModalComponent);
     component = fixture.componentInstance;
+
+    // eslint-disable-next-line  @rx-angular/no-explicit-change-detection-apis
     fixture.detectChanges();
 
     pluginService = TestBed.inject(PluginService);

@@ -6,7 +6,7 @@
     <mat-form-field  class="formElement">
       <mat-label>Server</mat-label>
       <mat-select [(ngModel)]="selectedServer" (ngModelChange)="onChangeServer()">
-        <mat-option *ngFor="let server of servers" [value]="server"
+        <mat-option *ngFor="let server of servers$ | async" [value]="server"
           >{{ server.ipaddress }}
           {{ server.name == "" ? "" : "(" + server.name + ")" }}</mat-option
         >
@@ -16,9 +16,8 @@
       <mat-label>Feature</mat-label>
       <mat-select
         [(ngModel)]="selectedPlugin"
-        (ngModelChange)="onChangeFeature()"
       >
-        <mat-option *ngFor="let plugin of availablePlugins" [value]="plugin">{{
+        <mat-option *ngFor="let plugin of availablePlugins$ | async" [value]="plugin">{{
           plugin.name
         }}</mat-option>
       </mat-select>

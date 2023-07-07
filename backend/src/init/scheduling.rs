@@ -24,7 +24,7 @@ pub async fn get_last_run(name: &str) -> Option<Instant> {
 pub async fn start_scheduled_jobs() -> Result<(), AppError> {
     let scheduler = JobScheduler::new().await?;
 
-    schedule_refresh(&scheduler).await?;
+    //schedule_refresh(&scheduler).await?;
     schedule_cache_update(&scheduler).await?;
     schedule_token_cleanup(&scheduler).await?;
     schedule_one_time_crypt_key_cleanup(&scheduler).await?;
@@ -41,7 +41,7 @@ async fn schedule_refresh(scheduler: &JobScheduler) -> Result<(), AppError> {
             match datastore::get_all_servers_from_cache() {
                 Ok(servers) => {
                     for server in servers {
-                        match datastore::get_status(&server.ipaddress) {
+                        match datastore::get_status(&server.get_ipaddress()) {
                             Ok(status) => {
                                 if let Some(status) = status {
                                     publish_refresh(now, Box::new(status));

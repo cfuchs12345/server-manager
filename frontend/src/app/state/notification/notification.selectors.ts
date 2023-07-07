@@ -5,10 +5,7 @@ import {adapter, State}  from './notification.reducers';
 
 // get the selectors
 const {
-  selectIds,
-  selectEntities,
   selectAll,
-  selectTotal,
 } = adapter.getSelectors();
 
 
@@ -27,7 +24,7 @@ export const selectNotificationState = createFeatureSelector<State>('notificatio
 
 
 
-  export const  selectotificationByIpAddress = (ipaddress: string) => createSelector(
+  export const  selectNotificationsByIpAddress = (ipaddress: string) => createSelector(
     selectNotificationState,
     (state: State) => state.entities[ipaddress]
   );

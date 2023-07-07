@@ -2,7 +2,6 @@ import {
   Component,
   Input,
   OnChanges,
-  SimpleChanges,
   ViewChild,
 } from '@angular/core';
 

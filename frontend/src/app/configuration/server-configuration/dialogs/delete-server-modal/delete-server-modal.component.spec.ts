@@ -17,6 +17,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 describe('DeleteServerModalComponent', () => {
   let component: DeleteServerModalComponent;
   let fixture: ComponentFixture<DeleteServerModalComponent>;
+    // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let serverService: ServerService;
 
   beforeEach(async () => {
@@ -40,6 +41,8 @@ describe('DeleteServerModalComponent', () => {
 
     fixture = TestBed.createComponent(DeleteServerModalComponent);
     component = fixture.componentInstance;
+
+    // eslint-disable-next-line  @rx-angular/no-explicit-change-detection-apis
     fixture.detectChanges();
 
     serverService= TestBed.inject(ServerService);

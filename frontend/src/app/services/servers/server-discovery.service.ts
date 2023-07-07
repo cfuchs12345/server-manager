@@ -11,7 +11,7 @@ import {
 import { defaultHeadersForJSON } from '../common';
 import { ErrorService, Source } from '../errors/error.service';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, pipe, throwError } from 'rxjs';
+import { Observable, catchError,  throwError } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',

@@ -63,7 +63,7 @@ export class ChartWrapperComponent implements OnInit, OnChanges {
 
   getNames = (): string[] => {
     return this.chartData
-      ? this.chartData.series.map((value, index) => {
+      ? this.chartData.series.map((value, ) => {
           return value.name;
         })
       : [];

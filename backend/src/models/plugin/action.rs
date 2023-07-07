@@ -1,8 +1,10 @@
+use std::hash::{Hash, Hasher};
+
 use serde::{Deserialize, Serialize};
 
 use super::common::{ArgDef, Script};
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub enum State {
     #[default]
     Active,
@@ -33,13 +35,27 @@ pub struct ActionDef {
     pub args: Vec<ArgDef>,
 }
 
-impl PartialEq for ActionDef {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
+impl Hash for ActionDef {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+        self.name.hash(state);
+        self.show_on_main.hash(state);
+        self.needs_confirmation.hash(state);
+        self.available_for_state.hash(state);
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+impl PartialEq for ActionDef {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+            && self.name == other.name
+            && self.show_on_main == other.show_on_main
+            && self.needs_confirmation == other.needs_confirmation
+            && self.available_for_state == other.available_for_state
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DependsDef {
     pub data_id: String,
     #[serde(default)]

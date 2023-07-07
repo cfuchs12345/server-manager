@@ -1,6 +1,6 @@
 import { createAction, props } from '@ngrx/store';
 import { Update } from '@ngrx/entity';
-import { Server, Status } from '../../services/servers/types';
+import { Server } from '../../services/servers/types';
 
 export const SERVER_UPDATE_ACTION = '[Server] Update';
 export const SERVER_INSERT_ACTION = '[Server] Insert';

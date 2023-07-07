@@ -149,7 +149,7 @@ pub async fn make_command_input_from_subaction(
         vec.push(CommandInput::new(
             HTTP,
             Some(crypto_key),
-            Some(server.ipaddress),
+            Some(server.get_ipaddress()),
             args_list,
             params.clone(),
             feature.credentials.clone(),
@@ -182,7 +182,7 @@ pub async fn make_command_input_from_data(
         vec.push(CommandInput::new(
             HTTP,
             Some(crypto_key),
-            Some(server.ipaddress),
+            Some(server.get_ipaddress()),
             args_list,
             params.clone(),
             feature.credentials.clone(),

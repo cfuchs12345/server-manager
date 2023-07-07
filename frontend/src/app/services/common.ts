@@ -1,4 +1,4 @@
-import { HttpHeaders, HttpParamsOptions } from '@angular/common/http';
+import { HttpHeaders } from '@angular/common/http';
 
 export const defaultHeadersForJSON = (): HttpHeaders => {
   return new HttpHeaders({

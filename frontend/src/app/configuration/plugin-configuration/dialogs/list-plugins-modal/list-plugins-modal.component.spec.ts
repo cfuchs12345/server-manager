@@ -8,7 +8,9 @@ import { MatTableModule } from '@angular/material/table';
 describe('ListPluginsModalComponent', () => {
   let component: ListPluginsModalComponent;
   let fixture: ComponentFixture<ListPluginsModalComponent>;
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let servicePlugins: PluginService;
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let errorService: ErrorService;
 
   beforeEach(async () => {
@@ -21,6 +23,8 @@ describe('ListPluginsModalComponent', () => {
 
     fixture = TestBed.createComponent(ListPluginsModalComponent);
     component = fixture.componentInstance;
+
+    // eslint-disable-next-line  @rx-angular/no-explicit-change-detection-apis
     fixture.detectChanges();
 
     servicePlugins = TestBed.inject(PluginService);

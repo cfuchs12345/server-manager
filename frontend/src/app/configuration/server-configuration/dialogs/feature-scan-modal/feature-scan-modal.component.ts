@@ -1,16 +1,16 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { ServerService } from 'src/app/services/servers/server.service';
 import { ServerFeature } from 'src/app/services/servers/types';
-import { Subscription } from 'rxjs';
 import { MatDialogRef } from '@angular/material/dialog';
 import { ServerDiscoveryService } from 'src/app/services/servers/server-discovery.service';
+import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
 
 @Component({
   selector: 'app-feature-scan-modal',
   templateUrl: './feature-scan-modal.component.html',
   styleUrls: ['./feature-scan-modal.component.scss'],
 })
-export class FeatureScanModalComponent implements OnInit, OnDestroy {
+export class FeatureScanModalComponent implements OnDestroy {
   buttonTextScanFeature = 'Start';
   buttonTextWorking = 'Working...';
   buttonTextSaveServerFeatures = 'Save Features';
@@ -20,7 +20,7 @@ export class FeatureScanModalComponent implements OnInit, OnDestroy {
   isWorking = false;
 
   discoveredServerFeatures: ServerFeature[] = [];
-  subscriptionDiscoveredServersFeatures: Subscription | undefined = undefined;
+  subscriptionHandler = new SubscriptionHandler(this);
 
   constructor(
     private discoveryService: ServerDiscoveryService,
@@ -28,20 +28,13 @@ export class FeatureScanModalComponent implements OnInit, OnDestroy {
     private ref: MatDialogRef<FeatureScanModalComponent>
   ) {}
 
-  // doesn't seem to work when written as arrow function!?
-  ngOnInit(): void {
-  }
 
   ngOnDestroy(): void {
-    if (this.subscriptionDiscoveredServersFeatures) {
-      this.subscriptionDiscoveredServersFeatures.unsubscribe();
-    }
+   this.subscriptionHandler.onDestroy();
   }
 
   private preSelectAllFeatures = (serverFeatures: ServerFeature[]) => {
-    for (let i = 0; i < serverFeatures.length; i++) {
-      serverFeatures[i].selected = true;
-    }
+    serverFeatures.forEach((f) => f.selected = true);
   }
 
 
@@ -55,13 +48,12 @@ export class FeatureScanModalComponent implements OnInit, OnDestroy {
 
   onClickScanFeature = () => {
     this.isWorking = true;
-    this.subscriptionDiscoveredServersFeatures = this.discoveryService.scanFeatureOfAllServers().subscribe(
+    this.subscriptionHandler.subscription = this.discoveryService.scanFeatureOfAllServers().subscribe(
       (serverFeatures) => {
         this.isWorking = false;
         this.preSelectAllFeatures(serverFeatures);
 
         this.discoveredServerFeatures = serverFeatures;
-        this.subscriptionDiscoveredServersFeatures?.unsubscribe();
       }
     );
   };
@@ -74,9 +66,9 @@ export class FeatureScanModalComponent implements OnInit, OnDestroy {
   onClickSaveServerFeatures = () => {
     const found_server_features = this.discoveredServerFeatures.filter((f) => f.selected);
 
-    found_server_features.forEach( (found_server_feature, index) => {
+    found_server_features.forEach( (found_server_feature, ) => {
 
-      const subscription = this.serverService.getServer(found_server_feature.ipaddress, true).subscribe({
+      this.subscriptionHandler.subscription = this.serverService.getServer(found_server_feature.ipaddress, true).subscribe({
         next: (server) => {
           let updated = false;
 
@@ -92,22 +84,9 @@ export class FeatureScanModalComponent implements OnInit, OnDestroy {
           if( updated ) {
             this.serverService.updateServer(server);
           }
-        },
-        error: (err) => {
-
-        },
-        complete: () => {
-          if( subscription ) {
-            subscription.unsubscribe();
-          }
-          if( index === found_server_features.length -1) {
-            this.serverService.listServers();
-          }
         }
       });
     });
-
-
     this.ref.close();
   };
 }

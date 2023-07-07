@@ -1,7 +1,8 @@
 // hydration.effects.ts
 import { Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { map, tap } from 'rxjs/operators';
+import { of } from 'rxjs';
+import { map, tap, mergeMap } from 'rxjs/operators';
 import * as GlobalActions from './global.actions';
 import { ServerService } from '../services/servers/server.service';
 import { PluginService } from '../services/plugins/plugin.service';
@@ -14,9 +15,18 @@ import { UserService } from '../services/users/users.service';
 
 @Injectable()
 export class GlobalEffects {
-  loadAll$ = createEffect(() => {
+  init$ = createEffect(() => {
     return this.action$.pipe(
       ofType(GlobalActions.init),
+      mergeMap((action) =>
+        of(upsertOne({ usertoken: action.userToken }), GlobalActions.loadAll())
+      )
+    );
+  });
+
+  loadAll$ = createEffect(() => {
+    return this.action$.pipe(
+      ofType(GlobalActions.loadAll),
       tap(() => {
         this.pluginService.loadPlugins();
         this.serverService.listServers();
@@ -25,17 +35,15 @@ export class GlobalEffects {
         this.notificationService.listNotifications();
         this.userService.listUsers();
       }),
-      map((action) => upsertOne({ usertoken: action.userToken }))
+      map(() => GlobalActions.loadDone())
     );
   });
 
   logout$ = createEffect(() => {
     return this.action$.pipe(
       ofType(GlobalActions.logout),
-      tap(() => {
-        resetSavedState();
-      }),
-      map((action) => removeOne({ user_id: action.userToken.user_id }))
+      tap(() => resetSavedState()),
+      map(() => removeOne())
     );
   });
 

@@ -27,7 +27,9 @@ describe('ConfigurationComponent', () => {
 
     fixture = TestBed.createComponent(ConfigurationComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
+
+
+    fixture.detectChanges();// eslint-disable-line
   });
 
   it('should create', () => {

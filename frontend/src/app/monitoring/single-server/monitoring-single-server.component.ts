@@ -90,7 +90,6 @@ export class MonitoringSingleServerComponent
   updateDataMap = (response: TimeSeriesResponse) => {
     if (response) {
       const dataset = response.data.dataset;
-      const columns = response.data.columns;
 
       const series_id = response.meta_data.series_id;
       const chart_name = response.meta_data.name;
@@ -112,6 +111,7 @@ export class MonitoringSingleServerComponent
       const seriesValue = new SeriesValues();
 
       for (let rowCount = 0; rowCount < dataset.length; rowCount++) {
+        // eslint-disable-next-line  @typescript-eslint/no-explicit-any
         const row = dataset[rowCount] as any[];
 
         const sub_identifier = hasSubIdentifier
@@ -167,6 +167,7 @@ export class MonitoringSingleServerComponent
     return response.data.columns.some((column) => column.name === name);
   };
 
+  // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   private getValue = (row: any[], index: number): number => {
     let value = row[index];
 

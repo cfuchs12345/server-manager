@@ -1,5 +1,7 @@
 use base64::{alphabet, engine, engine::general_purpose, Engine as _};
 use rand::{rngs::OsRng, RngCore};
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
 pub mod clientkey;
 mod crypt;
@@ -95,6 +97,12 @@ pub fn convert_value_to_str(value: &serde_json::Value) -> Option<String> {
         log::trace!("Unhandled json type for value {:?}", value);
         None
     }
+}
+
+pub fn hash_as_string<T: Hash>(object: T) -> String {
+    let mut s = DefaultHasher::new();
+    object.hash(&mut s);
+    format!("{}", s.finish())
 }
 
 #[cfg(test)]

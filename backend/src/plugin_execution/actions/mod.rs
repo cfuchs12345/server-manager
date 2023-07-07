@@ -91,7 +91,7 @@ pub async fn execute_action(
                 Ok(res.get_result())
             }
             commands::ping::PING => {
-                let input = commands::ping::make_input(server.ipaddress);
+                let input = commands::ping::make_input(server.get_ipaddress());
 
                 let res: PingCommandResult = commands::execute(input, silent).await?;
 
@@ -207,7 +207,7 @@ pub async fn check_main_action_conditions(silent: bool) -> Result<(), AppError> 
 
         tasks.push(tokio::spawn(async move {
             let start = Utc::now();
-            let ip = server.ipaddress;
+            let ip = server.get_ipaddress();
 
             match conditions::check_all_action_conditions(
                 server,

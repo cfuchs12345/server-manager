@@ -1,8 +1,4 @@
-import { Component, OnDestroy, OnInit } from "@angular/core";
-import { MatDialogRef } from "@angular/material/dialog";
-import { Subscription } from "rxjs";
-import { PluginService } from "src/app/services/plugins/plugin.service";
-import { Plugin } from "src/app/services/plugins/types";
+import { Component } from "@angular/core";
 
 
 @Component({

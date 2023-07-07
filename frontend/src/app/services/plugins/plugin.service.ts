@@ -46,7 +46,7 @@ export class PluginService {
       next: (loadedPlugins) => {
         this.store.dispatch(addManyPlugins({ plugins: loadedPlugins }));
       },
-      error: (err: any) => {
+      error: (err) => {
         this.errorService.newError(Source.PluginService, undefined, err);
       },
       complete: () => {
@@ -64,7 +64,7 @@ export class PluginService {
             addManyDisabledPlugins({ disabled_plugins: disabledPlugins })
           );
         },
-        error: (err: any) => {
+        error: (err) => {
           this.errorService.newError(Source.PluginService, undefined, err);
         },
         complete: () => {
@@ -80,15 +80,13 @@ export class PluginService {
     const body = JSON.stringify(action);
 
     this.http
-      .put<any>('/backend/plugins/actions', body, {
+      .put('/backend/plugins/actions', body, {
         headers: defaultHeadersForJSON(),
       })
       .subscribe({
-        next: (result) => {},
-        error: (err: any) => {
+        error: (err) => {
           this.errorService.newError(Source.PluginService, undefined, err);
-        },
-        complete: () => {},
+        }
       });
   };
 }

@@ -4,7 +4,7 @@ import { ServerService } from '../../../../services/servers/server.service';
 import { HostInformation, Server } from '../../../../services/servers/types';
 import { MatDialogRef } from '@angular/material/dialog';
 import { AutoDiscoveryDialog } from '../dialog-autodiscover';
-import { Subscription, filter } from 'rxjs';
+import { Observable } from 'rxjs';
 import { ServerDiscoveryService } from 'src/app/services/servers/server-discovery.service';
 import { GeneralService } from 'src/app/services/general/general.service';
 import { DNSServer } from 'src/app/services/general/types';
@@ -12,6 +12,7 @@ import { ErrorService, Source } from 'src/app/services/errors/error.service';
 import { RxwebValidators, IpVersion } from '@rxweb/reactive-form-validators';
 import { Store } from '@ngrx/store';
 import { selectAllServers } from 'src/app/state/server/server.selectors';
+import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
 
 @Component({
   selector: 'app-autodiscover-server-modal',
@@ -38,8 +39,9 @@ export class AutodiscoverServerModalComponent implements OnInit, OnDestroy {
   servers: HostInformation[] = [];
   dnsservers: DNSServer[] = [];
 
-  subscriptionServers: Subscription | undefined = undefined;
-  subscriptionExistingServers: Subscription | undefined = undefined;
+  servers$: Observable<Server[]>;
+
+  subscriptionHandler = new SubscriptionHandler(this);
 
   constructor(
     private store: Store,
@@ -48,35 +50,30 @@ export class AutodiscoverServerModalComponent implements OnInit, OnDestroy {
     private generalService: GeneralService,
     private errorService: ErrorService,
     private ref: MatDialogRef<AutoDiscoveryDialog>
-  ) {}
+  ) {
+    this.servers$ = this.store.select(selectAllServers);
+  }
 
   ngOnInit(): void {
     this.loadDNSServers();
 
-    this.subscriptionExistingServers = this.store
-      .select(selectAllServers)
-      .subscribe((servers) => {
-        this.existing_servers = servers;
-      });
+    this.servers$.subscribe((servers) => {
+      this.existing_servers = servers;
+    });
   }
 
   private loadDNSServers() {
-    const subscriptionDNSServers = this.generalService
-      .listDNSServers()
-      .subscribe((dnsservers) => {
-        this.dnsservers = dnsservers;
-        subscriptionDNSServers.unsubscribe();
-      });
+    this.generalService.listDNSServers(this.setDNSServers);
   }
 
+  private setDNSServers = (dnsservers: DNSServer[]) => {
+    if (dnsservers) {
+      this.dnsservers = dnsservers;
+    }
+  };
   // doesn't seem to work when written as arrow function!?
   ngOnDestroy(): void {
-    if (this.subscriptionServers) {
-      this.subscriptionServers.unsubscribe();
-    }
-    if (this.subscriptionExistingServers) {
-      this.subscriptionExistingServers.unsubscribe();
-    }
+    this.subscriptionHandler.onDestroy();
   }
 
   serversFound = (): boolean => {

@@ -1,40 +1,36 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { Plugin } from '../../../../services/plugins/types';
-import { Subscription } from 'rxjs';
+import { Observable } from 'rxjs';
 import { Store } from '@ngrx/store';
 import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
+import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
 
 @Component({
   selector: 'app-list-plugins-modal',
   templateUrl: './list-plugins-modal.component.html',
-  styleUrls: ['./list-plugins-modal.component.scss']
+  styleUrls: ['./list-plugins-modal.component.scss'],
 })
-export class ListPluginsModalComponent implements OnInit, OnDestroy {
+export class ListPluginsModalComponent implements  OnDestroy {
   displayedColumns: string[] = ['description', 'detection'];
 
-  plugins: Plugin[] = [];
-  subscriptionPlugins: Subscription | undefined = undefined;
+  readonly plugins$: Observable<Plugin[]>;
 
-  constructor(private store: Store) { }
+  private subscriptionHandler = new SubscriptionHandler(this);
 
-  ngOnInit() {
-    this.subscriptionPlugins = this.store.select(selectAllPlugins).subscribe(plugins => {
-      if (plugins) {
-        this.plugins = plugins;
-      } else {
-        // clear messages when empty message received
-        this.plugins = [];
-      }
-    });
+  constructor(private store: Store) {
+    this.plugins$ = this.store.select(selectAllPlugins);
   }
 
   ngOnDestroy(): void {
-    if( this.subscriptionPlugins ) {
-      this.subscriptionPlugins.unsubscribe();
-    }
+    this.subscriptionHandler.onDestroy();
   }
 
   detectionPossible(plugin: Plugin): boolean {
-    return plugin && plugin.detection && plugin.detection.detection_possible && plugin.detection.detection_possible === true;
+    return (
+      plugin &&
+      plugin.detection &&
+      plugin.detection.detection_possible &&
+      plugin.detection.detection_possible === true
+    );
   }
 }

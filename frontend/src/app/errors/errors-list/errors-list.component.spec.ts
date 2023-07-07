@@ -10,6 +10,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 describe('ErrorsListComponent', () => {
   let component: ErrorsListComponent;
   let fixture: ComponentFixture<ErrorsListComponent>;
+  // eslint-disable-next-line   @typescript-eslint/no-unused-vars
   let errorService: ErrorService;
 
   beforeEach(async () => {
@@ -22,6 +23,7 @@ describe('ErrorsListComponent', () => {
 
     fixture = TestBed.createComponent(ErrorsListComponent);
     component = fixture.componentInstance;
+    // eslint-disable-next-line  @rx-angular/no-explicit-change-detection-apis
     fixture.detectChanges();
 
     errorService = TestBed.inject(ErrorService);

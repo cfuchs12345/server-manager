@@ -7,14 +7,14 @@ use crate::{
         error::AppError,
         plugin::{
             data::DataDef,
-            notification::{Notification, NotificationDef},
+            notification::{Notification, NotificationDef, Notifications},
             Plugin,
         },
     },
 };
 
 pub struct NotificationProcessor {
-    map: HashMap<String, Vec<Notification>>,
+    map: HashMap<String, Notifications>,
 }
 
 impl NotificationProcessor {
@@ -25,10 +25,11 @@ impl NotificationProcessor {
     }
 
     pub async fn finish(&self) -> Result<(), AppError> {
-        let values: Vec<Notification> = self.map.values().flat_map(|v| v.to_owned()).collect();
+        let values: Vec<Notifications> = self.map.values().cloned().collect();
         log::debug!("notifications to persist: {:?}", values);
-
-        datastore::insert_or_update_notifications(&values).await?;
+        for notifications in values {
+            datastore::insert_or_update_notifications(notifications).await?;
+        }
         Ok(())
     }
 
@@ -80,7 +81,6 @@ impl NotificationProcessor {
                             let notification = Notification {
                                 id: notification_def.id.clone(),
                                 name: notification_def.name.clone(),
-                                ipaddress: ipaddress.clone(),
                                 message: notification_def.message.clone(),
                                 notification_level: notification_def.notification_level.clone(),
                             };
@@ -89,7 +89,11 @@ impl NotificationProcessor {
 
                             self.map
                                 .entry(ipaddress.clone())
-                                .or_insert_with(Vec::new)
+                                .or_insert_with(|| Notifications {
+                                    ipaddress: ipaddress.clone(),
+                                    list: Vec::new(),
+                                })
+                                .list
                                 .push(notification);
                         }
                     }

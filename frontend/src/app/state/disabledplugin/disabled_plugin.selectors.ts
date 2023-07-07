@@ -6,10 +6,7 @@ import {adapter, State}  from './disabled_plugin.reducers';
 
 // get the selectors
 const {
-  selectIds,
-  selectEntities,
   selectAll,
-  selectTotal,
 } = adapter.getSelectors();
 
 

@@ -5,7 +5,7 @@ use super::{
     ParamDef,
 };
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DetectionEntry {
     #[serde(default)]
     pub params: Vec<ParamDef>,
@@ -13,7 +13,7 @@ pub struct DetectionEntry {
     pub args: Vec<ArgDef>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DetectionDef {
     #[serde(default)]
     pub list: Vec<DetectionEntry>,

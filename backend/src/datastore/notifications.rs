@@ -1,72 +1,50 @@
-use std::{collections::HashMap, vec};
-
-use crate::models::{error::AppError, plugin::notification::Notification};
+use crate::models::{error::AppError, plugin::notification::Notifications};
 
 use super::{persistence, Entry};
 
 const TABLE: &str = "notifications";
 
-fn entry_to_notifications(entry: &Entry) -> Result<Vec<Notification>, AppError> {
-    serde_json::from_str::<Vec<Notification>>(entry.value.as_str()).map_err(AppError::from)
+fn entry_to_notifications(entry: &Entry) -> Result<Notifications, AppError> {
+    serde_json::from_str::<Notifications>(entry.value.as_str()).map_err(AppError::from)
 }
 
-fn entries_to_notifications(
-    entries: Vec<Entry>,
-) -> Result<HashMap<String, Vec<Notification>>, AppError> {
-    let mut map = HashMap::new();
+fn entries_to_notifications(entries: Vec<Entry>) -> Result<Vec<Notifications>, AppError> {
+    let mut vec = Vec::new();
 
     for entry in &entries {
         let notifications = entry_to_notifications(entry)?;
-
-        for notification in &notifications {
-            map.entry(notification.ipaddress.clone())
-                .or_insert_with(Vec::new)
-                .push(notification.clone());
-        }
+        vec.push(notifications);
     }
-    Ok(map)
+    Ok(vec)
 }
 
-fn notifications_to_entry(notifications: &[Notification]) -> Result<Option<Entry>, AppError> {
-    if notifications.is_empty() {
-        return Ok(None);
-    }
-
+fn notifications_to_entry(notifications: Notifications) -> Result<Option<Entry>, AppError> {
     Ok(Some(Entry {
-        key: notifications
-            .first()
-            .map(|n| n.ipaddress.clone())
-            .ok_or(AppError::Unknown(
-                "expected at least one notification to save".to_owned(),
-            ))?,
-        value: serde_json::to_string(notifications)?,
+        key: notifications.ipaddress.clone(),
+        value: serde_json::to_string(&notifications)?,
     }))
 }
 
 pub async fn insert_or_update_notifications(
-    notifications: &[Notification],
+    notifications: Notifications,
 ) -> Result<bool, AppError> {
     let mut updated = false;
 
-    for notification in notifications {
-        let existing: Vec<Notification> = get_existing(notification).await?;
+    let existing = get_existing(&notifications).await?;
 
-        let vec = vec![notification.to_owned()];
-
-        if existing.is_empty() {
-            updated |= insert_notifications(vec.as_slice()).await?;
-        } else {
-            updated |= update_notifications(vec.as_slice()).await?;
-        }
+    if existing.is_none() {
+        updated |= insert_notifications(notifications).await?;
+    } else {
+        updated |= update_notifications(notifications).await?;
     }
     Ok(updated)
 }
 
-async fn get_existing(notification: &Notification) -> Result<Vec<Notification>, AppError> {
-    let existing = match get_notification(&notification.ipaddress).await {
-        Ok(existing) => existing,
+async fn get_existing(notifications: &Notifications) -> Result<Option<Notifications>, AppError> {
+    let existing = match get_notification(&notifications.ipaddress).await {
+        Ok(existing) => Some(existing),
         Err(err) => match err {
-            AppError::DataNotFound(_) => Vec::new(),
+            AppError::DataNotFound(_) => None,
             y => {
                 log::error!("error while trying to select data: {}", y);
                 return Err(y);
@@ -76,7 +54,7 @@ async fn get_existing(notification: &Notification) -> Result<Vec<Notification>, 
     Ok(existing)
 }
 
-pub async fn insert_notifications(notifications: &[Notification]) -> Result<bool, AppError> {
+pub async fn insert_notifications(notifications: Notifications) -> Result<bool, AppError> {
     if let Some(entry) = notifications_to_entry(notifications)? {
         let count = persistence::insert(TABLE, entry).await?;
         Ok(count > 0)
@@ -85,7 +63,7 @@ pub async fn insert_notifications(notifications: &[Notification]) -> Result<bool
     }
 }
 
-pub async fn update_notifications(notifications: &[Notification]) -> Result<bool, AppError> {
+pub async fn update_notifications(notifications: Notifications) -> Result<bool, AppError> {
     if let Some(entry) = notifications_to_entry(notifications)? {
         let result = persistence::update(TABLE, entry).await?;
 
@@ -101,13 +79,13 @@ pub async fn delete_notification(ipaddress: &str) -> Result<bool, AppError> {
     Ok(result > 0)
 }
 
-pub async fn get_all_notifications() -> Result<HashMap<String, Vec<Notification>>, AppError> {
+pub async fn get_all_notifications() -> Result<Vec<Notifications>, AppError> {
     let notification_entries = persistence::get_all(TABLE, Some("key")).await?;
 
     entries_to_notifications(notification_entries)
 }
 
-pub async fn get_notification(ipaddress: &str) -> Result<Vec<Notification>, AppError> {
+pub async fn get_notification(ipaddress: &str) -> Result<Notifications, AppError> {
     match persistence::get(TABLE, ipaddress).await? {
         Some(entry) => entry_to_notifications(&entry),
         None => Err(AppError::DataNotFound(ipaddress.to_owned())),

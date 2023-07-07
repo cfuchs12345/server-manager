@@ -83,7 +83,7 @@ pub async fn discover_features_of_all_servers(
 
         tasks.push(tokio::spawn(async move {
             let server = server;
-            discover_features(server.ipaddress, crypto_key, &silent).await
+            discover_features(server.get_ipaddress(), crypto_key, &silent).await
         }));
     }
 
@@ -422,7 +422,7 @@ fn filter_features(
 
     if let Some(server) = servers
         .iter()
-        .find(|server| server.ipaddress == found_features_for_server.ipaddress)
+        .find(|server| server.get_ipaddress() == found_features_for_server.ipaddress)
     {
         let only_new_features: Vec<Feature> = updated
             .features
@@ -438,7 +438,7 @@ fn filter_features(
 
 fn server_has_feature(found_feature: &Feature, server: &Server) -> bool {
     server
-        .features
+        .get_features()
         .iter()
         .any(|existing_feature| existing_feature.id == found_feature.id)
 }

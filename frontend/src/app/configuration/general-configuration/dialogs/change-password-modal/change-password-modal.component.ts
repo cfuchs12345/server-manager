@@ -1,4 +1,4 @@
-import { Component} from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -8,19 +8,18 @@ import {
 } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
-import { AuthenticationService } from 'src/app/services/auth/authentication.service';
 import { EncryptionService } from 'src/app/services/encryption/encryption.service';
 import { UserToken } from 'src/app/services/users/types';
 import { UserService } from 'src/app/services/users/users.service';
 import { selectToken } from 'src/app/state/usertoken/usertoken.selectors';
-
+import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
 
 @Component({
   selector: 'app-change-password-modal',
   templateUrl: './change-password-modal.component.html',
   styleUrls: ['./change-password-modal.component.scss'],
 })
-export class ChangePasswordModalComponent {
+export class ChangePasswordModalComponent implements OnDestroy {
   buttonText = 'Change the password';
 
   oldPasswordLabel = 'Old Password';
@@ -50,12 +49,13 @@ export class ChangePasswordModalComponent {
 
   form: FormGroup = new FormGroup({});
 
-  userToken$: Observable<UserToken | undefined >;
+  userToken$: Observable<UserToken | undefined>;
+
+  subscriptionHandler = new SubscriptionHandler(this);
 
   constructor(
     private store: Store,
     private userService: UserService,
-    private authService: AuthenticationService,
     private encryptionService: EncryptionService,
     private formBuilder: FormBuilder
   ) {
@@ -72,36 +72,36 @@ export class ChangePasswordModalComponent {
     );
   }
 
-
+  ngOnDestroy(): void {
+    this.subscriptionHandler.onDestroy();
+  }
 
   onClickChangePassword = () => {
-    const subscriptionOTK = this.encryptionService.requestOneTimeKey().subscribe({
-      next: (otk) => {
-        this.userToken$.subscribe( (token) => {
-          if (
-            this.oldPassword.valid &&
-            this.oldPassword.value &&
-            this.newPassword.valid &&
-            this.newPassword.value &&
-            this.confirmNewPassword.valid &&
-            token
-          ) {
-            this.userService.changePassword(
-              token.user_id,
-              this.oldPassword.value,
-              this.newPassword.value,
-              otk
-            );
-          }
-        });
-
-      },
-      complete: () => {
-        if( subscriptionOTK ) {
-          subscriptionOTK.unsubscribe();
-        }
-      }
-    });
+    this.subscriptionHandler.subscription = this.encryptionService
+      .requestOneTimeKey()
+      .subscribe({
+        next: (otk) => {
+          this.subscriptionHandler.subscription = this.userToken$
+            .pipe()
+            .subscribe((token) => {
+              if (
+                this.oldPassword.valid &&
+                this.oldPassword.value &&
+                this.newPassword.valid &&
+                this.newPassword.value &&
+                this.confirmNewPassword.valid &&
+                token
+              ) {
+                this.userService.changePassword(
+                  token.user_id,
+                  this.oldPassword.value,
+                  this.newPassword.value,
+                  otk
+                );
+              }
+            });
+        },
+      });
   };
 
   getOldPasswordMessage = (): string => {
@@ -111,7 +111,7 @@ export class ChangePasswordModalComponent {
     return this.oldPassword.hasError('minlength')
       ? 'The password is not long enough (at least 6 chars)'
       : 'Unknown error';
-  }
+  };
 
   getNewPasswordMessage = (): string => {
     if (this.newPassword.hasError('required')) {
@@ -120,7 +120,7 @@ export class ChangePasswordModalComponent {
     return this.newPassword.hasError('minlength')
       ? 'The password is not long enough (at least 6 chars)'
       : 'Unknown error';
-  }
+  };
 
   getConfirmNewPasswordMessage = (): string => {
     if (this.confirmNewPassword.hasError('required')) {
@@ -132,7 +132,7 @@ export class ChangePasswordModalComponent {
     return this.confirmNewPassword.hasError('minlength')
       ? 'The password is not long enough (at least 6 chars)'
       : 'Unknown error';
-  }
+  };
 
   mustMatch = (controlName: string, matchingControlName: string) => {
     return (group: AbstractControl) => {

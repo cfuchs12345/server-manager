@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Debug};
+use std::fmt::Debug;
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -32,6 +32,7 @@ pub struct Event {
     key_name: String,
     key: String,
     value: String,
+    change_flag: String,
 }
 
 impl Event {
@@ -47,6 +48,7 @@ impl Event {
             key_name: event_source.get_event_key_name(),
             key: event_source.get_event_key(),
             value: event_source.get_event_value()?,
+            change_flag: event_source.get_change_flag(),
         })
     }
 
@@ -63,30 +65,8 @@ impl Event {
             key_name: event_source.get_event_key_name(),
             key: event_source.get_event_key(),
             value,
+            change_flag: event_source.get_change_flag(),
         })
-    }
-}
-
-#[derive(PartialEq, Debug)]
-pub enum Value {
-    String(String),
-    StringList(Vec<String>),
-    Number(i64),
-    Boolean(bool),
-}
-
-impl Value {
-    pub fn different(&self, other: &Value) -> bool {
-        self.get_value_as_astring() != other.get_value_as_astring()
-    }
-
-    fn get_value_as_astring(&self) -> String {
-        match self {
-            Value::String(val) => val.to_owned(),
-            Value::StringList(val) => format!("{:?}", val),
-            Value::Number(val) => format!("{}", val),
-            Value::Boolean(val) => format!("{}", val),
-        }
     }
 }
 
@@ -99,17 +79,18 @@ pub trait EventSource {
 
     fn get_event_value(&self) -> Result<String, AppError>;
 
-    fn get_key_values(&self) -> HashMap<String, Value>;
+    fn get_change_flag(&self) -> String;
 }
 
 impl Debug for dyn EventSource {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "EventSource{{{} {} {:?}}}",
+            "EventSource{{{} {} {:?} {}}}",
             self.get_event_key_name(),
             self.get_event_key(),
-            self.get_event_value()
+            self.get_event_value(),
+            self.get_change_flag()
         )
     }
 }
@@ -127,6 +108,37 @@ impl ListSource {
             key_name: "id".to_owned(),
             list,
         }
+    }
+
+    pub fn diff(&self, date_time: DateTime<Utc>, other: Self) -> Result<Vec<Event>, AppError> {
+        let mut res = Vec::new();
+
+        for new_val in &self.list {
+            if !other.list.contains(new_val) {
+                let event = Event::new_from_listevent_source(
+                    date_time,
+                    EventType::Insert,
+                    self,
+                    new_val.to_owned(),
+                )?;
+
+                res.push(event);
+            }
+        }
+
+        for old_val in other.list {
+            if !self.list.contains(&old_val) {
+                let event = Event::new_from_listevent_source(
+                    date_time,
+                    EventType::Delete,
+                    self,
+                    old_val.to_owned(),
+                )?;
+
+                res.push(event);
+            }
+        }
+        Ok(res)
     }
 }
 
@@ -147,9 +159,7 @@ impl EventSource for ListSource {
         Ok("".to_string())
     }
 
-    fn get_key_values(&self) -> HashMap<String, Value> {
-        let mut kv = HashMap::new();
-        kv.insert("list".to_owned(), Value::StringList(self.list.clone()));
-        kv
+    fn get_change_flag(&self) -> String {
+        format!("{:?}", self.list)
     }
 }

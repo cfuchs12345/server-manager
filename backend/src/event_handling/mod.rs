@@ -10,14 +10,14 @@ use tokio::sync::broadcast::Sender;
 
 use crate::models::error::AppError;
 
-use self::types::Event;
+pub use self::types::Event;
 
-pub use types::{EventSource, ListSource, ObjectType, Value};
+pub use types::{EventSource, ListSource, ObjectType};
 
 mod object_action;
 mod types;
 
-const MESSAGE_BUFFER_SIZE: usize = 50;
+const MESSAGE_BUFFER_SIZE: usize = 500;
 
 lazy_static! {
     static ref BUS: Mutex<(Sender<Event>, Receiver<Event>)> =
@@ -48,9 +48,7 @@ pub fn handle_object_change(
 
 pub fn handle_list_change(current: ListSource, old: ListSource) -> Result<(), AppError> {
     let now = Utc::now();
-
-    let events = object_action::get_events_for_list_change(now, current, old)?;
-    for event in events {
+    for event in current.diff(now, old)? {
         publish(event)?;
     }
 

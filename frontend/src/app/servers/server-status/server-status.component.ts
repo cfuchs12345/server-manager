@@ -1,6 +1,11 @@
-import { Component, OnInit, Input } from '@angular/core';
+import {
+  Component,
+  Input,
+  OnChanges,
+  SimpleChanges,
+} from '@angular/core';
 import { Store } from '@ngrx/store';
-import { Subscription } from 'rxjs';
+import { Observable } from 'rxjs';
 import { selectStatusByIpAddress } from 'src/app/state/status/status.selectors';
 import { Server, Status } from 'src/app/services/servers/types';
 
@@ -9,32 +14,25 @@ import { Server, Status } from 'src/app/services/servers/types';
   templateUrl: './server-status.component.html',
   styleUrls: ['./server-status.component.scss'],
 })
-export class ServerStatusComponent implements OnInit {
+export class ServerStatusComponent implements OnChanges {
   @Input() server: Server | undefined = undefined;
-  private status: Status | undefined = undefined;
 
-  private serverStatusSubscription: Subscription | undefined = undefined;
+  status$: Observable<Status | undefined> | undefined;
 
   constructor(private store: Store) {}
 
-  ngOnInit(): void {
-    if( this.server ) {
-      this.serverStatusSubscription = this.store.select(selectStatusByIpAddress(this.server.ipaddress)).subscribe((status) => {
-        this.status = status;
-      });
+  ngOnChanges(changes: SimpleChanges): void {
+    for (const propName in changes) {
+      if (Object.hasOwn(changes, propName)) {
+        switch (propName) {
+          case 'server':
+            if (this.server) {
+              this.status$ = this.store.select(
+                selectStatusByIpAddress(this.server.ipaddress)
+              );
+            }
+        }
+      }
     }
   }
-
-  ngOnDestroy(): void {
-    if (this.serverStatusSubscription) {
-      this.serverStatusSubscription.unsubscribe();
-    }
-  }
-
-  isRunning = (): boolean => {
-    if (this.status) {
-      return this.status.is_running;
-    }
-    return false;
-  };
 }

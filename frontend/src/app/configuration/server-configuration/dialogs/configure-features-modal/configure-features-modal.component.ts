@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import {
   FormBuilder,
   FormControl,
@@ -6,7 +6,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { Store } from '@ngrx/store';
-import { Observable, Subscription } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import {
   CredentialDefinition,
   ParamDefinition,
@@ -19,6 +19,7 @@ import {
   Param,
   Server,
 } from 'src/app/services/servers/types';
+import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
 import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
 import { selectAllServersWithFeatures } from 'src/app/state/server/server.selectors';
 
@@ -27,7 +28,7 @@ import { selectAllServersWithFeatures } from 'src/app/state/server/server.select
   templateUrl: './configure-features-modal.component.html',
   styleUrls: ['./configure-features-modal.component.scss'],
 })
-export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
+export class ConfigureFeaturesModalComponent implements OnDestroy {
   buttonTextSaveFeatureSettings = 'Save Feature Settings';
 
   showPasswordCredentials: Map<string, boolean> = new Map();
@@ -45,12 +46,11 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
   credentialsFromPlugin: CredentialDefinition[] = [];
   credentialFromFeature: Credential[] = [];
 
-  servers$: Observable<Server[]> | undefined;
+  servers$: Observable<Server[]>;
   features: Feature[] = [];
-  plugins$: Observable<Plugin[]> | undefined;
+  plugins$: Observable<Plugin[]>;
 
-  plugins: Plugin[] = [];
-  pluginsSubscription: Subscription | undefined;
+  subscriptionHandler = new SubscriptionHandler(this);
 
   constructor(
     private store: Store,
@@ -58,23 +58,13 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
     private formBuilder: FormBuilder
   ) {
     this.form = formBuilder.group({});
-  }
-
-  ngOnInit(): void {
     this.servers$ = this.store.select(selectAllServersWithFeatures);
     this.plugins$ = this.store.select(selectAllPlugins);
-
-    this.pluginsSubscription = this.plugins$.subscribe(
-      (plugins) => this.plugins = plugins
-    );
   }
 
   ngOnDestroy(): void {
-    if( this.pluginsSubscription) {
-      this.pluginsSubscription.unsubscribe();
-    }
+    this.subscriptionHandler.onDestroy();
   }
-
 
   getCurrentParamValue = (name: string): string => {
     if (!this.paramsFromFeature) {
@@ -115,13 +105,6 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
         credential.value
       )
     );
-  };
-
-  getSelectedPlugin = (plugins: Plugin[]): Plugin | undefined => {
-    const plugin = plugins.find(
-      (plugin) => plugin.id === this.selectedFeature?.id
-    );
-    return plugin;
   };
 
   getDefaultParamValue = (name: string): string => {
@@ -259,7 +242,7 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
   onChangeServer = () => {
     this.form = this.formBuilder.group({});
     if (this.selectedServer?.ipaddress) {
-      const subscriptionServerFullData: Subscription = this.serverService
+      this.subscriptionHandler.subscription = this.serverService
         .getServer(this.selectedServer?.ipaddress, true)
         .subscribe({
           next: (server) => {
@@ -267,12 +250,9 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
             this.features = this.selectedServerFullData
               ? this.selectedServerFullData.features
               : [];
-              this.resetSelections();
+            this.resetSelections();
             setTimeout(this.createInputControls, 0);
           },
-          complete: () =>
-            subscriptionServerFullData.unsubscribe()
-          ,
         });
     }
   };
@@ -281,22 +261,32 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
     this.form = this.formBuilder.group({});
 
     if (this.selectedFeature) {
-      if (this.plugins) {
-        const shownPlugin = this.getSelectedPlugin(this.plugins);
+      this.subscriptionHandler.subscription = this.plugins$
+        .pipe(
+          map((plugins) =>
+            plugins.filter((p) => p.id === this.selectedFeature?.id)
+          )
+        )
+        .subscribe((plugins) => {
+          if (plugins.length == 1) {
+            const plugin = plugins[0];
 
-        if (shownPlugin) {
-          this.paramsFromPlugin = shownPlugin.params;
-          this.credentialsFromPlugin = shownPlugin.credentials;
+            this.paramsFromPlugin = plugin.params;
+            this.credentialsFromPlugin = plugin.credentials;
 
-          this.paramsFromFeature = this.selectedFeature.params;
-          this.credentialFromFeature = this.selectedFeature.credentials;
+            this.paramsFromFeature = this.selectedFeature?.params
+              ? this.selectedFeature?.params
+              : [];
+            this.credentialFromFeature = this.selectedFeature?.credentials
+              ? this.selectedFeature?.credentials
+              : [];
 
-          this.createInputControls();
-          this.setInitialValuesOnInputControls();
-        }
-      } else {
-        this.resetPluginSelections();
-      }
+            this.createInputControls();
+            this.setInitialValuesOnInputControls();
+          } else {
+            this.resetFeatureSelections();
+          }
+        });
     } else {
       this.resetFeatureSelections();
     }

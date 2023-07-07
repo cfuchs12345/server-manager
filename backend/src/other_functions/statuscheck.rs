@@ -21,7 +21,7 @@ pub async fn status_check_all(silent: &bool) -> Result<(), AppError> {
     let mut tasks = Vec::new();
 
     for server in servers {
-        let address: IpAddr = server.ipaddress;
+        let address: IpAddr = server.get_ipaddress();
 
         let input = commands::ping::make_input(address);
         let silent = *silent;
@@ -77,7 +77,7 @@ pub async fn status_check(
     let list_to_check = if ips_to_check.is_empty() {
         datastore::get_all_servers_from_cache()?
             .iter()
-            .map(|s| s.ipaddress)
+            .map(|s| s.get_ipaddress())
             .collect()
     } else {
         ips_to_check

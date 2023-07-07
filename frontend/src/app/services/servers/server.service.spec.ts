@@ -9,15 +9,19 @@ import { ErrorService } from '../errors/error.service';
 import { HttpClient } from '@angular/common/http';
 import { EncryptionService } from '../encryption/encryption.service';
 import { AuthenticationService } from '../auth/authentication.service';
-import { Credential, Feature, Param, Server } from './types';
 import { getTestServer } from 'src/app/test/data';
 
 describe('ServerServiceService', () => {
   let service: ServerService;
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let logger: NGXLoggerMock;
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let http: HttpClient;
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let errorService: ErrorService;
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let encryptionService: EncryptionService;
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let authService: AuthenticationService;
 
   let httpTestingController: HttpTestingController;

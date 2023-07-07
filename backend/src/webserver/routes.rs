@@ -1,5 +1,6 @@
 use futures_util::StreamExt;
 use log_derive::logfn;
+use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
 
 use std::convert::Infallible;
 use std::net::IpAddr;
@@ -7,10 +8,11 @@ use std::time::Duration;
 use std::vec;
 
 use crate::common::{ClientKey, OneTimeKey};
+use crate::event_handling::Event;
 use crate::models::config::dns_server::DNSServer;
 use crate::models::config::Configuration;
 use crate::models::error::AppError;
-use crate::models::plugin::notification::Notification;
+use crate::models::plugin::notification::Notifications;
 use crate::models::request::common::QueryParamsAsMap;
 use crate::models::request::plugin::PluginsAction;
 use crate::models::request::server::{
@@ -528,7 +530,7 @@ async fn get_monitoring_ids(
 
     let mut names: Vec<String> = Vec::new();
 
-    for feature in &server.features {
+    for feature in &server.get_features() {
         if let Some(plugin) = datastore::get_plugin(feature.id.as_str())? {
             let mut plugin_monitoring_ids: Vec<String> = plugin
                 .data
@@ -571,11 +573,7 @@ async fn get_monitoring_data(
 async fn get_notifications(
     _query: web::Query<std::collections::HashMap<String, String>>,
 ) -> Result<HttpResponse, AppError> {
-    let notifications: Vec<Notification> = datastore::get_all_notifications()
-        .await?
-        .values()
-        .flat_map(|v| v.to_owned())
-        .collect();
+    let notifications: Vec<Notifications> = datastore::get_all_notifications().await?;
 
     Ok(HttpResponse::Ok().json(notifications))
 }
@@ -604,11 +602,34 @@ async fn get_events_from_stream() -> impl Responder {
     let event_subscriber = event_handling::subscribe().await;
     let stream = tokio_stream::wrappers::BroadcastStream::new(event_subscriber);
 
-    let mapped = stream.map(|val| {
-        Ok::<_, Infallible>(sse::Event::Data(sse::Data::new_json(val.unwrap()).unwrap()))
-    });
+    let mapped = stream
+        .filter_map(map_events_to_sse_data_events)
+        .map(Ok::<_, Infallible>);
 
     sse::Sse::from_stream(mapped).with_keep_alive(Duration::from_secs(5))
+}
+
+async fn map_events_to_sse_data_events(
+    event_result: Result<Event, BroadcastStreamRecvError>,
+) -> Option<sse::Event> {
+    match event_result {
+        Ok(event) => match sse::Data::new_json(&event) {
+            Ok(event_json) => {
+                return Some(sse::Event::Data(event_json));
+            }
+            Err(err) => {
+                log::error!(
+                    "Could not convert event {:?} to json. Error was: {:?}",
+                    event,
+                    err
+                );
+            }
+        },
+        Err(err) => {
+            log::error!("Received broadcast stream error from event bus: {:?}", err);
+        }
+    }
+    None
 }
 
 async fn get_decrypted_password_from_header(req: HttpRequest) -> Result<String, AppError> {

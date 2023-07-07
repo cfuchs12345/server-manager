@@ -19,6 +19,7 @@ import {
 
 import { OneTimeKey } from '../auth/types';
 
+// eslint-disable-next-line  @typescript-eslint/no-var-requires
 const Buffer = require('buffer/').Buffer
 
 const IV_LENGTH = 16;
@@ -84,6 +85,7 @@ export class EncryptionService {
       (SALT_LENGTH + IV_LENGTH) * 2,
       -TAG_LENGTH * 2
     );
+    // eslint-disable-next-line  @typescript-eslint/no-unused-vars
     const tag = stringValue.slice(-TAG_LENGTH * 2);
 
     const key = PBKDF2.getKey(secret, Hex.parse(salt), {

@@ -38,7 +38,7 @@ pub async fn execute_data_query(
 ) -> Result<Vec<DataResult>, AppError> {
     let mut results: Vec<DataResult> = vec![];
 
-    for feature in &server.features {
+    for feature in &server.get_features() {
         let plugin = datastore::get_plugin(feature.id.as_str())?
             .ok_or(AppError::UnknownPlugin(feature.id.clone()))?;
 
@@ -94,7 +94,7 @@ pub async fn execute_data_query(
                     .await?;
 
                     results.push(DataResult {
-                        ipaddress: server.ipaddress,
+                        ipaddress: server.get_ipaddress(),
                         data_id: data.id.clone(),
                         result: replaced,
                         check_results: super::merge_condition_check_results(check_results),

@@ -6,11 +6,13 @@ pub mod monitoring;
 pub mod notification;
 pub mod sub_action;
 
-use std::{collections::HashMap, fmt::Debug};
+use std::fmt::Debug;
 
 use serde::{Deserialize, Serialize};
 
-use crate::event_handling::{EventSource, ObjectType, Value};
+use crate::common::hash_as_string;
+use crate::event_handling::{EventSource, ObjectType};
+use std::hash::{Hash, Hasher};
 
 use self::{
     action::ActionDef, data::DataDef, detection::DetectionDef, notification::NotificationDef,
@@ -36,6 +38,15 @@ pub struct Plugin {
     pub notifications: Vec<NotificationDef>,
     #[serde(default)]
     pub actions: Vec<ActionDef>,
+}
+
+impl Hash for Plugin {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+        self.name.hash(state);
+        self.description.hash(state);
+        self.actions.hash(state);
+    }
 }
 
 impl Plugin {
@@ -76,10 +87,8 @@ impl EventSource for Plugin {
         Ok("".to_owned())
     }
 
-    fn get_key_values(&self) -> HashMap<String, Value> {
-        let mut kv = HashMap::new();
-        kv.insert("name".to_owned(), Value::String(self.name.to_string()));
-        kv
+    fn get_change_flag(&self) -> String {
+        hash_as_string(self)
     }
 }
 
@@ -90,6 +99,12 @@ pub struct ParamDef {
     pub default_value: String,
     #[serde(default = "default_false")]
     pub mandatory: bool,
+}
+
+impl Hash for ParamDef {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+    }
 }
 
 impl PartialEq for ParamDef {

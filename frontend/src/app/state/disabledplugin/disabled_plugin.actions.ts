@@ -1,6 +1,5 @@
 import { createAction, props } from '@ngrx/store';
 import { Update } from '@ngrx/entity';
-import { Plugin } from 'src/app/services/plugins/types';
 
 
 export const DISABLED_PLUGIN_UPDATE_ACTION = '[Disabled Plugin] Update';

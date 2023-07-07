@@ -1,1 +1,3 @@
-<app-active-light [isActive]="isRunning()"/>
+<div  *ngIf="status$ | async as status">
+  <app-active-light [isActive]="status.is_running"/>
+</div>

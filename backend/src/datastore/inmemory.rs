@@ -157,7 +157,7 @@ pub fn cache_servers(servers: Vec<Server>) -> Result<(), AppError> {
         .map_err(|err| AppError::Unknown(format!("Could not get write lock. Error: {}", err)))?;
 
     for server in servers {
-        let existing = cache.insert(server.ipaddress, server.clone());
+        let existing = cache.insert(server.get_ipaddress(), server.clone());
 
         event_handling::handle_object_change(
             Some(Box::new(server.to_owned())),
@@ -195,7 +195,7 @@ pub fn add_server(server: &Server) -> Result<(), AppError> {
         .write()
         .map_err(|err| AppError::Unknown(format!("Could not get write lock. Error: {}", err)))?;
 
-    let existing = cache.insert(server.ipaddress, server.clone());
+    let existing = cache.insert(server.get_ipaddress(), server.clone());
 
     event_handling::handle_object_change(
         Some(Box::new(server.to_owned())),

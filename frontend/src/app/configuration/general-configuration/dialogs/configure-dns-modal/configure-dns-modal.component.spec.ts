@@ -16,6 +16,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 describe('ConfigureDnsModalComponent', () => {
   let component: ConfigureDnsModalComponent;
   let fixture: ComponentFixture<ConfigureDnsModalComponent>;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let configService: GeneralService;
 
   beforeEach(async () => {
@@ -43,6 +44,7 @@ describe('ConfigureDnsModalComponent', () => {
 
     fixture = TestBed.createComponent(ConfigureDnsModalComponent);
     component = fixture.componentInstance;
+    // eslint-disable-next-line @rx-angular/no-explicit-change-detection-apis
     fixture.detectChanges();
 
     configService = TestBed.inject(GeneralService);

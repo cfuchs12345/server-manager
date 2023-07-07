@@ -160,7 +160,7 @@ async fn server_exists(server: &Server) -> Result<bool, AppError> {
 
     Ok(existing_servers
         .iter()
-        .any(|existing| existing.ipaddress == server.ipaddress))
+        .any(|existing| existing.get_ipaddress() == server.get_ipaddress()))
 }
 
 async fn dns_server_exists(dns_server: &DNSServer) -> Result<bool, AppError> {

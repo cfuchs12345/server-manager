@@ -3,7 +3,6 @@ import { Event } from './types';
 import { ToastrService } from 'ngx-toastr';
 import {
   ConditionCheckResult,
-  ConditionCheckSubResult,
   Status,
 } from '../servers/types';
 import { Store } from '@ngrx/store';
@@ -108,7 +107,7 @@ export class ToasterPopupGenerator {
                 new ToasterPopupInfo(
                   server$.pipe(
                     map(
-                      (server) =>
+                      () =>
                         `Condition for action changed. Action '${sr.action_id}' is available.`
                     )
                   ),
@@ -126,7 +125,7 @@ export class ToasterPopupGenerator {
                 new ToasterPopupInfo(
                   server$.pipe(
                     map(
-                      (server) =>
+                      () =>
                         `Condition for action changed. Action '${sr.action_id}' is not available.`
                     )
                   ),
@@ -231,7 +230,7 @@ export class ToasterPopupGenerator {
               server$.pipe(
                 map(
                   (server) =>
-                    `New Server ${server?.name} ${server?.dnsname} has been updated`
+                    `Server ${server?.name} ${server?.dnsname} has been updated`
                 )
               ),
               server$.pipe(map((server) => `Server ${server?.ipaddress}`)),

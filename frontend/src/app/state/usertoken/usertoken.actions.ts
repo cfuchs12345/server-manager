@@ -10,7 +10,7 @@ export const USERTOKEN_INSERT_OR_UPDATE_ACTION = '[UserToken] Insert or Update';
 
 export const updateOne = createAction(USERTOKEN_UPDATE_ACTION, props<{ usertoken: Update<UserToken> }>());
 export const addOne = createAction(USERTOKEN_INSERT_ACTION, props<{ usertoken: UserToken }>());
-export const removeOne = createAction(USERTOKEN_DELETE_ACTION, props<{ user_id: string }>());
+export const removeOne = createAction(USERTOKEN_DELETE_ACTION);
 
 
 export const upsertOne = createAction(USERTOKEN_INSERT_OR_UPDATE_ACTION, props<{ usertoken: UserToken }>());

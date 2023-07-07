@@ -19,9 +19,13 @@ describe('AutodiscoverServerModalComponent', () => {
   let component: AutodiscoverServerModalComponent;
   let fixture: ComponentFixture<AutodiscoverServerModalComponent>;
 
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let serverService: ServerService;
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let discoverService: ServerDiscoveryService;
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let generalService: GeneralService;
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let errorService: ErrorService;
 
   beforeEach(async () => {
@@ -40,6 +44,8 @@ describe('AutodiscoverServerModalComponent', () => {
 
     fixture = TestBed.createComponent(AutodiscoverServerModalComponent);
     component = fixture.componentInstance;
+
+    // eslint-disable-next-line  @rx-angular/no-explicit-change-detection-apis
     fixture.detectChanges();
 
     serverService = TestBed.inject(ServerService);

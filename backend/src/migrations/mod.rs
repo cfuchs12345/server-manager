@@ -66,9 +66,9 @@ pub async fn do_encryption_migration() -> std::result::Result<(), AppError> {
         let crypto_key_entry = get_default_encryption_key().await?;
 
         for server in servers_data_to_encrypt {
-            let mut s = server.to_owned();
+            let s = server.to_owned();
 
-            for mut feature in &mut s.features {
+            for mut feature in &mut s.get_features() {
                 let plugin = plugins_map
                     .get(&feature.id.clone())
                     .ok_or(AppError::UnknownPlugin(feature.id.to_owned()))?;
@@ -139,7 +139,7 @@ fn server_needs_encryption(
     server: &Server,
     plugins_map: &HashMap<String, Plugin>,
 ) -> Result<bool, AppError> {
-    for feature in &server.features {
+    for feature in &server.get_features() {
         if feature_needs_encryption(feature, plugins_map)? {
             return Ok(true);
         }

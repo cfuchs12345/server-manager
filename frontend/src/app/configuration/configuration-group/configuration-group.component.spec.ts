@@ -15,6 +15,8 @@ describe('ConfigurationGroupComponent', () => {
 
     fixture = TestBed.createComponent(ConfigurationGroupComponent);
     component = fixture.componentInstance;
+
+    // eslint-disable-next-line  @rx-angular/no-explicit-change-detection-apis
     fixture.detectChanges();
   });
 

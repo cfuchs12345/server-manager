@@ -100,7 +100,7 @@ pub async fn execute_all_data_dependent(silent: &bool) -> Result<(), AppError> {
                         "Feature {:?} not relevant for Server {:?} it only has following features: {:?}",
                         feature,
                         server,
-                        server.features
+                        server.get_features()
                     );
             }
         }

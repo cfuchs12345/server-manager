@@ -38,7 +38,7 @@ pub async fn check_condition_for_action_met(
 ) -> Result<ConditionCheckResult, AppError> {
     if feature.is_none() || action.is_none() {
         return Ok(ConditionCheckResult {
-            ipaddress: server.ipaddress,
+            ipaddress: server.get_ipaddress(),
             data_id,
             subresults: vec![ConditionCheckSubResult {
                 result: false,
@@ -51,7 +51,7 @@ pub async fn check_condition_for_action_met(
 
     let Some(plugin) = datastore::get_plugin(feature.as_ref().expect("Could not get ref").id.as_str())? else {
         return Ok(ConditionCheckResult {
-            ipaddress: server.ipaddress,
+            ipaddress: server.get_ipaddress(),
             data_id,
             subresults: vec![ConditionCheckSubResult {
                 action_id: action.expect("checked before").id,
@@ -63,7 +63,7 @@ pub async fn check_condition_for_action_met(
     };
 
     let status: Vec<Status> =
-        other_functions::statuscheck::status_check(vec![server.ipaddress], true)
+        other_functions::statuscheck::status_check(vec![server.get_ipaddress()], true)
             .await
             .unwrap_or(Vec::new());
 
@@ -93,7 +93,7 @@ pub async fn check_condition_for_action_met(
     if !result {
         // check if status dependency already failed - early exit
         return Ok(ConditionCheckResult {
-            ipaddress: server.ipaddress,
+            ipaddress: server.get_ipaddress(),
             data_id,
             subresults: vec![ConditionCheckSubResult {
                 action_id: action.expect("checked before").id,
@@ -128,7 +128,7 @@ pub async fn check_condition_for_action_met(
                                 .unwrap_or_default();
                         }
                         if !result {
-                            log::debug!("Dependencies for data {} of plugin {} for server {} not met. Responses were {:?}", data.id, feature.as_ref().expect("Could not get ref").id, server.ipaddress, responses);
+                            log::debug!("Dependencies for data {} of plugin {} for server {} not met. Responses were {:?}", data.id, feature.as_ref().expect("Could not get ref").id, server.get_ipaddress(), responses);
                             break;
                         }
                     }
@@ -155,7 +155,7 @@ pub async fn check_condition_for_action_met(
     };
 
     Ok(ConditionCheckResult {
-        ipaddress: server.ipaddress,
+        ipaddress: server.get_ipaddress(),
         data_id,
         subresults: vec![ConditionCheckSubResult {
             action_id: action.as_ref().expect("Could not get ref").id.clone(),
@@ -174,7 +174,7 @@ pub async fn check_all_action_conditions<'l>(
 ) -> Result<(), AppError> {
     let mut vec = Vec::new();
 
-    for feature in server.clone().features {
+    for feature in server.clone().get_features() {
         let plugin_res = datastore::get_plugin(feature.id.as_str())?;
         if plugin_res.is_none() {
             log::error!("plugin with id {} not found", feature.id);

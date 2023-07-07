@@ -1,6 +1,8 @@
+use std::hash::{Hash, Hasher};
+
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ArgType {
     ListFromData,
     String,
@@ -16,13 +18,19 @@ pub struct ArgDef {
     pub data_id: Option<String>,
 }
 
+impl Hash for ArgDef {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+    }
+}
+
 impl PartialEq for ArgDef {
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct Script {
     pub script_type: String,
     pub script: String,

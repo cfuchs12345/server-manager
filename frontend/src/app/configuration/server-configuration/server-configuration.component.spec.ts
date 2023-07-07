@@ -26,6 +26,8 @@ describe('ServerConfigurationComponent', () => {
 
     fixture = TestBed.createComponent(ServerConfigurationComponent);
     component = fixture.componentInstance;
+
+    // eslint-disable-next-line  @rx-angular/no-explicit-change-detection-apis
     fixture.detectChanges();
   });
 

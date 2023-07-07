@@ -13,8 +13,6 @@ export class ServerDetailControlComponent {
 
   showBack = false;
 
-  constructor() {}
-
   onClickTurnDetails = () => {
     this.showBack = !this.showBack;
 

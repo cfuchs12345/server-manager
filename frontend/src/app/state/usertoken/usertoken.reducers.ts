@@ -30,8 +30,8 @@ export const reducer  = createReducer(
   }),
 
 
-  on(removeOne, (state, { user_id }) => {
-    return adapter.removeOne(user_id, state);
+  on(removeOne, (state) => {
+    return adapter.removeOne("token", state);
   }),
 
   on(updateOne, (state, { usertoken }) => {

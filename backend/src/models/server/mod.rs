@@ -1,43 +1,93 @@
-use std::{collections::HashMap, fmt::Debug, net::IpAddr};
+use std::{
+    fmt::Debug,
+    hash::{Hash, Hasher},
+    net::IpAddr,
+};
 
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    common,
-    event_handling::{EventSource, ObjectType, Value},
+    common::{self, hash_as_string},
+    event_handling::{EventSource, ObjectType},
 };
 
 use super::error::AppError;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq)]
 pub struct Server {
-    pub ipaddress: IpAddr,
+    ipaddress: IpAddr,
     #[serde(default)]
-    pub name: String,
+    name: String,
     #[serde(default)]
-    pub dnsname: String,
+    dnsname: String,
     #[serde(default)]
-    pub features: Vec<Feature>,
+    features: Vec<Feature>,
+    #[serde(default)]
+    change_flag: String,
+}
+
+impl Hash for Server {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.ipaddress.hash(state);
+        self.name.hash(state);
+        self.dnsname.hash(state);
+        self.features.hash(state);
+    }
 }
 
 impl PartialEq for Server {
     fn eq(&self, other: &Self) -> bool {
         self.ipaddress == other.ipaddress
+            && self.name == other.name
+            && self.dnsname == other.dnsname
+            && self.features == other.features
     }
 }
 
 impl Server {
-    pub fn find_feature(&self, feature_id: &str) -> Option<Feature> {
-        self.features.iter().find(|f| f.id == feature_id).cloned()
-    }
-
     pub fn new_only_ip(ipaddress: IpAddr) -> Self {
-        Server {
+        let mut instance = Server {
             ipaddress,
             name: "".to_owned(),
             dnsname: "".to_owned(),
             features: Vec::new(),
-        }
+            change_flag: "".to_owned(),
+        };
+
+        instance.change_flag = hash_as_string(&instance);
+        instance
+    }
+
+    pub fn new(ipaddress: IpAddr, name: String, dnsname: String, features: Vec<Feature>) -> Self {
+        let mut instance = Server {
+            ipaddress,
+            name,
+            dnsname,
+            features,
+            change_flag: "".to_owned(),
+        };
+        instance.change_flag = hash_as_string(&instance);
+        instance
+    }
+
+    pub fn update_change_flag(&mut self) {
+        self.change_flag = hash_as_string(&self);
+    }
+
+    pub fn get_ipaddress(&self) -> IpAddr {
+        self.ipaddress
+    }
+
+    pub fn get_features(&self) -> Vec<Feature> {
+        self.features.clone()
+    }
+
+    pub fn set_features(&mut self, features: Vec<Feature>) {
+        self.features = features
+    }
+
+    pub fn find_feature(&self, feature_id: &str) -> Option<Feature> {
+        self.features.iter().find(|f| f.id == feature_id).cloned()
     }
 
     pub fn replace_feature(mut self, new_feature: Feature) -> Self {
@@ -74,15 +124,8 @@ impl EventSource for Server {
         serde_json::to_string(self).map_err(AppError::from)
     }
 
-    fn get_key_values(&self) -> HashMap<String, Value> {
-        let mut kv = HashMap::new();
-        kv.insert("name".to_owned(), Value::String(self.name.clone()));
-        kv.insert("dnsname".to_owned(), Value::String(self.dnsname.clone()));
-        kv.insert(
-            "features".to_owned(),
-            Value::String(format!("{:?}", self.features)),
-        );
-        kv
+    fn get_change_flag(&self) -> String {
+        hash_as_string(self)
     }
 }
 
@@ -95,6 +138,13 @@ pub struct Feature {
     pub params: Vec<Param>,
     #[serde(default)]
     pub credentials: Vec<Credential>,
+}
+
+impl Hash for Feature {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+        self.name.hash(state);
+    }
 }
 
 impl PartialEq for Feature {

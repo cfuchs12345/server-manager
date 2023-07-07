@@ -24,14 +24,16 @@ fn json_to_server(json: &str) -> Result<Server, AppError> {
 fn entries_to_servers(entries: Vec<Entry>) -> Result<Vec<Server>, AppError> {
     let mut list = Vec::new();
     for entry in entries {
-        list.push(json_to_server(&entry.value)?);
+        let mut server = json_to_server(&entry.value)?;
+        server.update_change_flag();
+        list.push(server);
     }
     Ok(list)
 }
 
 fn server_to_entry(server: &Server) -> Result<Entry, AppError> {
     Ok(Entry {
-        key: format!("{}", server.ipaddress),
+        key: format!("{}", server.get_ipaddress()),
         value: serde_json::to_string(server)?,
     })
 }
@@ -182,23 +184,27 @@ pub fn simplify_servers_for_client(servers: Vec<Server>) -> Vec<Server> {
 pub fn simplify_server_for_client(server: Server) -> Server {
     let mut server = server;
 
-    server.features = server
-        .features
-        .iter_mut()
-        .map(|feature| {
-            feature.credentials.clear();
-            feature.to_owned()
-        })
-        .collect();
+    server.set_features(
+        server
+            .get_features()
+            .iter_mut()
+            .map(|feature| {
+                feature.credentials.clear();
+                feature.to_owned()
+            })
+            .collect(),
+    );
 
-    server.features = server
-        .features
-        .iter_mut()
-        .map(|feature| {
-            feature.params.clear();
-            feature.to_owned()
-        })
-        .collect();
+    server.set_features(
+        server
+            .get_features()
+            .iter_mut()
+            .map(|feature| {
+                feature.params.clear();
+                feature.to_owned()
+            })
+            .collect(),
+    );
 
     server
 }
@@ -215,7 +221,7 @@ fn de_or_encrypt_fields(
 
     let mut server_result = server.clone();
 
-    for feature in &server.features {
+    for feature in &server.get_features() {
         if let Some(plugin) = super::get_plugin(feature.id.as_str())? {
             if !has_encrypted_fields(&plugin) {
                 continue;
@@ -231,11 +237,11 @@ fn de_or_encrypt_fields(
 }
 
 fn could_need_encryption(server: &Server) -> Result<bool, AppError> {
-    if server.features.is_empty() {
+    if server.get_features().is_empty() {
         Ok(false)
     } else {
         Ok(server
-            .features
+            .get_features()
             .iter()
             .map(|feature| feature_could_need_encryption(feature).unwrap_or(false))
             .any(|b| b))
@@ -266,7 +272,7 @@ fn de_or_encrypted_credentials(
             log::debug!(
                 "credential {:?} for server {} needs encryption",
                 credential,
-                server.ipaddress
+                server.get_ipaddress()
             );
             clone_credential.encrypted = !clone_credential.encrypted;
             clone_credential.value = crypt_func(credential.value.as_str(), key)?;

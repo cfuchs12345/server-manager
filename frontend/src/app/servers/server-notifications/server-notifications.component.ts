@@ -1,40 +1,33 @@
-import { Component, OnInit, Input, OnDestroy } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { Server } from 'src/app/services/servers/types';
-import { Notification } from 'src/app/services/notifications/types';
-import { Subscription, map } from 'rxjs';
+import { Notifications } from 'src/app/services/notifications/types';
+import { Observable } from 'rxjs';
 import { Store } from '@ngrx/store';
-import { selectAllNotification } from 'src/app/state/notification/notification.selectors';
+import { selectNotificationsByIpAddress } from 'src/app/state/notification/notification.selectors';
 @Component({
   selector: 'app-server-notifications',
   templateUrl: './server-notifications.component.html',
   styleUrls: ['./server-notifications.component.scss'],
 })
-export class ServerNotificationComponent implements OnInit, OnDestroy {
+export class ServerNotificationComponent implements OnChanges {
   @Input() server: Server | undefined = undefined;
 
-  notifications: Notification[] | undefined;
+  notifications$: Observable<Notifications | undefined> | undefined = undefined;
 
-  private subscription: Subscription | undefined;
+  constructor(private store: Store) {}
 
-  constructor(
-    private store: Store,
-  ) {}
-
-  ngOnInit(): void {
-    this.subscription = this.store.select(selectAllNotification).pipe(
-      map((notifications) => {
-        return notifications.filter((n) => n.ipaddress === this.server?.ipaddress);
-      })
-    ).subscribe((notifications) => {
-      this.notifications = notifications;
-    });
-  }
-
-
-  ngOnDestroy(): void {
-    if( this.subscription ) {
-      this.subscription.unsubscribe();
+  ngOnChanges(changes: SimpleChanges): void {
+    for (const propName in changes) {
+      if (Object.hasOwn(changes, propName)) {
+        switch (propName) {
+          case 'server':
+            if (this.server) {
+              this.notifications$ = this.store.select(
+                selectNotificationsByIpAddress(this.server.ipaddress)
+              );
+            }
+        }
+      }
     }
   }
-
 }

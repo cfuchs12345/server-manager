@@ -1,39 +1,38 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component,  OnDestroy } from '@angular/core';
 import { ErrorService } from 'src/app/services/errors/error.service';
-import { Subscription } from 'rxjs';
 import { Error } from 'src/app/services/errors/types';
 import { sortByNumericField } from 'src/app/shared/utils';
+import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
 
 @Component({
   selector: 'app-error',
   templateUrl: './error.component.html',
   styleUrls: ['./error.component.scss'],
 })
-export class ErrorComponent implements OnInit, OnDestroy {
+export class ErrorComponent implements OnDestroy {
   errors: Error[] = [];
-  private subscriptionErrors: Subscription | undefined = undefined;
+  private subscriptionHandler = new SubscriptionHandler(this);
 
-  constructor(private errorService: ErrorService) {}
+  constructor(private errorService: ErrorService) {
+    this.subscriptionHandler.subscription = this.errorService.errors.subscribe(
+      (error) => {
+        const found = this.errors.find(
+          (existing) => this.key(existing) === this.key(error)
+        );
 
-  ngOnInit(): void {
-    this.subscriptionErrors = this.errorService.errors.subscribe((error) => {
-      const found = this.errors.find(
-        (existing) => this.key(existing) === this.key(error)
-      );
-
-      if (found) {
-        found.setLastOccurrance(error.lastOccurrance);
-        found.increment();
-      } else {
-        this.errors.push(error);
+        if (found) {
+          found.setLastOccurrance(error.lastOccurrance);
+          found.increment();
+        } else {
+          this.errors.push(error);
+        }
+        this.sort();
       }
-      this.sort();
-    });
+    );
   }
+
   ngOnDestroy(): void {
-    if (this.subscriptionErrors) {
-      this.subscriptionErrors.unsubscribe();
-    }
+    this.subscriptionHandler.onDestroy();
   }
 
   sort = () => {

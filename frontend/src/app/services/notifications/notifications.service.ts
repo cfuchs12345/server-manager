@@ -5,8 +5,8 @@ import {
   removeOne,
   upsertOne,
 } from 'src/app/state/notification/notification.actions';
-import { Notification } from './types';
-import { Observable, filter, tap } from 'rxjs';
+import { Notifications } from './types';
+import { filter } from 'rxjs';
 import { ErrorService, Source } from '../errors/error.service';
 import { Store } from '@ngrx/store';
 import { EventService } from '../events/event.service';
@@ -30,9 +30,9 @@ export class NotificationService {
       )
       .subscribe((event: Event) => {
         if (event.event_type === 'Insert' || event.event_type === 'Update') {
-          const notification: Notification = JSON.parse(event.value);
+          const notifications: Notifications = JSON.parse(event.value);
 
-          this.store.dispatch(upsertOne({notification: notification}));
+          this.store.dispatch(upsertOne({notifications: notifications}));
         } else if (event.event_type === 'Delete') {
           this.store.dispatch(removeOne({ ipaddress: event.key }));
         }
@@ -41,12 +41,12 @@ export class NotificationService {
 
   listNotifications = () => {
     const subscription = this.http
-      .get<Notification[]>('/backend/notifications')
+      .get<Notifications[]>('/backend/notifications')
       .subscribe({
         next: (notifications) => {
           this.store.dispatch(addMany({ notifications: notifications }));
         },
-        error: (err: any) => {
+        error: (err) => {
           if (err) {
             this.errorService.newError(
               Source.NotificationService,

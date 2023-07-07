@@ -18,7 +18,8 @@ export enum Source {
   ServerFeaturesComponent,
   AutodiscoverServerModalComponent,
   NotificationService,
-  EventService
+  EventService,
+  Component
 }
 
 @Injectable()
@@ -31,6 +32,7 @@ export class ErrorService {
   newError(
     source: Source,
     ipaddress: string | undefined = undefined,
+    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
     error_object: any
   ) {
     let text = 'Unkown';

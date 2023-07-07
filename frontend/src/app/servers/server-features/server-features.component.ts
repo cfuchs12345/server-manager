@@ -55,7 +55,7 @@ export class ServerFeaturesComponent implements OnInit, OnDestroy, OnChanges {
     }
 
     const plugin_names: string[] = [];
-    for (var feature of this.server.features) {
+    for (const feature of this.server.features) {
       const plugin = this.plugins.find((p) => p.id === feature.id);
       if (plugin) {
         plugin_names.push(plugin.name);

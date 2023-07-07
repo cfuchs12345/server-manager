@@ -27,8 +27,13 @@ pub struct NotificationDef {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-pub struct Notification {
+pub struct Notifications {
     pub ipaddress: String,
+    pub list: Vec<Notification>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct Notification {
     pub id: String,
     pub name: String,
     #[serde(default)]
