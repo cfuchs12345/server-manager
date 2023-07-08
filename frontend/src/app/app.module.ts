@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { NgModule, isDevMode } from '@angular/core';
 import { AppComponent } from './app.component';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AppRoutingModule } from './app-routing.module';
@@ -79,11 +79,13 @@ import { ConfigImExportModalComponent } from './configuration/general-configurat
 import { ErrorSourceNamePipe } from './shared/error-enum-name.pipe';
 import { LoggerModule, NgxLoggerLevel } from 'ngx-logger';
 import { StoreModule } from '@ngrx/store';
+import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { reducers, metaReducers } from './state';
 import { ToastrModule } from 'ngx-toastr';
 import { EffectsModule } from '@ngrx/effects';
 import { HydrationEffects } from './state/hydration/hydration.effects';
 import { GlobalEffects } from './state/global.effects';
+
 
 @NgModule({
   declarations: [
@@ -172,6 +174,7 @@ import { GlobalEffects } from './state/global.effects';
     StoreModule.forRoot(reducers, {
       metaReducers
     }),
+    StoreDevtoolsModule.instrument({ maxAge: 25, logOnly: !isDevMode() }),
     EffectsModule.forRoot([HydrationEffects, GlobalEffects]),
   ],
   providers: [

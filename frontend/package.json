@@ -24,6 +24,7 @@
     "@ngrx/effects": "^16.0.1",
     "@ngrx/entity": "^16.0.1",
     "@ngrx/store": "^16.0.1",
+    "@ngrx/store-devtools": "^16.1.0",
     "@rxweb/reactive-form-validators": "^13.0.1",
     "apexcharts": "^3.40.0",
     "browserify": "^17.0.0",
