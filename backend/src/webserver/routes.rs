@@ -566,6 +566,7 @@ async fn get_monitoring_data(
     let ipaddress = ipaddress_param.parse::<IpAddr>()?;
 
     let response = plugin_execution::get_monitoring_data(series_id, ipaddress).await?;
+
     Ok(HttpResponse::Ok().json(response))
 }
 

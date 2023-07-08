@@ -6,7 +6,7 @@ import {
   OnChanges,
   SimpleChanges,
 } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { NGXLogger } from 'ngx-logger';
 import { MonitoringService } from 'src/app/services/monitoring/monitoring.service';
 import {
   SUB_IDENTIFIER,
@@ -15,6 +15,7 @@ import {
   TimeSeriesResponse,
 } from 'src/app/services/monitoring/types';
 import { Server } from 'src/app/services/servers/types';
+import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
 import { sortByString } from 'src/app/shared/utils';
 import { ChartData, ChartDataList } from 'src/types/ChartData';
 
@@ -28,16 +29,18 @@ export class MonitoringSingleServerComponent
 {
   @Input() server: Server | undefined;
 
-  private monitoringDataSubscription: Subscription | undefined;
-  private monitorinTimeSeriesSubscription: Subscription | undefined;
-
   seriesData: TimeSeriesIds | undefined;
 
   chartDataList: ChartDataList = new ChartDataList();
 
   chartTypes: Map<string, string> = new Map();
 
-  constructor(private monitoringService: MonitoringService) {}
+  subscriptionHandler = new SubscriptionHandler(this);
+
+  constructor(
+    private monitoringService: MonitoringService,
+    private logger: NGXLogger
+  ) {}
 
   ngOnInit(): void {
     this.loadData();
@@ -45,7 +48,7 @@ export class MonitoringSingleServerComponent
 
   private loadData() {
     if (this.server) {
-      this.monitorinTimeSeriesSubscription = this.monitoringService
+      this.subscriptionHandler.subscription = this.monitoringService
         .getMonitoringIds(this.server)
         .subscribe((seriesData) => {
           this.seriesData = seriesData;
@@ -53,7 +56,7 @@ export class MonitoringSingleServerComponent
           setTimeout(() => {
             if (this.server && this.seriesData) {
               for (const seriesId of this.seriesData.seriesIds) {
-                this.monitoringDataSubscription = this.monitoringService
+                this.subscriptionHandler.subscription = this.monitoringService
                   .loadMonitoringData(this.server, seriesId)
                   .subscribe((data) => {
                     this.updateDataMap(data);
@@ -66,12 +69,7 @@ export class MonitoringSingleServerComponent
   }
 
   ngOnDestroy(): void {
-    if (this.monitoringDataSubscription) {
-      this.monitoringDataSubscription.unsubscribe();
-    }
-    if (this.monitorinTimeSeriesSubscription) {
-      this.monitorinTimeSeriesSubscription.unsubscribe();
-    }
+    this.subscriptionHandler.onDestroy(this.logger);
   }
 
   ngOnChanges(changes: SimpleChanges): void {

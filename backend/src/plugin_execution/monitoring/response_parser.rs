@@ -141,12 +141,16 @@ impl MonitoringDataExtractor {
                 let input = tuple.0.clone();
                 let response = tuple.1.clone();
 
-                let mut extracted_data =
-                    extract_monitoring_data(response.as_str(), monitoring, &input)?;
-
-                map.entry(monitoring.id.clone())
-                    .or_insert_with(Vec::new)
-                    .append(&mut extracted_data);
+                match extract_monitoring_data(response.as_str(), monitoring, &input) {
+                    Ok(mut extracted_data) => {
+                        map.entry(monitoring.id.clone())
+                            .or_insert_with(Vec::new)
+                            .append(&mut extracted_data);
+                    }
+                    Err(err) => {
+                        log::error!("{:?}", err);
+                    }
+                }
             }
         }
         Ok(map)
@@ -212,8 +216,8 @@ fn extract_monitoring_data(
         }
         Err(err) => {
             return Err(AppError::ParseError(format!(
-                "Could not parse response as JSON. Error: {}",
-                err
+                "Could not parse response {} as JSON. Error: {}",
+                response, err
             )))
         }
     }
