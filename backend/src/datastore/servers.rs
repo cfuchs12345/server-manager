@@ -24,9 +24,7 @@ fn json_to_server(json: &str) -> Result<Server, AppError> {
 fn entries_to_servers(entries: Vec<Entry>) -> Result<Vec<Server>, AppError> {
     let mut list = Vec::new();
     for entry in entries {
-        let mut server = json_to_server(&entry.value)?;
-        server.update_change_flag();
-        list.push(server);
+        list.push(json_to_server(&entry.value)?);
     }
     Ok(list)
 }
@@ -82,15 +80,18 @@ pub async fn get_all_servers(use_cache: bool) -> Result<Vec<Server>, AppError> {
         inmemory::get_all_servers()
     } else {
         let server_entries = persistence::get_all(TABLE, Some("inet_aton(key) asc")).await?;
-
-        Ok(entries_to_servers(server_entries)?)
+        let servers = entries_to_servers(server_entries)?;
+        Ok(servers)
     }
 }
 
 pub async fn get_server(ipaddress: &IpAddr) -> Result<Server, AppError> {
     let opt = persistence::get(TABLE, format!("{}", ipaddress).as_str()).await?;
     match opt {
-        Some(entry) => Ok(json_to_server(&entry.value)?),
+        Some(entry) => {
+            let server = json_to_server(&entry.value)?;
+            Ok(server)
+        }
         None => Err(AppError::ServerNotFound(format!("{}", ipaddress))),
     }
 }

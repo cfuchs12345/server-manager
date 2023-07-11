@@ -17,7 +17,7 @@ export class EventService {
 
   private _eventSubject = new Subject<Event>();
 
-  readonly eventSubject = this._eventSubject.asObservable();
+  readonly eventSubject$ = this._eventSubject.asObservable();
 
   private source: EventSource | undefined;
 
@@ -73,7 +73,7 @@ export class EventService {
   };
 
   subscribeForToasterMessages = () => {
-    this.eventSubject.subscribe((event) => {
+    this.eventSubject$.subscribe((event) => {
       this.toasterMessage.handleEvent(event);
     });
   };
@@ -97,7 +97,7 @@ export type EventHandlingUpdateFunction = (
   keyType: string,
   key: string,
   data: string,
-  changeFlag: string
+  version: number
 ) => void;
 
 export class EventHandler {
@@ -124,7 +124,7 @@ export class EventHandler {
       return;
     }
 
-    this.subscription = this.eventService.eventSubject
+    this.subscription = this.eventService.eventSubject$
       .pipe(
         filter((event: Event) => {
           return event.object_type === this.objectType;
@@ -160,7 +160,7 @@ export class EventHandler {
               event.key_name,
               event.key,
               event.value,
-              event.change_flag
+              event.version
             );
           } catch (err) {
             if (this.errorService) {

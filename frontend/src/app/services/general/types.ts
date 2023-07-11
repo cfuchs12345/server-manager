@@ -9,7 +9,8 @@ export class RowData {
     public ipaddress: string,
     public name: string,
     public dnsname: string = '',
-    public show_details: boolean = false
+    public version: number,
+    public show_details: boolean = false,
   ) {}
 }
 

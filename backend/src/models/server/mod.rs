@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     fmt::Debug,
     hash::{Hash, Hasher},
     net::IpAddr,
@@ -7,8 +8,8 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    common::{self, hash_as_string},
-    event_handling::{EventSource, ObjectType},
+    common,
+    event_handling::{EventSource, ObjectType, Value},
 };
 
 use super::error::AppError;
@@ -23,7 +24,7 @@ pub struct Server {
     #[serde(default)]
     features: Vec<Feature>,
     #[serde(default)]
-    change_flag: String,
+    version: i64,
 }
 
 impl Hash for Server {
@@ -46,32 +47,23 @@ impl PartialEq for Server {
 
 impl Server {
     pub fn new_only_ip(ipaddress: IpAddr) -> Self {
-        let mut instance = Server {
+        Server {
             ipaddress,
             name: "".to_owned(),
             dnsname: "".to_owned(),
             features: Vec::new(),
-            change_flag: "".to_owned(),
-        };
-
-        instance.change_flag = hash_as_string(&instance);
-        instance
+            version: -1,
+        }
     }
 
     pub fn new(ipaddress: IpAddr, name: String, dnsname: String, features: Vec<Feature>) -> Self {
-        let mut instance = Server {
+        Server {
             ipaddress,
             name,
             dnsname,
             features,
-            change_flag: "".to_owned(),
-        };
-        instance.change_flag = hash_as_string(&instance);
-        instance
-    }
-
-    pub fn update_change_flag(&mut self) {
-        self.change_flag = hash_as_string(&self);
+            version: -1,
+        }
     }
 
     pub fn get_ipaddress(&self) -> IpAddr {
@@ -124,8 +116,19 @@ impl EventSource for Server {
         serde_json::to_string(self).map_err(AppError::from)
     }
 
-    fn get_change_flag(&self) -> String {
-        hash_as_string(self)
+    fn get_version(&self) -> i64 {
+        self.version
+    }
+
+    fn get_key_values(&self) -> HashMap<String, Value> {
+        let mut kv = HashMap::new();
+        kv.insert("name".to_owned(), Value::String(self.name.clone()));
+        kv.insert("dnsname".to_owned(), Value::String(self.dnsname.clone()));
+        kv.insert(
+            "features".to_owned(),
+            Value::String(format!("{:?}", self.features)),
+        );
+        kv
     }
 }
 

@@ -1,8 +1,10 @@
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
 
 use crate::models::error::AppError;
 
-use super::types::{Event, EventSource, EventType};
+use super::types::{Event, EventSource, EventType, Value};
 
 pub fn get_event_for_refresh(
     occurrence_datetime: DateTime<Utc>,
@@ -32,23 +34,25 @@ pub fn get_event_for_object_change(
             EventType::Insert,
             &*current.expect("could not get option value"),
         )?)
-    } else if current
-        .as_ref()
-        .expect("could not get option value")
-        .get_change_flag()
-        != old
+    } else {
+        let current_val = current
             .as_ref()
             .expect("could not get option value")
-            .get_change_flag()
-    {
-        Some(Event::new_from_event_source(
-            occurrence_datetime,
-            EventType::Update,
-            &*current.expect("could not get option value"),
-        )?)
-    } else {
-        log::debug!("Did not handle object change {:?} {:?}", current, old);
-        None
+            .as_ref();
+        let old_val = old.as_ref().expect("could not get option value").as_ref();
+
+        if current_val.get_version() != old_val.get_version()
+            || key_values_are_different(current_val.get_key_values(), old_val.get_key_values())
+        {
+            Some(Event::new_from_event_source(
+                occurrence_datetime,
+                EventType::Update,
+                &*current.expect("could not get option value"),
+            )?)
+        } else {
+            log::debug!("Did not handle object change {:?} {:?}", current, old);
+            None
+        }
     };
 
     log::trace!("{:?}", event);
@@ -59,4 +63,29 @@ pub fn get_event_for_object_change(
     }
 
     Ok(None)
+}
+
+fn key_values_are_different(
+    current_map: HashMap<String, Value>,
+    old_map: HashMap<String, Value>,
+) -> bool {
+    for (k, v) in &current_map {
+        let old = old_map.get(k);
+
+        if old.is_none()
+            || v != old.expect("could not get option value")
+            || v.different(old.expect("could not get option value"))
+        {
+            return true;
+        }
+    }
+
+    for (k, _) in old_map {
+        let current = current_map.get(&k);
+
+        if current.is_none() {
+            return true;
+        }
+    }
+    false
 }

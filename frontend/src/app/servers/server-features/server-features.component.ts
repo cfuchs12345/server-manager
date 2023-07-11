@@ -1,6 +1,6 @@
-import { Component, Input, OnChanges, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { Store } from '@ngrx/store';
-import { Subscription, filter } from 'rxjs';
+import { Observable, filter, map, switchMap } from 'rxjs';
 import { ErrorService, Source } from 'src/app/services/errors/error.service';
 import { PluginService } from 'src/app/services/plugins/plugin.service';
 import { Plugin } from 'src/app/services/plugins/types';
@@ -12,42 +12,30 @@ import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
   templateUrl: './server-features.component.html',
   styleUrls: ['./server-features.component.scss'],
 })
-export class ServerFeaturesComponent implements OnInit, OnDestroy, OnChanges {
+export class ServerFeaturesComponent {
   @Input() server: Server | undefined = undefined;
 
-  features: string[] | undefined = undefined;
+  features$: Observable<string[]>;
 
-  private plugins: Plugin[] | undefined = undefined;
-  private pluginSubscription: Subscription | undefined = undefined;
+  private plugins$: Observable<Plugin[]>;
 
   constructor(
     private store: Store,
     private pluginService: PluginService,
     private errorService: ErrorService
-  ) {}
+  ) {
+    this.plugins$ = this.store
+      .select(selectAllPlugins)
+      .pipe(filter((plugins) => this.filter(plugins)));
 
-  ngOnInit(): void {
-    this.pluginSubscription = this.store.select(selectAllPlugins)
-      .pipe(filter((plugins) => this.filter(plugins)))
-      .subscribe((plugins) => (this.plugins = plugins));
-
-    this.features = this.getFeatures();
+    this.features$ = this.plugins$.pipe(
+      map((plugins) => this.getFeatures(plugins))
+    );
   }
 
-  ngOnChanges(): void {
-    this.features = this.getFeatures();
-  }
-
-  ngOnDestroy(): void {
-    if (this.pluginSubscription) {
-      this.pluginSubscription.unsubscribe();
-    }
-  }
-
-  private getFeatures = (): string[] => {
+  private getFeatures = (plugins: Plugin[]): string[] => {
     if (
       !this.server ||
-      !this.plugins ||
       !this.server.features ||
       this.server.features.length === 0
     ) {
@@ -56,7 +44,7 @@ export class ServerFeaturesComponent implements OnInit, OnDestroy, OnChanges {
 
     const plugin_names: string[] = [];
     for (const feature of this.server.features) {
-      const plugin = this.plugins.find((p) => p.id === feature.id);
+      const plugin = plugins.find((p) => p.id === feature.id);
       if (plugin) {
         plugin_names.push(plugin.name);
       } else {

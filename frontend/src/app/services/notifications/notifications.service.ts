@@ -22,7 +22,7 @@ export class NotificationService {
     private errorService: ErrorService,
     private eventService: EventService
   ) {
-    this.eventService.eventSubject
+    this.eventService.eventSubject$
       .pipe(
         filter((event: Event) => {
           return event.object_type === 'Notification';

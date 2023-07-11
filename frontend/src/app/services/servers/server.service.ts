@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable,  map, of, switchMap, tap } from 'rxjs';
+import { Observable, map, of, switchMap, tap, take } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
 import {
   addMany,
@@ -8,11 +8,16 @@ import {
   removeOne,
   upsertOne,
 } from 'src/app/state/server/server.actions';
-import { Server } from './types';
+import { Server, prepareForSave } from './types';
 import { ErrorService, Source } from '../errors/error.service';
 import { EncryptionService } from '../encryption/encryption.service';
 
-import { EventHandler, EventHandlingFunction, EventHandlingUpdateFunction, EventService } from '../events/event.service';
+import {
+  EventHandler,
+  EventHandlingFunction,
+  EventHandlingUpdateFunction,
+  EventService,
+} from '../events/event.service';
 import { Store } from '@ngrx/store';
 import { selectToken } from 'src/app/state/usertoken/usertoken.selectors';
 import { UserToken } from '../users/types';
@@ -28,22 +33,40 @@ export class ServerService {
   userToken$: Observable<UserToken | undefined>;
 
   // eslint-disable-next-line  @typescript-eslint/no-unused-vars
-  insertEventFunction: EventHandlingFunction = (eventType: EventType, keyType: string, key: string, data: string) => {
+  insertEventFunction: EventHandlingFunction = (
+    eventType: EventType,
+    keyType: string,
+    key: string,
+    data: string
+  ) => {
     this.loadAndUpdateState(key, eventType);
   };
 
-  updateEventFunction: EventHandlingUpdateFunction = (eventType: EventType, keyType: string, key: string, data: string, change_flag: string) => {
+  updateEventFunction: EventHandlingUpdateFunction = (
+    eventType: EventType,
+    keyType: string,
+    key: string,
+    data: string,
+    version: number
+  ) => {
     const server$ = this.store.select(selectServerByIpAddress(key));
-    server$.subscribe((server) => {
-      // only update, if change_flag is different (change flag could be a hash)
-      if (server && server.change_flag !== change_flag) {
-        this.loadAndUpdateState(key, eventType);
-      }
+    server$.pipe(take(1)).subscribe({
+      next: (server) => {
+        // only update, if version is different or if the current object in store is preliminary
+        if (server && (server.version !== version || server.isPreliminary)) {
+          this.loadAndUpdateState(key, eventType);
+        }
+      },
     });
   };
 
   // eslint-disable-next-line  @typescript-eslint/no-unused-vars
-  deleteEventFunction: EventHandlingFunction = (eventType: EventType, keyType: string, key: string, data: string) => {
+  deleteEventFunction: EventHandlingFunction = (
+    eventType: EventType,
+    keyType: string,
+    key: string,
+    data: string
+  ) => {
     this.store.dispatch(removeOne({ ipaddress: key }));
   };
 
@@ -56,10 +79,15 @@ export class ServerService {
   ) {
     this.userToken$ = this.store.select(selectToken());
 
-    this.eventService.registerEventHandler(new EventHandler('Server', this.insertEventFunction,  this.updateEventFunction, this.deleteEventFunction));
+    this.eventService.registerEventHandler(
+      new EventHandler(
+        'Server',
+        this.insertEventFunction,
+        this.updateEventFunction,
+        this.deleteEventFunction
+      )
+    );
   }
-
-
 
   deleteServers = (servers: Server[]) => {
     for (const [, server] of servers.entries()) {
@@ -148,7 +176,9 @@ export class ServerService {
 
   saveServers = (servers: Server[]) => {
     for (const [, server] of servers.entries()) {
-      const body = JSON.stringify(server);
+      const serverToSave = prepareForSave(server);
+
+      const body = JSON.stringify(serverToSave);
 
       const subscription = this.http
         .post('/backend/servers', body, {
@@ -156,10 +186,7 @@ export class ServerService {
         })
         .subscribe({
           next: () => {
-            const preLimServerUpdate = Object.assign({}, server);
-            preLimServerUpdate.isPreliminary = true;
-
-            this.store.dispatch(upsertOne({ server: preLimServerUpdate }));
+            this.store.dispatch(upsertOne({ server: serverToSave }));
           },
           error: (err) => {
             this.errorService.newError(
@@ -176,17 +203,19 @@ export class ServerService {
   };
 
   updateServer = (server: Server) => {
-    const body = JSON.stringify(server);
+    const serverToSave = prepareForSave(server);
+
+    const body = JSON.stringify(serverToSave);
 
     const subscription = this.http
-      .put(`/backend/servers/${server.ipaddress}`, body, {
+      .put(`/backend/servers/${serverToSave.ipaddress}`, body, {
         headers: defaultHeadersForJSON(),
       })
       .subscribe({
         error: (err) => {
           this.errorService.newError(
             Source.ServerService,
-            server.ipaddress,
+            serverToSave.ipaddress,
             err
           );
         },

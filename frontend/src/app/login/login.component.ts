@@ -1,16 +1,17 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { AuthenticationService } from '../services/auth/authentication.service';
 import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import * as GlobalActions from '../state/global.actions';
+import { SubscriptionHandler } from '../shared/subscriptionHandler';
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
 })
-export class LoginComponent {
+export class LoginComponent implements OnDestroy {
   userIdLabel = 'User Id';
   userIdPlaceholder = '';
   userIdHint = '';
@@ -31,11 +32,17 @@ export class LoginComponent {
 
   form = new FormGroup({ userId: this.userId, password: this.password });
 
+  subscriptionHandler = new SubscriptionHandler(this);
+
   constructor(
     private store: Store,
     private authService: AuthenticationService,
     private router: Router
   ) {}
+
+ ngOnDestroy(): void {
+   this.subscriptionHandler.onDestroy();
+ }
 
   getErrorMessagUserId = (): string => {
     if (this.userId.hasError('required')) {
@@ -70,7 +77,7 @@ export class LoginComponent {
   onClickLogin = () => {
     // even if no TLS/HTTPS is used, we don't want to transfer a cleartext password
     // so we use a encryption here and the server is then checking the password against the hash value on the server side
-    const subscription = this.authService
+    this.subscriptionHandler.subscription = this.authService
       .login(this.userId.value, this.password.value)
       .subscribe({
         next: (userToken) => {
@@ -85,11 +92,6 @@ export class LoginComponent {
           this.form.setErrors({
             wrongLogin: 'User Id and/or password is incorrect',
           });
-        },
-        complete: () => {
-          if (subscription) {
-            subscription.unsubscribe();
-          }
         },
       });
   };

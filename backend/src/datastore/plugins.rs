@@ -249,6 +249,7 @@ mod tests {
                     },
                 ],
             }],
+            version: 0,
         };
 
         let expected = "{\"id\":\"test\",\"name\":\"Test\",\"description\":\"\",\"server_icon\":\"\",\"detection\":{\"list\":[{\"params\":[{\"name\":\"port\",\"param_type\":\"string\",\"default_value\":\"80\",\"mandatory\":true}],\"args\":[{\"name\":\"method\",\"arg_type\":\"String\",\"value\":\"get\",\"data_id\":null},{\"name\":\"url\",\"arg_type\":\"String\",\"value\":\"url\",\"data_id\":null}]}],\"script\":{\"script_type\":\"lua\",\"script\":\"Dummy script\"},\"detection_possible\":false,\"command\":\"http\"},\"credentials\":[],\"params\":[],\"data\":[],\"notifications\":[],\"actions\":[{\"id\":\"\",\"name\":\"\",\"show_on_main\":false,\"depends\":[],\"available_for_state\":\"Any\",\"needs_confirmation\":false,\"description\":\"\",\"icon\":\"\",\"command\":\"http\",\"args\":[{\"name\":\"method\",\"arg_type\":\"String\",\"value\":\"get\",\"data_id\":null},{\"name\":\"url\",\"arg_type\":\"String\",\"value\":\"url\",\"data_id\":null}]}]}";
@@ -323,6 +324,7 @@ mod tests {
                     },
                 ],
             }],
+            version: 0,
         };
 
         let test_string: &str = "{\"id\":\"test\",\"name\":\"Test\",\"description\":\"\",\"server_icon\":\"\",\"detection\":{\"list\":[{\"params\":[{\"name\":\"port\",\"param_type\":\"string\",\"default_value\":\"80\",\"mandatory\":true}],\"args\":[{\"name\":\"method\",\"value\":\"get\"},{\"name\":\"url\",\"value\":\"url\"}]}],\"script\":{\"script_type\":\"lua\",\"script\":\"Dummy script\"},\"detection_possible\":false,\"command\":\"http\"},\"credentials\":[],\"params\":[],\"data\":[],\"actions\":[{\"id\":\"\",\"name\":\"\",\"show_on_main\":false,\"depends\":[],\"available_for_state\":\"Any\",\"needs_confirmation\":false,\"description\":\"\",\"icon\":\"\",\"command\":\"http\",\"args\":[{\"name\":\"method\",\"value\":\"get\"},{\"name\":\"url\",\"value\":\"url\"}]}]}";

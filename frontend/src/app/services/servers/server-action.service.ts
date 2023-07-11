@@ -26,7 +26,7 @@ export class ServerActionService {
     private errorService: ErrorService,
     private logger: NGXLogger
   ) {
-    this.eventService.eventSubject
+    this.eventService.eventSubject$
       .pipe(
         filter((event: Event) => {
           return event.object_type === 'ConditionCheckResult';

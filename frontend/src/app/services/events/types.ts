@@ -16,6 +16,6 @@ export class Event {
     public key_name: string,
     public key: string,
     public value: string,
-    public change_flag: string
+    public version: number
   ) {}
 }

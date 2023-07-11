@@ -6,12 +6,12 @@ pub mod monitoring;
 pub mod notification;
 pub mod sub_action;
 
+use std::collections::HashMap;
 use std::fmt::Debug;
 
 use serde::{Deserialize, Serialize};
 
-use crate::common::hash_as_string;
-use crate::event_handling::{EventSource, ObjectType};
+use crate::event_handling::{EventSource, ObjectType, Value};
 use std::hash::{Hash, Hasher};
 
 use self::{
@@ -38,6 +38,8 @@ pub struct Plugin {
     pub notifications: Vec<NotificationDef>,
     #[serde(default)]
     pub actions: Vec<ActionDef>,
+    #[serde(default)]
+    pub version: i64,
 }
 
 impl Hash for Plugin {
@@ -87,8 +89,14 @@ impl EventSource for Plugin {
         Ok("".to_owned())
     }
 
-    fn get_change_flag(&self) -> String {
-        hash_as_string(self)
+    fn get_version(&self) -> i64 {
+        self.version
+    }
+
+    fn get_key_values(&self) -> std::collections::HashMap<String, Value> {
+        let mut kv = HashMap::new();
+        kv.insert("name".to_owned(), Value::String(self.name.to_string()));
+        kv
     }
 }
 

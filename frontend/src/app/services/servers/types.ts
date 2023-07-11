@@ -65,9 +65,25 @@ export class Server {
     public dnsname: string = '',
     public features: Feature[] = [],
     public isPreliminary: boolean = false,
-    public change_flag: string = ""
+    public version: number = -1
   ) {}
 }
+
+export const prepareForSave = (server: Server): Server => {
+  const toSave = Object.assign({}, server);
+    incrementVersion(toSave);
+    markPreliminaryUpdate(toSave);
+    return toSave;
+}
+
+const incrementVersion = (server: Server) => {
+  server.version += 1;
+}
+
+const markPreliminaryUpdate = (server: Server) => {
+  server.isPreliminary = true;
+}
+
 
 export class ServerAction {
   constructor(

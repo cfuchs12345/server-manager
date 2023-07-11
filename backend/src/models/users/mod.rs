@@ -1,10 +1,10 @@
-use std::hash::Hash;
+use std::{collections::HashMap, hash::Hash};
 
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    common::{self, hash_as_string},
-    event_handling::{EventSource, ObjectType},
+    common,
+    event_handling::{EventSource, ObjectType, Value},
 };
 
 use super::error::AppError;
@@ -16,6 +16,8 @@ pub struct User {
     email: String,
     #[serde(default)]
     password_hash: String,
+    #[serde(default)]
+    version: i64,
 }
 
 impl User {
@@ -26,6 +28,7 @@ impl User {
             full_name,
             email,
             password_hash,
+            version: 0,
         }
     }
 
@@ -78,7 +81,21 @@ impl EventSource for User {
         Ok(self.user_id.to_owned())
     }
 
-    fn get_change_flag(&self) -> String {
-        hash_as_string(self)
+    fn get_version(&self) -> i64 {
+        self.version
+    }
+
+    fn get_key_values(&self) -> HashMap<String, Value> {
+        let mut kv = HashMap::new();
+        kv.insert(
+            "password_hash".to_owned(),
+            Value::String("password_hash".to_owned()),
+        );
+        kv.insert("email".to_owned(), Value::String("email".to_owned()));
+        kv.insert(
+            "full_name".to_owned(),
+            Value::String("full_name".to_owned()),
+        );
+        kv
     }
 }

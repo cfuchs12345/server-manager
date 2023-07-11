@@ -2,6 +2,7 @@ import {
   Component,
   Input,
   OnChanges,
+  OnDestroy,
   SimpleChanges,
 } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -12,6 +13,7 @@ import {
   DataResult,
   Server,
 } from 'src/app/services/servers/types';
+import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
 
 const action_regex = /\[\[Action.*\]\]/g;
 
@@ -20,7 +22,7 @@ const action_regex = /\[\[Action.*\]\]/g;
   templateUrl: './server-detail.component.html',
   styleUrls: ['./server-detail.component.scss'],
 })
-export class ServerDetailComponent implements OnChanges {
+export class ServerDetailComponent implements OnChanges, OnDestroy {
   @Input() server: Server | undefined = undefined;
   @Input() showDetail = false;
   @Input() turnDetail = false;
@@ -29,12 +31,19 @@ export class ServerDetailComponent implements OnChanges {
 
   innerHtml: SafeHtml;
 
+  private subscriptionHandler = new SubscriptionHandler(this);
+
   constructor(
     private logger: NGXLogger,
     private sanitizer: DomSanitizer,
     private serverDataService: ServerDataService
   ) {
     this.innerHtml = sanitizer.bypassSecurityTrustHtml('');
+  }
+
+
+  ngOnDestroy(): void {
+    this.subscriptionHandler.onDestroy();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -54,12 +63,11 @@ export class ServerDetailComponent implements OnChanges {
     if (this.server && this.showDetail && !this.turnDetail) {
       this.logger.trace('querying data for server ', source, this.server);
 
-      const subscription = this.serverDataService
+      this.subscriptionHandler.subscription = this.serverDataService
         .queryData(this.server)
         .subscribe((result) => {
           this.dataResults = result;
           setTimeout(this.formatData, 0);
-          subscription.unsubscribe();
         });
     }
   }

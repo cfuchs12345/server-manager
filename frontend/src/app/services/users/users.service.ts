@@ -22,7 +22,7 @@ export class UserService {
     private encryptionService: EncryptionService,
     private logger: NGXLogger
   ) {
-    this.eventService.eventSubject
+    this.eventService.eventSubject$
       .pipe(
         filter((event: Event) => {
           return event.object_type === 'User';
@@ -37,7 +37,7 @@ export class UserService {
       });
   }
 
-  listUsers = async () => {
+  listUsers = () => {
     const subscription = this.http.get<User[]>('/backend/users').subscribe({
       next: (users) => {
         this.store.dispatch(addMany({ users }));

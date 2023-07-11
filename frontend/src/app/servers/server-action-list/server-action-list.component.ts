@@ -19,6 +19,7 @@ import { selectStatusByIpAddress } from 'src/app/state/status/status.selectors';
 import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
 import { selectConditionCheckResultByKey } from 'src/app/state/conditioncheckresult/conditioncheckresult.selectors';
 import { NGXLogger } from 'ngx-logger';
+import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
 
 @Component({
   selector: 'app-server-action-list',
@@ -33,15 +34,14 @@ export class ServerActionListComponent implements OnInit, OnDestroy {
   status: Status | undefined = undefined;
   private plugins: Plugin[] | undefined = undefined;
 
-  private serverStatusSubscription: Subscription | undefined = undefined;
-  private pluginSubscription: Subscription | undefined = undefined;
-  private serverActionCheckSubscription: Subscription | undefined = undefined;
 
   private conditions$:
     | Observable<ConditionCheckResult | undefined>
     | undefined = undefined;
   private status$: Observable<Status | undefined> | undefined = undefined;
   private plugins$: Observable<Plugin[]>;
+
+  private subscriptionHandler = new SubscriptionHandler(this);
 
   constructor(
     private store: Store,
@@ -58,7 +58,7 @@ export class ServerActionListComponent implements OnInit, OnDestroy {
         selectConditionCheckResultByKey(this.server.ipaddress + "_") // data_id is empty - ends with _
       );
 
-      this.serverActionCheckSubscription = this.conditions$.subscribe(
+      this.subscriptionHandler.subscription = this.conditions$.subscribe(
         (checkResult) => {
           if (checkResult && this.isCheckResultRequired(checkResult)) {
             this.conditionCheckResult = checkResult;
@@ -74,14 +74,14 @@ export class ServerActionListComponent implements OnInit, OnDestroy {
         selectStatusByIpAddress(this.server.ipaddress)
       );
 
-      this.serverStatusSubscription = this.status$.subscribe((status) => {
+      this.subscriptionHandler.subscription = this.status$.subscribe((status) => {
         this.status = status;
 
         this.getActionsForServer();
       });
     }
 
-    this.pluginSubscription = this.plugins$
+    this.subscriptionHandler.subscription = this.plugins$
       .pipe(filter((plugins) => this.filter(plugins)))
       .subscribe((plugins) => {
         this.plugins = plugins;
@@ -91,15 +91,7 @@ export class ServerActionListComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.serverStatusSubscription) {
-      this.serverStatusSubscription.unsubscribe();
-    }
-    if (this.pluginSubscription) {
-      this.pluginSubscription.unsubscribe();
-    }
-    if (this.serverActionCheckSubscription) {
-      this.serverActionCheckSubscription.unsubscribe();
-    }
+    this.subscriptionHandler.onDestroy();
   }
 
   private getActionsForServer = () => {

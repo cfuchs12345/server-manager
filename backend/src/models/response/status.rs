@@ -1,11 +1,11 @@
-use std::net::IpAddr;
+use std::{collections::HashMap, net::IpAddr};
 
 use serde::{Deserialize, Serialize};
 
 use crate::{
     commands::ping::PingCommandResult,
     common,
-    event_handling::{EventSource, ObjectType},
+    event_handling::{EventSource, ObjectType, Value},
     models::error::AppError,
 };
 
@@ -14,6 +14,7 @@ pub struct Status {
     pub is_running: bool,
     pub ipaddress: IpAddr,
     pub error: bool,
+    pub version: i64,
 }
 
 impl Status {
@@ -22,6 +23,7 @@ impl Status {
             is_running: false,
             error: false,
             ipaddress,
+            version: 0,
         }
     }
 
@@ -30,6 +32,7 @@ impl Status {
             is_running,
             error: false,
             ipaddress,
+            version: 0,
         }
     }
 
@@ -38,6 +41,7 @@ impl Status {
             is_running: false,
             error: true,
             ipaddress,
+            version: 0,
         }
     }
 }
@@ -71,7 +75,13 @@ impl EventSource for Status {
         serde_json::to_string(self).map_err(AppError::from)
     }
 
-    fn get_change_flag(&self) -> String {
-        format!("{} {}", self.is_running, self.error)
+    fn get_version(&self) -> i64 {
+        self.version
+    }
+
+    fn get_key_values(&self) -> std::collections::HashMap<String, Value> {
+        let mut kv = HashMap::new();
+        kv.insert("is_running".to_owned(), Value::Boolean(self.is_running));
+        kv
     }
 }

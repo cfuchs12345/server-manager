@@ -1,10 +1,13 @@
-use std::net::{IpAddr, Ipv4Addr};
+use std::{
+    collections::HashMap,
+    net::{IpAddr, Ipv4Addr},
+};
 
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    common::{hash_as_string, IPADDRESS},
-    event_handling::{EventSource, ObjectType},
+    common::IPADDRESS,
+    event_handling::{EventSource, ObjectType, Value},
     models::error::AppError,
 };
 
@@ -23,6 +26,7 @@ pub struct ConditionCheckResult {
     pub ipaddress: IpAddr,
     pub data_id: String,
     pub subresults: Vec<ConditionCheckSubResult>,
+    pub version: i64,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, Hash)]
@@ -56,8 +60,21 @@ impl EventSource for ConditionCheckResult {
         serde_json::to_string(self).map_err(AppError::from)
     }
 
-    fn get_change_flag(&self) -> String {
-        hash_as_string(self)
+    fn get_version(&self) -> i64 {
+        self.version
+    }
+
+    fn get_key_values(&self) -> HashMap<String, Value> {
+        let mut kv = HashMap::new();
+        kv.insert(
+            "value".to_string(),
+            Value::String(
+                serde_json::to_string(self)
+                    .map_err(AppError::from)
+                    .expect(""),
+            ),
+        );
+        kv
     }
 }
 

@@ -8,8 +8,7 @@
       <img src="assets/svg/logout-svgrepo-com.svg" (click)="onClickLogout()">
   </div>
 </div>
-<table
-  mat-table
+<table #serversTable mat-table
   [dataSource]="dataSource"
   class="mat-elevation-z8"
   multiTemplateDataRows

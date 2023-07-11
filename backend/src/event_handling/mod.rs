@@ -12,7 +12,7 @@ use crate::models::error::AppError;
 
 pub use self::types::Event;
 
-pub use types::{EventSource, ListSource, ObjectType};
+pub use types::{EventSource, ListSource, ObjectType, Value};
 
 mod object_action;
 mod types;

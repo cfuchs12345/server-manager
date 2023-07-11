@@ -40,6 +40,7 @@ pub async fn check_condition_for_action_met(
         return Ok(ConditionCheckResult {
             ipaddress: server.get_ipaddress(),
             data_id,
+            version: 0,
             subresults: vec![ConditionCheckSubResult {
                 result: false,
                 action_id: "".to_string(),
@@ -53,11 +54,12 @@ pub async fn check_condition_for_action_met(
         return Ok(ConditionCheckResult {
             ipaddress: server.get_ipaddress(),
             data_id,
+            version: 0,
             subresults: vec![ConditionCheckSubResult {
                 action_id: action.expect("checked before").id,
                 action_params: action_params.unwrap_or_default(),
                 feature_id: feature.expect("checked before").id,
-                result: false,
+                result: false
             }],
         });
     };
@@ -95,6 +97,7 @@ pub async fn check_condition_for_action_met(
         return Ok(ConditionCheckResult {
             ipaddress: server.get_ipaddress(),
             data_id,
+            version: 0,
             subresults: vec![ConditionCheckSubResult {
                 action_id: action.expect("checked before").id,
                 action_params: action_params.unwrap_or_default(),
@@ -157,6 +160,7 @@ pub async fn check_condition_for_action_met(
     Ok(ConditionCheckResult {
         ipaddress: server.get_ipaddress(),
         data_id,
+        version: 0,
         subresults: vec![ConditionCheckSubResult {
             action_id: action.as_ref().expect("Could not get ref").id.clone(),
             action_params: action_params.unwrap_or_default(),
