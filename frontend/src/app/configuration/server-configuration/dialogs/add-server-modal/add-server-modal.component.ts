@@ -90,6 +90,9 @@ export class AddServerModalComponent implements OnDestroy {
                 )
               );
               this.serverService.updateServer(server);
+
+              this.selectedPlugin = undefined;
+              this.selectedServer = undefined;
             }
           },
         });

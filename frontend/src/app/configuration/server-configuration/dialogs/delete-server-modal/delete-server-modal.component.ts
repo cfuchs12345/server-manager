@@ -22,8 +22,8 @@ export class DeleteServerModalComponent implements OnDestroy {
   loading = false;
 
 
-  selectedServer: Server | undefined = undefined;
-  selectedFeature: Feature | undefined = undefined;
+  selectedServer: Server | undefined = undefined; // for removal of feature
+  selectedFeature: Feature | undefined = undefined;// for removal of feature
 
   servers$: Observable<Server[]>;
   serversWithFeatures$: Observable<Server[]>;
@@ -84,6 +84,9 @@ export class DeleteServerModalComponent implements OnDestroy {
           server.features = filteredFeatures;
 
           this.serverService.updateServer(server);
+
+          this.selectedFeature = undefined;
+          this.selectedServer = undefined;
         },
       });
     }
