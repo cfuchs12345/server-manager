@@ -19,3 +19,7 @@ export class Event {
     public version: number
   ) {}
 }
+
+export interface VersionedObject {
+  getVersion(): number;
+}

@@ -6,8 +6,6 @@ import {
   updateOne,
   removeOne,
   upsertOne,
-  upsertOneExist,
-  removeOneExist,
 } from 'src/app/state/user/user.actions';
 import { EntityState, EntityAdapter, createEntityAdapter } from '@ngrx/entity';
 
@@ -30,14 +28,9 @@ export const adapter: EntityAdapter<User> =
     selectId: selectUserId,
   });
 
-  export const adapterUserExist: EntityAdapter<boolean> =
-  createEntityAdapter<boolean>({
-    selectId: selectUserExist,
-  });
 
 
 export const initialUserState: State = adapter.getInitialState({});
-export const initialUserExistState: StateExist = adapterUserExist.getInitialState({});
 
 export const reducer  = createReducer(
   initialUserState,
@@ -61,16 +54,4 @@ export const reducer  = createReducer(
   on(upsertOne, (state, { user }) => {
     return adapter.upsertOne(user, state);
   })
-);
-
-export const reducerUserExist  = createReducer(
-  initialUserExistState,
-
-  on(upsertOneExist, (state, { exist }) => {
-    return adapterUserExist.upsertOne(exist, state);
-  }),
-
-  on(removeOneExist, (state) => {
-    return adapterUserExist.removeOne("exist", state);
-  }),
 );

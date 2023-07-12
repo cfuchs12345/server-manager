@@ -38,8 +38,8 @@ const OPTIONS = {
 export class ToasterPopupGenerator {
   constructor(private store: Store, private toasterService: ToastrService) {}
 
-  handleEvent(event: Event) {
-    this.show(this.getToasterPopupInfo(event));
+  handleEvent(eventAndObject: [Event, any]) {
+    this.show(this.getToasterPopupInfo(eventAndObject[0]));
   }
 
   getToasterPopupInfo = (event: Event): ToasterPopupInfo[] => {

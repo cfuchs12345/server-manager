@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { filter } from 'rxjs';
+import { Observable, filter, of } from 'rxjs';
 import { Store } from '@ngrx/store';
 import { defaultHeadersForJSON } from '../common';
 import { ConditionCheckResult, ServersAction } from './types';
@@ -12,13 +12,55 @@ import {
 import { Param, ServerAction, Feature } from './types';
 import { ErrorService, Source } from '../errors/error.service';
 import { NGXLogger } from 'ngx-logger';
-import { EventService } from '../events/event.service';
-import { Event } from '../events/types';
+import { EventHandler, EventHandlingFunction, EventHandlingGetObjectFunction, EventHandlingUpdateFunction, EventService } from '../events/event.service';
+import { Event, EventType } from '../events/types';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ServerActionService {
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
+  insertEventFunction: EventHandlingFunction<ConditionCheckResult> = (
+    eventType: EventType,
+    keyType: string,
+    key: string,
+    data: string,
+    object: ConditionCheckResult
+  ) => {
+    this.store.dispatch(upsertOne({ result: object }));
+  };
+
+  updateEventFunction: EventHandlingUpdateFunction<ConditionCheckResult> = (
+    eventType: EventType,
+    keyType: string,
+    key: string,
+    data: string,
+    version: number,
+    object: ConditionCheckResult
+  ) => {
+    this.store.dispatch(upsertOne({ result: object }));
+  };
+
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
+  deleteEventFunction: EventHandlingFunction<ConditionCheckResult> = (
+    eventType: EventType,
+    key_name: string,
+    key: string,
+    data: string
+  ) => {
+    this.store.dispatch(removeOne({ key: key }));
+  };
+
+  getObjectFunction: EventHandlingGetObjectFunction<ConditionCheckResult> = (
+    key_name: string,
+    key: string,
+    value: string
+  ): Observable<ConditionCheckResult> => {
+    const result: ConditionCheckResult = JSON.parse(value);
+    return of(result);
+  };
+
+
   constructor(
     private store: Store,
     private http: HttpClient,
@@ -26,48 +68,29 @@ export class ServerActionService {
     private errorService: ErrorService,
     private logger: NGXLogger
   ) {
-    this.eventService.eventSubject$
-      .pipe(
-        filter((event: Event) => {
-          return event.object_type === 'ConditionCheckResult';
-        })
-      )
-      .subscribe((event: Event) => {
-        if (event.event_type === 'Insert' || event.event_type === 'Update') {
-          const result: ConditionCheckResult = JSON.parse(event.value);
 
-          this.store.dispatch(upsertOne({ result: result }));
-        } else if (event.event_type === 'Delete') {
-          this.store.dispatch(removeOne({ key: event.key }));
-        }
-      });
+    this.eventService.registerEventHandler(
+      new EventHandler(
+        'ConditionCheckResult',
+        this.insertEventFunction,
+        this.updateEventFunction,
+        this.deleteEventFunction,
+        this.getObjectFunction
+      )
+    );
   }
 
-  listActionCheckResults = () => {
+  listActionCheckResults = (): Observable<ConditionCheckResult[]> => {
     const action = new ServersAction('ActionConditionCheck', []);
     const body = JSON.stringify(action);
 
-    const subscription = this.http
-      .post<ConditionCheckResult[]>('/backend/servers/actions', body, {
+    return this.http.post<ConditionCheckResult[]>(
+      '/backend/servers/actions',
+      body,
+      {
         headers: defaultHeadersForJSON(),
-      })
-      .subscribe({
-        next: (results) => {
-          this.store.dispatch(addMany({ results: results }));
-        },
-        error: (err) => {
-          this.logger.error(err);
-
-          this.errorService.newError(
-            Source.ServerActionService,
-            undefined,
-            err !== undefined ? err : err
-          );
-        },
-        complete: () => {
-          subscription.unsubscribe();
-        },
-      });
+      }
+    );
   };
 
   executeAction = (
@@ -75,7 +98,7 @@ export class ServerActionService {
     action_id: string,
     ipaddress: string,
     action_params: string | undefined = undefined
-  ) => {
+  ): Observable<Feature[]> => {
     const query = new ServerAction('ExecuteFeatureAction');
     query.params.push(new Param('feature_id', feature_id));
     query.params.push(new Param('action_id', action_id));
@@ -85,21 +108,9 @@ export class ServerActionService {
 
     const body = JSON.stringify(query);
 
-    const subscription = this.http
+    return this.http
       .post<Feature[]>('/backend/servers/' + ipaddress + '/actions', body, {
         headers: defaultHeadersForJSON(),
-      })
-      .subscribe({
-        error: (err) => {
-          this.errorService.newError(
-            Source.ServerActionService,
-            ipaddress,
-            err
-          );
-        },
-        complete: () => {
-          subscription.unsubscribe();
-        },
       });
   };
 }

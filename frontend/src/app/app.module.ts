@@ -85,7 +85,13 @@ import { ToastrModule } from 'ngx-toastr';
 import { EffectsModule } from '@ngrx/effects';
 import { HydrationEffects } from './state/hydration/hydration.effects';
 import { GlobalEffects } from './state/global.effects';
-
+import { ServerEffects } from './state/server/server.effects';
+import { PluginEffects } from './state/plugin/plugin.effects';
+import { DisabledPluginEffects } from './state/disabledplugin/disabled_plugin.effects';
+import { UserEffects } from './state/user/user.effects';
+import { StatusEffects } from './state/status/status.effects';
+import { ConditionCheckResultEffects } from './state/conditioncheckresult/conditioncheckresult.effects';
+import { ActionEffects } from './state/action/action.effects';
 
 @NgModule({
   declarations: [
@@ -144,7 +150,7 @@ import { GlobalEffects } from './state/global.effects';
     BarChartComponent,
     ChartWrapperComponent,
     MonitoringSingleServerComponent,
-    ConfigImExportDialog
+    ConfigImExportDialog,
   ],
   imports: [
     AppRoutingModule,
@@ -169,13 +175,23 @@ import { GlobalEffects } from './state/global.effects';
     NgApexchartsModule,
     ToastrModule.forRoot(),
     LoggerModule.forRoot({
-      level: NgxLoggerLevel.DEBUG
+      level: NgxLoggerLevel.DEBUG,
     }),
     StoreModule.forRoot(reducers, {
-      metaReducers
+      metaReducers,
     }),
     StoreDevtoolsModule.instrument({ maxAge: 25, logOnly: !isDevMode() }),
-    EffectsModule.forRoot([HydrationEffects, GlobalEffects]),
+    EffectsModule.forRoot([
+      HydrationEffects,
+      GlobalEffects,
+      ServerEffects,
+      PluginEffects,
+      DisabledPluginEffects,
+      UserEffects,
+      StatusEffects,
+      ConditionCheckResultEffects,
+      ActionEffects
+    ]),
   ],
   providers: [
     ErrorService,

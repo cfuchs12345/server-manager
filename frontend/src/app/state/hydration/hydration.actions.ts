@@ -9,3 +9,7 @@ export const hydrateSuccess = createAction(
 );
 
 export const hydrateFailure = createAction("[Hydration] Hydrate Failure");
+
+
+
+export const noHydration = createAction("[Hydration] No Hydration");

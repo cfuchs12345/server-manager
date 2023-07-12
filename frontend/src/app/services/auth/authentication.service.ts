@@ -9,13 +9,10 @@ import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { selectToken } from 'src/app/state/usertoken/usertoken.selectors';
 import * as GlobalActions from '../../../app/state/global.actions';
-import { upsertOneExist } from 'src/app/state/user/user.actions';
-import { selectUserExistByKey } from 'src/app/state/user/user.selectors';
 
 @Injectable({ providedIn: 'root' })
 export class AuthenticationService {
   userToken$: Observable<UserToken | undefined>;
-  userExist$: Observable<boolean | undefined>;
 
   constructor(
     private store: Store,
@@ -25,7 +22,6 @@ export class AuthenticationService {
     private encryptionService: EncryptionService
   ) {
     this.userToken$ = store.select(selectToken());
-    this.userExist$ = store.select(selectUserExistByKey());
   }
 
   login(userId: string, password: string): Observable<UserToken> {
@@ -67,17 +63,13 @@ export class AuthenticationService {
   logout = () => {
     this.userToken$.pipe(take(1)).subscribe((token) => {
       if (token) {
+        this.router.navigate(['/login']);
         this.store.dispatch(GlobalActions.logout({ userToken: token, logout: true }));
       }
     });
-
-    this.router.navigate(['/login']);
   };
 
   userExist = (): Observable<boolean> => {
     return this.http.get<boolean>('/backend_nt/users/exist')
-    .pipe(
-      tap((result) => this.store.dispatch(upsertOneExist({exist: result})))
-    );
   };
 }

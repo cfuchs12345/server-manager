@@ -1,9 +1,4 @@
-import {
-  Component,
-  Input,
-  OnChanges,
-  ChangeDetectorRef
-} from '@angular/core';
+import { Component, Input, OnChanges, ChangeDetectorRef } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { GUIAction } from 'src/app/services/general/types';
 import {
@@ -12,8 +7,9 @@ import {
   Status,
 } from 'src/app/services/servers/types';
 import { ConfirmDialogComponent } from 'src/app/ui/confirm-dialog/confirm-dialog.component';
-import { ServerActionService } from 'src/app/services/servers/server-action.service';
 import { NGXLogger } from 'ngx-logger';
+import { Store } from '@ngrx/store';
+import { executeAction } from 'src/app/state/action/action.actions';
 
 @Component({
   selector: 'app-server-action',
@@ -29,7 +25,7 @@ export class ServerActionComponent implements OnChanges {
   allDependenciesMet = false;
 
   constructor(
-    private serverActionService: ServerActionService,
+    private store: Store,
     private dialog: MatDialog,
     private logger: NGXLogger,
     private cdr: ChangeDetectorRef
@@ -39,8 +35,8 @@ export class ServerActionComponent implements OnChanges {
     const old = this.allDependenciesMet;
     this.allDependenciesMet = this.allDependenciesMetCheck();
 
-    if( old !== this.allDependenciesMet ) {
-        this.cdr.detectChanges();
+    if (old !== this.allDependenciesMet) {
+      this.cdr.detectChanges();
     }
   }
 
@@ -52,14 +48,15 @@ export class ServerActionComponent implements OnChanges {
       this.conditionCheckResult.ipaddress === this.server.ipaddress
     ) {
       const foundSubResult = this.conditionCheckResult.subresults.find(
-        (sr) => sr.feature_id === this.guiAction?.feature.id && sr.action_id === this.guiAction.action.id
+        (sr) =>
+          sr.feature_id === this.guiAction?.feature.id &&
+          sr.action_id === this.guiAction.action.id
       );
 
       return foundSubResult !== undefined ? foundSubResult.result : false;
     }
     return false;
   };
-
 
   onClickAction() {
     if (!this.server || !this.guiAction) {
@@ -81,18 +78,22 @@ export class ServerActionComponent implements OnChanges {
       });
       confirmDialog.afterClosed().subscribe((result) => {
         if (result === true && this.server && this.guiAction) {
-          this.serverActionService.executeAction(
-            this.guiAction.feature.id,
-            this.guiAction.action.id,
-            this.server.ipaddress
+          this.store.dispatch(
+            executeAction({
+              feature_id: this.guiAction.feature.id,
+              action_id: this.guiAction.action.id,
+              ipaddress: this.server.ipaddress,
+            })
           );
         }
       });
     } else {
-      this.serverActionService.executeAction(
-        this.guiAction.feature.id,
-        this.guiAction.action.id,
-        this.server.ipaddress
+      this.store.dispatch(
+        executeAction({
+          feature_id: this.guiAction.feature.id,
+          action_id: this.guiAction.action.id,
+          ipaddress: this.server.ipaddress,
+        })
       );
     }
   }

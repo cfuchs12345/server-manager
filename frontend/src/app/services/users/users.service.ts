@@ -24,11 +24,15 @@ export class UserService {
   ) {
     this.eventService.eventSubject$
       .pipe(
-        filter((event: Event) => {
+        filter((eventAndObject: [Event, User]) => {
+          const event = eventAndObject[0];
+
           return event.object_type === 'User';
         })
       )
-      .subscribe((event: Event) => {
+      .subscribe((eventAndObject: [Event, User]) => {
+        const event = eventAndObject[0];
+
         if (event.event_type === 'Insert' || event.event_type === 'Update') {
           this.listUsers();
         } else if (event.event_type === 'Delete') {
@@ -37,19 +41,8 @@ export class UserService {
       });
   }
 
-  listUsers = () => {
-    const subscription = this.http.get<User[]>('/backend/users').subscribe({
-      next: (users) => {
-        this.store.dispatch(addMany({ users }));
-      },
-      error: (err) => {
-        this.logger.error('error while loading users', err);
-        this.errorService.newError(Source.UserService, undefined, err);
-      },
-      complete: () => {
-        subscription.unsubscribe();
-      },
-    });
+  listUsers = (): Observable<User[]> => {
+    return this.http.get<User[]>('/backend/users');
   };
 
   saveUser = (

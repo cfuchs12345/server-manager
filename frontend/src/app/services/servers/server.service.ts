@@ -14,6 +14,7 @@ import { EncryptionService } from '../encryption/encryption.service';
 
 import {
   EventHandler,
+  EventHandlingGetObjectFunction,
   EventHandlingFunction,
   EventHandlingUpdateFunction,
   EventService,
@@ -33,41 +34,50 @@ export class ServerService {
   userToken$: Observable<UserToken | undefined>;
 
   // eslint-disable-next-line  @typescript-eslint/no-unused-vars
-  insertEventFunction: EventHandlingFunction = (
-    eventType: EventType,
-    keyType: string,
-    key: string,
-    data: string
-  ) => {
-    this.loadAndUpdateState(key, eventType);
-  };
-
-  updateEventFunction: EventHandlingUpdateFunction = (
+  insertEventFunction: EventHandlingFunction<Server> = (
     eventType: EventType,
     keyType: string,
     key: string,
     data: string,
-    version: number
+    object: Server
+  ) => {
+    this.update(key, eventType, object);
+  };
+
+  updateEventFunction: EventHandlingUpdateFunction<Server> = (
+    eventType: EventType,
+    keyType: string,
+    key: string,
+    data: string,
+    version: number,
+    object: Server
   ) => {
     const server$ = this.store.select(selectServerByIpAddress(key));
     server$.pipe(take(1)).subscribe({
       next: (server) => {
         // only update, if version is different or if the current object in store is preliminary
         if (server && (server.version !== version || server.isPreliminary)) {
-          this.loadAndUpdateState(key, eventType);
+          this.update(key, eventType, object);
         }
       },
     });
   };
 
   // eslint-disable-next-line  @typescript-eslint/no-unused-vars
-  deleteEventFunction: EventHandlingFunction = (
+  deleteEventFunction: EventHandlingFunction<Server> = (
     eventType: EventType,
-    keyType: string,
+    key_name: string,
     key: string,
     data: string
   ) => {
     this.store.dispatch(removeOne({ ipaddress: key }));
+  };
+
+  getObjectFunction: EventHandlingGetObjectFunction<Server> = (
+    key_name: string,
+    key: string
+  ): Observable<Server> => {
+    return this.getServer(key, false);
   };
 
   constructor(
@@ -80,11 +90,12 @@ export class ServerService {
     this.userToken$ = this.store.select(selectToken());
 
     this.eventService.registerEventHandler(
-      new EventHandler(
+      new EventHandler<Server>(
         'Server',
         this.insertEventFunction,
         this.updateEventFunction,
-        this.deleteEventFunction
+        this.deleteEventFunction,
+        this.getObjectFunction
       )
     );
   }
@@ -110,25 +121,14 @@ export class ServerService {
     }
   };
 
-  listServers = () => {
-    const subscription = this.http
+  listServers = (): Observable<Server[]> => {
+    return this.http
       .get<Server[]>('/backend/servers')
       .pipe(
         tap(() => {
           this.lastLoad = new Date();
         })
-      )
-      .subscribe({
-        next: (servers) => {
-          this.store.dispatch(addMany({ servers: servers })); // add many
-        },
-        error: (err) => {
-          this.errorService.newError(Source.ServerService, undefined, err);
-        },
-        complete: () => {
-          subscription.unsubscribe();
-        },
-      });
+      );
   };
 
   getServer = (ipaddress: string, fullData: boolean): Observable<Server> => {
@@ -225,21 +225,15 @@ export class ServerService {
       });
   };
 
-  loadAndUpdateState = (
+  update = (
     ipaddress: string,
-    event_type: 'Insert' | 'Update' | 'Refresh' | 'Delete'
+    event_type: 'Insert' | 'Update' | 'Refresh' | 'Delete',
+    object: Server
   ) => {
-    const subscription = this.getServer(ipaddress, false).subscribe({
-      next: (server) => {
-        if (event_type === 'Insert') {
-          this.store.dispatch(addOne({ server }));
-        } else {
-          this.store.dispatch(upsertOne({ server }));
-        }
-      },
-      complete: () => {
-        subscription.unsubscribe();
-      },
-    });
+    if (event_type === 'Insert') {
+      this.store.dispatch(addOne({ server: object }));
+    } else {
+      this.store.dispatch(upsertOne({ server: object }));
+    }
   };
 }

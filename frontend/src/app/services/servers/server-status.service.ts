@@ -7,6 +7,7 @@ import { Status } from './types';
 import { ErrorService, Source } from '../errors/error.service';
 import {
   EventHandler,
+  EventHandlingGetObjectFunction,
   EventHandlingFunction,
   EventHandlingUpdateFunction,
   EventService,
@@ -19,13 +20,14 @@ import {
   upsertOne,
 } from 'src/app/state/status/status.actions';
 import { Store } from '@ngrx/store';
+import { Observable, catchError, of, take, tap, throwError } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ServerStatusService {
   // eslint-disable-next-line  @typescript-eslint/no-unused-vars
-  insertEventFunction: EventHandlingFunction = (
+  insertEventFunction: EventHandlingFunction<Status> = (
     eventType: EventType,
     keyType: string,
     key: string,
@@ -39,28 +41,37 @@ export class ServerStatusService {
   };
 
   // eslint-disable-next-line  @typescript-eslint/no-unused-vars
-  updateEventFunction: EventHandlingUpdateFunction = (
+  updateEventFunction: EventHandlingUpdateFunction<Status> = (
     eventType: EventType,
     keyType: string,
     key: string,
     data: string,
-    version: number
+    version: number,
+    object: Status
   ) => {
-    const newStatus: Status = JSON.parse(data);
-
-    if (newStatus) {
-      this.store.dispatch(upsertOne({ status: newStatus }));
+    if (object) {
+      this.store.dispatch(upsertOne({ status: object }));
     }
   };
 
   // eslint-disable-next-line  @typescript-eslint/no-unused-vars
-  deleteEventFunction: EventHandlingFunction = (
+  deleteEventFunction: EventHandlingFunction<Status> = (
     eventType: EventType,
     keyType: string,
     key: string,
-    data: string
+    data: string,
+    object: Status
   ) => {
     this.store.dispatch(removeOne({ ipaddress: key }));
+  };
+
+  getObjectFunction: EventHandlingGetObjectFunction<Status> = (
+    key_name: string,
+    key: string,
+    value: string
+  ): Observable<Status> => {
+    const status: Status = JSON.parse(value);
+    return of(status);
   };
 
   constructor(
@@ -75,54 +86,32 @@ export class ServerStatusService {
         'Status',
         this.insertEventFunction,
         this.updateEventFunction,
-        this.deleteEventFunction
+        this.deleteEventFunction,
+        this.getObjectFunction
       )
     );
   }
 
-  listAllServerStatus = () => {
+  listAllServerStatus = (): Observable<Status[]> => {
     const action = new ServersAction('Status', []);
     const body = JSON.stringify(action);
 
-    this.http
-      .post<Status[]>('/backend/servers/actions', body, {
-        headers: defaultHeadersForJSON(),
-      })
-      .subscribe({
-        next: (statusList) => {
-          this.store.dispatch(addMany({ status: statusList }));
-        },
-        error: (err) => {
-          if (err) {
-            this.errorService.newError(
-              Source.ServerStatusService,
-              undefined,
-              err
-            );
-          }
-        },
-      });
+    return this.http.post<Status[]>('/backend/servers/actions', body, {
+      headers: defaultHeadersForJSON(),
+    });
   };
 
-  getServerStatus = (ipaddress: string) => {
+  getServerStatus = (ipaddress: string): Observable<Status> => {
     const action = new ServersAction('Status', []);
     const body = JSON.stringify(action);
 
-    this.http
-      .post<Status>(`/servers/${ipaddress}/actions`, body, {
+    return this.http
+      .post<Status>(`/backend/servers/${ipaddress}/actions`, body, {
         headers: defaultHeadersForJSON(),
       })
-      .subscribe({
-        next: (status) => {
-          /*const statusUpdate: Update<Status> = {
-            id: status.ipaddress,
-            changes: { is_running: status.is_running }
-          };
-          this.store.dispatch(updateOne({status: statusUpdate}));*/
-
-          this.store.dispatch(upsertOne({ status: status }));
-        },
-        error: (err) => {
+      .pipe(
+        take(1),
+        catchError((err) => {
           if (err) {
             this.errorService.newError(
               Source.ServerStatusService,
@@ -130,7 +119,8 @@ export class ServerStatusService {
               err
             );
           }
-        },
-      });
+          return throwError(() => err);
+        })
+      );
   };
 }

@@ -4,7 +4,7 @@ import { Actions, createEffect, ofType, OnInitEffects } from '@ngrx/effects';
 import { Action, Store } from '@ngrx/store';
 import { distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators';
 import * as HydrationActions from './hydration.actions';
-import { resetSavedState, getSavedState, savedState, State } from '..';
+import { resetSavedState, getSavedState, saveState, isStateSaved,  State } from '..';
 
 @Injectable()
 export class HydrationEffects implements OnInitEffects {
@@ -13,7 +13,12 @@ export class HydrationEffects implements OnInitEffects {
       ofType(HydrationActions.hydrate),
       map(() => {
         try {
-          return HydrationActions.hydrateSuccess({ state: getSavedState() });
+          if( isStateSaved() ) {
+            return HydrationActions.hydrateSuccess({ state: getSavedState() });
+          }
+          else {
+            return HydrationActions.noHydration();
+          }
         } catch {
           resetSavedState();
           return HydrationActions.hydrateFailure();
@@ -31,7 +36,18 @@ export class HydrationEffects implements OnInitEffects {
         ),
         switchMap(() => this.store),
         distinctUntilChanged(),
-        tap((state) => savedState(state as State))
+        tap((state) => saveState(state as State))
+      );
+    },
+    { dispatch: false }
+  );
+
+  noHydration$ = createEffect(
+    () => {
+      return this.action$.pipe(
+        ofType(
+          HydrationActions.noHydration,
+        ),
       );
     },
     { dispatch: false }

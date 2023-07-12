@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import * as GlobalActions from '../state/global.actions';
 import { SubscriptionHandler } from '../shared/subscriptionHandler';
+import { take } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -79,10 +80,10 @@ export class LoginComponent implements OnDestroy {
     // so we use a encryption here and the server is then checking the password against the hash value on the server side
     this.subscriptionHandler.subscription = this.authService
       .login(this.userId.value, this.password.value)
+      .pipe(take(1))
       .subscribe({
         next: (userToken) => {
           this.store.dispatch(GlobalActions.init({userToken: userToken}));
-
 
           if (userToken && userToken.token) {
             this.router.navigate(['/home']);
