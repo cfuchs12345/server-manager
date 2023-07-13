@@ -1,9 +1,10 @@
 import { Component, OnDestroy } from '@angular/core';
-import { ServerService } from 'src/app/services/servers/server.service';
 import { ServerFeature } from 'src/app/services/servers/types';
 import { MatDialogRef } from '@angular/material/dialog';
 import { ServerDiscoveryService } from 'src/app/services/servers/server-discovery.service';
 import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
+import { Store } from '@ngrx/store';
+import { addServerFeatures } from 'src/app/state/server/server.actions';
 
 @Component({
   selector: 'app-feature-scan-modal',
@@ -24,19 +25,17 @@ export class FeatureScanModalComponent implements OnDestroy {
 
   constructor(
     private discoveryService: ServerDiscoveryService,
-    private serverService: ServerService,
+    private store: Store,
     private ref: MatDialogRef<FeatureScanModalComponent>
   ) {}
 
-
   ngOnDestroy(): void {
-   this.subscriptionHandler.onDestroy();
+    this.subscriptionHandler.onDestroy();
   }
 
   private preSelectAllFeatures = (serverFeatures: ServerFeature[]) => {
-    serverFeatures.forEach((f) => f.selected = true);
-  }
-
+    serverFeatures.forEach((f) => (f.selected = true));
+  };
 
   featuresFound = (): boolean => {
     return this.discoveredServerFeatures.length > 0;
@@ -48,14 +47,14 @@ export class FeatureScanModalComponent implements OnDestroy {
 
   onClickScanFeature = () => {
     this.isWorking = true;
-    this.subscriptionHandler.subscription = this.discoveryService.scanFeatureOfAllServers().subscribe(
-      (serverFeatures) => {
+    this.subscriptionHandler.subscription = this.discoveryService
+      .scanFeatureOfAllServers()
+      .subscribe((serverFeatures) => {
         this.isWorking = false;
         this.preSelectAllFeatures(serverFeatures);
 
         this.discoveredServerFeatures = serverFeatures;
-      }
-    );
+      });
   };
 
   onClickDeselectServer = (index: number) => {
@@ -64,29 +63,12 @@ export class FeatureScanModalComponent implements OnDestroy {
   };
 
   onClickSaveServerFeatures = () => {
-    const found_server_features = this.discoveredServerFeatures.filter((f) => f.selected);
+    const serverFeatures = this.discoveredServerFeatures.filter(
+      (f) => f.selected
+    );
 
-    found_server_features.forEach( (found_server_feature, ) => {
+    this.store.dispatch(addServerFeatures({ serverFeatures }));
 
-      this.subscriptionHandler.subscription = this.serverService.getServer(found_server_feature.ipaddress, true).subscribe({
-        next: (server) => {
-          let updated = false;
-
-          found_server_feature.features.forEach( (found) => {
-            const already_set = server.features.find((server_feature) => server_feature.id === found.id)
-
-            if( !already_set) {
-              updated = true;
-              server.features.push(found);
-            }
-          }); // we just add new features found, removal is only done manually
-
-          if( updated ) {
-            this.serverService.updateServer(server);
-          }
-        }
-      });
-    });
     this.ref.close();
   };
 }

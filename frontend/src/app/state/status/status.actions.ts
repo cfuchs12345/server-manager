@@ -27,4 +27,4 @@ export const upsertOne = createAction(STATUS_INSERT_OR_UPDATE_ACTION, props<{ st
 // for effects
 export const loadAll = createAction(STATUS_EFFECT_LOAD_ALL);
 export const loadAllSuccess = createAction(STATUS_EFFECT_LOAD_ALL_SUCCESS, props<{status: Status[]}>());
-export const loadAllFailure = createAction(STATUS_EFFECT_LOAD_ALL_FAILURE, props<{error: any}>());
+export const loadAllFailure = createAction(STATUS_EFFECT_LOAD_ALL_FAILURE, props<{error: Error}>());

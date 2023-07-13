@@ -25,4 +25,4 @@ export const upsertOne = createAction(DISABLED_PLUGIN_INSERT_OR_UPDATE_ACTION, p
 // for effects
 export const loadAll = createAction(DISABLED_PLUGIN_EFFECT_LOAD_ALL);
 export const loadAllSuccess = createAction(DISABLED_PLUGIN_EFFECT_LOAD_ALL_SUCCESS, props<{disabled_plugins: string[]}>());
-export const loadAllFailure = createAction(DISABLED_PLUGIN_EFFECT_LOAD_ALL_FAILURE, props<{error: any}>());
+export const loadAllFailure = createAction(DISABLED_PLUGIN_EFFECT_LOAD_ALL_FAILURE, props<{error: Error}>());

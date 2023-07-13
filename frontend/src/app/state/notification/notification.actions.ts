@@ -28,4 +28,4 @@ export const upsertOne = createAction(NOTIFICATION_INSERT_OR_UPDATE_ACTION, prop
 // for effects
 export const loadAll = createAction(NOTIFICATION_EFFECT_LOAD_ALL);
 export const loadAllSuccess = createAction(NOTIFICATION_EFFECT_LOAD_ALL_SUCCESS, props<{notifications: Notifications[]}>());
-export const loadAllFailure = createAction(NOTIFICATION_EFFECT_LOAD_ALL_FAILURE, props<{error: any}>());
+export const loadAllFailure = createAction(NOTIFICATION_EFFECT_LOAD_ALL_FAILURE, props<{error: Error}>());

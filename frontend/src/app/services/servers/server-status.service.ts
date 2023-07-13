@@ -15,12 +15,11 @@ import {
 import { EventType } from '../events/types';
 import { NGXLogger } from 'ngx-logger';
 import {
-  addMany,
   removeOne,
   upsertOne,
 } from 'src/app/state/status/status.actions';
 import { Store } from '@ngrx/store';
-import { Observable, catchError, of, take, tap, throwError } from 'rxjs';
+import { Observable, catchError, of, take, throwError } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -59,8 +58,8 @@ export class ServerStatusService {
     eventType: EventType,
     keyType: string,
     key: string,
-    data: string,
-    object: Status
+    data: string, // eslint-disable-line @typescript-eslint/no-unused-vars
+    object: Status // eslint-disable-line @typescript-eslint/no-unused-vars
   ) => {
     this.store.dispatch(removeOne({ ipaddress: key }));
   };

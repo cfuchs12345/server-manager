@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError, take } from 'rxjs';
-import { catchError, mergeMap, tap } from 'rxjs/operators';
+import { catchError, mergeMap } from 'rxjs/operators';
 import { UserToken } from '../users/types';
 import { ErrorService, Source } from '../errors/error.service';
 import { EncryptionService } from '../encryption/encryption.service';

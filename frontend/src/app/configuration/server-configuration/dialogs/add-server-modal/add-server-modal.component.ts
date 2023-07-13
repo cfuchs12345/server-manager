@@ -6,9 +6,10 @@ import { Observable,  map, of } from 'rxjs';
 import { ErrorService } from 'src/app/services/errors/error.service';
 import { Plugin } from 'src/app/services/plugins/types';
 import { ServerService } from 'src/app/services/servers/server.service';
-import { Feature, Server } from 'src/app/services/servers/types';
+import { Feature, Server, ServerFeature } from 'src/app/services/servers/types';
 import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
 import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
+import { addServerFeature, saveServer } from 'src/app/state/server/server.actions';
 import { selectAllServers } from 'src/app/state/server/server.selectors';
 
 @Component({
@@ -67,35 +68,25 @@ export class AddServerModalComponent implements OnDestroy {
 
   saveServer = () => {
     if (this.ipaddress.value) {
-      this.serverService.saveServers([
-        new Server(this.ipaddress.value, this.name.value ? this.name.value: ''),
-      ]);
+      this.store.dispatch(saveServer({server: new Server(this.ipaddress.value, this.name.value ? this.name.value: '') }));
     }
   };
 
   addFeatureToServer = () => {
-    if (this.selectedServer) {
-      this.subscriptionHandler.subscription = this.serverService
-        .getServer(this.selectedServer.ipaddress, true)
-        .subscribe({
-          next: (server) => {
-            if (this.selectedPlugin && this.selectedServer) {
-              const features = server.features;
-              features.push(
-                new Feature(
-                  this.selectedPlugin.id,
-                  this.selectedPlugin.name,
-                  [],
-                  []
-                )
-              );
-              this.serverService.updateServer(server);
+    if (this.selectedServer && this.selectedPlugin && this.selectedServer) {
+      const feature = new Feature(
+        this.selectedPlugin.id,
+        this.selectedPlugin.name,
+        [],
+        []
+      );
 
-              this.selectedPlugin = undefined;
-              this.selectedServer = undefined;
-            }
-          },
-        });
+      const serverFeature = new ServerFeature(this.selectedServer.ipaddress, [feature]);
+
+      this.store.dispatch(addServerFeature({serverFeature: serverFeature}));
+
+      this.selectedPlugin = undefined;
+      this.selectedServer = undefined;
     }
   };
 

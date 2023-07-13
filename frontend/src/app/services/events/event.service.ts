@@ -13,9 +13,9 @@ import { selectAllTokens } from 'src/app/state/usertoken/usertoken.selectors';
   providedIn: 'root',
 })
 export class EventService {
-  private eventHandlers: EventHandler<any>[] = [];
+  private eventHandlers: EventHandler<any>[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-  private _eventSubject = new Subject<[Event, any]>();
+  private _eventSubject = new Subject<[Event, any]>(); // eslint-disable-line @typescript-eslint/no-explicit-any
 
   readonly eventSubject$ = this._eventSubject.asObservable();
 
@@ -23,7 +23,7 @@ export class EventService {
 
   private userToken$: Observable<UserToken[]>;
 
-  private map: Map<ObjectType, EventHandlingGetObjectFunction<any>> = new Map();
+  private map: Map<ObjectType, EventHandlingGetObjectFunction<any>> = new Map(); // eslint-disable-line @typescript-eslint/no-explicit-any
 
   constructor(
     private store: Store,
@@ -60,18 +60,17 @@ export class EventService {
         const event: Event = JSON.parse(message.data);
 
         if (isType<Event>(event)) {
-          this.logger.info('event received: ', event);
-          const object$ = this.getObject(
+          this.logger.trace('event received: ', event);
+
+          const object$ = event.event_type === 'Delete' ? of(undefined) :  this.getObject(
             event.object_type,
             event.key_name,
             event.key,
             event.value
-          );
+          ); // When we receive a Delete, the object doesn't exist anymore, so we can't select it as object
 
           object$.pipe(take(1)).subscribe({
             next: (object) => {
-              console.log('current object ', event.object_type, event.key, object);
-
               this._eventSubject.next([event, object]);
             }
           });
@@ -98,7 +97,7 @@ export class EventService {
 
   registerGetObjectFunction = (
     objectType: ObjectType,
-    func: EventHandlingGetObjectFunction<any>
+    func: EventHandlingGetObjectFunction<any> // eslint-disable-line @typescript-eslint/no-explicit-any
   ) => {
     this.map.set(objectType, func);
   };
@@ -170,11 +169,11 @@ export class EventHandler<T> {
 
     this.subscription = this.eventService.eventSubject$
       .pipe(
-        filter((eventAndObject: [Event, any]) => {
+        filter((eventAndObject: [Event, any]) => {  // eslint-disable-line @typescript-eslint/no-explicit-any
           return eventAndObject[0].object_type === this.objectType;
         })
       )
-      .subscribe((eventAndObject: [Event, any]) => {
+      .subscribe((eventAndObject: [Event, any]) => {  // eslint-disable-line @typescript-eslint/no-explicit-any
         const event = eventAndObject[0];
         const currenObject = eventAndObject[1];
 

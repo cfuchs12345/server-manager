@@ -23,13 +23,6 @@ export class GUIAction {
   ) {}
 }
 
-export class ConfigAction {
-  constructor(
-    public action_type: 'SaveDNSServers',
-    dnsServers: DNSServer[] = []
-  ) {}
-}
-
 export class DNSServer {
   constructor(public ipaddress: string, public port: number) {}
 }

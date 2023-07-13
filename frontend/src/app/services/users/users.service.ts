@@ -7,7 +7,7 @@ import { defaultHeadersForJSON } from '../common';
 import { EncryptionService } from '../encryption/encryption.service';
 import { OneTimeKey } from '../auth/types';
 import { Store } from '@ngrx/store';
-import { removeOne, addMany } from 'src/app/state/user/user.actions';
+import { removeOne } from 'src/app/state/user/user.actions';
 import { NGXLogger } from 'ngx-logger';
 import { EventService } from '../events/event.service';
 import { Event } from '../events/types';

@@ -34,7 +34,7 @@ pub fn get_event_for_object_change(
             EventType::Insert,
             &*current.expect("could not get option value"),
         )?)
-    } else {
+    } else if current.is_some() && old.is_some() {
         let current_val = current
             .as_ref()
             .expect("could not get option value")
@@ -53,6 +53,9 @@ pub fn get_event_for_object_change(
             log::debug!("Did not handle object change {:?} {:?}", current, old);
             None
         }
+    } else {
+        log::warn!("both values seem to be empty: {:?} {:?}", current, old);
+        None
     };
 
     log::trace!("{:?}", event);

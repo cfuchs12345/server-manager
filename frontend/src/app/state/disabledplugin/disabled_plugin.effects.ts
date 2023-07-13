@@ -2,7 +2,7 @@
 import { Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { of } from 'rxjs';
-import { map, switchMap, tap, catchError, mergeMap } from 'rxjs/operators';
+import { map, tap, catchError, exhaustMap } from 'rxjs/operators';
 import {
   addMany,
   loadAll,
@@ -17,7 +17,7 @@ export class DisabledPluginEffects {
   loadAll$ = createEffect(() => {
     return this.action$.pipe(
       ofType(loadAll),
-      switchMap(() => this.pluginService.loadDisabledPlugins()),
+      exhaustMap(() => this.pluginService.loadDisabledPlugins()),
       map((disabled_plugins) => loadAllSuccess({ disabled_plugins: disabled_plugins })),
       catchError((e) => of(loadAllFailure({ error: e })))
     );

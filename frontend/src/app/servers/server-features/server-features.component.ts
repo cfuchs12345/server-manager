@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { Store } from '@ngrx/store';
-import { Observable, filter, map, switchMap } from 'rxjs';
+import { Observable, filter, map } from 'rxjs';
 import { ErrorService, Source } from 'src/app/services/errors/error.service';
 import { PluginService } from 'src/app/services/plugins/plugin.service';
 import { Plugin } from 'src/app/services/plugins/types';

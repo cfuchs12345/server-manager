@@ -2,12 +2,13 @@ import { Component, OnDestroy } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { Observable } from 'rxjs';
 import { ServerService } from 'src/app/services/servers/server.service';
-import { Feature, Server } from 'src/app/services/servers/types';
+import { Feature, Server, ServerFeature } from 'src/app/services/servers/types';
 import { ConfirmDialogComponent } from 'src/app/ui/confirm-dialog/confirm-dialog.component';
 import { DeleteServerDialog } from '../dialog-delete-server';
 import { Store } from '@ngrx/store';
 import { selectAllServers, selectAllServersWithFeatures } from 'src/app/state/server/server.selectors';
 import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
+import { removeServerFeature, removeServers } from 'src/app/state/server/server.actions';
 
 @Component({
   selector: 'app-delete-server-modal',
@@ -77,18 +78,11 @@ export class DeleteServerModalComponent implements OnDestroy {
 
   removeFeatureFromServer = () => {
     if(this.selectedServer && this.selectedFeature) {
-      // cannot get it from store here, since we need the full data (features, credentials, params and so on)
-      this.subscriptionHandler.subscription = this.serverService.getServer(this.selectedServer.ipaddress, true).subscribe({
-        next: (server) => {
-          const filteredFeatures = server.features.filter( (feature) => feature.id !== this.selectedFeature?.id);
-          server.features = filteredFeatures;
+      const serverFeature = new ServerFeature(this.selectedServer.ipaddress, [this.selectedFeature]);
+      this.store.dispatch(removeServerFeature({serverFeature}));
 
-          this.serverService.updateServer(server);
-
-          this.selectedFeature = undefined;
-          this.selectedServer = undefined;
-        },
-      });
+      this.selectedFeature = undefined;
+      this.selectedServer = undefined;
     }
   }
 
@@ -102,7 +96,7 @@ export class DeleteServerModalComponent implements OnDestroy {
     });
     confirmDialog.afterClosed().subscribe(result => {
       if (result === true) {
-        this.serverService.deleteServers(this.selectedServers);
+        this.store.dispatch(removeServers({servers: this.selectedServers}));
         this.ref.close();
       }
     });

@@ -1,19 +1,18 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, filter, of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { Store } from '@ngrx/store';
 import { defaultHeadersForJSON } from '../common';
 import { ConditionCheckResult, ServersAction } from './types';
 import {
-  addMany,
   removeOne,
   upsertOne,
 } from 'src/app/state/conditioncheckresult/conditioncheckresult.actions';
 import { Param, ServerAction, Feature } from './types';
-import { ErrorService, Source } from '../errors/error.service';
+import { ErrorService } from '../errors/error.service';
 import { NGXLogger } from 'ngx-logger';
 import { EventHandler, EventHandlingFunction, EventHandlingGetObjectFunction, EventHandlingUpdateFunction, EventService } from '../events/event.service';
-import { Event, EventType } from '../events/types';
+import { EventType } from '../events/types';
 
 @Injectable({
   providedIn: 'root',
@@ -46,7 +45,7 @@ export class ServerActionService {
     eventType: EventType,
     key_name: string,
     key: string,
-    data: string
+    data: string // eslint-disable-line @typescript-eslint/no-unused-vars
   ) => {
     this.store.dispatch(removeOne({ key: key }));
   };

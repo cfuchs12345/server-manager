@@ -5,7 +5,7 @@ import {
   ChangeDetectorRef,
   OnDestroy
 } from '@angular/core';
-import { Subscription, Observable, filter } from 'rxjs';
+import { Observable, filter } from 'rxjs';
 import { GUIAction } from 'src/app/services/general/types';
 import { ImageCache } from 'src/app/services/cache/image-cache.service';
 import {

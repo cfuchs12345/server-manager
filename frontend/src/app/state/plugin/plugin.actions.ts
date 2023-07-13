@@ -26,4 +26,4 @@ export const upsertOne = createAction(PLUGIN_INSERT_OR_UPDATE_ACTION, props<{ pl
 // for effects
 export const loadAll = createAction(PLUGIN_EFFECT_LOAD_ALL);
 export const loadAllSuccess = createAction(PLUGIN_EFFECT_LOAD_ALL_SUCCESS, props<{plugins: Plugin[]}>());
-export const loadAllFailure = createAction(PLUGIN_EFFECT_LOAD_ALL_FAILURE, props<{error: any}>());
+export const loadAllFailure = createAction(PLUGIN_EFFECT_LOAD_ALL_FAILURE, props<{error: Error}>());

@@ -36,7 +36,7 @@ export class ServerActionComponent implements OnChanges {
     this.allDependenciesMet = this.allDependenciesMetCheck();
 
     if (old !== this.allDependenciesMet) {
-      this.cdr.detectChanges();
+      this.cdr.detectChanges();  // eslint-disable-line @rx-angular/no-explicit-change-detection-apis
     }
   }
 

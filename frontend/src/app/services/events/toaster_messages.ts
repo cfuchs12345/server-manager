@@ -38,7 +38,7 @@ const OPTIONS = {
 export class ToasterPopupGenerator {
   constructor(private store: Store, private toasterService: ToastrService) {}
 
-  handleEvent(eventAndObject: [Event, any]) {
+  handleEvent(eventAndObject: [Event, any]) { // eslint-disable-line @typescript-eslint/no-explicit-any
     this.show(this.getToasterPopupInfo(eventAndObject[0]));
   }
 

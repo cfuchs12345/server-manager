@@ -3,7 +3,6 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map, of, switchMap, tap, take } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
 import {
-  addMany,
   addOne,
   removeOne,
   upsertOne,
@@ -68,7 +67,7 @@ export class ServerService {
     eventType: EventType,
     key_name: string,
     key: string,
-    data: string
+    data: string  // eslint-disable-line @typescript-eslint/no-unused-vars
   ) => {
     this.store.dispatch(removeOne({ ipaddress: key }));
   };

@@ -25,4 +25,4 @@ export const upsertOne = createAction(CONDITIONCHECKRES_INSERT_OR_UPDATE_ACTION,
 // for effects
 export const loadAll = createAction(CONDITIONCHECKRES_EFFECT_LOAD_ALL);
 export const loadAllSuccess = createAction(CONDITIONCHECKRES_EFFECT_LOAD_ALL_SUCCESS, props<{results: ConditionCheckResult[]}>());
-export const loadAllFailure = createAction(CONDITIONCHECKRES_EFFECT_LOAD_ALL_FAILURE, props<{error: any}>());
+export const loadAllFailure = createAction(CONDITIONCHECKRES_EFFECT_LOAD_ALL_FAILURE, props<{error: Error}>());

@@ -1,6 +1,5 @@
 import { inject, isDevMode } from '@angular/core';
 import {
-  Action,
   ActionReducer,
   ActionReducerMap,
   MetaReducer,

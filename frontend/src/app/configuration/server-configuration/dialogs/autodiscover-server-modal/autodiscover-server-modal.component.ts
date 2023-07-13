@@ -13,6 +13,7 @@ import { RxwebValidators, IpVersion } from '@rxweb/reactive-form-validators';
 import { Store } from '@ngrx/store';
 import { selectAllServers } from 'src/app/state/server/server.selectors';
 import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
+import { saveServers } from 'src/app/state/server/server.actions';
 
 @Component({
   selector: 'app-autodiscover-server-modal',
@@ -102,13 +103,15 @@ export class AutodiscoverServerModalComponent implements OnInit, OnDestroy {
 
     if (value != null) {
       this.loading = true;
-      this.discoverService
+      this.subscriptionHandler.subscription = this.discoverService
         .autoDiscoverServers(value, true)
         .subscribe((servers) => {
-          this.servers = servers.filter(
-            (s) => this.runningOrHasName(s) && !this.alreadyExists(s)
-          );
-          this.servers.forEach((s) => (s.selected = true));
+          this.servers = servers
+            .filter((s) => this.runningOrHasName(s) && !this.alreadyExists(s))
+            .map((s) => {
+              s.selected = true;
+              return s;
+            });
 
           this.loading = false;
         });
@@ -127,17 +130,10 @@ export class AutodiscoverServerModalComponent implements OnInit, OnDestroy {
   };
 
   onClickSaveServers = () => {
-    const serversToSave: Server[] = [];
-    for (let i = 0; i < this.servers.length; i++) {
-      const server = this.servers[i];
-
-      if (server.selected) {
-        serversToSave.push(
-          new Server(server.ipaddress, '', server.dnsname, [])
-        );
-      }
-    }
-    this.serverService.saveServers(serversToSave);
+    const servers = this.servers
+      .filter((s) => s.selected)
+      .map((s) => new Server(s.ipaddress, '', s.dnsname, []));
+    this.store.dispatch(saveServers({ servers }));
     this.ref.close();
   };
 

@@ -25,4 +25,4 @@ export const upsertOne = createAction(USER_INSERT_OR_UPDATE_ACTION, props<{ user
 // for effects
 export const loadAll = createAction(USER_EFFECT_LOAD_ALL);
 export const loadAllSuccess = createAction(USER_EFFECT_LOAD_ALL_SUCCESS, props<{users: User[]}>());
-export const loadAllFailure = createAction(USER_EFFECT_LOAD_ALL_FAILURE, props<{error: any}>());
+export const loadAllFailure = createAction(USER_EFFECT_LOAD_ALL_FAILURE, props<{error: Error}>());
