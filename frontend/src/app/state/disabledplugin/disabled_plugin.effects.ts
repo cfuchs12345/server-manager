@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 import { map, tap, catchError, exhaustMap } from 'rxjs/operators';
 import {
   addMany,
+  disablePlugins,
   loadAll,
   loadAllFailure,
   loadAllSuccess
@@ -36,6 +37,13 @@ export class DisabledPluginEffects {
     return this.action$.pipe(
       ofType(loadAllFailure),
       tap( (err) => this.errorService.newError(Source.PluginService, undefined, err)),
+    );
+  }, { dispatch: false });
+
+  disablePlugins$ = createEffect(() => {
+    return this.action$.pipe(
+      ofType(disablePlugins),
+      tap( (action) => this.pluginService.disablePlugins(action.plugins))
     );
   }, { dispatch: false });
 

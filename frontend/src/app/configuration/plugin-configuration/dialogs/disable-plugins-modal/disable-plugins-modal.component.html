@@ -15,7 +15,7 @@
   <ng-container matColumnDef="disable">
     <th mat-header-cell *matHeaderCellDef><span (click)="onClickSelectAll()"  style="cursor: pointer;">{{ selectAll ? '&#9745;' : '&#9744;'}}</span>&nbsp;&nbsp;Disable</th>
     <td mat-cell *matCellDef="let plugin">
-      <div (click)="onClickSelectPlugin(plugin)" style="cursor: pointer;">{{ isDisabled(plugin.id) ? "&#10003;" : "&#10005;" }}</div>
+      <div (click)="onClickSelectPlugin(plugin)" style="cursor: pointer;">{{ isDisabled(plugin) ? "&#10003;" : "&#10005;" }}</div>
     </td>
   </ng-container>
   <ng-container matColumnDef="name">

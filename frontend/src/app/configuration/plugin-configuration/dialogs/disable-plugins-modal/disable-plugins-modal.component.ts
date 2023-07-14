@@ -1,9 +1,9 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { Observable, map } from 'rxjs';
-import { PluginService } from 'src/app/services/plugins/plugin.service';
 import { Plugin } from 'src/app/services/plugins/types';
 import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
+import { disablePlugins } from 'src/app/state/disabledplugin/disabled_plugin.actions';
 import { selectAllDisabledPlugins } from 'src/app/state/disabledplugin/disabled_plugin.selectors';
 import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
 
@@ -24,7 +24,7 @@ export class DisablePluginsModalComponent implements OnInit, OnDestroy {
 
   private subscriptionHandler = new SubscriptionHandler(this);
 
-  constructor(private store: Store, private servicePlugins: PluginService) {
+  constructor(private store: Store) {
     this.plugins$ = this.store.select(selectAllPlugins);
     this.disabledPlugins$ = this.store.select(selectAllDisabledPlugins);
   }
@@ -39,19 +39,17 @@ export class DisablePluginsModalComponent implements OnInit, OnDestroy {
     this.subscriptionHandler.onDestroy();
   }
 
-  isDisabled = (id: string): boolean => {
-    return this.selectedPlugins.indexOf(id) > -1;
+  onClickSaveDisabledPlugins = () => {
+    this.store.dispatch(disablePlugins({plugins: this.selectedPlugins }))
   };
 
-  onClickSaveDisabledPlugins = () => {
-    this.servicePlugins.disablePlugins(this.selectedPlugins);
-  };
+  isDisabled = (plugin: Plugin): boolean => {
+    return this.selectedPlugins.indexOf(plugin.id) > -1;
+  }
 
   onClickSelectPlugin = (plugin: Plugin) => {
-    if (this.isDisabled(plugin.id)) {
-      this.selectedPlugins = this.selectedPlugins.filter(
-        (str) => str !== plugin.id
-      );
+    if (this.isDisabled(plugin)) {
+      this.selectedPlugins = this.selectedPlugins.filter( (p) => p !== plugin.id)
     } else {
       this.selectedPlugins.push(plugin.id);
     }

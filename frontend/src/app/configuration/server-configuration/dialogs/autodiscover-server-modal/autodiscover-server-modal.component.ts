@@ -1,6 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
-import { ServerService } from '../../../../services/servers/server.service';
 import { HostInformation, Server } from '../../../../services/servers/types';
 import { MatDialogRef } from '@angular/material/dialog';
 import { AutoDiscoveryDialog } from '../dialog-autodiscover';
@@ -46,7 +45,6 @@ export class AutodiscoverServerModalComponent implements OnInit, OnDestroy {
 
   constructor(
     private store: Store,
-    private serverService: ServerService,
     private discoverService: ServerDiscoveryService,
     private generalService: GeneralService,
     private errorService: ErrorService,

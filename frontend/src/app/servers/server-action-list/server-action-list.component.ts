@@ -2,7 +2,6 @@ import {
   Component,
   OnInit,
   Input,
-  ChangeDetectorRef,
   OnDestroy
 } from '@angular/core';
 import { Observable, filter } from 'rxjs';
@@ -18,7 +17,6 @@ import { Store } from '@ngrx/store';
 import { selectStatusByIpAddress } from 'src/app/state/status/status.selectors';
 import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
 import { selectConditionCheckResultByKey } from 'src/app/state/conditioncheckresult/conditioncheckresult.selectors';
-import { NGXLogger } from 'ngx-logger';
 import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
 
 @Component({
@@ -46,8 +44,6 @@ export class ServerActionListComponent implements OnInit, OnDestroy {
   constructor(
     private store: Store,
     private imageCache: ImageCache,
-    private logger: NGXLogger,
-    private cdr: ChangeDetectorRef
   ) {
     this.plugins$ = this.store.select(selectAllPlugins);
   }

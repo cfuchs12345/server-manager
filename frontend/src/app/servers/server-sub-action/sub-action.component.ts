@@ -1,10 +1,10 @@
 import { Component, NgZone } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from 'src/app/ui/confirm-dialog/confirm-dialog.component';
-import { ServerActionService } from 'src/app/services/servers/server-action.service';
 import { ErrorService, Source } from 'src/app/services/errors/error.service';
 import { Store } from '@ngrx/store';
 import { selectPluginById } from 'src/app/state/plugin/plugin.selectors';
+import { executeAction } from 'src/app/state/action/action.actions';
 
 @Component({
   selector: 'app-server-sub-action',
@@ -14,7 +14,6 @@ import { selectPluginById } from 'src/app/state/plugin/plugin.selectors';
 export class ServerSubActionComponent {
   constructor(
     private store: Store,
-    private serverActionService: ServerActionService,
     private errorService: ErrorService,
     private dialog: MatDialog,
     private zone: NgZone
@@ -73,21 +72,11 @@ export class ServerSubActionComponent {
               });
               confirmDialog.afterClosed().subscribe((result) => {
                 if (result === true) {
-                  this.serverActionService.executeAction(
-                    feature_id,
-                    action_id,
-                    ipaddress,
-                    action_params
-                  );
+                  this.store.dispatch(executeAction({feature_id, action_id, ipaddress, action_params}));
                 }
               });
             } else {
-              this.serverActionService.executeAction(
-                feature_id,
-                action_id,
-                ipaddress,
-                action_params
-              );
+              this.store.dispatch(executeAction({feature_id, action_id, ipaddress, action_params}));
             }
           } else {
             this.errorService.newError(

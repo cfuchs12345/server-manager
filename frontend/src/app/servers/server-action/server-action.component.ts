@@ -7,7 +7,6 @@ import {
   Status,
 } from 'src/app/services/servers/types';
 import { ConfirmDialogComponent } from 'src/app/ui/confirm-dialog/confirm-dialog.component';
-import { NGXLogger } from 'ngx-logger';
 import { Store } from '@ngrx/store';
 import { executeAction } from 'src/app/state/action/action.actions';
 
@@ -27,7 +26,6 @@ export class ServerActionComponent implements OnChanges {
   constructor(
     private store: Store,
     private dialog: MatDialog,
-    private logger: NGXLogger,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -83,6 +81,7 @@ export class ServerActionComponent implements OnChanges {
               feature_id: this.guiAction.feature.id,
               action_id: this.guiAction.action.id,
               ipaddress: this.server.ipaddress,
+              action_params: undefined
             })
           );
         }
@@ -93,6 +92,7 @@ export class ServerActionComponent implements OnChanges {
           feature_id: this.guiAction.feature.id,
           action_id: this.guiAction.action.id,
           ipaddress: this.server.ipaddress,
+          action_params: undefined
         })
       );
     }

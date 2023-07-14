@@ -16,7 +16,7 @@ export class ActionEffects {
   executeAction$ = createEffect(() => {
     return this.action$.pipe(
       ofType(executeAction),
-      switchMap((action) => this.serverActionService.executeAction(action.feature_id, action.action_id, action.ipaddress)),
+      switchMap((action) => this.serverActionService.executeAction(action.feature_id, action.action_id, action.ipaddress, action.action_params)),
       map(() => executeActionSuccess()),
       catchError((e) => of(executeActionFailure({ error: e })))
     );

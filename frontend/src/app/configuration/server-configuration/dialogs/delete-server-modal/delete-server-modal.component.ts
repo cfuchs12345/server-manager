@@ -1,7 +1,6 @@
 import { Component, OnDestroy } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { Observable } from 'rxjs';
-import { ServerService } from 'src/app/services/servers/server.service';
 import { Feature, Server, ServerFeature } from 'src/app/services/servers/types';
 import { ConfirmDialogComponent } from 'src/app/ui/confirm-dialog/confirm-dialog.component';
 import { DeleteServerDialog } from '../dialog-delete-server';
@@ -36,7 +35,7 @@ export class DeleteServerModalComponent implements OnDestroy {
 
   displayedColumns: string[] = ['delete', 'ipaddress', 'name'];
 
-  constructor(private store: Store,private serverService: ServerService, private dialog: MatDialog, private ref: MatDialogRef<DeleteServerDialog>) {
+  constructor(private store: Store, private dialog: MatDialog, private ref: MatDialogRef<DeleteServerDialog>) {
     this.servers$ = this.store.select(selectAllServers);
     this.serversWithFeatures$ = this.store.select(selectAllServersWithFeatures);
   }

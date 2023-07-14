@@ -6,7 +6,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { Store } from '@ngrx/store';
-import { Observable, map } from 'rxjs';
+import { Observable, map, take } from 'rxjs';
 import {
   CredentialDefinition,
   ParamDefinition,
@@ -21,6 +21,7 @@ import {
 } from 'src/app/services/servers/types';
 import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
 import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
+import { saveServer } from 'src/app/state/server/server.actions';
 import { selectAllServersWithFeatures } from 'src/app/state/server/server.selectors';
 
 @Component({
@@ -176,17 +177,16 @@ export class ConfigureFeaturesModalComponent implements OnDestroy {
   };
 
   onClickSaveFeatureSettings = () => {
-    const selectedFeature = this.selectedFeature;
-
     if (
       !this.selectedServerFullData ||
-      !selectedFeature ||
       !this.selectedServerFullData.ipaddress
     ) {
       return;
     }
     const feature = this.selectedServerFullData.features.find(
-      (feature) => feature.id === selectedFeature.id
+      (feature) =>
+        this.selectedFeature !== undefined &&
+        feature.id === this.selectedFeature.id
     );
     if (!feature) {
       return;
@@ -195,7 +195,7 @@ export class ConfigureFeaturesModalComponent implements OnDestroy {
     feature.credentials = this.makeCredentials();
     feature.params = this.makeParams();
 
-    this.serverService.updateServer(this.selectedServerFullData);
+    this.store.dispatch(saveServer({server: this.selectedServerFullData}));
   };
 
   makeCredentials = (): Credential[] => {
@@ -244,6 +244,7 @@ export class ConfigureFeaturesModalComponent implements OnDestroy {
     if (this.selectedServer?.ipaddress) {
       this.subscriptionHandler.subscription = this.serverService
         .getServer(this.selectedServer?.ipaddress, true)
+        .pipe(take(1))
         .subscribe({
           next: (server) => {
             this.selectedServerFullData = server;

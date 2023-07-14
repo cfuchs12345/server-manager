@@ -12,6 +12,7 @@ export const DISABLED_PLUGIN_INSERT_OR_UPDATE_ACTION = '[Disabled Plugin] Insert
 export const DISABLED_PLUGIN_EFFECT_LOAD_ALL = '[Disabled Plugin] Effect: Load All';
 export const DISABLED_PLUGIN_EFFECT_LOAD_ALL_SUCCESS = '[Disabled Plugin] Effect: Load All Success';
 export const DISABLED_PLUGIN_EFFECT_LOAD_ALL_FAILURE = '[Disabled Plugin] Effect: Load All Failure';
+export const DISABLED_PLUGIN_DISABLE_PLUGINS = '[Disabled Plugin] Effect: Disable Plugins';
 
 
 
@@ -26,3 +27,4 @@ export const upsertOne = createAction(DISABLED_PLUGIN_INSERT_OR_UPDATE_ACTION, p
 export const loadAll = createAction(DISABLED_PLUGIN_EFFECT_LOAD_ALL);
 export const loadAllSuccess = createAction(DISABLED_PLUGIN_EFFECT_LOAD_ALL_SUCCESS, props<{disabled_plugins: string[]}>());
 export const loadAllFailure = createAction(DISABLED_PLUGIN_EFFECT_LOAD_ALL_FAILURE, props<{error: Error}>());
+export const disablePlugins = createAction(DISABLED_PLUGIN_DISABLE_PLUGINS, props<{plugins: string[]}>());

@@ -2,7 +2,6 @@ import { Component, Input } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { Observable, filter, map } from 'rxjs';
 import { ErrorService, Source } from 'src/app/services/errors/error.service';
-import { PluginService } from 'src/app/services/plugins/plugin.service';
 import { Plugin } from 'src/app/services/plugins/types';
 import { Server } from 'src/app/services/servers/types';
 import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
@@ -21,7 +20,6 @@ export class ServerFeaturesComponent {
 
   constructor(
     private store: Store,
-    private pluginService: PluginService,
     private errorService: ErrorService
   ) {
     this.plugins$ = this.store

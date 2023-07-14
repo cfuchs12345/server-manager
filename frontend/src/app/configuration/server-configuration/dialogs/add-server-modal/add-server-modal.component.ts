@@ -3,9 +3,7 @@ import { FormControl, Validators } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { RxwebValidators, IpVersion } from '@rxweb/reactive-form-validators';
 import { Observable,  map, of } from 'rxjs';
-import { ErrorService } from 'src/app/services/errors/error.service';
 import { Plugin } from 'src/app/services/plugins/types';
-import { ServerService } from 'src/app/services/servers/server.service';
 import { Feature, Server, ServerFeature } from 'src/app/services/servers/types';
 import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
 import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
@@ -45,8 +43,6 @@ export class AddServerModalComponent implements OnDestroy {
 
   constructor(
     private store: Store,
-    private serverService: ServerService,
-    private errorService: ErrorService
   ) {
     this.servers$ = this.store.select(selectAllServers);
     this.plugins$ = this.store.select(selectAllPlugins);
