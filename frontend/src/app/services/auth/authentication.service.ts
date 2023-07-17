@@ -9,6 +9,7 @@ import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { selectToken } from 'src/app/state/usertoken/usertoken.selectors';
 import * as GlobalActions from '../../../app/state/global.actions';
+import { Token } from './types';
 
 @Injectable({ providedIn: 'root' })
 export class AuthenticationService {
@@ -72,4 +73,8 @@ export class AuthenticationService {
   userExist = (): Observable<boolean> => {
     return this.http.get<boolean>('/backend_nt/users/exist')
   };
+
+  getEventServiceToken = (): Observable<Token> => {
+    return this.http.get<Token>('/backend/eventservicetoken')
+  }
 }

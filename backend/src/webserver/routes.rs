@@ -7,7 +7,7 @@ use std::net::IpAddr;
 use std::time::Duration;
 use std::vec;
 
-use crate::common::{ClientKey, OneTimeKey};
+use crate::common::{ClientKey, OneTimeKey, Token};
 use crate::event_handling::Event;
 use crate::models::config::dns_server::DNSServer;
 use crate::models::config::Configuration;
@@ -599,15 +599,41 @@ async fn post_config(
 }
 
 #[get("events")]
-async fn get_events_from_stream() -> impl Responder {
-    let event_subscriber = event_handling::subscribe().await;
-    let stream = tokio_stream::wrappers::BroadcastStream::new(event_subscriber);
+pub async fn get_events_from_stream(
+    req: HttpRequest,
+    query: web::Query<std::collections::HashMap<String, String>>,
+) -> impl Responder {
+    let params = query.into_inner();
 
-    let mapped = stream
-        .filter_map(map_events_to_sse_data_events)
-        .map(Ok::<_, Infallible>);
+    match params.get("token") {
+        Some(token_param) => {
+            let token = Token::new(token_param.as_str());
 
-    sse::Sse::from_stream(mapped).with_keep_alive(Duration::from_secs(5))
+            if token.is_valid().await {
+                let event_subscriber = event_handling::subscribe().await;
+                let stream = tokio_stream::wrappers::BroadcastStream::new(event_subscriber);
+
+                let mapped = stream
+                    .filter_map(map_events_to_sse_data_events)
+                    .map(Ok::<_, Infallible>);
+
+                sse::Sse::from_stream(mapped)
+                    .with_keep_alive(Duration::from_secs(5))
+                    .respond_to(&req)
+            } else {
+                log::error!("Token {:?} is invalid", token);
+                HttpResponse::Unauthorized().finish().respond_to(&req)
+            }
+        }
+        None => HttpResponse::Unauthorized().finish().respond_to(&req),
+    }
+}
+
+#[get("eventservicetoken")]
+pub async fn get_eventservicetoken() -> Result<HttpResponse, AppError> {
+    let token = common::Token::generate().await?;
+
+    Ok(HttpResponse::Ok().json(token))
 }
 
 async fn map_events_to_sse_data_events(

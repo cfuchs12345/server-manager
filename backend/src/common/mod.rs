@@ -10,6 +10,7 @@ mod kafka_functions;
 mod mail;
 mod onetimekey;
 mod script_languages;
+mod token;
 
 pub use http_functions::DELETE;
 pub use http_functions::GET;
@@ -38,6 +39,8 @@ pub use mail::send_email;
 
 pub use onetimekey::invalidate_expired_one_time_keys;
 pub use onetimekey::OneTimeKey;
+
+pub use token::Token;
 
 pub use clientkey::ClientKey;
 

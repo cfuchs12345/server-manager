@@ -97,6 +97,8 @@ fn init_no_token_api(cfg: &mut web::ServiceConfig) {
 }
 
 fn init_token_secured_api(cfg: &mut web::ServiceConfig) {
+    cfg.service(routes::get_eventservicetoken);
+
     cfg.service(routes::post_networks_action);
 
     cfg.service(routes::post_servers);
