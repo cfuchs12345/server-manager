@@ -47,42 +47,52 @@ export class EventService {
     private toasterMessage: ToasterPopupGenerator
   ) {
     this.userToken$ = this.store.select(selectAllTokens);
-    this.userToken$.subscribe((tokens) => {
-      if (tokens && tokens.length > 0) {
-        this.authService
-          .getEventServiceToken()
-          .pipe(take(1))
-          .subscribe((token) => {
-            const event_api_token = token.token;
-            this.source = new EventSource(
-              `/backend_nt/events?token=${event_api_token}`
-            );
+    this.userToken$
+      .pipe(tap((userTokens) => this.logger.debug('userTokens', userTokens)))
+      .subscribe((userTokens) => {
+        if (userTokens && userTokens.length > 0) {
+          this.authService
+            .getEventServiceToken()
+            .pipe(
+              tap((eventServiceToken) =>
+                this.logger.debug('eventServiceToken', eventServiceToken)
+              ),
+              take(1)
+            )
+            .subscribe((eventServiceToken) => {
+              const event_token = eventServiceToken.token;
+              this.source = new EventSource(
+                `/backend_nt/events?token=${event_token}`
+              );
 
-            this.subscribeToEvents();
-            this.subscribeForToasterMessages();
+              this.subscribeToEvents();
+              this.subscribeForToasterMessages();
 
-            for (const eventHandler of this.eventHandlers) {
-              eventHandler.start();
-            }
-            this.logger.info('Event connection established');
-          });
-      } else {
-        for (const eventHandler of this.eventHandlers) {
-          eventHandler.stop();
+              for (const eventHandler of this.eventHandlers) {
+                eventHandler.start();
+              }
+              this.logger.info('Event connection established');
+            });
+        } else {
+          for (const eventHandler of this.eventHandlers) {
+            eventHandler.stop();
+          }
+          if (this.source) {
+            this.source.close();
+            this.source = undefined;
+          }
+          this.logger.info('Event connection closed');
         }
-        if (this.source) {
-          this.source.close();
-          this.source = undefined;
-        }
-        this.logger.info('Event connection closed');
-      }
-    });
+      });
   }
 
   private subscribeToEvents = () => {
     if (this.source) {
       this.source.addEventListener('message', (message) => {
+        this.logger.info('Event received', message);
+
         const event: Event = JSON.parse(message.data);
+        this.logger.info('Event received', event);
 
         if (isType<Event>(event)) {
           if (event.object_type === 'SystemInformation') {

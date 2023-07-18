@@ -608,18 +608,26 @@ pub async fn get_events_from_stream(
     match params.get("token") {
         Some(token_param) => {
             let token = Token::from(token_param.to_owned());
-
             if token.is_valid(true).await {
-                let event_subscriber = event_handling::subscribe().await;
-                let stream = tokio_stream::wrappers::BroadcastStream::new(event_subscriber);
+                match event_handling::subscribe().await {
+                    Ok(event_subscriber) => {
+                        let stream = tokio_stream::wrappers::BroadcastStream::new(event_subscriber);
 
-                let mapped = stream
-                    .filter_map(map_events_to_sse_data_events)
-                    .map(Ok::<_, Infallible>);
+                        let mapped = stream
+                            .filter_map(map_events_to_sse_data_events)
+                            .map(Ok::<_, Infallible>);
 
-                sse::Sse::from_stream(mapped)
-                    .with_keep_alive(Duration::from_secs(5))
-                    .respond_to(&req)
+                        sse::Sse::from_stream(mapped)
+                            .with_keep_alive(Duration::from_secs(5))
+                            .respond_to(&req)
+                    }
+                    Err(err) => {
+                        log::error!("Could not subscribe to events {:?}", err);
+                        HttpResponse::InternalServerError()
+                            .body("Could not subscribe to events")
+                            .respond_to(&req)
+                    }
+                }
             } else {
                 log::error!("Token {:?} is invalid", token);
                 HttpResponse::Unauthorized().finish().respond_to(&req)
@@ -632,7 +640,7 @@ pub async fn get_events_from_stream(
 #[get("eventservicetoken")]
 pub async fn get_eventservicetoken() -> Result<HttpResponse, AppError> {
     let token = common::Token::generate().await?;
-
+    log::info!("Sending event service token {:?}", token);
     Ok(HttpResponse::Ok().json(token))
 }
 

@@ -67,13 +67,17 @@ pub fn handle_list_change(current: ListSource, old: ListSource) -> Result<(), Ap
     Ok(())
 }
 
-pub async fn subscribe() -> Receiver<Event> {
-    BUS.lock().expect("could not lock bus").0.subscribe()
+pub async fn subscribe() -> Result<Receiver<Event>, AppError> {
+    Ok(BUS
+        .lock()
+        .map_err(|err| AppError::CannotSubscriveToEvents(format!("{:?}", err)))?
+        .0
+        .subscribe())
 }
 
 fn publish(event: Event) -> Result<usize, AppError> {
     BUS.lock()
-        .expect("Could not publish event since bus could not be locked")
+        .map_err(|err| AppError::CannotBroadcastEvent(format!("{:?}", err)))?
         .0
         .send(event)
         .map_err(|err| AppError::CannotBroadcastEvent(format!("{:?}", err)))

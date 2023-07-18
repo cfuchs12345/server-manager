@@ -28,37 +28,48 @@ impl Token {
     }
 
     pub async fn generate() -> Result<Self, AppError> {
-        let read_tokens = GENERATED_TOKENS.read().await;
+        let token = generate_unique_token().await;
 
-        let mut token;
-        'outer: loop {
-            token = super::generate_short_random_string();
+        insert_token(&token).await;
 
-            if !read_tokens.contains_key(&token) {
-                break 'outer;
-            }
-        }
-
-        drop(read_tokens);
-
-        let mut write_keys = GENERATED_TOKENS.write().await;
-
-        write_keys.insert(token.clone(), token.clone());
         Ok(Token { token })
     }
 
-    pub async fn is_valid(&self, remove_if_valid: bool) -> bool {
-        let read_tokens = GENERATED_TOKENS.read().await;
-        let result = read_tokens.contains_key(&self.token);
-        if result && remove_if_valid {
-            self.remove_token().await;
+    pub async fn is_valid(&self, remove_if_exists: bool) -> bool {
+        let exists = token_exists(&self.token).await;
+
+        if exists && remove_if_exists {
+            remove_token(&self.token).await;
         }
-        result
+        exists
     }
+}
 
-    pub async fn remove_token(&self) {
-        let mut write_tokens = GENERATED_TOKENS.write().await;
+async fn generate_unique_token() -> String {
+    let read_tokens = GENERATED_TOKENS.read().await;
+    let mut token;
+    'outer: loop {
+        token = super::generate_short_random_string();
 
-        write_tokens.remove(&self.token);
+        if !read_tokens.contains_key(&token) {
+            break 'outer;
+        }
     }
+    token
+}
+
+async fn token_exists(token: &str) -> bool {
+    let read_tokens = GENERATED_TOKENS.read().await;
+    read_tokens.contains_key(token)
+}
+
+async fn insert_token(token: &str) {
+    let mut write_keys = GENERATED_TOKENS.write().await;
+    write_keys.insert(token.to_owned(), token.to_owned());
+}
+
+pub async fn remove_token(token: &str) {
+    let mut write_tokens = GENERATED_TOKENS.write().await;
+
+    write_tokens.remove(token);
 }

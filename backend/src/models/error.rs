@@ -53,6 +53,7 @@ pub enum AppError {
     ScriptError(String),
     NokOKResponse(StatusCode, String),
     CannotBroadcastEvent(String),
+    CannotSubscriveToEvents(String),
 }
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
@@ -156,6 +157,9 @@ impl Display for AppError {
             ),
             AppError::CannotBroadcastEvent(err) => {
                 write!(f, "Could not broardcast event '{}'", err)
+            }
+            AppError::CannotSubscriveToEvents(err) => {
+                write!(f, "Could not subscrive to events '{}'", err)
             }
         }
     }
