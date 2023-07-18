@@ -358,6 +358,15 @@ pub async fn get_users() -> Result<HttpResponse, AppError> {
     Ok(HttpResponse::Ok().json(result))
 }
 
+#[get("/users/{user_id}")]
+pub async fn get_user_by_id(path: web::Path<String>) -> Result<HttpResponse, AppError> {
+    let user_id = path.into_inner();
+
+    let result = datastore::get_user(&user_id).await?;
+
+    Ok(HttpResponse::Ok().json(result))
+}
+
 #[get("/users/exist")]
 pub async fn get_users_exist() -> Result<HttpResponse, AppError> {
     let result = datastore::get_all_users(false).await?;

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { GeneralService } from 'src/app/services/general/general.service';
@@ -12,6 +12,9 @@ import { ServerAddressType } from 'src/types/ServerAddress';
   styleUrls: ['./configure-dns-modal.component.scss'],
 })
 export class ConfigureDnsModalComponent implements OnInit {
+  private configService = inject(GeneralService);
+  private dialog = inject(MatDialog);
+
   buttonTextAddDNSServer = 'Add DNS Server';
   buttonTextDeleteDNSServers = 'Delete DNS Servers';
 
@@ -39,11 +42,6 @@ export class ConfigureDnsModalComponent implements OnInit {
   selectedDNSServers: string[] = [];
 
   selectAll = false;
-
-  constructor(
-    private configService: GeneralService,
-    private dialog: MatDialog
-  ) {}
 
   ngOnInit(): void {
     this.loadSystemDNSServers();

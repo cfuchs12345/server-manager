@@ -123,6 +123,7 @@ fn init_token_secured_api(cfg: &mut web::ServiceConfig) {
     cfg.service(routes::get_smtp_config_valid);
 
     cfg.service(routes::get_users);
+    cfg.service(routes::get_user_by_id);
     cfg.service(routes::post_user);
     cfg.service(routes::delete_user);
     cfg.service(routes::put_user_changepassword);

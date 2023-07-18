@@ -3,6 +3,7 @@ import {
   ElementRef,
   OnDestroy,
   ViewChild,
+  inject,
 } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
 import { ErrorService, Source } from 'src/app/services/errors/error.service';
@@ -16,6 +17,10 @@ import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
 })
 export class ConfigImExportModalComponent implements OnDestroy {
   @ViewChild('fileSelector') fileSelector: ElementRef<HTMLElement> | undefined;
+
+  private errorService = inject(ErrorService);
+  private generalService = inject(GeneralService);
+  private subscriptionHandler = new SubscriptionHandler(this);
 
   fileUrl: string | undefined;
   uploadFileName = '';
@@ -42,12 +47,6 @@ export class ConfigImExportModalComponent implements OnDestroy {
 
   multiple = false;
   accept = '';
-  subscriptionHandler = new SubscriptionHandler(this);
-
-  constructor(
-    private errorService: ErrorService,
-    private generalService: GeneralService
-  ) {}
 
 
   ngOnDestroy(): void {

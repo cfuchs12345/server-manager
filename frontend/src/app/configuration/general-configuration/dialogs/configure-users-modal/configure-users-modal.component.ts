@@ -1,8 +1,8 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { User } from 'src/app/services/users/types';
 import { UserService } from 'src/app/services/users/users.service';
 import { ConfirmDialogComponent } from 'src/app/ui/confirm-dialog/confirm-dialog.component';
@@ -16,6 +16,11 @@ import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
   styleUrls: ['./configure-users-modal.component.scss'],
 })
 export class ConfigureUsersModalComponent implements OnInit, OnDestroy {
+  private store = inject(Store);
+  private userService = inject(UserService);
+  private dialog = inject(MatDialog);
+  private subscriptionHandler = new SubscriptionHandler(this);
+
   buttonTextAdd = 'Add User';
   buttonTextDelete = 'Delete User';
 
@@ -42,23 +47,14 @@ export class ConfigureUsersModalComponent implements OnInit, OnDestroy {
 
   displayedColumns = ['delete', 'user_id', 'full_name'];
 
-  users$: Observable<User[]>;
+  users$: Observable<User[]> = of([]);
 
   selectedUsers: string[] = [];
 
-  subscriptionHandler = new SubscriptionHandler(this);
-
   selectAll = false;
 
-  constructor(
-    private store: Store,
-    private userService: UserService,
-    private dialog: MatDialog
-  ) {
-    this.users$ = this.store.select(selectAllUsers);
-  }
-
   ngOnInit(): void {
+    this.users$ = this.store.select(selectAllUsers);
     this.userService.listUsers();
   }
 

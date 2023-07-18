@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -19,7 +19,18 @@ import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
   templateUrl: './change-password-modal.component.html',
   styleUrls: ['./change-password-modal.component.scss'],
 })
-export class ChangePasswordModalComponent implements OnDestroy {
+export class ChangePasswordModalComponent implements OnDestroy, OnInit {
+  private store = inject(Store);
+  private userService = inject(UserService);
+  private encryptionService = inject(EncryptionService);
+  private formBuilder = inject(FormBuilder);
+
+  private userToken$?: Observable<UserToken | undefined>;
+
+  private subscriptionHandler = new SubscriptionHandler(this);
+
+  private form: FormGroup = new FormGroup({});
+
   buttonText = 'Change the password';
 
   oldPasswordLabel = 'Old Password';
@@ -47,18 +58,9 @@ export class ChangePasswordModalComponent implements OnDestroy {
     Validators.minLength(6),
   ]);
 
-  form: FormGroup = new FormGroup({});
 
-  userToken$: Observable<UserToken | undefined>;
 
-  subscriptionHandler = new SubscriptionHandler(this);
-
-  constructor(
-    private store: Store,
-    private userService: UserService,
-    private encryptionService: EncryptionService,
-    private formBuilder: FormBuilder
-  ) {
+  ngOnInit(): void {
     this.userToken$ = this.store.select(selectToken());
 
     this.form = this.formBuilder.group({
@@ -81,6 +83,10 @@ export class ChangePasswordModalComponent implements OnDestroy {
       .requestOneTimeKey()
       .subscribe({
         next: (otk) => {
+          if (!this.userToken$) {
+            return;
+          }
+
           this.subscriptionHandler.subscription = this.userToken$
             .pipe()
             .subscribe((token) => {

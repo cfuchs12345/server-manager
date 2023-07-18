@@ -2,18 +2,72 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { User, UserInitialPassword } from './types';
 import { ErrorService, Source } from '../errors/error.service';
-import { Observable, catchError, map, throwError, filter } from 'rxjs';
+import { Observable, catchError, map, throwError, take } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
 import { EncryptionService } from '../encryption/encryption.service';
 import { OneTimeKey } from '../auth/types';
 import { Store } from '@ngrx/store';
-import { removeOne } from 'src/app/state/user/user.actions';
+import { addOne, removeOne, upsertOne } from 'src/app/state/user/user.actions';
 import { NGXLogger } from 'ngx-logger';
-import { EventService } from '../events/event.service';
-import { Event } from '../events/types';
+import {
+  EventHandler,
+  EventHandlingFunction,
+  EventHandlingGetObjectFunction,
+  EventHandlingUpdateFunction,
+  EventService,
+} from '../events/event.service';
+import { EventType } from '../events/types';
+import { selectUserByUserId } from 'src/app/state/user/user.selectors';
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
+  insertEventFunction: EventHandlingFunction<User> = (
+    eventType: EventType,
+    keyType: string,
+    key: string,
+    data: string,
+    object: User
+  ) => {
+    this.update(key, eventType, object);
+  };
+
+  updateEventFunction: EventHandlingUpdateFunction<User> = (
+    eventType: EventType,
+    keyType: string,
+    key: string,
+    data: string,
+    version: number,
+    object: User
+  ) => {
+    const server$ = this.store.select(selectUserByUserId(key));
+    server$.pipe(take(1)).subscribe({
+      next: (user) => {
+        // only update, if version is different or if the current object in store is preliminary
+        if (user) {
+          this.update(key, eventType, object);
+        }
+      },
+    });
+  };
+
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
+  deleteEventFunction: EventHandlingFunction<User> = (
+    eventType: EventType,
+    key_name: string,
+    key: string,
+    data: string // eslint-disable-line @typescript-eslint/no-unused-vars
+  ) => {
+    this.store.dispatch(removeOne({ user_id: key }));
+  };
+
+  getObjectFunction: EventHandlingGetObjectFunction<User> = (
+    key_name: string,
+    key: string
+  ): Observable<User> => {
+    return this.getUser(key);
+  };
+
   constructor(
     private store: Store,
     private http: HttpClient,
@@ -22,24 +76,32 @@ export class UserService {
     private encryptionService: EncryptionService,
     private logger: NGXLogger
   ) {
-    this.eventService.eventSubject$
-      .pipe(
-        filter((eventAndObject: [Event, User]) => {
-          const event = eventAndObject[0];
-
-          return event.object_type === 'User';
-        })
+    this.eventService.registerEventHandler(
+      new EventHandler<User>(
+        'User',
+        this.insertEventFunction,
+        this.updateEventFunction,
+        this.deleteEventFunction,
+        this.getObjectFunction
       )
-      .subscribe((eventAndObject: [Event, User]) => {
-        const event = eventAndObject[0];
-
-        if (event.event_type === 'Insert' || event.event_type === 'Update') {
-          this.listUsers();
-        } else if (event.event_type === 'Delete') {
-          this.store.dispatch(removeOne({ user_id: event.key }));
-        }
-      });
+    );
   }
+
+  update = (
+    userId: string,
+    event_type: 'Insert' | 'Update' | 'Refresh' | 'Delete',
+    object: User
+  ) => {
+    if (event_type === 'Insert') {
+      this.store.dispatch(addOne({ user: object }));
+    } else {
+      this.store.dispatch(upsertOne({ user: object }));
+    }
+  };
+
+  getUser = (userId: string): Observable<User> => {
+    return this.http.get<User>(`/backend/users/${userId}`);
+  };
 
   listUsers = (): Observable<User[]> => {
     return this.http.get<User[]>('/backend/users');
