@@ -93,15 +93,6 @@ export class GeneralService {
       });
   };
 
-  getSystemInformation = (): Observable<SystemInformation> => {
-    return this.http.get<SystemInformation>('/backend/system/information').pipe(
-      catchError((err) => {
-        this.errorService.newError(Source.GeneralService, undefined, err);
-        return throwError(() => err);
-      })
-    );
-  };
-
   uploadConfigFile = (config: Configuration, password: string) => {
     const subscriptionOTK = this.encryptionService
       .requestOneTimeKey()

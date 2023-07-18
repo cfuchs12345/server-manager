@@ -16,11 +16,15 @@ pub struct Token {
     token: String,
 }
 
+impl From<String> for Token {
+    fn from(string: String) -> Self {
+        Token::new(string)
+    }
+}
+
 impl Token {
-    pub fn new(token: &str) -> Self {
-        Token {
-            token: token.to_owned(),
-        }
+    pub fn new(token: String) -> Self {
+        Token { token }
     }
 
     pub async fn generate() -> Result<Self, AppError> {
@@ -43,15 +47,18 @@ impl Token {
         Ok(Token { token })
     }
 
-    pub async fn is_valid(&self) -> bool {
+    pub async fn is_valid(&self, remove_if_valid: bool) -> bool {
         let read_tokens = GENERATED_TOKENS.read().await;
-        read_tokens.contains_key(&self.token)
+        let result = read_tokens.contains_key(&self.token);
+        if result && remove_if_valid {
+            self.remove_token().await;
+        }
+        result
     }
 
-    pub async fn remove_token(&self) -> Result<(), AppError> {
+    pub async fn remove_token(&self) {
         let mut write_tokens = GENERATED_TOKENS.write().await;
 
         write_tokens.remove(&self.token);
-        Ok(())
     }
 }

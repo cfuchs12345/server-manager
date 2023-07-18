@@ -10,7 +10,8 @@ use crate::{
     common,
     datastore::{self},
     event_handling::{self, EventSource},
-    models::error::AppError,
+    models::{error::AppError, response::system_information::SystemInformation},
+    other_functions::systeminfo,
 };
 
 lazy_static! {
@@ -25,6 +26,7 @@ pub async fn start_scheduled_jobs() -> Result<(), AppError> {
     let scheduler = JobScheduler::new().await?;
 
     //schedule_refresh(&scheduler).await?;
+    schedule_system_info_publish(&scheduler).await?;
     schedule_cache_update(&scheduler).await?;
     schedule_token_cleanup(&scheduler).await?;
     schedule_one_time_crypt_key_cleanup(&scheduler).await?;
@@ -34,9 +36,26 @@ pub async fn start_scheduled_jobs() -> Result<(), AppError> {
     Ok(())
 }
 
+async fn schedule_system_info_publish(scheduler: &JobScheduler) -> Result<(), AppError> {
+    scheduler
+        .add(Job::new("*/20 * * * * *", |_uuid, _l| {
+            let now = Utc::now();
+            let system_info = SystemInformation {
+                load_average: systeminfo::get_load_info(),
+                memory_stats: systeminfo::get_memory_stats(),
+                memory_usage: systeminfo::get_memory_usage(),
+            };
+
+            publish_system_info(now, system_info);
+        })?)
+        .await?;
+
+    Ok(())
+}
+
 async fn schedule_refresh(scheduler: &JobScheduler) -> Result<(), AppError> {
     scheduler
-        .add(Job::new("* */5 * * * *", |_uuid, _l| {
+        .add(Job::new("0 */10 * * * *", |_uuid, _l| {
             let now = Utc::now();
             match datastore::get_all_servers_from_cache() {
                 Ok(servers) => {
@@ -66,6 +85,17 @@ async fn schedule_refresh(scheduler: &JobScheduler) -> Result<(), AppError> {
         .await?;
 
     Ok(())
+}
+
+fn publish_system_info(now: chrono::DateTime<Utc>, system_info: SystemInformation) {
+    match event_handling::publish_system_info(now, &system_info) {
+        Ok(_) => {
+            log::debug!("published system information {:?}", system_info);
+        }
+        Err(err) => {
+            log::error!("Error while publishing system info event: {}", err);
+        }
+    }
 }
 
 fn publish_refresh(now: chrono::DateTime<Utc>, object: Box<dyn EventSource>) {

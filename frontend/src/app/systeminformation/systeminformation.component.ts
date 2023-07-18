@@ -1,29 +1,26 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { GeneralService } from '../services/general/general.service';
-import { Subscription } from 'rxjs';
+import { Component, OnDestroy } from '@angular/core';
 import { SystemInformation } from '../services/general/types';
+import { EventService } from '../services/events/event.service';
+import { SubscriptionHandler } from '../shared/subscriptionHandler';
 
 @Component({
   selector: 'app-system-information',
   templateUrl: './systeminformation.component.html',
   styleUrls: ['./systeminformation.component.scss'],
 })
-export class SystemInformationComponent implements OnInit, OnDestroy {
-  private systemInformationSubscription: Subscription | undefined = undefined;
+export class SystemInformationComponent implements OnDestroy {
   private systemInformation: SystemInformation | undefined;
 
-  constructor(private generalService: GeneralService) {}
+  private subscriptionHandler = new SubscriptionHandler(this);
 
-  ngOnInit(): void {
-    this.systemInformationSubscription =
-      this.generalService.getSystemInformation().subscribe((info) => {
-        this.systemInformation = info;
-      });
+  constructor(private eventService: EventService) {
+    this.subscriptionHandler.subscription =
+      this.eventService.systemInformationSubject$.subscribe(
+        (systemInformation) => this.systemInformation = systemInformation
+      );
   }
   ngOnDestroy(): void {
-    if (this.systemInformationSubscription) {
-      this.systemInformationSubscription.unsubscribe();
-    }
+    this.subscriptionHandler.onDestroy();
   }
 
   find = (

@@ -56,16 +56,6 @@ impl Server {
         }
     }
 
-    pub fn new(ipaddress: IpAddr, name: String, dnsname: String, features: Vec<Feature>) -> Self {
-        Server {
-            ipaddress,
-            name,
-            dnsname,
-            features,
-            version: -1,
-        }
-    }
-
     pub fn get_ipaddress(&self) -> IpAddr {
         self.ipaddress
     }

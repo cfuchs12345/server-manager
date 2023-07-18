@@ -3,12 +3,22 @@ import { Event, EventType, ObjectType } from './types';
 import { isType } from 'src/app/shared/utils';
 import { ErrorService, Source } from '../errors/error.service';
 import { NGXLogger } from 'ngx-logger';
-import { Observable, Subject, Subscription, filter, last, of, take, tap } from 'rxjs';
+import {
+  Observable,
+  Subject,
+  Subscription,
+  filter,
+  last,
+  of,
+  take,
+  tap,
+} from 'rxjs';
 import { ToasterPopupGenerator } from './toaster_messages';
 import { Store } from '@ngrx/store';
 import { UserToken } from '../users/types';
 import { selectAllTokens } from 'src/app/state/usertoken/usertoken.selectors';
 import { AuthenticationService } from '../auth/authentication.service';
+import { SystemInformation } from '../general/types';
 
 @Injectable({
   providedIn: 'root',
@@ -17,8 +27,11 @@ export class EventService {
   private eventHandlers: EventHandler<any>[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
 
   private _eventSubject = new Subject<[Event, any]>(); // eslint-disable-line @typescript-eslint/no-explicit-any
+  private _systemInformationSubject = new Subject<SystemInformation>(); // eslint-disable-line @typescript-eslint/no-explicit-any
 
   readonly eventSubject$ = this._eventSubject.asObservable();
+  readonly systemInformationSubject$ =
+    this._systemInformationSubject.asObservable();
 
   private source: EventSource | undefined;
 
@@ -36,10 +49,14 @@ export class EventService {
     this.userToken$ = this.store.select(selectAllTokens);
     this.userToken$.subscribe((tokens) => {
       if (tokens && tokens.length > 0) {
-        this.authService.getEventServiceToken().pipe(take(1)).subscribe(
-          (token) => {
+        this.authService
+          .getEventServiceToken()
+          .pipe(take(1))
+          .subscribe((token) => {
             const event_api_token = token.token;
-            this.source = new EventSource(`/backend_nt/events?token=${event_api_token}`);
+            this.source = new EventSource(
+              `/backend_nt/events?token=${event_api_token}`
+            );
 
             this.subscribeToEvents();
             this.subscribeForToasterMessages();
@@ -47,10 +64,8 @@ export class EventService {
             for (const eventHandler of this.eventHandlers) {
               eventHandler.start();
             }
-            this.logger.info("Event connection established");
-          }
-        );
-
+            this.logger.info('Event connection established');
+          });
       } else {
         for (const eventHandler of this.eventHandlers) {
           eventHandler.stop();
@@ -59,7 +74,7 @@ export class EventService {
           this.source.close();
           this.source = undefined;
         }
-        this.logger.info("Event connection closed");
+        this.logger.info('Event connection closed');
       }
     });
   }
@@ -70,20 +85,28 @@ export class EventService {
         const event: Event = JSON.parse(message.data);
 
         if (isType<Event>(event)) {
-          this.logger.trace('event received: ', event);
+          if (event.object_type === 'SystemInformation') {
+            const si: SystemInformation = JSON.parse(event.value);
+            this._systemInformationSubject.next(si);
+          } else {
+            this.logger.trace('event received: ', event);
 
-          const object$ = event.event_type === 'Delete' ? of(undefined) :  this.getObject(
-            event.object_type,
-            event.key_name,
-            event.key,
-            event.value
-          ); // When we receive a Delete, the object doesn't exist anymore, so we can't select it as object
+            const object$ =
+              event.event_type === 'Delete'
+                ? of(undefined)
+                : this.getObject(
+                    event.object_type,
+                    event.key_name,
+                    event.key,
+                    event.value
+                  ); // When we receive a Delete, the object doesn't exist anymore, so we can't select it as object
 
-          object$.pipe(take(1)).subscribe({
-            next: (object) => {
-              this._eventSubject.next([event, object]);
-            }
-          });
+            object$.pipe(take(1)).subscribe({
+              next: (object) => {
+                this._eventSubject.next([event, object]);
+              },
+            });
+          }
         }
       });
 
@@ -179,11 +202,13 @@ export class EventHandler<T> {
 
     this.subscription = this.eventService.eventSubject$
       .pipe(
-        filter((eventAndObject: [Event, any]) => {  // eslint-disable-line @typescript-eslint/no-explicit-any
+        filter((eventAndObject: [Event, any]) => {
+          // eslint-disable-line @typescript-eslint/no-explicit-any
           return eventAndObject[0].object_type === this.objectType;
         })
       )
-      .subscribe((eventAndObject: [Event, any]) => {  // eslint-disable-line @typescript-eslint/no-explicit-any
+      .subscribe((eventAndObject: [Event, any]) => {
+        // eslint-disable-line @typescript-eslint/no-explicit-any
         const event = eventAndObject[0];
         const currenObject = eventAndObject[1];
 

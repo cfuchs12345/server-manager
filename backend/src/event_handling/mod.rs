@@ -9,6 +9,7 @@ use tokio::sync::broadcast::Receiver;
 use tokio::sync::broadcast::Sender;
 
 use crate::models::error::AppError;
+use crate::models::response::system_information::SystemInformation;
 
 pub use self::types::Event;
 
@@ -22,6 +23,17 @@ const MESSAGE_BUFFER_SIZE: usize = 500;
 lazy_static! {
     static ref BUS: Mutex<(Sender<Event>, Receiver<Event>)> =
         Mutex::new(broadcast::channel(MESSAGE_BUFFER_SIZE));
+}
+
+pub fn publish_system_info(
+    occurrence_datetime: DateTime<Utc>,
+    system_info: &SystemInformation,
+) -> Result<(), AppError> {
+    publish(Event::new_from_system_info(
+        occurrence_datetime,
+        system_info,
+    )?)?;
+    Ok(())
 }
 
 pub fn publish_refresh_event(

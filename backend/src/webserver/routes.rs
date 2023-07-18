@@ -607,9 +607,9 @@ pub async fn get_events_from_stream(
 
     match params.get("token") {
         Some(token_param) => {
-            let token = Token::new(token_param.as_str());
+            let token = Token::from(token_param.to_owned());
 
-            if token.is_valid().await {
+            if token.is_valid(true).await {
                 let event_subscriber = event_handling::subscribe().await;
                 let stream = tokio_stream::wrappers::BroadcastStream::new(event_subscriber);
 

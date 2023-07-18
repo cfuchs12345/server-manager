@@ -3,7 +3,7 @@ use std::{collections::HashMap, fmt::Debug};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::models::error::AppError;
+use crate::models::{error::AppError, response::system_information::SystemInformation};
 
 #[derive(PartialEq, Debug)]
 pub enum Value {
@@ -45,6 +45,7 @@ pub enum ObjectType {
     ConditionCheckResult,
     Notification,
     User,
+    SystemInformation,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -59,6 +60,21 @@ pub struct Event {
 }
 
 impl Event {
+    pub fn new_from_system_info(
+        occurrence_datetime: DateTime<Utc>,
+        system_info: &SystemInformation,
+    ) -> Result<Self, AppError> {
+        Ok(Event {
+            occurrence_datetime,
+            object_type: ObjectType::SystemInformation,
+            event_type: EventType::Refresh,
+            key_name: "".to_owned(),
+            key: "".to_owned(),
+            value: serde_json::to_string(&system_info)?,
+            version: -1,
+        })
+    }
+
     pub fn new_from_event_source(
         occurrence_datetime: DateTime<Utc>,
         event_type: EventType,

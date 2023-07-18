@@ -5,7 +5,8 @@ export type ObjectType =
   | 'DisabledPlugins'
   | 'ConditionCheckResult'
   | 'Notification'
-  | 'User';
+  | 'User'
+  | 'SystemInformation';
 
 export type EventType = 'Insert' | 'Update' | 'Delete' | 'Refresh';
 
@@ -23,3 +24,4 @@ export class Event {
 export interface VersionedObject {
   getVersion(): number;
 }
+
