@@ -8,7 +8,6 @@ import {
   Subject,
   Subscription,
   filter,
-  last,
   of,
   take,
   tap,
@@ -89,10 +88,7 @@ export class EventService {
   private subscribeToEvents = () => {
     if (this.source) {
       this.source.addEventListener('message', (message) => {
-        this.logger.info('Event received', message);
-
         const event: Event = JSON.parse(message.data);
-        this.logger.info('Event received', event);
 
         if (isType<Event>(event)) {
           if (event.object_type === 'SystemInformation') {
@@ -153,7 +149,7 @@ export class EventService {
   ): Observable<T> => {
     const func = this.map.get(objectType);
 
-    return func ? func(key_name, key, value) : of();
+    return func ? func(key_name, key, value, value) : of();
   };
 }
 
@@ -161,7 +157,7 @@ export type EventHandlingFunction<T> = (
   eventType: EventType,
   key_name: string,
   key: string,
-  data: string,
+  value: string,
   object: T
 ) => void;
 
@@ -169,7 +165,7 @@ export type EventHandlingUpdateFunction<T> = (
   eventType: EventType,
   key_name: string,
   key: string,
-  data: string,
+  value: string,
   version: number,
   object: T
 ) => void;
@@ -177,7 +173,8 @@ export type EventHandlingUpdateFunction<T> = (
 export type EventHandlingGetObjectFunction<T> = (
   key_name: string,
   key: string,
-  value: string
+  value: string,
+  data: string
 ) => Observable<T>;
 
 export class EventHandler<T> {

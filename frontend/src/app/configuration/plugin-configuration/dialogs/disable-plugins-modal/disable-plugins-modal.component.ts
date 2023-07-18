@@ -1,9 +1,23 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  OnChanges,
+  SimpleChanges,
+  inject,
+  ChangeDetectorRef,
+} from '@angular/core';
 import { Store } from '@ngrx/store';
-import { Observable, map } from 'rxjs';
+import { Observable, map, of, take } from 'rxjs';
 import { Plugin } from 'src/app/services/plugins/types';
 import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
-import { disablePlugins } from 'src/app/state/disabledplugin/disabled_plugin.actions';
+import {
+  addMany,
+  addOne,
+  disablePlugins,
+  removeAll,
+  removeOne,
+} from 'src/app/state/disabledplugin/disabled_plugin.actions';
 import { selectAllDisabledPlugins } from 'src/app/state/disabledplugin/disabled_plugin.selectors';
 import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
 
@@ -12,27 +26,27 @@ import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
   templateUrl: './disable-plugins-modal.component.html',
   styleUrls: ['./disable-plugins-modal.component.scss'],
 })
-export class DisablePluginsModalComponent implements OnInit, OnDestroy {
+export class DisablePluginsModalComponent
+  implements OnInit, OnDestroy, OnChanges
+{
+  private store = inject(Store);
+  private cdr = inject(ChangeDetectorRef);
+  private subscriptionHandler = new SubscriptionHandler(this);
+
   buttonTextDisablePlugins = 'Disable Plugins';
   selectAll = false;
   displayedColumns: string[] = ['disable', 'name'];
-  plugins$: Observable<Plugin[]>;
+  plugins$?: Observable<Plugin[]>;
 
-  private disabledPlugins$: Observable<string[]>;
+  private disabledPlugins$: Observable<string[]> = of([]);
 
-  private selectedPlugins: string[] = [];
-
-  private subscriptionHandler = new SubscriptionHandler(this);
-
-  constructor(private store: Store) {
+  ngOnInit(): void {
     this.plugins$ = this.store.select(selectAllPlugins);
     this.disabledPlugins$ = this.store.select(selectAllDisabledPlugins);
   }
 
-  ngOnInit(): void {
-    this.subscriptionHandler.subscription = this.disabledPlugins$.subscribe(
-      (disablePlugins) => (this.selectedPlugins = disablePlugins)
-    );
+  ngOnChanges(simpleChange: SimpleChanges): void {
+    console.log('simpleChange', simpleChange);
   }
 
   ngOnDestroy(): void {
@@ -40,30 +54,49 @@ export class DisablePluginsModalComponent implements OnInit, OnDestroy {
   }
 
   onClickSaveDisabledPlugins = () => {
-    this.store.dispatch(disablePlugins({plugins: this.selectedPlugins }))
+    this.subscriptionHandler.subscription = this.disabledPlugins$
+      .pipe(take(1))
+      .subscribe((plugins) => {
+        this.store.dispatch(disablePlugins({ plugins }));
+      });
   };
 
-  isDisabled = (plugin: Plugin): boolean => {
-    return this.selectedPlugins.indexOf(plugin.id) > -1;
-  }
+  isDisabled = (plugin: Plugin): Observable<boolean> => {
+    return this.disabledPlugins$.pipe(
+      take(1),
+      map((pluginIds) => pluginIds.indexOf(plugin.id) > -1)
+    );
+  };
 
   onClickSelectPlugin = (plugin: Plugin) => {
-    if (this.isDisabled(plugin)) {
-      this.selectedPlugins = this.selectedPlugins.filter( (p) => p !== plugin.id)
-    } else {
-      this.selectedPlugins.push(plugin.id);
-    }
+    return this.disabledPlugins$
+      .pipe(
+        take(1),
+        map((pluginIds) => pluginIds.indexOf(plugin.id) > -1)
+      )
+      .subscribe((exists) => {
+        if (exists) {
+          this.store.dispatch(removeOne({ disabled_plugin: plugin.id }));
+        } else {
+          this.store.dispatch(addOne({ disabled_plugin: plugin.id }));
+        }
+      });
   };
 
   onClickSelectAll = () => {
     this.selectAll = !this.selectAll;
 
-    if (this.selectAll) {
+    this.store.dispatch(removeAll());
+
+    if (this.selectAll && this.plugins$) {
       this.subscriptionHandler.subscription = this.plugins$
-        .pipe(map((plugins) => plugins.map((p) => p.id)))
-        .subscribe((pluginames) => (this.selectedPlugins = pluginames));
-    } else {
-      this.selectedPlugins = [];
+        .pipe(
+          take(1),
+          map((plugins) => plugins.map((p) => p.id))
+        )
+        .subscribe((pluginIds) => {
+          this.store.dispatch(addMany({ disabled_plugins: pluginIds }));
+        });
     }
   };
 }

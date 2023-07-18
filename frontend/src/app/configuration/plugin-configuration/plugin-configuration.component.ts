@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component , inject} from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import {
   DisablePluginsDialog,
@@ -15,13 +15,13 @@ import {
   styleUrls: ['./plugin-configuration.component.scss'],
 })
 export class PluginConfigurationComponent {
+  private dialog = inject(MatDialog);
+
   title = 'Plugin Configuration';
   description = 'Configure Plugins.';
 
   buttonTextManagePlugins = 'Manage Plugins';
   buttonTextListPlugins = 'List Plugins';
-
-  constructor(private dialog: MatDialog) {}
 
   openDialogManagePlugins() {
     this.dialog.open(DisablePluginsDialog, {

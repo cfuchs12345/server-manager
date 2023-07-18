@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import {
   ConfigureDNSDialog as ConfigureDNSDialog,
@@ -23,6 +23,8 @@ import {
   styleUrls: ['./general-configuration.component.scss'],
 })
 export class GeneralConfigurationComponent {
+  private dialog = inject(MatDialog);
+
   title = 'General Configuration';
   description = 'Configure User Permissions and so on.';
 
@@ -30,8 +32,6 @@ export class GeneralConfigurationComponent {
   buttonTextManageUsers = 'Users';
   buttonTextChangePassword = 'Change your password';
   buttonTextImExportConfig = 'Import/Export of Config';
-
-  constructor(private dialog: MatDialog) {}
 
   openDialogManageDNSServers = () => {
     this.dialog.open(ConfigureDNSDialog, {

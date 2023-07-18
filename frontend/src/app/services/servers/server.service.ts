@@ -37,7 +37,7 @@ export class ServerService {
     eventType: EventType,
     keyType: string,
     key: string,
-    data: string,
+    value: string,
     object: Server
   ) => {
     this.update(key, eventType, object);
@@ -47,7 +47,7 @@ export class ServerService {
     eventType: EventType,
     keyType: string,
     key: string,
-    data: string,
+    value: string,
     version: number,
     object: Server
   ) => {
@@ -67,14 +67,16 @@ export class ServerService {
     eventType: EventType,
     key_name: string,
     key: string,
-    data: string  // eslint-disable-line @typescript-eslint/no-unused-vars
+    value: string  // eslint-disable-line @typescript-eslint/no-unused-vars
   ) => {
     this.store.dispatch(removeOne({ ipaddress: key }));
   };
 
   getObjectFunction: EventHandlingGetObjectFunction<Server> = (
     key_name: string,
-    key: string
+    key: string,
+    value: string, // eslint-disable-line @typescript-eslint/no-unused-vars
+    data: string // eslint-disable-line @typescript-eslint/no-unused-vars
   ): Observable<Server> => {
     return this.getServer(key, false);
   };

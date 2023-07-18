@@ -1,6 +1,6 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { Plugin } from '../../../../services/plugins/types';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { Store } from '@ngrx/store';
 import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
 import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
@@ -10,14 +10,15 @@ import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
   templateUrl: './list-plugins-modal.component.html',
   styleUrls: ['./list-plugins-modal.component.scss'],
 })
-export class ListPluginsModalComponent implements  OnDestroy {
-  displayedColumns: string[] = ['description', 'detection'];
-
-  readonly plugins$: Observable<Plugin[]>;
-
+export class ListPluginsModalComponent implements OnInit, OnDestroy {
+  private store = inject(Store);
   private subscriptionHandler = new SubscriptionHandler(this);
 
-  constructor(private store: Store) {
+  plugins$: Observable<Plugin[]> = of([]);
+
+  displayedColumns: string[] = ['description', 'detection'];
+
+  ngOnInit(): void {
     this.plugins$ = this.store.select(selectAllPlugins);
   }
 

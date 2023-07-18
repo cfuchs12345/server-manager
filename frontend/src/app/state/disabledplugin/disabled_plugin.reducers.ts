@@ -37,8 +37,8 @@ export const reducer  = createReducer(
     return adapter.addMany(disabled_plugins, state);
   }),
 
-  on(removeOne, (state, { id }) => {
-    return adapter.removeOne(id, state);
+  on(removeOne, (state, { disabled_plugin }) => {
+    return adapter.removeOne(disabled_plugin, state);
   }),
 
   on(removeAll, (state) => {

@@ -19,7 +19,7 @@ export const DISABLED_PLUGIN_DISABLE_PLUGINS = '[Disabled Plugin] Effect: Disabl
 export const updateOne = createAction(DISABLED_PLUGIN_UPDATE_ACTION, props<{ disabled_plugin: Update<string> }>());
 export const addOne = createAction(DISABLED_PLUGIN_INSERT_ACTION, props<{ disabled_plugin: string }>());
 export const addMany = createAction(DISABLED_PLUGIN_INSERT_MANY_ACTION, props<{ disabled_plugins: string[] }>());
-export const removeOne = createAction(DISABLED_PLUGIN_DELETE_ACTION, props<{ id: string }>());
+export const removeOne = createAction(DISABLED_PLUGIN_DELETE_ACTION, props<{ disabled_plugin: string }>());
 export const removeAll = createAction(DISABLED_PLUGIN_DELETE_ALL_ACTION);
 export const upsertOne = createAction(DISABLED_PLUGIN_INSERT_OR_UPDATE_ACTION, props<{ disabled_plugin: string }>());
 
