@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, inject } from '@angular/core';
 import { ServerFeature } from 'src/app/services/servers/types';
 import { MatDialogRef } from '@angular/material/dialog';
 import { ServerDiscoveryService } from 'src/app/services/servers/server-discovery.service';
@@ -12,6 +12,10 @@ import { addServerFeatures } from 'src/app/state/server/server.actions';
   styleUrls: ['./feature-scan-modal.component.scss'],
 })
 export class FeatureScanModalComponent implements OnDestroy {
+  private discoveryService = inject(ServerDiscoveryService);
+  private store = inject(Store);
+  private ref = inject(MatDialogRef<FeatureScanModalComponent>);
+
   buttonTextScanFeature = 'Start';
   buttonTextWorking = 'Working...';
   buttonTextSaveServerFeatures = 'Save Features';
@@ -22,12 +26,6 @@ export class FeatureScanModalComponent implements OnDestroy {
 
   discoveredServerFeatures: ServerFeature[] = [];
   subscriptionHandler = new SubscriptionHandler(this);
-
-  constructor(
-    private discoveryService: ServerDiscoveryService,
-    private store: Store,
-    private ref: MatDialogRef<FeatureScanModalComponent>
-  ) {}
 
   ngOnDestroy(): void {
     this.subscriptionHandler.onDestroy();

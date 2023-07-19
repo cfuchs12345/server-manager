@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, inject } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { AuthenticationService } from '../services/auth/authentication.service';
 import { Router } from '@angular/router';
@@ -13,6 +13,12 @@ import { take } from 'rxjs';
   styleUrls: ['./login.component.scss'],
 })
 export class LoginComponent implements OnDestroy {
+  private store = inject(Store);
+  private authService = inject(AuthenticationService);
+  private router = inject(Router);
+
+  private subscriptionHandler = new SubscriptionHandler(this);
+
   userIdLabel = 'User Id';
   userIdPlaceholder = '';
   userIdHint = '';
@@ -33,17 +39,10 @@ export class LoginComponent implements OnDestroy {
 
   form = new FormGroup({ userId: this.userId, password: this.password });
 
-  subscriptionHandler = new SubscriptionHandler(this);
 
-  constructor(
-    private store: Store,
-    private authService: AuthenticationService,
-    private router: Router
-  ) {}
-
- ngOnDestroy(): void {
-   this.subscriptionHandler.onDestroy();
- }
+  ngOnDestroy(): void {
+    this.subscriptionHandler.onDestroy();
+  }
 
   getErrorMessagUserId = (): string => {
     if (this.userId.hasError('required')) {
@@ -83,7 +82,7 @@ export class LoginComponent implements OnDestroy {
       .pipe(take(1))
       .subscribe({
         next: (userToken) => {
-          this.store.dispatch(GlobalActions.init({userToken: userToken}));
+          this.store.dispatch(GlobalActions.init({ userToken: userToken }));
 
           if (userToken && userToken.token) {
             this.router.navigate(['/home']);

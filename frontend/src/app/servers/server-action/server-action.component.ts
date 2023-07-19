@@ -1,4 +1,10 @@
-import { Component, Input, OnChanges, ChangeDetectorRef } from '@angular/core';
+import {
+  Component,
+  Input,
+  OnChanges,
+  ChangeDetectorRef,
+  inject,
+} from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { GUIAction } from 'src/app/services/general/types';
 import {
@@ -16,6 +22,10 @@ import { executeAction } from 'src/app/state/action/action.actions';
   styleUrls: ['./server-action.component.scss'],
 })
 export class ServerActionComponent implements OnChanges {
+  private store = inject(Store);
+  private dialog = inject(MatDialog);
+  private cdr = inject(ChangeDetectorRef);
+
   @Input() server: Server | undefined = undefined;
   @Input() guiAction: GUIAction | undefined = undefined;
   @Input() status: Status | undefined = undefined;
@@ -23,18 +33,12 @@ export class ServerActionComponent implements OnChanges {
 
   allDependenciesMet = false;
 
-  constructor(
-    private store: Store,
-    private dialog: MatDialog,
-    private cdr: ChangeDetectorRef
-  ) {}
-
   ngOnChanges(): void {
     const old = this.allDependenciesMet;
     this.allDependenciesMet = this.allDependenciesMetCheck();
 
     if (old !== this.allDependenciesMet) {
-      this.cdr.detectChanges();  // eslint-disable-line @rx-angular/no-explicit-change-detection-apis
+      this.cdr.detectChanges(); // eslint-disable-line @rx-angular/no-explicit-change-detection-apis
     }
   }
 
@@ -81,7 +85,7 @@ export class ServerActionComponent implements OnChanges {
               feature_id: this.guiAction.feature.id,
               action_id: this.guiAction.action.id,
               ipaddress: this.server.ipaddress,
-              action_params: undefined
+              action_params: undefined,
             })
           );
         }
@@ -92,7 +96,7 @@ export class ServerActionComponent implements OnChanges {
           feature_id: this.guiAction.feature.id,
           action_id: this.guiAction.action.id,
           ipaddress: this.server.ipaddress,
-          action_params: undefined
+          action_params: undefined,
         })
       );
     }

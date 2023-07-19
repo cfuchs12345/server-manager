@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import {
   FormBuilder,
   FormControl,
@@ -19,7 +19,6 @@ import {
   Param,
   Server,
 } from 'src/app/services/servers/types';
-import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
 import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
 import { saveServer } from 'src/app/state/server/server.actions';
 import { selectAllServersWithFeatures } from 'src/app/state/server/server.selectors';
@@ -29,7 +28,10 @@ import { selectAllServersWithFeatures } from 'src/app/state/server/server.select
   templateUrl: './configure-features-modal.component.html',
   styleUrls: ['./configure-features-modal.component.scss'],
 })
-export class ConfigureFeaturesModalComponent implements OnDestroy {
+export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
+  private store = inject(Store);
+  private serverService = inject(ServerService);
+
   buttonTextSaveFeatureSettings = 'Save Feature Settings';
 
   showPasswordCredentials: Map<string, boolean> = new Map();
@@ -47,25 +49,21 @@ export class ConfigureFeaturesModalComponent implements OnDestroy {
   credentialsFromPlugin: CredentialDefinition[] = [];
   credentialFromFeature: Credential[] = [];
 
-  servers$: Observable<Server[]>;
+  servers$?: Observable<Server[]>;
   features: Feature[] = [];
-  plugins$: Observable<Plugin[]>;
+  plugins$?: Observable<Plugin[]>;
 
-  subscriptionHandler = new SubscriptionHandler(this);
-
-  constructor(
-    private store: Store,
-    private serverService: ServerService,
-    private formBuilder: FormBuilder
-  ) {
+  constructor(private formBuilder: FormBuilder) {
     this.form = formBuilder.group({});
+  }
+
+  ngOnInit() {
+    this.form = this.formBuilder.group({});
     this.servers$ = this.store.select(selectAllServersWithFeatures);
     this.plugins$ = this.store.select(selectAllPlugins);
   }
 
-  ngOnDestroy(): void {
-    this.subscriptionHandler.onDestroy();
-  }
+  ngOnDestroy(): void {}
 
   getCurrentParamValue = (name: string): string => {
     if (!this.paramsFromFeature) {
@@ -80,32 +78,40 @@ export class ConfigureFeaturesModalComponent implements OnDestroy {
   };
 
   createInputControls = () => {
-    this.paramsFromPlugin.forEach((param) =>
-      this.form.addControl(
-        'param.' + param.name,
-        new FormControl('', param.mandatory ? [Validators.required] : [])
-      )
-    );
+    this.paramsFromPlugin.forEach((param) => {
+      if (this.form) {
+        this.form.addControl(
+          'param.' + param.name,
+          new FormControl('', param.mandatory ? [Validators.required] : [])
+        );
+      }
+    });
     this.credentialsFromPlugin.forEach((credential) => {
       if (credential.encrypt) {
         this.passwordCredentials.set(credential.name, true);
       }
-      this.form.addControl(
-        'credential.' + credential.name,
-        new FormControl('', credential.mandatory ? [Validators.required] : [])
-      );
+      if (this.form) {
+        this.form.addControl(
+          'credential.' + credential.name,
+          new FormControl('', credential.mandatory ? [Validators.required] : [])
+        );
+      }
     });
   };
 
   setInitialValuesOnInputControls = () => {
-    this.paramsFromFeature.forEach((param) =>
-      this.form.controls[`param.${param.name}`].setValue(param.value)
-    );
-    this.credentialFromFeature.forEach((credential) =>
-      this.form.controls[`credential.${credential.name}`].setValue(
-        credential.value
-      )
-    );
+    this.paramsFromFeature.forEach((param) => {
+      if (this.form) {
+        this.form.controls[`param.${param.name}`].setValue(param.value);
+      }
+    });
+    this.credentialFromFeature.forEach((credential) => {
+      if (this.form) {
+        this.form.controls[`credential.${credential.name}`].setValue(
+          credential.value
+        );
+      }
+    });
   };
 
   getDefaultParamValue = (name: string): string => {
@@ -195,7 +201,7 @@ export class ConfigureFeaturesModalComponent implements OnDestroy {
     feature.credentials = this.makeCredentials();
     feature.params = this.makeParams();
 
-    this.store.dispatch(saveServer({server: this.selectedServerFullData}));
+    this.store.dispatch(saveServer({ server: this.selectedServerFullData }));
   };
 
   makeCredentials = (): Credential[] => {
@@ -229,68 +235,79 @@ export class ConfigureFeaturesModalComponent implements OnDestroy {
   getValuesFromForm = (prefix: string): Map<string, string> => {
     const map = new Map();
 
-    Object.keys(this.form.controls).forEach((key) => {
-      const control = this.form.controls[key];
+    if (this.form === undefined) {
+      return map;
+    }
 
-      if (key.startsWith(prefix)) {
-        map.set(key.replace(prefix, ''), control.value);
+    Object.keys(this.form.controls).forEach((key) => {
+      if (this.form) {
+        const control = this.form.controls[key];
+
+        if (key.startsWith(prefix)) {
+          map.set(key.replace(prefix, ''), control.value);
+        }
       }
     });
     return map;
   };
 
   onChangeServer = () => {
-    this.form = this.formBuilder.group({});
-    if (this.selectedServer?.ipaddress) {
-      this.subscriptionHandler.subscription = this.serverService
-        .getServer(this.selectedServer?.ipaddress, true)
-        .pipe(take(1))
-        .subscribe({
-          next: (server) => {
-            this.selectedServerFullData = server;
-            this.features = this.selectedServerFullData
-              ? this.selectedServerFullData.features
-              : [];
-            this.resetSelections();
-            setTimeout(this.createInputControls, 0);
-          },
-        });
-    }
+    setTimeout(() => {
+      this.form = this.formBuilder.group({});
+      if (this.selectedServer?.ipaddress) {
+        this.serverService
+          .getServer(this.selectedServer?.ipaddress, true)
+          .pipe(take(1))
+          .subscribe({
+            next: (server) => {
+              this.selectedServerFullData = server;
+              this.features = this.selectedServerFullData
+                ? this.selectedServerFullData.features
+                : [];
+              this.resetSelections();
+              setTimeout(this.createInputControls, 0);
+            },
+          });
+      }
+    }, 0);
   };
 
   onChangeFeature = () => {
-    this.form = this.formBuilder.group({});
+    setTimeout(() => {
+      this.form = this.formBuilder.group({});
 
-    if (this.selectedFeature) {
-      this.subscriptionHandler.subscription = this.plugins$
-        .pipe(
-          map((plugins) =>
-            plugins.filter((p) => p.id === this.selectedFeature?.id)
+      if (this.selectedFeature && this.plugins$) {
+        this.plugins$
+          .pipe(
+            take(1),
+            map((plugins) =>
+              plugins.filter((p) => p.id === this.selectedFeature?.id)
+            )
           )
-        )
-        .subscribe((plugins) => {
-          if (plugins.length == 1) {
-            const plugin = plugins[0];
+          .subscribe((plugins) => {
+            if (plugins.length == 1) {
+              const plugin = plugins[0];
 
-            this.paramsFromPlugin = plugin.params;
-            this.credentialsFromPlugin = plugin.credentials;
+              this.paramsFromPlugin = plugin.params;
+              this.credentialsFromPlugin = plugin.credentials;
 
-            this.paramsFromFeature = this.selectedFeature?.params
-              ? this.selectedFeature?.params
-              : [];
-            this.credentialFromFeature = this.selectedFeature?.credentials
-              ? this.selectedFeature?.credentials
-              : [];
+              this.paramsFromFeature = this.selectedFeature?.params
+                ? this.selectedFeature?.params
+                : [];
+              this.credentialFromFeature = this.selectedFeature?.credentials
+                ? this.selectedFeature?.credentials
+                : [];
 
-            this.createInputControls();
-            this.setInitialValuesOnInputControls();
-          } else {
-            this.resetFeatureSelections();
-          }
-        });
-    } else {
-      this.resetFeatureSelections();
-    }
+              this.createInputControls();
+              this.setInitialValuesOnInputControls();
+            } else {
+              this.resetFeatureSelections();
+            }
+          });
+      } else {
+        this.resetFeatureSelections();
+      }
+    }, 0);
   };
 
   private resetFeatureSelections() {

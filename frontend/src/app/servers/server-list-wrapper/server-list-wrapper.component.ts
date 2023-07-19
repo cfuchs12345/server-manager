@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Server } from 'src/app/services/servers/types';
 import { ImageCache } from 'src/app/services/cache/image-cache.service';
@@ -15,17 +15,18 @@ import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
   styleUrls: ['./server-list-wrapper.component.scss'],
 })
 export class ServerListWrapperComponent implements OnInit, OnDestroy {
-  servers$: Observable<Server[]>;
-  plugins$: Observable<Plugin[]>;
+  private store = inject(Store);
+  private imageCache = inject(ImageCache);
+
+  servers$?: Observable<Server[]>;
+  plugins$?: Observable<Plugin[]>;
 
   private subscriptionHandler = new SubscriptionHandler(this);
 
-  constructor(private store: Store, private imageCache: ImageCache) {
+  ngOnInit(): void {
     this.servers$ = this.store.select(selectAllServers);
     this.plugins$ = this.store.select(selectAllPlugins);
-  }
 
-  ngOnInit(): void {
     this.subscriptionHandler.subscription = this.plugins$.subscribe((plugins) =>
       this.imageCache.init(plugins)
     );

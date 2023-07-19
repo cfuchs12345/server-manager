@@ -5,6 +5,7 @@ import {
   OnInit,
   OnDestroy,
   ViewChild,
+  inject
 } from '@angular/core';
 import {
   animate,
@@ -50,6 +51,8 @@ const displayedColumnForMobilesPhones: string[] = [
   ],
 })
 export class ServerListComponent implements OnInit, OnDestroy {
+  private authService = inject(AuthenticationService);
+
   @Input() servers$: Observable<Server[]> | undefined;
   @ViewChild('serversTable', { static: true }) table:
     | MatTable<RowData>
@@ -65,7 +68,6 @@ export class ServerListComponent implements OnInit, OnDestroy {
   expandedElement: RowData | null = null;
 
   private subscriptionHandler = new SubscriptionHandler(this);
-  constructor(private authService: AuthenticationService) {}
 
   ngOnInit(): void {
     if (this.servers$ && this.servers$) {

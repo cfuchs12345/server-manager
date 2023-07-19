@@ -1,4 +1,4 @@
-import { Component,  OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { ErrorService } from 'src/app/services/errors/error.service';
 import { Error } from 'src/app/services/errors/types';
 import { sortByNumericField } from 'src/app/shared/utils';
@@ -9,11 +9,14 @@ import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
   templateUrl: './error.component.html',
   styleUrls: ['./error.component.scss'],
 })
-export class ErrorComponent implements OnDestroy {
-  errors: Error[] = [];
+export class ErrorComponent implements OnInit, OnDestroy {
+  private errorService = inject(ErrorService);
+
   private subscriptionHandler = new SubscriptionHandler(this);
 
-  constructor(private errorService: ErrorService) {
+  errors: Error[] = [];
+
+  ngOnInit() {
     this.subscriptionHandler.subscription = this.errorService.errors.subscribe(
       (error) => {
         const found = this.errors.find(

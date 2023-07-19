@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, inject } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
 
 import { Router } from '@angular/router';
@@ -14,6 +14,10 @@ import { SubscriptionHandler } from '../shared/subscriptionHandler';
   styleUrls: ['./register.component.scss'],
 })
 export class RegisterComponent implements OnDestroy {
+  private userService = inject(UserService);
+  private router = inject(Router);
+  private dialog = inject(MatDialog);
+
   userIdLabel = 'User Id';
   useridPlaceholder = '';
   userIdHint = '';
@@ -38,12 +42,6 @@ export class RegisterComponent implements OnDestroy {
   buttonText = 'Save';
 
   subscriptionHandler = new SubscriptionHandler(this);
-
-  constructor(
-    private userService: UserService,
-    private router: Router,
-    private dialog: MatDialog
-  ) {}
 
   ngOnDestroy(): void {
     this.subscriptionHandler.onDestroy();

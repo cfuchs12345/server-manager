@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import {
   AutoDiscoveryDialog,
   dialogSettings as autodiscoverDialogSettings,
@@ -27,6 +27,8 @@ import { MatDialog } from '@angular/material/dialog';
   styleUrls: ['./server-configuration.component.scss'],
 })
 export class ServerConfigurationComponent {
+  private dialog = inject(MatDialog);
+
   title = 'Server Configuration';
   description = 'Configure the list of available/known servers.';
 
@@ -36,7 +38,6 @@ export class ServerConfigurationComponent {
   buttonTextFeatureScan = 'Feature Scan';
   buttonTextConfigureFeatures = 'Configure Features';
 
-  constructor(private dialog: MatDialog) {}
 
   openDialogAutodiscovery = () => {
     this.dialog.open(AutoDiscoveryDialog, {

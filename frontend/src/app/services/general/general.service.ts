@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, catchError, throwError, mergeMap } from 'rxjs';
+import { Observable, catchError, throwError, mergeMap, take } from 'rxjs';
 import { defaultHeadersForJSON } from '../common';
-import { Configuration, DNSServer, SystemInformation } from './types';
+import { Configuration, DNSServer } from './types';
 import { ErrorService, Source } from '../errors/error.service';
 import { EncryptionService } from '../encryption/encryption.service';
 import { OneTimeKey } from '../auth/types';
@@ -22,16 +22,14 @@ export class GeneralService {
   saveDNSServer = (server: DNSServer) => {
     const body = JSON.stringify(server);
 
-    const subscriptipn = this.http
+    this.http
       .post<boolean>('/backend/configurations/dnsservers', body, {
         headers: defaultHeadersForJSON(),
       })
+      .pipe(take(1))
       .subscribe({
         error: (err) => {
           this.errorService.newError(Source.GeneralService, undefined, err);
-        },
-        complete: () => {
-          subscriptipn.unsubscribe();
         },
       });
   };
@@ -40,25 +38,24 @@ export class GeneralService {
     for (let i = 0; i < servers.length; i++) {
       const server = servers[i];
 
-      const subscriptipn = this.http
+      this.http
         .delete<boolean>(
           '/backend/configurations/dnsservers/' + server.ipaddress
         )
+        .pipe(take(1))
         .subscribe({
           error: (err) => {
             this.errorService.newError(Source.GeneralService, undefined, err);
-          },
-          complete: () => {
-            subscriptipn.unsubscribe();
           },
         });
     }
   };
 
   listDNSServers = (callback: (dnsservers: DNSServer[]) => void) => {
-    const subscription = this.http
+    this.http
       .get<DNSServer[]>('/backend/configurations/dnsservers')
       .pipe(
+        take(1),
         catchError((err) => {
           this.errorService.newError(Source.GeneralService, undefined, err);
           return throwError(() => err);
@@ -67,17 +64,15 @@ export class GeneralService {
       .subscribe({
         next: (value) => {
           callback(value);
-        },
-        complete: () => {
-          subscription.unsubscribe();
         },
       });
   };
 
   listSystemDNSServers = (callback: (dnsservers: DNSServer[]) => void) => {
-    const subscription = this.http
+    this.http
       .get<DNSServer[]>('/backend/systeminformation/dnsservers')
       .pipe(
+        take(1),
         catchError((err) => {
           this.errorService.newError(Source.GeneralService, undefined, err);
           return throwError(() => err);
@@ -87,24 +82,19 @@ export class GeneralService {
         next: (value) => {
           callback(value);
         },
-        complete: () => {
-          subscription.unsubscribe();
-        },
       });
   };
 
   uploadConfigFile = (config: Configuration, password: string) => {
-    const subscriptionOTK = this.encryptionService
+    this.encryptionService
       .requestOneTimeKey()
+      .pipe(take(1))
       .subscribe({
         next: (otk) => {
           this.upload(otk, config, password);
         },
         error: (err) => {
           this.errorService.newError(Source.GeneralService, undefined, err);
-        },
-        complete: () => {
-          subscriptionOTK.unsubscribe();
         },
       });
   };
@@ -121,19 +111,17 @@ export class GeneralService {
       'X-custom2': `${encrypted_password}`,
       'Content-Type': 'application/json',
     });
-    const subscription = this.http
+    this.http
       .post<boolean>('/backend/configuration', body, {
         headers: headers,
       })
+      .pipe(take(1))
       .subscribe({
         next: (res) => {
           this.logger.trace(res);
         },
         error: (err) => {
           this.errorService.newError(Source.GeneralService, undefined, err);
-        },
-        complete: () => {
-          subscription.unsubscribe();
         },
       });
   };

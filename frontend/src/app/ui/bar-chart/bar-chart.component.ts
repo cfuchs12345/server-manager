@@ -1,9 +1,4 @@
-import {
-  Component,
-  Input,
-  OnChanges,
-  ViewChild,
-} from '@angular/core';
+import { Component, Input, OnChanges, OnInit, ViewChild } from '@angular/core';
 
 import { ChartComponent } from 'ng-apexcharts';
 import { ChartData, ChartOptions } from 'src/types/ChartData';
@@ -13,14 +8,14 @@ import { ChartData, ChartOptions } from 'src/types/ChartData';
   templateUrl: './bar-chart.component.html',
   styleUrls: ['./bar-chart.component.scss'],
 })
-export class BarChartComponent implements OnChanges {
+export class BarChartComponent implements OnInit, OnChanges {
   @Input() series_id: string | undefined;
   @Input() chartData: ChartData | undefined;
 
   @ViewChild('chart') chart: ChartComponent | undefined;
-  public chartOptions: Partial<ChartOptions>;
+  public chartOptions?: Partial<ChartOptions>;
 
-  constructor() {
+  ngOnInit() {
     this.chartOptions = {
       series: [
         {
@@ -62,35 +57,33 @@ export class BarChartComponent implements OnChanges {
   }
 
   ngOnChanges(): void {
-    if (!this.series_id || !this.chartData) {
+    if (!this.series_id || !this.chartData || !this.chartOptions) {
       return;
     }
 
-    if (this.chartData) {
-      this.chartOptions.series = this.chartData.series;
-      if (this.chartOptions.title) {
-        this.chartOptions.title.text = this.chartData.name;
-      }
-      if (
-        this.chartOptions.xaxis &&
-        (this.chartData.series_type === 'datetime' ||
-          this.chartData.series_type === 'category' ||
-          this.chartData.series_type === 'numeric')
-      ) {
-        this.chartOptions.xaxis.type = this.chartData.series_type;
+    this.chartOptions.series = this.chartData.series;
+    if (this.chartOptions.title) {
+      this.chartOptions.title.text = this.chartData.name;
+    }
+    if (
+      this.chartOptions.xaxis &&
+      (this.chartData.series_type === 'datetime' ||
+        this.chartData.series_type === 'category' ||
+        this.chartData.series_type === 'numeric')
+    ) {
+      this.chartOptions.xaxis.type = this.chartData.series_type;
 
-        if (this.chartData.series_type === 'datetime') {
-          this.chartOptions.tooltip = {
-            x: {
-              format: 'dd.MM.yy HH:mm',
-            },
-          };
-        }
+      if (this.chartData.series_type === 'datetime') {
+        this.chartOptions.tooltip = {
+          x: {
+            format: 'dd.MM.yy HH:mm',
+          },
+        };
       }
+    }
 
-      if (this.chart) {
-        this.chart.render();
-      }
+    if (this.chart) {
+      this.chart.render();
     }
   }
 }

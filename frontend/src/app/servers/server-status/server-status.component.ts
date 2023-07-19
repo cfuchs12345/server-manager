@@ -3,6 +3,7 @@ import {
   Input,
   OnChanges,
   SimpleChanges,
+  inject
 } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
@@ -15,11 +16,12 @@ import { Server, Status } from 'src/app/services/servers/types';
   styleUrls: ['./server-status.component.scss'],
 })
 export class ServerStatusComponent implements OnChanges {
+  private store = inject(Store);
+
   @Input() server: Server | undefined = undefined;
 
   status$: Observable<Status | undefined> | undefined;
 
-  constructor(private store: Store) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     for (const propName in changes) {

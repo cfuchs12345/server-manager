@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 import { SafeHtml } from '@angular/platform-browser';
 import { ImageCache } from 'src/app/services/cache/image-cache.service';
 import { Server } from 'src/app/services/servers/types';
@@ -9,9 +9,9 @@ import { Server } from 'src/app/services/servers/types';
   styleUrls: ['./server-icon.component.scss'],
 })
 export class ServerIconComponent {
-  @Input() server: Server | undefined = undefined;
+  private imageCache = inject(ImageCache);
 
-  constructor(private imageCache: ImageCache) {}
+  @Input() server: Server | undefined = undefined;
 
   getServerIcon = (): SafeHtml | undefined => {
     if (!this.server) {

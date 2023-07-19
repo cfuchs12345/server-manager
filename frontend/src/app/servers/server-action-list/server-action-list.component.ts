@@ -1,9 +1,4 @@
-import {
-  Component,
-  OnInit,
-  Input,
-  OnDestroy
-} from '@angular/core';
+import { Component, OnInit, Input, OnDestroy, inject } from '@angular/core';
 import { Observable, filter } from 'rxjs';
 import { GUIAction } from 'src/app/services/general/types';
 import { ImageCache } from 'src/app/services/cache/image-cache.service';
@@ -25,6 +20,9 @@ import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
   styleUrls: ['./server-action-list.component.scss'],
 })
 export class ServerActionListComponent implements OnInit, OnDestroy {
+  private store = inject(Store);
+  private imageCache = inject(ImageCache);
+
   @Input() server: Server | undefined = undefined;
   conditionCheckResult: ConditionCheckResult | undefined = undefined;
 
@@ -32,26 +30,20 @@ export class ServerActionListComponent implements OnInit, OnDestroy {
   status: Status | undefined = undefined;
   private plugins: Plugin[] | undefined = undefined;
 
-
   private conditions$:
     | Observable<ConditionCheckResult | undefined>
     | undefined = undefined;
   private status$: Observable<Status | undefined> | undefined = undefined;
-  private plugins$: Observable<Plugin[]>;
+  private plugins$?: Observable<Plugin[]>;
 
   private subscriptionHandler = new SubscriptionHandler(this);
 
-  constructor(
-    private store: Store,
-    private imageCache: ImageCache,
-  ) {
-    this.plugins$ = this.store.select(selectAllPlugins);
-  }
-
   ngOnInit(): void {
+    this.plugins$ = this.store.select(selectAllPlugins);
+
     if (this.server) {
       this.conditions$ = this.store.select(
-        selectConditionCheckResultByKey(this.server.ipaddress + "_") // data_id is empty - ends with _
+        selectConditionCheckResultByKey(this.server.ipaddress + '_') // data_id is empty - ends with _
       );
 
       this.subscriptionHandler.subscription = this.conditions$.subscribe(
@@ -70,11 +62,13 @@ export class ServerActionListComponent implements OnInit, OnDestroy {
         selectStatusByIpAddress(this.server.ipaddress)
       );
 
-      this.subscriptionHandler.subscription = this.status$.subscribe((status) => {
-        this.status = status;
+      this.subscriptionHandler.subscription = this.status$.subscribe(
+        (status) => {
+          this.status = status;
 
-        this.getActionsForServer();
-      });
+          this.getActionsForServer();
+        }
+      );
     }
 
     this.subscriptionHandler.subscription = this.plugins$

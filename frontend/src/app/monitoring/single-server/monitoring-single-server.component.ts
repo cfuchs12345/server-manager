@@ -5,6 +5,7 @@ import {
   OnDestroy,
   OnChanges,
   SimpleChanges,
+  inject,
 } from '@angular/core';
 import { NGXLogger } from 'ngx-logger';
 import { MonitoringService } from 'src/app/services/monitoring/monitoring.service';
@@ -27,6 +28,9 @@ import { ChartData, ChartDataList } from 'src/types/ChartData';
 export class MonitoringSingleServerComponent
   implements OnInit, OnDestroy, OnChanges
 {
+  private monitoringService = inject(MonitoringService);
+  private logger = inject(NGXLogger);
+
   @Input() server: Server | undefined;
 
   seriesData: TimeSeriesIds | undefined;
@@ -35,12 +39,7 @@ export class MonitoringSingleServerComponent
 
   chartTypes: Map<string, string> = new Map();
 
-  subscriptionHandler = new SubscriptionHandler(this);
-
-  constructor(
-    private monitoringService: MonitoringService,
-    private logger: NGXLogger
-  ) {}
+  private subscriptionHandler = new SubscriptionHandler(this);
 
   ngOnInit(): void {
     this.loadData();

@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { SystemInformation } from '../services/general/types';
 import { EventService } from '../services/events/event.service';
 import { SubscriptionHandler } from '../shared/subscriptionHandler';
@@ -8,17 +8,20 @@ import { SubscriptionHandler } from '../shared/subscriptionHandler';
   templateUrl: './systeminformation.component.html',
   styleUrls: ['./systeminformation.component.scss'],
 })
-export class SystemInformationComponent implements OnDestroy {
+export class SystemInformationComponent implements OnInit, OnDestroy {
+  private eventService = inject(EventService);
+
   private systemInformation: SystemInformation | undefined;
 
   private subscriptionHandler = new SubscriptionHandler(this);
 
-  constructor(private eventService: EventService) {
+  ngOnInit() {
     this.subscriptionHandler.subscription =
       this.eventService.systemInformationSubject$.subscribe(
-        (systemInformation) => this.systemInformation = systemInformation
+        (systemInformation) => (this.systemInformation = systemInformation)
       );
   }
+
   ngOnDestroy(): void {
     this.subscriptionHandler.onDestroy();
   }

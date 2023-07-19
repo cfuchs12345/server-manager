@@ -1,4 +1,4 @@
-import { Directive, Input, OnInit } from '@angular/core';
+import { Directive, Input, OnInit, inject } from '@angular/core';
 import { MatGridList } from '@angular/material/grid-list';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 
@@ -13,6 +13,9 @@ export interface GridColumns {
   selector: '[gridCols]',
 })
 export class GridColsDirective implements OnInit {
+  private grid = inject(MatGridList);
+  private breakpointObserver = inject(BreakpointObserver);
+
   private gridCols: GridColumns = { xs: 1, sm: 2, md: 4, lg: 6, xl: 8 };
 
   public get cols(): GridColumns {
@@ -23,15 +26,6 @@ export class GridColsDirective implements OnInit {
   public set cols(map: GridColumns) {
     if (map && 'object' === typeof map) {
       this.gridCols = map;
-    }
-  }
-
-  public constructor(
-    private grid: MatGridList,
-    private breakpointObserver: BreakpointObserver
-  ) {
-    if (this.grid != null) {
-      this.grid.cols = this.gridCols.xs;
     }
   }
 

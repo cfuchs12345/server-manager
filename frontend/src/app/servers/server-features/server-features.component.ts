@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit, inject } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { Observable, filter, map } from 'rxjs';
 import { ErrorService, Source } from 'src/app/services/errors/error.service';
@@ -11,17 +11,17 @@ import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
   templateUrl: './server-features.component.html',
   styleUrls: ['./server-features.component.scss'],
 })
-export class ServerFeaturesComponent {
+export class ServerFeaturesComponent implements OnInit {
+  private store = inject(Store);
+  private errorService = inject(ErrorService);
+
   @Input() server: Server | undefined = undefined;
 
-  features$: Observable<string[]>;
+  features$?: Observable<string[]>;
 
-  private plugins$: Observable<Plugin[]>;
+  private plugins$?: Observable<Plugin[]>;
 
-  constructor(
-    private store: Store,
-    private errorService: ErrorService
-  ) {
+  ngOnInit() {
     this.plugins$ = this.store
       .select(selectAllPlugins)
       .pipe(filter((plugins) => this.filter(plugins)));

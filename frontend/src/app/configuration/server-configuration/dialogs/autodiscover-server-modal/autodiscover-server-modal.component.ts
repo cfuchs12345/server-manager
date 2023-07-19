@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
 import { HostInformation, Server } from '../../../../services/servers/types';
 import { MatDialogRef } from '@angular/material/dialog';
@@ -20,6 +20,12 @@ import { saveServers } from 'src/app/state/server/server.actions';
   styleUrls: ['./autodiscover-server-modal.component.scss'],
 })
 export class AutodiscoverServerModalComponent implements OnInit, OnDestroy {
+  private store = inject(Store);
+  private discoverService = inject(ServerDiscoveryService);
+  private generalService = inject(GeneralService);
+  private errorService = inject(ErrorService);
+  private ref = inject(MatDialogRef<AutoDiscoveryDialog>);
+
   buttonTextStart = 'Start';
   buttonTextWorking = 'Working...';
   buttonTextSaveServer = 'Save Servers';
@@ -39,21 +45,13 @@ export class AutodiscoverServerModalComponent implements OnInit, OnDestroy {
   servers: HostInformation[] = [];
   dnsservers: DNSServer[] = [];
 
-  servers$: Observable<Server[]>;
+  servers$?: Observable<Server[]>;
 
   subscriptionHandler = new SubscriptionHandler(this);
 
-  constructor(
-    private store: Store,
-    private discoverService: ServerDiscoveryService,
-    private generalService: GeneralService,
-    private errorService: ErrorService,
-    private ref: MatDialogRef<AutoDiscoveryDialog>
-  ) {
-    this.servers$ = this.store.select(selectAllServers);
-  }
-
   ngOnInit(): void {
+    this.servers$ = this.store.select(selectAllServers);
+
     this.loadDNSServers();
 
     this.servers$.subscribe((servers) => {

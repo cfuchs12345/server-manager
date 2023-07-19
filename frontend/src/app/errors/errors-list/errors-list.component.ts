@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { ErrorService } from 'src/app/services/errors/error.service';
 import { Subscription } from 'rxjs';
 
@@ -8,12 +8,12 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./errors-list.component.scss'],
 })
 export class ErrorsListComponent implements OnInit, OnDestroy {
+  private errorService = inject( ErrorService);
+  private subscriptionErrors: Subscription | undefined = undefined;
+
   errorCount = 0;
   classes: string[] = [];
 
-  private subscriptionErrors: Subscription | undefined = undefined;
-
-  constructor(private errorService: ErrorService) {}
 
   ngOnInit(): void {
     this.subscriptionErrors = this.errorService.errors.subscribe(() => {

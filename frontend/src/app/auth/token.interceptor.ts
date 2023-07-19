@@ -1,24 +1,18 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   HttpRequest,
   HttpHandler,
   HttpEvent,
   HttpInterceptor,
 } from '@angular/common/http';
-import { Observable, switchMap } from 'rxjs';
+import { Observable, switchMap, take } from 'rxjs';
 import { Store } from '@ngrx/store';
 import { selectToken } from '../state/usertoken/usertoken.selectors';
 import { UserToken } from '../services/users/types';
 
 @Injectable()
 export class TokenInterceptor implements HttpInterceptor {
-  userToken$: Observable<UserToken | undefined>;
-
-  constructor(
-    private store: Store
-  ) {
-    this.userToken$ = this.store.select(selectToken());
-  }
+  private store = inject(Store);
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
   intercept(
@@ -27,7 +21,8 @@ export class TokenInterceptor implements HttpInterceptor {
   ): Observable<HttpEvent<any>> {
     // add header with basic auth credentials if user is logged in and request is to the api url
 
-    return this.userToken$.pipe(
+    return this.store.select(selectToken()).pipe(
+      take(1),
       switchMap((userToken) => {
         const isApiUrl = request.url.startsWith('/backend');
 

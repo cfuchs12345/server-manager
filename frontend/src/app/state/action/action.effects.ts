@@ -1,5 +1,5 @@
 // hydration.effects.ts
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { of, tap } from 'rxjs';
 import { map, switchMap,  catchError } from 'rxjs/operators';
@@ -13,6 +13,10 @@ import { ServerActionService } from 'src/app/services/servers/server-action.serv
 
 @Injectable()
 export class ActionEffects {
+  private action$ = inject(Actions);
+  private serverActionService= inject( ServerActionService);
+  private errorService= inject( ErrorService);
+
   executeAction$ = createEffect(() => {
     return this.action$.pipe(
       ofType(executeAction),
@@ -28,8 +32,4 @@ export class ActionEffects {
       tap( (err) => this.errorService.newError(Source.ServerActionService, undefined, err)),
     );
   }, { dispatch: false });
-
-
-
-  constructor(private action$: Actions, private serverActionService: ServerActionService, private errorService: ErrorService) {}
 }

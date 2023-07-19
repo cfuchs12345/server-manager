@@ -1,6 +1,7 @@
-import { Component, Inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-message-dialog',
@@ -8,12 +9,9 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   styleUrls: ['./message-dialog.component.scss'],
 })
 export class MessageDialogComponent {
-  constructor(
-    public dialogRef: MatDialogRef<MessageDialogComponent>,
-    private sanitizer: DomSanitizer,
-    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-    @Inject(MAT_DIALOG_DATA) public data: any
-  ) {}
+  public dialogRef = inject(MatDialogRef<ConfirmDialogComponent>);
+  private sanitizer = inject(DomSanitizer);
+  public data = inject(MAT_DIALOG_DATA);
 
   get_content(): SafeHtml {
     return this.sanitizer.bypassSecurityTrustHtml(this.data.message);

@@ -1,8 +1,10 @@
 import {
   Component,
   Input,
+  OnInit,
   OnChanges,
   OnDestroy,
+  inject,
   SimpleChanges,
 } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -22,25 +24,26 @@ const action_regex = /\[\[Action.*\]\]/g;
   templateUrl: './server-detail.component.html',
   styleUrls: ['./server-detail.component.scss'],
 })
-export class ServerDetailComponent implements OnChanges, OnDestroy {
+export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
+  private logger = inject(NGXLogger);
+  private sanitizer = inject(DomSanitizer);
+  private serverDataService = inject(ServerDataService);
+
   @Input() server: Server | undefined = undefined;
   @Input() showDetail = false;
   @Input() turnDetail = false;
 
   dataResults: DataResult[] | undefined = undefined;
 
-  innerHtml: SafeHtml;
+  innerHtml?: SafeHtml;
 
   private subscriptionHandler = new SubscriptionHandler(this);
 
-  constructor(
-    private logger: NGXLogger,
-    private sanitizer: DomSanitizer,
-    private serverDataService: ServerDataService
-  ) {
-    this.innerHtml = sanitizer.bypassSecurityTrustHtml('');
+  ngOnInit() {
+    if (this.sanitizer) {
+      this.innerHtml = this.sanitizer.bypassSecurityTrustHtml('');
+    }
   }
-
 
   ngOnDestroy(): void {
     this.subscriptionHandler.onDestroy();

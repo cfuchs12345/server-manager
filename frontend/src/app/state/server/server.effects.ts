@@ -1,5 +1,5 @@
 // hydration.effects.ts
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Observable, of } from 'rxjs';
 import { map, switchMap, tap, catchError, mergeMap } from 'rxjs/operators';
@@ -26,6 +26,10 @@ import { Server, ServerFeature } from 'src/app/services/servers/types';
 
 @Injectable()
 export class ServerEffects {
+  private action$ = inject(Actions);
+  private serverService = inject(ServerService);
+  private errorService = inject(ErrorService);
+
   loadAll$ = createEffect(() => {
     return this.action$.pipe(
       ofType(loadAll),
@@ -162,11 +166,6 @@ export class ServerEffects {
     );
   }, { dispatch: false });
 
-  constructor(
-    private action$: Actions,
-    private serverService: ServerService,
-    private errorService: ErrorService
-  ) {}
 
   private saveSingleFeature = (
     foundServerFeature: ServerFeature

@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { Server } from 'src/app/services/servers/types';
 import { Notifications } from 'src/app/services/notifications/types';
 import { Observable } from 'rxjs';
@@ -10,11 +10,11 @@ import { selectNotificationsByIpAddress } from 'src/app/state/notification/notif
   styleUrls: ['./server-notifications.component.scss'],
 })
 export class ServerNotificationComponent implements OnChanges {
+  private store = inject(Store);
+
   @Input() server: Server | undefined = undefined;
 
   notifications$: Observable<Notifications | undefined> | undefined = undefined;
-
-  constructor(private store: Store) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     for (const propName in changes) {

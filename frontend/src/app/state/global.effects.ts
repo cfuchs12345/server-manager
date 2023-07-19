@@ -1,5 +1,5 @@
 // hydration.effects.ts
-import { Injectable } from '@angular/core';
+import { Injectable , inject} from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { of } from 'rxjs';
 import { mergeMap } from 'rxjs/operators';
@@ -15,6 +15,8 @@ import * as ConditionCheckResultActions from './conditioncheckresult/conditionch
 
 @Injectable()
 export class GlobalEffects {
+  private action$ = inject(Actions);
+
   init$ = createEffect(() => {
     return this.action$.pipe(
       ofType(GlobalActions.init),
@@ -41,8 +43,4 @@ export class GlobalEffects {
       )
     );
   });
-
-  constructor(
-    private action$: Actions,
-  ) {}
 }

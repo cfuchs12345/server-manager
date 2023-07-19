@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   HttpRequest,
   HttpHandler,
@@ -11,7 +11,7 @@ import { AuthenticationService } from '../services/auth/authentication.service';
 
 @Injectable()
 export class ErrorInterceptor implements HttpInterceptor {
-  constructor(private authenticationService: AuthenticationService) {}
+  private authenticationService = inject( AuthenticationService);
 
   intercept(
     // eslint-disable-next-line  @typescript-eslint/no-explicit-any
