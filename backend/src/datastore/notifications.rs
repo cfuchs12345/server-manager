@@ -73,6 +73,7 @@ pub async fn update_notifications(notifications: Notifications) -> Result<bool, 
     }
 }
 
+#[allow(dead_code)]
 pub async fn delete_notification(ipaddress: &str) -> Result<bool, AppError> {
     let result = persistence::delete(TABLE, ipaddress).await?;
 

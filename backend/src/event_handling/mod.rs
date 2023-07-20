@@ -36,6 +36,7 @@ pub fn publish_system_info(
     Ok(())
 }
 
+#[allow(dead_code)]
 pub fn publish_refresh_event(
     occurrence_datetime: DateTime<Utc>,
     current: Box<dyn EventSource>,

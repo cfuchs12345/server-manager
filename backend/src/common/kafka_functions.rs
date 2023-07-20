@@ -175,7 +175,7 @@ impl Receiver {
         &self,
         uuid: &str,
         timeout: chrono::Duration,
-        key: &str,
+        _key: &str,
     ) -> Result<String, AppError> {
         let start = Utc::now();
         let mut result = None;

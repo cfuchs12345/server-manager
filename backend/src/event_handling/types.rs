@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::{error::AppError, response::system_information::SystemInformation};
 
+#[allow(dead_code)]
 #[derive(PartialEq, Debug)]
 pub enum Value {
     String(String),

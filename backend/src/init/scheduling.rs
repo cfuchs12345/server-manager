@@ -18,6 +18,7 @@ lazy_static! {
     static ref LAST_RUN: RwLock<HashMap<String, Instant>> = RwLock::new(HashMap::new());
 }
 
+#[allow(dead_code)]
 pub async fn get_last_run(name: &str) -> Option<Instant> {
     LAST_RUN.read().await.get(name).map(|v| v.to_owned())
 }
@@ -53,6 +54,7 @@ async fn schedule_system_info_publish(scheduler: &JobScheduler) -> Result<(), Ap
     Ok(())
 }
 
+#[allow(dead_code)]
 async fn schedule_refresh(scheduler: &JobScheduler) -> Result<(), AppError> {
     scheduler
         .add(Job::new("0 */10 * * * *", |_uuid, _l| {
@@ -98,6 +100,7 @@ fn publish_system_info(now: chrono::DateTime<Utc>, system_info: SystemInformatio
     }
 }
 
+#[allow(dead_code)]
 fn publish_refresh(now: chrono::DateTime<Utc>, object: Box<dyn EventSource>) {
     match event_handling::publish_refresh_event(now, object) {
         Ok(_) => {}

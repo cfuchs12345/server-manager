@@ -137,6 +137,7 @@ pub async fn make_command_input_from_data(
     Ok(vec)
 }
 
+#[allow(dead_code)]
 pub async fn make_command_input_from_detection(
     ipaddress: &IpAddr,
     crypto_key: &str,

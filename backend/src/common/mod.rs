@@ -102,6 +102,7 @@ pub fn convert_value_to_str(value: &serde_json::Value) -> Option<String> {
     }
 }
 
+#[allow(dead_code)]
 pub fn hash_as_string<T: Hash>(object: T) -> String {
     let mut s = DefaultHasher::new();
     object.hash(&mut s);
