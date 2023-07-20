@@ -1,7 +1,6 @@
 <div class="heading">
   <div class="status">
-    <div><b>Event Connection:</b></div>
-    <div>
+    <div class="serverIndicator">
         <app-active-light [isActive]="(this.eventService.heartBeatSubject$ | async)"></app-active-light>
     </div>
   </div>
