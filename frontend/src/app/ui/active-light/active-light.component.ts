@@ -10,6 +10,6 @@ import { NgClass } from '@angular/common';
     imports: [NgClass, ExtendedModule],
 })
 export class ActiveLightComponent {
-  @Input() isActive = false;
+  @Input() isActive: boolean | null = false;
 
 }

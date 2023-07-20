@@ -14,10 +14,10 @@ import {
   EventHandlingFunction,
   EventHandlingGetObjectFunction,
   EventHandlingUpdateFunction,
-  EventService,
-} from '../events/event.service';
+} from '../events/types';
 import { EventType } from '../events/types';
 import { selectUserByUserId } from 'src/app/state/user/user.selectors';
+import { EventService } from '../events/event.service';
 
 @Injectable({ providedIn: 'root' })
 export class UserService {

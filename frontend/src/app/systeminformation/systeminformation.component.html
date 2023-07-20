@@ -1,6 +1,32 @@
 <div class="heading">
-  <b>Server</b>&nbsp;
-  <b>Memory Stats</b>&nbsp;Physical:&nbsp;{{find("memory_stats", "physical")}} GB&nbsp;Virtual:&nbsp;{{find("memory_stats", "virtual")}} GB&nbsp;
-  <b>Memory Usage</b>&nbsp;Total:&nbsp;{{find("memory_usage", "mem_total")}} GB&nbsp;Free:&nbsp;{{find("memory_usage", "mem_free")}} GB&nbsp;Available:&nbsp;{{find("memory_usage", "mem_avail")}} GB&nbsp;
-  <b>Load Average</b>&nbsp;{{find("load_average", "load_one")}}/{{find("load_average", "load_five")}}/{{find("load_average", "load_fifteen")}}
+  <div class="status">
+    <div><b>Event Connection:</b></div>
+    <div>
+        <app-active-light [isActive]="(this.eventService.heartBeatSubject$ | async)"></app-active-light>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stats_label">Memory:</div>
+    <div class="stats_values">
+      Physical:&nbsp;{{
+        find("memory_stats", "physical")
+      }}
+      GB&nbsp;Virtual:&nbsp;{{
+        find("memory_stats", "virtual")
+      }}
+      GB&nbsp;Free:&nbsp;{{
+        find("memory_usage", "mem_free")
+      }}
+      GB&nbsp;Available:&nbsp;{{ find("memory_usage", "mem_avail") }} GB
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stats_label">Load Average:</div>
+    <div class="stats_values">
+      {{ find("load_average", "load_one") }}/{{
+        find("load_average", "load_five")
+      }}/{{ find("load_average", "load_fifteen") }}
+    </div>
+  </div>
 </div>
+<div></div>

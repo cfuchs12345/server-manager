@@ -11,8 +11,14 @@ import {
 import { Param, ServerAction, Feature } from './types';
 import { ErrorService } from '../errors/error.service';
 import { NGXLogger } from 'ngx-logger';
-import { EventHandler, EventHandlingFunction, EventHandlingGetObjectFunction, EventHandlingUpdateFunction, EventService } from '../events/event.service';
-import { EventType } from '../events/types';
+import {
+  EventHandler,
+  EventHandlingFunction,
+  EventHandlingGetObjectFunction,
+  EventHandlingUpdateFunction,
+  EventType,
+} from '../events/types';
+import { EventService } from '../events/event.service';
 
 @Injectable({
   providedIn: 'root',
@@ -59,7 +65,6 @@ export class ServerActionService {
     return of(result);
   };
 
-
   constructor(
     private store: Store,
     private http: HttpClient,
@@ -67,7 +72,6 @@ export class ServerActionService {
     private errorService: ErrorService,
     private logger: NGXLogger
   ) {
-
     this.eventService.registerEventHandler(
       new EventHandler(
         'ConditionCheckResult',
@@ -107,9 +111,12 @@ export class ServerActionService {
 
     const body = JSON.stringify(query);
 
-    return this.http
-      .post<Feature[]>('/backend/servers/' + ipaddress + '/actions', body, {
+    return this.http.post<Feature[]>(
+      '/backend/servers/' + ipaddress + '/actions',
+      body,
+      {
         headers: defaultHeadersForJSON(),
-      });
+      }
+    );
   };
 }

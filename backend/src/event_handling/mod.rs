@@ -25,6 +25,11 @@ lazy_static! {
         Mutex::new(broadcast::channel(MESSAGE_BUFFER_SIZE));
 }
 
+pub fn publish_heartbeat() -> Result<(), AppError> {
+    publish(Event::new_heartbeat()?)?;
+    Ok(())
+}
+
 pub fn publish_system_info(
     occurrence_datetime: DateTime<Utc>,
     system_info: &SystemInformation,

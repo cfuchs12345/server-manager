@@ -39,6 +39,7 @@ pub enum EventType {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ObjectType {
+    Heartbeat,
     Status,
     Server,
     Plugin,
@@ -61,6 +62,18 @@ pub struct Event {
 }
 
 impl Event {
+    pub fn new_heartbeat() -> Result<Self, AppError> {
+        Ok(Event {
+            occurrence_datetime: Utc::now(),
+            object_type: ObjectType::Heartbeat,
+            event_type: EventType::Update,
+            key_name: "".to_owned(),
+            key: "".to_owned(),
+            value: "".to_owned(),
+            version: -1,
+        })
+    }
+
     pub fn new_from_system_info(
         occurrence_datetime: DateTime<Utc>,
         system_info: &SystemInformation,

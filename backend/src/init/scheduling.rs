@@ -27,12 +27,23 @@ pub async fn start_scheduled_jobs() -> Result<(), AppError> {
     let scheduler = JobScheduler::new().await?;
 
     //schedule_refresh(&scheduler).await?;
+    schedule_heartbeat(&scheduler).await?;
     schedule_system_info_publish(&scheduler).await?;
     schedule_cache_update(&scheduler).await?;
     schedule_token_cleanup(&scheduler).await?;
     schedule_one_time_crypt_key_cleanup(&scheduler).await?;
 
     scheduler.start().await?;
+
+    Ok(())
+}
+
+async fn schedule_heartbeat(scheduler: &JobScheduler) -> Result<(), AppError> {
+    scheduler
+        .add(Job::new("*/3 * * * * *", |_uuid, _l| {
+            publish_heartbeat();
+        })?)
+        .await?;
 
     Ok(())
 }
@@ -87,6 +98,17 @@ async fn schedule_refresh(scheduler: &JobScheduler) -> Result<(), AppError> {
         .await?;
 
     Ok(())
+}
+
+fn publish_heartbeat() {
+    match event_handling::publish_heartbeat() {
+        Ok(_) => {
+            log::debug!("published heartbeat");
+        }
+        Err(err) => {
+            log::error!("Error while publishing heartbeat: {}", err);
+        }
+    }
 }
 
 fn publish_system_info(now: chrono::DateTime<Utc>, system_info: SystemInformation) {

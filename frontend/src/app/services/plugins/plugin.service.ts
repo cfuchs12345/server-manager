@@ -20,9 +20,9 @@ import {
   EventHandlingFunction,
   EventHandlingGetObjectFunction,
   EventHandlingUpdateFunction,
-  EventService,
-} from '../events/event.service';
-import {  EventType } from '../events/types';
+} from '../events/types';
+import { EventService } from '../events/event.service';
+import { EventType } from '../events/types';
 import { selectPluginById } from 'src/app/state/plugin/plugin.selectors';
 
 @Injectable({
@@ -72,8 +72,8 @@ export class PluginService {
   getObjectFunction: EventHandlingGetObjectFunction<Plugin> = (
     key_name: string,
     key: string,
-    value: string,// eslint-disable-line @typescript-eslint/no-unused-vars
-    data: string// eslint-disable-line @typescript-eslint/no-unused-vars
+    value: string, // eslint-disable-line @typescript-eslint/no-unused-vars
+    data: string // eslint-disable-line @typescript-eslint/no-unused-vars
   ): Observable<Plugin> => {
     return this.getPlugin(key);
   };
@@ -86,7 +86,7 @@ export class PluginService {
     data: string, // eslint-disable-line @typescript-eslint/no-unused-vars
     object: string // eslint-disable-line @typescript-eslint/no-unused-vars
   ) => {
-    this.store.dispatch(addOneDisabledPlugin({disabled_plugin: data}));
+    this.store.dispatch(addOneDisabledPlugin({ disabled_plugin: data }));
   };
 
   updateDisabledPluginsEventFunction: EventHandlingUpdateFunction<string> = (
@@ -97,7 +97,7 @@ export class PluginService {
     version: number, // eslint-disable-line @typescript-eslint/no-unused-vars
     object: string // eslint-disable-line @typescript-eslint/no-unused-vars
   ) => {
-    this.store.dispatch(upsertOneDisabledPlugin({disabled_plugin: value}));
+    this.store.dispatch(upsertOneDisabledPlugin({ disabled_plugin: value }));
   };
 
   // eslint-disable-next-line  @typescript-eslint/no-unused-vars
@@ -114,7 +114,7 @@ export class PluginService {
     key_name: string,
     key: string,
     value: string,
-    data: string// eslint-disable-line @typescript-eslint/no-unused-vars
+    data: string // eslint-disable-line @typescript-eslint/no-unused-vars
   ): Observable<string> => {
     return of(value);
   };
@@ -141,7 +141,7 @@ export class PluginService {
         this.insertDisabledPluginsEventFunction,
         this.updateDisabledPluginsEventFunction,
         this.deleteDisabledPluginsEventFunction,
-        this.getObjectDisabledPluginsFunction,
+        this.getObjectDisabledPluginsFunction
       )
     );
   }

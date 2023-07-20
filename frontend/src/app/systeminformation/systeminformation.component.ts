@@ -2,15 +2,19 @@ import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { SystemInformation } from '../services/general/types';
 import { EventService } from '../services/events/event.service';
 import { SubscriptionHandler } from '../shared/subscriptionHandler';
+import { ActiveLightComponent } from '../ui/active-light/active-light.component';
+import { Observable } from 'rxjs';
+import { AsyncPipe, NgIf } from '@angular/common';
 
 @Component({
     selector: 'app-system-information',
     templateUrl: './systeminformation.component.html',
     styleUrls: ['./systeminformation.component.scss'],
     standalone: true,
+    imports: [ActiveLightComponent, NgIf, AsyncPipe],
 })
 export class SystemInformationComponent implements OnInit, OnDestroy {
-  private eventService = inject(EventService);
+  eventService = inject(EventService);
 
   private systemInformation: SystemInformation | undefined;
 
@@ -21,6 +25,7 @@ export class SystemInformationComponent implements OnInit, OnDestroy {
       this.eventService.systemInformationSubject$.subscribe(
         (systemInformation) => (this.systemInformation = systemInformation)
       );
+
   }
 
   ngOnDestroy(): void {

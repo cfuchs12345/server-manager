@@ -16,6 +16,8 @@ import {
   EventHandlingGetObjectFunction,
   EventHandlingFunction,
   EventHandlingUpdateFunction,
+} from '../events/types';
+import {
   EventService,
 } from '../events/event.service';
 import { Store } from '@ngrx/store';

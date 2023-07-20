@@ -1,4 +1,30 @@
 .heading {
   width: 100%;
-  text-align: center;
+  display: flex;
+  align-content: center ;
 }
+
+.heading > div {
+  flex-grow: 1;
+  vertical-align: middle;
+  background-color: gray;
+}
+
+.stats {
+  display: flex;
+  flex-direction: row;
+}
+
+.stats_label {
+  text-align: right;
+  margin-right: 5px;
+}
+.stats_values {
+  margin-left: 5px;
+  text-align: left;
+}
+
+.status {
+  display: flex;
+}
+
