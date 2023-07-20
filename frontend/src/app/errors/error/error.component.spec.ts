@@ -10,9 +10,9 @@ describe('ErrorComponent', () => {
   let errorService: ErrorService;
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ErrorComponent ],
-      providers: [ErrorService]
-    })
+    imports: [ErrorComponent],
+    providers: [ErrorService]
+})
     .compileComponents();
 
     fixture = TestBed.createComponent(ErrorComponent);

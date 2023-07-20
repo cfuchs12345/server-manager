@@ -9,11 +9,19 @@ import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { selectStatusByIpAddress } from 'src/app/state/status/status.selectors';
 import { Server, Status } from 'src/app/services/servers/types';
+import { ActiveLightComponent } from '../../ui/active-light/active-light.component';
+import { NgIf, AsyncPipe } from '@angular/common';
 
 @Component({
-  selector: 'app-server-status',
-  templateUrl: './server-status.component.html',
-  styleUrls: ['./server-status.component.scss'],
+    selector: 'app-server-status',
+    templateUrl: './server-status.component.html',
+    styleUrls: ['./server-status.component.scss'],
+    standalone: true,
+    imports: [
+        NgIf,
+        ActiveLightComponent,
+        AsyncPipe,
+    ],
 })
 export class ServerStatusComponent implements OnChanges {
   private store = inject(Store);

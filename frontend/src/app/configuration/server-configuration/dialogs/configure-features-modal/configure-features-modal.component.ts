@@ -1,10 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import {
-  FormBuilder,
-  FormControl,
-  FormGroup,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { Observable, map, take } from 'rxjs';
 import {
@@ -22,11 +17,32 @@ import {
 import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
 import { saveServer } from 'src/app/state/server/server.actions';
 import { selectAllServersWithFeatures } from 'src/app/state/server/server.selectors';
+import { MatButtonModule } from '@angular/material/button';
+import { MatInputModule } from '@angular/material/input';
+import { MatOptionModule } from '@angular/material/core';
+import { NgFor, NgIf, AsyncPipe } from '@angular/common';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { FlexModule } from '@angular/flex-layout/flex';
 
 @Component({
-  selector: 'app-configure-features-modal',
-  templateUrl: './configure-features-modal.component.html',
-  styleUrls: ['./configure-features-modal.component.scss'],
+    selector: 'app-configure-features-modal',
+    templateUrl: './configure-features-modal.component.html',
+    styleUrls: ['./configure-features-modal.component.scss'],
+    standalone: true,
+    imports: [
+        FlexModule,
+        MatFormFieldModule,
+        MatSelectModule,
+        FormsModule,
+        NgFor,
+        MatOptionModule,
+        ReactiveFormsModule,
+        NgIf,
+        MatInputModule,
+        MatButtonModule,
+        AsyncPipe,
+    ],
 })
 export class ConfigureFeaturesModalComponent implements OnInit {
   private store = inject(Store);

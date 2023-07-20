@@ -16,11 +16,20 @@ import {
   ConfigImExportDialogComponent,
   dialogSettings as changeDialogImExportConfig,
 } from './dialogs/dialog-config-im-and-export';
+import { MatButtonModule } from '@angular/material/button';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { ConfigurationGroupComponent } from '../configuration-group/configuration-group.component';
 
 @Component({
-  selector: 'app-general-configuration',
-  templateUrl: './general-configuration.component.html',
-  styleUrls: ['./general-configuration.component.scss'],
+    selector: 'app-general-configuration',
+    templateUrl: './general-configuration.component.html',
+    styleUrls: ['./general-configuration.component.scss'],
+    standalone: true,
+    imports: [
+        ConfigurationGroupComponent,
+        FlexModule,
+        MatButtonModule,
+    ],
 })
 export class GeneralConfigurationComponent {
   private dialog = inject(MatDialog);

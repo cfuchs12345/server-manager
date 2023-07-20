@@ -17,9 +17,10 @@ import { Store } from '@ngrx/store';
 import { executeAction } from 'src/app/state/action/action.actions';
 
 @Component({
-  selector: 'app-server-action',
-  templateUrl: './server-action.component.html',
-  styleUrls: ['./server-action.component.scss'],
+    selector: 'app-server-action',
+    templateUrl: './server-action.component.html',
+    styleUrls: ['./server-action.component.scss'],
+    standalone: true,
 })
 export class ServerActionComponent implements OnChanges {
   private store = inject(Store);

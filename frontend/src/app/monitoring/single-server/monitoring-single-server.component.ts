@@ -19,11 +19,19 @@ import { Server } from 'src/app/services/servers/types';
 import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
 import { sortByString } from 'src/app/shared/utils';
 import { ChartData, ChartDataList } from 'src/types/ChartData';
+import { ChartWrapperComponent } from '../../ui/chart-wrapper/chart-wrapper.component';
+import { NgIf, NgFor } from '@angular/common';
 
 @Component({
-  selector: 'app-monitoring-single-server',
-  templateUrl: './monitoring-single-server.component.html',
-  styleUrls: ['./monitoring-single-server.component.scss'],
+    selector: 'app-monitoring-single-server',
+    templateUrl: './monitoring-single-server.component.html',
+    styleUrls: ['./monitoring-single-server.component.scss'],
+    standalone: true,
+    imports: [
+        NgIf,
+        NgFor,
+        ChartWrapperComponent,
+    ],
 })
 export class MonitoringSingleServerComponent
   implements OnInit, OnDestroy, OnChanges

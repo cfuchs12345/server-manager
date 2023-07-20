@@ -14,13 +14,23 @@ import {
   transition,
   trigger,
 } from '@angular/animations';
-import { MatTable, MatTableDataSource } from '@angular/material/table';
+import { MatTable, MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { RowData } from 'src/app/services/general/types';
 import { Server } from 'src/app/services/servers/types';
 import { AuthenticationService } from 'src/app/services/auth/authentication.service';
 import { Observable } from 'rxjs';
 import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
 import { sortByIpAddress } from 'src/app/shared/utils';
+import { ServerDetailComponent } from '../server-detail/server-detail.component';
+import { ServerDetailControlComponent } from '../server-detail-control/server-detail-control.component';
+import { ServerActionListComponent } from '../server-action-list/server-action-list.component';
+import { ServerNotificationComponent } from '../server-notifications/server-notifications.component';
+import { ServerFeaturesComponent } from '../server-features/server-features.component';
+import { ServerStatusComponent } from '../server-status/server-status.component';
+import { ServerIconComponent } from '../server-icon/server-icon.component';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { FlexModule } from '@angular/flex-layout/flex';
 
 const initialDisplayedColumns: string[] = [
   'icons',
@@ -39,16 +49,30 @@ const displayedColumnForMobilesPhones: string[] = [
 ];
 
 @Component({
-  selector: 'app-server-list',
-  templateUrl: './server-list.component.html',
-  styleUrls: ['./server-list.component.scss'],
-  animations: [
-    trigger('detailExpand', [
-      state('collapsed', style({ height: '0px' })),
-      state('expanded', style({ height: '*' })),
-      transition('collapsed <=> expanded', animate('0.2s')),
-    ]),
-  ],
+    selector: 'app-server-list',
+    templateUrl: './server-list.component.html',
+    styleUrls: ['./server-list.component.scss'],
+    animations: [
+        trigger('detailExpand', [
+            state('collapsed', style({ height: '0px' })),
+            state('expanded', style({ height: '*' })),
+            transition('collapsed <=> expanded', animate('0.2s')),
+        ]),
+    ],
+    standalone: true,
+    imports: [
+        FlexModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatTableModule,
+        ServerIconComponent,
+        ServerStatusComponent,
+        ServerFeaturesComponent,
+        ServerNotificationComponent,
+        ServerActionListComponent,
+        ServerDetailControlComponent,
+        ServerDetailComponent,
+    ],
 })
 export class ServerListComponent implements OnInit, OnDestroy {
   private authService = inject(AuthenticationService);

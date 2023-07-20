@@ -24,10 +24,9 @@ describe('AddServerModalComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ AddServerModalComponent ],
-      imports: [LoggerTestingModule, HttpClientTestingModule, MatFormFieldModule, MatTableModule, BrowserAnimationsModule, MatSelectModule, MatInputModule, ReactiveFormsModule, FormsModule ],
-      providers: [ErrorService, EncryptionService]
-    })
+    imports: [LoggerTestingModule, HttpClientTestingModule, MatFormFieldModule, MatTableModule, BrowserAnimationsModule, MatSelectModule, MatInputModule, ReactiveFormsModule, FormsModule, AddServerModalComponent],
+    providers: [ErrorService, EncryptionService]
+})
     .compileComponents();
 
     fixture = TestBed.createComponent(AddServerModalComponent);

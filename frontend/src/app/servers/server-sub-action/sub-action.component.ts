@@ -7,9 +7,10 @@ import { selectPluginById } from 'src/app/state/plugin/plugin.selectors';
 import { executeAction } from 'src/app/state/action/action.actions';
 
 @Component({
-  selector: 'app-server-sub-action',
-  templateUrl: './server-sub-action.component.html',
-  styleUrls: ['./server-sub-action.component.scss'],
+    selector: 'app-server-sub-action',
+    templateUrl: './server-sub-action.component.html',
+    styleUrls: ['./server-sub-action.component.scss'],
+    standalone: true,
 })
 export class ServerSubActionComponent implements OnInit {
   private store = inject(Store);

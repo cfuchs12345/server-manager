@@ -7,11 +7,29 @@ import {
   SimpleChanges,
 } from '@angular/core';
 import { ChartData } from 'src/types/ChartData';
+import { BarChartComponent } from '../bar-chart/bar-chart.component';
+import { LineChartComponent } from '../line-chart/line-chart.component';
+import { MatOptionModule } from '@angular/material/core';
+import { FormsModule } from '@angular/forms';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { NgIf, NgFor } from '@angular/common';
 
 @Component({
-  selector: 'app-chart-wrapper',
-  templateUrl: './chart-wrapper.component.html',
-  styleUrls: ['./chart-wrapper.component.scss'],
+    selector: 'app-chart-wrapper',
+    templateUrl: './chart-wrapper.component.html',
+    styleUrls: ['./chart-wrapper.component.scss'],
+    standalone: true,
+    imports: [
+        NgIf,
+        MatFormFieldModule,
+        MatSelectModule,
+        FormsModule,
+        NgFor,
+        MatOptionModule,
+        LineChartComponent,
+        BarChartComponent,
+    ],
 })
 export class ChartWrapperComponent implements OnInit, OnChanges {
   @Input() series_id: string | undefined;

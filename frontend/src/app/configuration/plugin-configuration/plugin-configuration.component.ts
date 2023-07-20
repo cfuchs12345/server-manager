@@ -8,11 +8,20 @@ import {
   ListPluginsDialogComponent,
   dialogSettings as listPluginDialogSettings,
 } from './dialogs/dialog-listplugins';
+import { MatButtonModule } from '@angular/material/button';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { ConfigurationGroupComponent } from '../configuration-group/configuration-group.component';
 
 @Component({
-  selector: 'app-plugin-configuration',
-  templateUrl: './plugin-configuration.component.html',
-  styleUrls: ['./plugin-configuration.component.scss'],
+    selector: 'app-plugin-configuration',
+    templateUrl: './plugin-configuration.component.html',
+    styleUrls: ['./plugin-configuration.component.scss'],
+    standalone: true,
+    imports: [
+        ConfigurationGroupComponent,
+        FlexModule,
+        MatButtonModule,
+    ],
 })
 export class PluginConfigurationComponent {
   private dialog = inject(MatDialog);

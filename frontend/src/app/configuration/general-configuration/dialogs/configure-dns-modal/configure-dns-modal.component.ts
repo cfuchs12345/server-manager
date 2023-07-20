@@ -1,15 +1,32 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { FormControl, Validators } from '@angular/forms';
+import { FormControl, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { GeneralService } from 'src/app/services/general/general.service';
 import { DNSServer } from 'src/app/services/general/types';
 import { ConfirmDialogComponent } from 'src/app/ui/confirm-dialog/confirm-dialog.component';
 import { ServerAddressType } from 'src/types/ServerAddress';
+import { MatTableModule } from '@angular/material/table';
+import { MatButtonModule } from '@angular/material/button';
+import { NgIf } from '@angular/common';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { FlexModule } from '@angular/flex-layout/flex';
 
 @Component({
-  selector: 'app-configure-dns-modal',
-  templateUrl: './configure-dns-modal.component.html',
-  styleUrls: ['./configure-dns-modal.component.scss'],
+    selector: 'app-configure-dns-modal',
+    templateUrl: './configure-dns-modal.component.html',
+    styleUrls: ['./configure-dns-modal.component.scss'],
+    standalone: true,
+    imports: [
+        FlexModule,
+        MatFormFieldModule,
+        MatInputModule,
+        FormsModule,
+        ReactiveFormsModule,
+        NgIf,
+        MatButtonModule,
+        MatTableModule,
+    ],
 })
 export class ConfigureDnsModalComponent implements OnInit {
   private configService = inject(GeneralService);

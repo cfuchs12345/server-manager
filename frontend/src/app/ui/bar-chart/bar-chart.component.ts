@@ -1,12 +1,15 @@
 import { Component, Input, OnChanges, OnInit, ViewChild } from '@angular/core';
 
-import { ChartComponent } from 'ng-apexcharts';
+import { ChartComponent, NgApexchartsModule } from 'ng-apexcharts';
 import { ChartData, ChartOptions } from 'src/types/ChartData';
+import { NgIf } from '@angular/common';
 
 @Component({
-  selector: 'app-bar-chart',
-  templateUrl: './bar-chart.component.html',
-  styleUrls: ['./bar-chart.component.scss'],
+    selector: 'app-bar-chart',
+    templateUrl: './bar-chart.component.html',
+    styleUrls: ['./bar-chart.component.scss'],
+    standalone: true,
+    imports: [NgIf, NgApexchartsModule],
 })
 export class BarChartComponent implements OnInit, OnChanges {
   @Input() series_id: string | undefined;

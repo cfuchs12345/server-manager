@@ -4,9 +4,10 @@ import { EventService } from '../services/events/event.service';
 import { SubscriptionHandler } from '../shared/subscriptionHandler';
 
 @Component({
-  selector: 'app-system-information',
-  templateUrl: './systeminformation.component.html',
-  styleUrls: ['./systeminformation.component.scss'],
+    selector: 'app-system-information',
+    templateUrl: './systeminformation.component.html',
+    styleUrls: ['./systeminformation.component.scss'],
+    standalone: true,
 })
 export class SystemInformationComponent implements OnInit, OnDestroy {
   private eventService = inject(EventService);

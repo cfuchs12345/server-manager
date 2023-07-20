@@ -17,10 +17,9 @@ describe('DisablePluginsModalComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule, MatTableModule],
-      providers: [ErrorService],
-      declarations: [ DisablePluginsModalComponent ]
-    })
+    imports: [HttpClientTestingModule, MatTableModule, DisablePluginsModalComponent],
+    providers: [ErrorService]
+})
     .compileComponents();
 
     fixture = TestBed.createComponent(DisablePluginsModalComponent);

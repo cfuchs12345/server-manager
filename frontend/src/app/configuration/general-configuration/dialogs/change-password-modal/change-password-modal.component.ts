@@ -1,11 +1,5 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import {
-  AbstractControl,
-  FormBuilder,
-  FormControl,
-  FormGroup,
-  Validators,
-} from '@angular/forms';
+import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { EncryptionService } from 'src/app/services/encryption/encryption.service';
@@ -13,11 +7,26 @@ import { UserToken } from 'src/app/services/users/types';
 import { UserService } from 'src/app/services/users/users.service';
 import { selectToken } from 'src/app/state/usertoken/usertoken.selectors';
 import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
+import { MatButtonModule } from '@angular/material/button';
+import { NgIf } from '@angular/common';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { FlexModule } from '@angular/flex-layout/flex';
 
 @Component({
-  selector: 'app-change-password-modal',
-  templateUrl: './change-password-modal.component.html',
-  styleUrls: ['./change-password-modal.component.scss'],
+    selector: 'app-change-password-modal',
+    templateUrl: './change-password-modal.component.html',
+    styleUrls: ['./change-password-modal.component.scss'],
+    standalone: true,
+    imports: [
+        FlexModule,
+        MatFormFieldModule,
+        MatInputModule,
+        FormsModule,
+        ReactiveFormsModule,
+        NgIf,
+        MatButtonModule,
+    ],
 })
 export class ChangePasswordModalComponent implements OnDestroy, OnInit {
   private store = inject(Store);

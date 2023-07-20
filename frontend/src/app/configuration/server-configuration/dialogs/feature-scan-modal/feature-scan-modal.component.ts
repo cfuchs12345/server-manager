@@ -5,11 +5,22 @@ import { ServerDiscoveryService } from 'src/app/services/servers/server-discover
 import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
 import { Store } from '@ngrx/store';
 import { addServerFeatures } from 'src/app/state/server/server.actions';
+import { MatTableModule } from '@angular/material/table';
+import { NgIf } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
+import { FlexModule } from '@angular/flex-layout/flex';
 
 @Component({
-  selector: 'app-feature-scan-modal',
-  templateUrl: './feature-scan-modal.component.html',
-  styleUrls: ['./feature-scan-modal.component.scss'],
+    selector: 'app-feature-scan-modal',
+    templateUrl: './feature-scan-modal.component.html',
+    styleUrls: ['./feature-scan-modal.component.scss'],
+    standalone: true,
+    imports: [
+        FlexModule,
+        MatButtonModule,
+        NgIf,
+        MatTableModule,
+    ],
 })
 export class FeatureScanModalComponent implements OnDestroy {
   private discoveryService = inject(ServerDiscoveryService);

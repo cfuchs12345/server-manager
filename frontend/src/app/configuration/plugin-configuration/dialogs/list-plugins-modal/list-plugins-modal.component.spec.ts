@@ -15,10 +15,9 @@ describe('ListPluginsModalComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule, MatTableModule],
-      declarations: [ ListPluginsModalComponent ],
-      providers: [ErrorService]
-    })
+    imports: [HttpClientTestingModule, MatTableModule, ListPluginsModalComponent],
+    providers: [ErrorService]
+})
     .compileComponents();
 
     fixture = TestBed.createComponent(ListPluginsModalComponent);

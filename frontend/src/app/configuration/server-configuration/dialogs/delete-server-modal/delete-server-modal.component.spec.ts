@@ -22,21 +22,19 @@ describe('DeleteServerModalComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ DeleteServerModalComponent ],
-      imports: [LoggerTestingModule, HttpClientTestingModule, MatFormFieldModule, MatTableModule, BrowserAnimationsModule, MatSelectModule, MatInputModule, ReactiveFormsModule, FormsModule],
-      providers: [
+    imports: [LoggerTestingModule, HttpClientTestingModule, MatFormFieldModule, MatTableModule, BrowserAnimationsModule, MatSelectModule, MatInputModule, ReactiveFormsModule, FormsModule, DeleteServerModalComponent],
+    providers: [
         ErrorService, EncryptionService,
         {
-          provide: MatDialog,
-          useValue: {}
+            provide: MatDialog,
+            useValue: {}
         },
         {
-          provide: MatDialogRef,
-          useValue: {}
+            provide: MatDialogRef,
+            useValue: {}
         }
-
-      ]
-    })
+    ]
+})
     .compileComponents();
 
     fixture = TestBed.createComponent(DeleteServerModalComponent);

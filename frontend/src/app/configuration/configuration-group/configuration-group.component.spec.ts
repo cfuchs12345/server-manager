@@ -9,9 +9,8 @@ describe('ConfigurationGroupComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ConfigurationGroupComponent],
-      imports: [MatExpansionModule, BrowserAnimationsModule]
-    }).compileComponents();
+    imports: [MatExpansionModule, BrowserAnimationsModule, ConfigurationGroupComponent]
+}).compileComponents();
 
     fixture = TestBed.createComponent(ConfigurationGroupComponent);
     component = fixture.componentInstance;

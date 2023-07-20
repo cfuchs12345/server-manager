@@ -4,10 +4,19 @@ import { Notifications } from 'src/app/services/notifications/types';
 import { Observable } from 'rxjs';
 import { Store } from '@ngrx/store';
 import { selectNotificationsByIpAddress } from 'src/app/state/notification/notification.selectors';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { NgIf, NgFor, AsyncPipe } from '@angular/common';
 @Component({
-  selector: 'app-server-notifications',
-  templateUrl: './server-notifications.component.html',
-  styleUrls: ['./server-notifications.component.scss'],
+    selector: 'app-server-notifications',
+    templateUrl: './server-notifications.component.html',
+    styleUrls: ['./server-notifications.component.scss'],
+    standalone: true,
+    imports: [
+        NgIf,
+        NgFor,
+        MatTooltipModule,
+        AsyncPipe,
+    ],
 })
 export class ServerNotificationComponent implements OnChanges {
   private store = inject(Store);

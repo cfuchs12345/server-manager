@@ -1,5 +1,5 @@
 import { Component, OnDestroy, inject } from '@angular/core';
-import { FormControl, Validators } from '@angular/forms';
+import { FormControl, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { Router } from '@angular/router';
 import { UserService } from '../services/users/users.service';
@@ -7,11 +7,26 @@ import { User } from '../services/users/types';
 import { MatDialog } from '@angular/material/dialog';
 import { MessageDialogComponent } from '../ui/message_dialog/message-dialog.component';
 import { SubscriptionHandler } from '../shared/subscriptionHandler';
+import { MatButtonModule } from '@angular/material/button';
+import { NgIf } from '@angular/common';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { FlexModule } from '@angular/flex-layout/flex';
 
 @Component({
-  selector: 'app-register',
-  templateUrl: './register.component.html',
-  styleUrls: ['./register.component.scss'],
+    selector: 'app-register',
+    templateUrl: './register.component.html',
+    styleUrls: ['./register.component.scss'],
+    standalone: true,
+    imports: [
+        FlexModule,
+        MatFormFieldModule,
+        MatInputModule,
+        FormsModule,
+        ReactiveFormsModule,
+        NgIf,
+        MatButtonModule,
+    ],
 })
 export class RegisterComponent implements OnDestroy {
   private userService = inject(UserService);

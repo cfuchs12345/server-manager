@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { FormControl, Validators } from '@angular/forms';
+import { FormControl, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HostInformation, Server } from '../../../../services/servers/types';
 import { MatDialogRef } from '@angular/material/dialog';
 import { AutoDiscoveryDialogComponent } from '../dialog-autodiscover';
@@ -13,11 +13,28 @@ import { Store } from '@ngrx/store';
 import { selectAllServers } from 'src/app/state/server/server.selectors';
 import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
 import { saveServers } from 'src/app/state/server/server.actions';
+import { MatTableModule } from '@angular/material/table';
+import { MatButtonModule } from '@angular/material/button';
+import { NgIf } from '@angular/common';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { FlexModule } from '@angular/flex-layout/flex';
 
 @Component({
-  selector: 'app-autodiscover-server-modal',
-  templateUrl: './autodiscover-server-modal.component.html',
-  styleUrls: ['./autodiscover-server-modal.component.scss'],
+    selector: 'app-autodiscover-server-modal',
+    templateUrl: './autodiscover-server-modal.component.html',
+    styleUrls: ['./autodiscover-server-modal.component.scss'],
+    standalone: true,
+    imports: [
+        FlexModule,
+        MatFormFieldModule,
+        MatInputModule,
+        FormsModule,
+        ReactiveFormsModule,
+        NgIf,
+        MatButtonModule,
+        MatTableModule,
+    ],
 })
 export class AutodiscoverServerModalComponent implements OnInit, OnDestroy {
   private store = inject(Store);

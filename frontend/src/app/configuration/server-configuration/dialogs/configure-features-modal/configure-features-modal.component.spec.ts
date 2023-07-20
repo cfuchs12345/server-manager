@@ -27,10 +27,9 @@ describe('ConfigureFeaturesModalComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ConfigureFeaturesModalComponent ],
-      imports: [LoggerTestingModule, HttpClientTestingModule, MatTableModule, BrowserAnimationsModule, MatFormFieldModule, MatSelectModule, ReactiveFormsModule, FormsModule],
-      providers: [ErrorService, EncryptionService]
-    })
+    imports: [LoggerTestingModule, HttpClientTestingModule, MatTableModule, BrowserAnimationsModule, MatFormFieldModule, MatSelectModule, ReactiveFormsModule, FormsModule, ConfigureFeaturesModalComponent],
+    providers: [ErrorService, EncryptionService]
+})
     .compileComponents();
 
     fixture = TestBed.createComponent(ConfigureFeaturesModalComponent);

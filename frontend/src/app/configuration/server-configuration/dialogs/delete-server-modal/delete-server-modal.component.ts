@@ -14,11 +14,32 @@ import {
   removeServerFeature,
   removeServers,
 } from 'src/app/state/server/server.actions';
+import { MatTableModule } from '@angular/material/table';
+import { MatButtonModule } from '@angular/material/button';
+import { MatOptionModule } from '@angular/material/core';
+import { NgFor, NgIf, AsyncPipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { FlexModule } from '@angular/flex-layout/flex';
 
 @Component({
-  selector: 'app-delete-server-modal',
-  templateUrl: './delete-server-modal.component.html',
-  styleUrls: ['./delete-server-modal.component.scss'],
+    selector: 'app-delete-server-modal',
+    templateUrl: './delete-server-modal.component.html',
+    styleUrls: ['./delete-server-modal.component.scss'],
+    standalone: true,
+    imports: [
+        FlexModule,
+        MatFormFieldModule,
+        MatSelectModule,
+        FormsModule,
+        NgFor,
+        MatOptionModule,
+        MatButtonModule,
+        NgIf,
+        MatTableModule,
+        AsyncPipe,
+    ],
 })
 export class DeleteServerModalComponent implements OnInit, OnDestroy {
   private store = inject(Store);

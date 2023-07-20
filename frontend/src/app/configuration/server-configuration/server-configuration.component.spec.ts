@@ -12,15 +12,14 @@ describe('ServerConfigurationComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ServerConfigurationComponent, ConfigurationGroupComponent ],
-      imports: [MatExpansionModule, BrowserAnimationsModule],
-      providers: [{
-        provide: MatDialog,
-        useValue: {}
-      },
-      { provide: MAT_DIALOG_DATA, useValue: {} }
-      ]
-    })
+    imports: [MatExpansionModule, BrowserAnimationsModule, ServerConfigurationComponent, ConfigurationGroupComponent],
+    providers: [{
+            provide: MatDialog,
+            useValue: {}
+        },
+        { provide: MAT_DIALOG_DATA, useValue: {} }
+    ]
+})
 
     .compileComponents();
 

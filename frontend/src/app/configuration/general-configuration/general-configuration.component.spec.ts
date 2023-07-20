@@ -15,15 +15,14 @@ describe('GeneralConfigurationComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ GeneralConfigurationComponent, ConfigurationGroupComponent ],
-      imports: [MatExpansionModule, BrowserAnimationsModule],
-      providers: [{
-        provide: MatDialog,
-        useValue: {}
-      },
-      { provide: MAT_DIALOG_DATA, useValue: {} }
+    imports: [MatExpansionModule, BrowserAnimationsModule, GeneralConfigurationComponent, ConfigurationGroupComponent],
+    providers: [{
+            provide: MatDialog,
+            useValue: {}
+        },
+        { provide: MAT_DIALOG_DATA, useValue: {} }
     ]
-    })
+})
     .compileComponents();
 
     fixture = TestBed.createComponent(GeneralConfigurationComponent);

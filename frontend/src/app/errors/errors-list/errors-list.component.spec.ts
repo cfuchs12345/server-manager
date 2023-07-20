@@ -15,10 +15,9 @@ describe('ErrorsListComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ErrorsListComponent, ConfigurationGroupComponent, ErrorComponent ],
-      imports: [MatExpansionModule, BrowserAnimationsModule],
-      providers: [ErrorService]
-    })
+    imports: [MatExpansionModule, BrowserAnimationsModule, ErrorsListComponent, ConfigurationGroupComponent, ErrorComponent],
+    providers: [ErrorService]
+})
     .compileComponents();
 
     fixture = TestBed.createComponent(ErrorsListComponent);

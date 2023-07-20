@@ -1,16 +1,31 @@
 import { Component, OnDestroy, inject } from '@angular/core';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { FormControl, FormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AuthenticationService } from '../services/auth/authentication.service';
 import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import * as GlobalActions from '../state/global.actions';
 import { SubscriptionHandler } from '../shared/subscriptionHandler';
 import { take } from 'rxjs';
+import { MatButtonModule } from '@angular/material/button';
+import { NgIf } from '@angular/common';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { FlexModule } from '@angular/flex-layout/flex';
 
 @Component({
-  selector: 'app-login',
-  templateUrl: './login.component.html',
-  styleUrls: ['./login.component.scss'],
+    selector: 'app-login',
+    templateUrl: './login.component.html',
+    styleUrls: ['./login.component.scss'],
+    standalone: true,
+    imports: [
+        FormsModule,
+        ReactiveFormsModule,
+        FlexModule,
+        MatFormFieldModule,
+        MatInputModule,
+        NgIf,
+        MatButtonModule,
+    ],
 })
 export class LoginComponent implements OnDestroy {
   private store = inject(Store);

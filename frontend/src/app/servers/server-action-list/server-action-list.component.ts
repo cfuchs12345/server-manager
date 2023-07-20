@@ -13,11 +13,20 @@ import { selectStatusByIpAddress } from 'src/app/state/status/status.selectors';
 import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
 import { selectConditionCheckResultByKey } from 'src/app/state/conditioncheckresult/conditioncheckresult.selectors';
 import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
+import { ServerActionComponent } from '../server-action/server-action.component';
+import { NgFor } from '@angular/common';
+import { FlexModule } from '@angular/flex-layout/flex';
 
 @Component({
-  selector: 'app-server-action-list',
-  templateUrl: './server-action-list.component.html',
-  styleUrls: ['./server-action-list.component.scss'],
+    selector: 'app-server-action-list',
+    templateUrl: './server-action-list.component.html',
+    styleUrls: ['./server-action-list.component.scss'],
+    standalone: true,
+    imports: [
+        FlexModule,
+        NgFor,
+        ServerActionComponent,
+    ],
 })
 export class ServerActionListComponent implements OnInit, OnDestroy {
   private store = inject(Store);

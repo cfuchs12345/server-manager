@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { FormControl, Validators } from '@angular/forms';
+import { FormControl, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { RxwebValidators, IpVersion } from '@rxweb/reactive-form-validators';
 import { Observable, map, of } from 'rxjs';
@@ -12,11 +12,32 @@ import {
   saveServer,
 } from 'src/app/state/server/server.actions';
 import { selectAllServers } from 'src/app/state/server/server.selectors';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatOptionModule } from '@angular/material/core';
+import { NgFor, NgIf, AsyncPipe } from '@angular/common';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { FlexModule } from '@angular/flex-layout/flex';
 
 @Component({
-  selector: 'app-add-server-modal',
-  templateUrl: './add-server-modal.component.html',
-  styleUrls: ['./add-server-modal.component.scss'],
+    selector: 'app-add-server-modal',
+    templateUrl: './add-server-modal.component.html',
+    styleUrls: ['./add-server-modal.component.scss'],
+    standalone: true,
+    imports: [
+        FlexModule,
+        MatFormFieldModule,
+        MatSelectModule,
+        FormsModule,
+        NgFor,
+        MatOptionModule,
+        MatButtonModule,
+        MatInputModule,
+        ReactiveFormsModule,
+        NgIf,
+        AsyncPipe,
+    ],
 })
 export class AddServerModalComponent implements OnInit, OnDestroy {
   private store = inject(Store);

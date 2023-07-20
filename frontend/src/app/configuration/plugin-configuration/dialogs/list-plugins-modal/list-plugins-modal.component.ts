@@ -4,11 +4,14 @@ import { Observable, of } from 'rxjs';
 import { Store } from '@ngrx/store';
 import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
 import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
+import { MatTableModule } from '@angular/material/table';
 
 @Component({
-  selector: 'app-list-plugins-modal',
-  templateUrl: './list-plugins-modal.component.html',
-  styleUrls: ['./list-plugins-modal.component.scss'],
+    selector: 'app-list-plugins-modal',
+    templateUrl: './list-plugins-modal.component.html',
+    styleUrls: ['./list-plugins-modal.component.scss'],
+    standalone: true,
+    imports: [MatTableModule],
 })
 export class ListPluginsModalComponent implements OnInit, OnDestroy {
   private store = inject(Store);

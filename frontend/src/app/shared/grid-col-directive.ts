@@ -10,7 +10,8 @@ export interface GridColumns {
   xl: number;
 }
 @Directive({
-  selector: '[appGridCols]',
+    selector: '[appGridCols]',
+    standalone: true,
 })
 export class GridColsDirective implements OnInit {
   private grid = inject(MatGridList);

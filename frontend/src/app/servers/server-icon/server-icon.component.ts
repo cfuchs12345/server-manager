@@ -4,9 +4,10 @@ import { ImageCache } from 'src/app/services/cache/image-cache.service';
 import { Server } from 'src/app/services/servers/types';
 
 @Component({
-  selector: 'app-server-icon',
-  templateUrl: './server-icon.component.html',
-  styleUrls: ['./server-icon.component.scss'],
+    selector: 'app-server-icon',
+    templateUrl: './server-icon.component.html',
+    styleUrls: ['./server-icon.component.scss'],
+    standalone: true,
 })
 export class ServerIconComponent {
   private imageCache = inject(ImageCache);

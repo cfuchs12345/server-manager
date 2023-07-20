@@ -16,13 +16,23 @@ import {
   Server,
 } from 'src/app/services/servers/types';
 import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
+import { MonitoringSingleServerComponent } from '../../monitoring/single-server/monitoring-single-server.component';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { NgClass, NgIf } from '@angular/common';
 
 const action_regex = /\[\[Action.*\]\]/g;
 
 @Component({
-  selector: 'app-server-detail',
-  templateUrl: './server-detail.component.html',
-  styleUrls: ['./server-detail.component.scss'],
+    selector: 'app-server-detail',
+    templateUrl: './server-detail.component.html',
+    styleUrls: ['./server-detail.component.scss'],
+    standalone: true,
+    imports: [
+        NgClass,
+        ExtendedModule,
+        NgIf,
+        MonitoringSingleServerComponent,
+    ],
 })
 export class ServerDetailComponent implements OnInit, OnChanges, OnDestroy {
   private logger = inject(NGXLogger);

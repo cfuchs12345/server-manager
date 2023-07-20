@@ -9,8 +9,8 @@ describe('AppActiveLightComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ActiveLightComponent ]
-    })
+    imports: [ActiveLightComponent]
+})
     .compileComponents();
 
     fixture = TestBed.createComponent(ActiveLightComponent);

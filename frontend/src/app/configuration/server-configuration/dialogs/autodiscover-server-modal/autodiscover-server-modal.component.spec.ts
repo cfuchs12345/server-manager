@@ -30,17 +30,16 @@ describe('AutodiscoverServerModalComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [AutodiscoverServerModalComponent],
-      providers: [
+    providers: [
         ErrorService,
         EncryptionService,
         {
-          provide: MatDialogRef,
-          useValue: {},
+            provide: MatDialogRef,
+            useValue: {},
         },
-      ],
-      imports: [MatFormFieldModule, MatInputModule, LoggerTestingModule, HttpClientTestingModule, MatTableModule, BrowserAnimationsModule, MatFormFieldModule, ReactiveFormsModule, FormsModule],
-    }).compileComponents();
+    ],
+    imports: [MatFormFieldModule, MatInputModule, LoggerTestingModule, HttpClientTestingModule, MatTableModule, BrowserAnimationsModule, MatFormFieldModule, ReactiveFormsModule, FormsModule, AutodiscoverServerModalComponent],
+}).compileComponents();
 
     fixture = TestBed.createComponent(AutodiscoverServerModalComponent);
     component = fixture.componentInstance;

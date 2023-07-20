@@ -15,13 +15,12 @@ describe('PluginConfigurationComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ PluginConfigurationComponent, ConfigurationGroupComponent ],
-      imports: [MatExpansionModule, BrowserAnimationsModule],
-      providers: [{
-        provide: MatDialog,
-        useValue: {}
-      },]
-    })
+    imports: [MatExpansionModule, BrowserAnimationsModule, PluginConfigurationComponent, ConfigurationGroupComponent],
+    providers: [{
+            provide: MatDialog,
+            useValue: {}
+        },]
+})
     .compileComponents();
 
     fixture = TestBed.createComponent(PluginConfigurationComponent);

@@ -21,8 +21,7 @@ describe('ConfigureDnsModalComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ConfigureDnsModalComponent],
-      imports: [
+    imports: [
         HttpClientTestingModule,
         LoggerTestingModule,
         MatTableModule,
@@ -31,16 +30,17 @@ describe('ConfigureDnsModalComponent', () => {
         MatInputModule,
         FormsModule,
         ReactiveFormsModule,
-      ],
-      providers: [
+        ConfigureDnsModalComponent,
+    ],
+    providers: [
         ErrorService,
         EncryptionService,
         {
-          provide: MatDialog,
-          useValue: {},
+            provide: MatDialog,
+            useValue: {},
         },
-      ],
-    }).compileComponents();
+    ],
+}).compileComponents();
 
     fixture = TestBed.createComponent(ConfigureDnsModalComponent);
     component = fixture.componentInstance;

@@ -5,11 +5,14 @@ import { ErrorService, Source } from 'src/app/services/errors/error.service';
 import { Plugin } from 'src/app/services/plugins/types';
 import { Server } from 'src/app/services/servers/types';
 import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
+import { NgFor, AsyncPipe } from '@angular/common';
 
 @Component({
-  selector: 'app-server-features',
-  templateUrl: './server-features.component.html',
-  styleUrls: ['./server-features.component.scss'],
+    selector: 'app-server-features',
+    templateUrl: './server-features.component.html',
+    styleUrls: ['./server-features.component.scss'],
+    standalone: true,
+    imports: [NgFor, AsyncPipe],
 })
 export class ServerFeaturesComponent implements OnInit {
   private store = inject(Store);

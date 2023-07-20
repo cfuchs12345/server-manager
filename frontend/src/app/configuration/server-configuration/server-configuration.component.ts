@@ -20,11 +20,20 @@ import {
   dialogSettings as configureFeaturesDialogSettings,
 } from './dialogs/dialog-configure-features';
 import { MatDialog } from '@angular/material/dialog';
+import { MatButtonModule } from '@angular/material/button';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { ConfigurationGroupComponent } from '../configuration-group/configuration-group.component';
 
 @Component({
-  selector: 'app-server-configuration',
-  templateUrl: './server-configuration.component.html',
-  styleUrls: ['./server-configuration.component.scss'],
+    selector: 'app-server-configuration',
+    templateUrl: './server-configuration.component.html',
+    styleUrls: ['./server-configuration.component.scss'],
+    standalone: true,
+    imports: [
+        ConfigurationGroupComponent,
+        FlexModule,
+        MatButtonModule,
+    ],
 })
 export class ServerConfigurationComponent {
   private dialog = inject(MatDialog);

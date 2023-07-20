@@ -22,17 +22,16 @@ describe('FeatureScanModalComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ FeatureScanModalComponent ],
-      imports: [HttpClientTestingModule, LoggerTestingModule, MatTableModule, BrowserAnimationsModule],
-      providers: [
+    imports: [HttpClientTestingModule, LoggerTestingModule, MatTableModule, BrowserAnimationsModule, FeatureScanModalComponent],
+    providers: [
         ErrorService,
         EncryptionService,
         {
-          provide: MatDialogRef,
-          useValue: {}
+            provide: MatDialogRef,
+            useValue: {}
         }
-      ]
-    })
+    ]
+})
     .compileComponents();
 
     fixture = TestBed.createComponent(FeatureScanModalComponent);

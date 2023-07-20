@@ -3,11 +3,19 @@ import { ErrorService } from 'src/app/services/errors/error.service';
 import { Error } from 'src/app/services/errors/types';
 import { sortByNumericField } from 'src/app/shared/utils';
 import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
+import { ErrorSourceNamePipe } from '../../shared/error-enum-name.pipe';
+import { NgFor, DatePipe } from '@angular/common';
 
 @Component({
-  selector: 'app-error',
-  templateUrl: './error.component.html',
-  styleUrls: ['./error.component.scss'],
+    selector: 'app-error',
+    templateUrl: './error.component.html',
+    styleUrls: ['./error.component.scss'],
+    standalone: true,
+    imports: [
+        NgFor,
+        DatePipe,
+        ErrorSourceNamePipe,
+    ],
 })
 export class ErrorComponent implements OnInit, OnDestroy {
   private errorService = inject(ErrorService);

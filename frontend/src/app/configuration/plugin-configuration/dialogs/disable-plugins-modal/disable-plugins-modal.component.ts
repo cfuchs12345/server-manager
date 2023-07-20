@@ -20,11 +20,23 @@ import {
 } from 'src/app/state/disabledplugin/disabled_plugin.actions';
 import { selectAllDisabledPlugins } from 'src/app/state/disabledplugin/disabled_plugin.selectors';
 import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
+import { MatTableModule } from '@angular/material/table';
+import { NgIf, AsyncPipe } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
+import { FlexModule } from '@angular/flex-layout/flex';
 
 @Component({
-  selector: 'app-disable-plugins-modal',
-  templateUrl: './disable-plugins-modal.component.html',
-  styleUrls: ['./disable-plugins-modal.component.scss'],
+    selector: 'app-disable-plugins-modal',
+    templateUrl: './disable-plugins-modal.component.html',
+    styleUrls: ['./disable-plugins-modal.component.scss'],
+    standalone: true,
+    imports: [
+        FlexModule,
+        MatButtonModule,
+        NgIf,
+        MatTableModule,
+        AsyncPipe,
+    ],
 })
 export class DisablePluginsModalComponent
   implements OnInit, OnDestroy, OnChanges

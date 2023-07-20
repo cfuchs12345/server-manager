@@ -13,19 +13,18 @@ describe('ConfirmDialogComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ConfirmDialogComponent ],
-      imports: [MatDialogModule],
-      providers: [
+    imports: [MatDialogModule, ConfirmDialogComponent],
+    providers: [
         {
-          provide: MatDialogRef,
-          useValue: {}
+            provide: MatDialogRef,
+            useValue: {}
         },
         {
-          provide: MAT_DIALOG_DATA,
-          useValue: {}
+            provide: MAT_DIALOG_DATA,
+            useValue: {}
         },
-      ]
-    })
+    ]
+})
     .compileComponents();
 
     fixture = TestBed.createComponent(ConfirmDialogComponent);

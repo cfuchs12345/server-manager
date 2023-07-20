@@ -8,11 +8,15 @@ import { selectAllServers } from 'src/app/state/server/server.selectors';
 import { selectAllPlugins } from 'src/app/state/plugin/plugin.selectors';
 import { Plugin } from 'src/app/services/plugins/types';
 import { SubscriptionHandler } from 'src/app/shared/subscriptionHandler';
+import { ServerListComponent } from '../server-list/server-list.component';
+import { MatCardModule } from '@angular/material/card';
 
 @Component({
-  selector: 'app-server-list-wrapper',
-  templateUrl: './server-list-wrapper.component.html',
-  styleUrls: ['./server-list-wrapper.component.scss'],
+    selector: 'app-server-list-wrapper',
+    templateUrl: './server-list-wrapper.component.html',
+    styleUrls: ['./server-list-wrapper.component.scss'],
+    standalone: true,
+    imports: [MatCardModule, ServerListComponent],
 })
 export class ServerListWrapperComponent implements OnInit, OnDestroy {
   private store = inject(Store);
