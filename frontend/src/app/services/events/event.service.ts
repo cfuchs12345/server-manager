@@ -209,13 +209,11 @@ export class EventHandler<T> {
 
     this.subscription = this.eventService.eventSubject$
       .pipe(
-        filter((eventAndObject: [Event, any]) => {
-          // eslint-disable-line @typescript-eslint/no-explicit-any
+        filter((eventAndObject: [Event, any]) => { // eslint-disable-line @typescript-eslint/no-explicit-any
           return eventAndObject[0].object_type === this.objectType;
         })
       )
-      .subscribe((eventAndObject: [Event, any]) => {
-        // eslint-disable-line @typescript-eslint/no-explicit-any
+      .subscribe((eventAndObject: [Event, any]) => { // eslint-disable-line @typescript-eslint/no-explicit-any
         const event = eventAndObject[0];
         const currenObject = eventAndObject[1];
 

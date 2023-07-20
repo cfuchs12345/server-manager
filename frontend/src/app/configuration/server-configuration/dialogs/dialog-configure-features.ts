@@ -1,13 +1,13 @@
 import { Component } from '@angular/core';
 
 @Component({
-  selector: 'dialog-configure-features',
+  selector: 'app-dialog-configure-features',
   template: '<h1 mat-dialog-title>{{title}}</h1>\
   <div mat-dialog-content>\
     <app-configure-features-modal></app-configure-features-modal>\
   </div>',
 })
-export class ConfigureFeaturesDialog {
+export class ConfigureFeaturesDialogComponent {
   title = 'Configure Features';
 }
 

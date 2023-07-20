@@ -13,7 +13,7 @@
           *ngFor="let server of serversWithFeatures$ | async"
           [value]="server"
           >{{ server.ipaddress }}
-          {{ server.name == "" ? "" : "(" + server.name + ")" }}</mat-option
+          {{ server.name === "" ? "" : "(" + server.name + ")" }}</mat-option
         >
       </mat-select>
     </mat-form-field>

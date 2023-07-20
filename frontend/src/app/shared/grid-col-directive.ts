@@ -10,7 +10,7 @@ export interface GridColumns {
   xl: number;
 }
 @Directive({
-  selector: '[gridCols]',
+  selector: '[appGridCols]',
 })
 export class GridColsDirective implements OnInit {
   private grid = inject(MatGridList);
@@ -22,7 +22,7 @@ export class GridColsDirective implements OnInit {
     return this.gridCols;
   }
 
-  @Input('gridCols')
+  @Input()
   public set cols(map: GridColumns) {
     if (map && 'object' === typeof map) {
       this.gridCols = map;

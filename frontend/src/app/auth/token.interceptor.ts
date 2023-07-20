@@ -8,7 +8,6 @@ import {
 import { Observable, switchMap, take } from 'rxjs';
 import { Store } from '@ngrx/store';
 import { selectToken } from '../state/usertoken/usertoken.selectors';
-import { UserToken } from '../services/users/types';
 
 @Injectable()
 export class TokenInterceptor implements HttpInterceptor {

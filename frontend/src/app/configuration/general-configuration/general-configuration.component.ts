@@ -1,19 +1,19 @@
 import { Component, inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import {
-  ConfigureDNSDialog as ConfigureDNSDialog,
+  ConfigureDNSDialogComponent as ConfigureDNSDialogComponent,
   dialogSettings as configureDNSDialogSettings,
 } from './dialogs/dialog-configure-dns';
 import {
-  ConfigureUsersDialog,
+  ConfigureUsersDialogComponent,
   dialogSettings as configureUsersDialogSettings,
 } from './dialogs/dialog-configure-users';
 import {
-  ChangePasswordDialog,
+  ChangePasswordDialogComponent,
   dialogSettings as changePasswordDialogSettings,
 } from './dialogs/dialog-change-password';
 import {
-  ConfigImExportDialog,
+  ConfigImExportDialogComponent,
   dialogSettings as changeDialogImExportConfig,
 } from './dialogs/dialog-config-im-and-export';
 
@@ -34,25 +34,25 @@ export class GeneralConfigurationComponent {
   buttonTextImExportConfig = 'Import/Export of Config';
 
   openDialogManageDNSServers = () => {
-    this.dialog.open(ConfigureDNSDialog, {
+    this.dialog.open(ConfigureDNSDialogComponent, {
       ...configureDNSDialogSettings(),
     });
   };
 
   openDialogManageUsers = () => {
-    this.dialog.open(ConfigureUsersDialog, {
+    this.dialog.open(ConfigureUsersDialogComponent, {
       ...configureUsersDialogSettings(),
     });
   };
 
   openDialogChangePassword = () => {
-    this.dialog.open(ChangePasswordDialog, {
+    this.dialog.open(ChangePasswordDialogComponent, {
       ...changePasswordDialogSettings(),
     });
   };
 
   openDialogImExportConfig = () => {
-    this.dialog.open(ConfigImExportDialog, {
+    this.dialog.open(ConfigImExportDialogComponent, {
       ...changeDialogImExportConfig(),
     });
   };

@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import {
   FormBuilder,
   FormControl,
@@ -28,7 +28,7 @@ import { selectAllServersWithFeatures } from 'src/app/state/server/server.select
   templateUrl: './configure-features-modal.component.html',
   styleUrls: ['./configure-features-modal.component.scss'],
 })
-export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
+export class ConfigureFeaturesModalComponent implements OnInit {
   private store = inject(Store);
   private serverService = inject(ServerService);
 
@@ -63,7 +63,6 @@ export class ConfigureFeaturesModalComponent implements OnInit, OnDestroy {
     this.plugins$ = this.store.select(selectAllPlugins);
   }
 
-  ngOnDestroy(): void {}
 
   getCurrentParamValue = (name: string): string => {
     if (!this.paramsFromFeature) {

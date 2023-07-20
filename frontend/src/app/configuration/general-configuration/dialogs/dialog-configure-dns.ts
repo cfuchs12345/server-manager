@@ -1,13 +1,13 @@
 import { Component } from '@angular/core';
 
 @Component({
-  selector: 'dialog-configure-dns',
+  selector: 'app-dialog-configure-dns',
   template: '<h1 mat-dialog-title>{{title}}</h1>\
   <div mat-dialog-content>\
     <app-configure-dns-modal></app-configure-dns-modal>\
   </div>',
 })
-export class ConfigureDNSDialog {
+export class ConfigureDNSDialogComponent {
   title = 'Configure DNS';
 }
 

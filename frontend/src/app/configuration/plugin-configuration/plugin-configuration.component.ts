@@ -1,11 +1,11 @@
 import { Component , inject} from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import {
-  DisablePluginsDialog,
+  DisablePluginsDialogComponent,
   dialogSettings as managePluginDialogSettings,
 } from './dialogs/dialog-manageplugins';
 import {
-  ListPluginsDialog,
+  ListPluginsDialogComponent,
   dialogSettings as listPluginDialogSettings,
 } from './dialogs/dialog-listplugins';
 
@@ -24,13 +24,13 @@ export class PluginConfigurationComponent {
   buttonTextListPlugins = 'List Plugins';
 
   openDialogManagePlugins() {
-    this.dialog.open(DisablePluginsDialog, {
+    this.dialog.open(DisablePluginsDialogComponent, {
       ...managePluginDialogSettings(),
     });
   }
 
   openDialogListPlugins() {
-    this.dialog.open(ListPluginsDialog, {
+    this.dialog.open(ListPluginsDialogComponent, {
       ...listPluginDialogSettings(),
     });
   }

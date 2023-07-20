@@ -3,7 +3,7 @@ import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { Observable } from 'rxjs';
 import { Feature, Server, ServerFeature } from 'src/app/services/servers/types';
 import { ConfirmDialogComponent } from 'src/app/ui/confirm-dialog/confirm-dialog.component';
-import { DeleteServerDialog } from '../dialog-delete-server';
+import { DeleteServerDialogComponent } from '../dialog-delete-server';
 import { Store } from '@ngrx/store';
 import {
   selectAllServers,
@@ -23,7 +23,7 @@ import {
 export class DeleteServerModalComponent implements OnInit, OnDestroy {
   private store = inject(Store);
   private dialog = inject(MatDialog);
-  private ref = inject(MatDialogRef<DeleteServerDialog>);
+  private ref = inject(MatDialogRef<DeleteServerDialogComponent>);
 
   buttonTextDeleteServers = 'Delete Server';
   buttonTextDeleteFeature = 'Delete Feature';

@@ -33,24 +33,24 @@ import { AutodiscoverServerModalComponent } from './configuration/server-configu
 import { ConfigurationComponent } from './configuration/configuration/configuration.component';
 import { AddServerModalComponent } from './configuration/server-configuration/dialogs/add-server-modal/add-server-modal.component';
 import { ServerConfigurationComponent } from './configuration/server-configuration/server-configuration.component';
-import { AutoDiscoveryDialog } from './configuration/server-configuration/dialogs/dialog-autodiscover';
+import { AutoDiscoveryDialogComponent } from './configuration/server-configuration/dialogs/dialog-autodiscover';
 import { FeatureScanDialog } from './configuration/server-configuration/dialogs/dialog-feature-scan';
-import { AddServerDialog } from './configuration/server-configuration/dialogs/dialog-add-server';
-import { DeleteServerDialog } from './configuration/server-configuration/dialogs/dialog-delete-server';
+import { AddServerDialogComponent } from './configuration/server-configuration/dialogs/dialog-add-server';
+import { DeleteServerDialogComponent } from './configuration/server-configuration/dialogs/dialog-delete-server';
 import { ConfigurationGroupComponent } from './configuration/configuration-group/configuration-group.component';
 import { GeneralConfigurationComponent } from './configuration/general-configuration/general-configuration.component';
 import { FeatureScanModalComponent } from './configuration/server-configuration/dialogs/feature-scan-modal/feature-scan-modal.component';
-import { ListPluginsDialog } from './configuration/plugin-configuration/dialogs/dialog-listplugins';
-import { DisablePluginsDialog } from './configuration/plugin-configuration/dialogs/dialog-manageplugins';
+import { ListPluginsDialogComponent } from './configuration/plugin-configuration/dialogs/dialog-listplugins';
+import { DisablePluginsDialogComponent } from './configuration/plugin-configuration/dialogs/dialog-manageplugins';
 import { ListPluginsModalComponent } from './configuration/plugin-configuration/dialogs/list-plugins-modal/list-plugins-modal.component';
 import { DisablePluginsModalComponent } from './configuration/plugin-configuration/dialogs/disable-plugins-modal/disable-plugins-modal.component';
 import { PluginConfigurationComponent } from './configuration/plugin-configuration/plugin-configuration.component';
 import { ConfigureDnsModalComponent } from './configuration/general-configuration/dialogs/configure-dns-modal/configure-dns-modal.component';
 import { ConfigureUsersModalComponent } from './configuration/general-configuration/dialogs/configure-users-modal/configure-users-modal.component';
-import { ConfigureDNSDialog } from './configuration/general-configuration/dialogs/dialog-configure-dns';
-import { ConfigureUsersDialog } from './configuration/general-configuration/dialogs/dialog-configure-users';
-import { ChangePasswordDialog } from './configuration/general-configuration/dialogs/dialog-change-password';
-import { ConfigureFeaturesDialog } from './configuration/server-configuration/dialogs/dialog-configure-features';
+import { ConfigureDNSDialogComponent } from './configuration/general-configuration/dialogs/dialog-configure-dns';
+import { ConfigureUsersDialogComponent } from './configuration/general-configuration/dialogs/dialog-configure-users';
+import { ChangePasswordDialogComponent } from './configuration/general-configuration/dialogs/dialog-change-password';
+import { ConfigureFeaturesDialogComponent } from './configuration/server-configuration/dialogs/dialog-configure-features';
 import { ConfigureFeaturesModalComponent } from './configuration/server-configuration/dialogs/configure-features-modal/configure-features-modal.component';
 import { ChangePasswordModalComponent } from './configuration/general-configuration/dialogs/change-password-modal/change-password-modal.component';
 import { ConfirmDialogComponent } from './ui/confirm-dialog/confirm-dialog.component';
@@ -74,7 +74,7 @@ import { TokenInterceptor } from './auth/token.interceptor';
 import { ErrorInterceptor } from './errors/error.interceptor';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { MonitoringSingleServerComponent } from './monitoring/single-server/monitoring-single-server.component';
-import { ConfigImExportDialog } from './configuration/general-configuration/dialogs/dialog-config-im-and-export';
+import { ConfigImExportDialogComponent } from './configuration/general-configuration/dialogs/dialog-config-im-and-export';
 import { ConfigImExportModalComponent } from './configuration/general-configuration/dialogs/config-im-export-modal/config-im-export-modal.component';
 import { ErrorSourceNamePipe } from './shared/error-enum-name.pipe';
 import { LoggerModule, NgxLoggerLevel } from 'ngx-logger';
@@ -98,16 +98,16 @@ import { ActionEffects } from './state/action/action.effects';
     ErrorSourceNamePipe,
 
     GridColsDirective,
-    AutoDiscoveryDialog,
+    AutoDiscoveryDialogComponent,
     FeatureScanDialog,
-    AddServerDialog,
-    DeleteServerDialog,
-    ListPluginsDialog,
-    DisablePluginsDialog,
-    ConfigureDNSDialog,
-    ConfigureUsersDialog,
-    ConfigureFeaturesDialog,
-    ChangePasswordDialog,
+    AddServerDialogComponent,
+    DeleteServerDialogComponent,
+    ListPluginsDialogComponent,
+    DisablePluginsDialogComponent,
+    ConfigureDNSDialogComponent,
+    ConfigureUsersDialogComponent,
+    ConfigureFeaturesDialogComponent,
+    ChangePasswordDialogComponent,
 
     ActiveLightComponent,
     AutodiscoverServerModalComponent,
@@ -150,7 +150,7 @@ import { ActionEffects } from './state/action/action.effects';
     BarChartComponent,
     ChartWrapperComponent,
     MonitoringSingleServerComponent,
-    ConfigImExportDialog,
+    ConfigImExportDialogComponent,
   ],
   imports: [
     AppRoutingModule,

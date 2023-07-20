@@ -2,14 +2,14 @@ import { Component } from "@angular/core";
 
 
 @Component({
-  selector: 'dialog-list-plugins',
+  selector: 'app-dialog-list-plugins',
   template: '<h1 mat-dialog-title>{{  title }}</h1>\
   <div mat-dialog-content>\
     <app-list-plugins-modal></app-list-plugins-modal>\
   </div>',
   styles: ['::ng-deep .mat-mdc-dialog-content { max-height: 1000vh;}']
 })
-export class ListPluginsDialog {
+export class ListPluginsDialogComponent {
   title = 'List Plugins';
 }
 

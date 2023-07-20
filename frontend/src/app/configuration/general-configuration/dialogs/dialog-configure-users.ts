@@ -1,13 +1,13 @@
 import { Component } from '@angular/core';
 
 @Component({
-  selector: 'dialog-configure-users',
+  selector: 'app-dialog-configure-users',
   template: '<h1 mat-dialog-title>{{title}}</h1>\
   <div mat-dialog-content>\
     <app-configure-users-modal></app-configure-users-modal>\
   </div>',
 })
-export class ConfigureUsersDialog {
+export class ConfigureUsersDialogComponent {
   title = 'Configure Users';
 }
 

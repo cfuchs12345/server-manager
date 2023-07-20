@@ -5,7 +5,7 @@
     </mat-form-field>
   </div>
   <div fxFlex="10" class="app-right-align">
-      <img src="assets/svg/logout-svgrepo-com.svg" (click)="onClickLogout()">
+      <img src="assets/svg/logout-svgrepo-com.svg" (click)="onClickLogout()" alt="logout">
   </div>
 </div>
 <table #serversTable mat-table
@@ -83,7 +83,7 @@
     <td mat-cell *matCellDef="let rowData">
       <div
         class="element-detail"
-        [@detailExpand]="rowData == expandedElement ? 'expanded' : 'collapsed'"
+        [@detailExpand]="rowData === expandedElement ? 'expanded' : 'collapsed'"
       >
         <app-server-control-detail [server]="rowData.server" (turnDetail)="onClickTurnDetailChange($event)"/>
       </div>
@@ -97,9 +97,9 @@
     >
       <div
         class="element-detail"
-        [@detailExpand]="rowData == expandedElement ? 'expanded' : 'collapsed'"
+        [@detailExpand]="rowData === expandedElement ? 'expanded' : 'collapsed'"
       >
-        <app-server-detail [server]="rowData.server" [showDetail]="rowData == expandedElement" [turnDetail]="turnDetail"/>
+        <app-server-detail [server]="rowData.server" [showDetail]="rowData === expandedElement" [turnDetail]="turnDetail"/>
       </div>
     </td>
   </ng-container>

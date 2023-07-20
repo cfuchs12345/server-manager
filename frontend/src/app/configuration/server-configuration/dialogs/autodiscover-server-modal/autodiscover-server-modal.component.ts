@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
 import { HostInformation, Server } from '../../../../services/servers/types';
 import { MatDialogRef } from '@angular/material/dialog';
-import { AutoDiscoveryDialog } from '../dialog-autodiscover';
+import { AutoDiscoveryDialogComponent } from '../dialog-autodiscover';
 import { Observable } from 'rxjs';
 import { ServerDiscoveryService } from 'src/app/services/servers/server-discovery.service';
 import { GeneralService } from 'src/app/services/general/general.service';
@@ -24,7 +24,7 @@ export class AutodiscoverServerModalComponent implements OnInit, OnDestroy {
   private discoverService = inject(ServerDiscoveryService);
   private generalService = inject(GeneralService);
   private errorService = inject(ErrorService);
-  private ref = inject(MatDialogRef<AutoDiscoveryDialog>);
+  private ref = inject(MatDialogRef<AutoDiscoveryDialogComponent>);
 
   buttonTextStart = 'Start';
   buttonTextWorking = 'Working...';

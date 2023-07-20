@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import {
-  AutoDiscoveryDialog,
+  AutoDiscoveryDialogComponent,
   dialogSettings as autodiscoverDialogSettings,
 } from './dialogs/dialog-autodiscover';
 import {
@@ -8,15 +8,15 @@ import {
   dialogSettings as featurescanDialogSettings,
 } from './dialogs/dialog-feature-scan';
 import {
-  AddServerDialog,
+  AddServerDialogComponent,
   dialogSettings as addServerDialogSettings,
 } from './dialogs/dialog-add-server';
 import {
-  DeleteServerDialog,
+  DeleteServerDialogComponent,
   dialogSettings as deleteDialogSettings,
 } from './dialogs/dialog-delete-server';
 import {
-  ConfigureFeaturesDialog,
+  ConfigureFeaturesDialogComponent,
   dialogSettings as configureFeaturesDialogSettings,
 } from './dialogs/dialog-configure-features';
 import { MatDialog } from '@angular/material/dialog';
@@ -40,7 +40,7 @@ export class ServerConfigurationComponent {
 
 
   openDialogAutodiscovery = () => {
-    this.dialog.open(AutoDiscoveryDialog, {
+    this.dialog.open(AutoDiscoveryDialogComponent, {
       ...autodiscoverDialogSettings(),
     });
   };
@@ -52,19 +52,19 @@ export class ServerConfigurationComponent {
   };
 
   openDialogAddManually = () => {
-    this.dialog.open(AddServerDialog, {
+    this.dialog.open(AddServerDialogComponent, {
       ...addServerDialogSettings(),
     });
   };
 
   openDialogDelete = () => {
-    this.dialog.open(DeleteServerDialog, {
+    this.dialog.open(DeleteServerDialogComponent, {
       ...deleteDialogSettings(),
     });
   };
 
   openDialogConfigureFeatures = () => {
-    this.dialog.open(ConfigureFeaturesDialog, {
+    this.dialog.open(ConfigureFeaturesDialogComponent, {
       ...configureFeaturesDialogSettings(),
     });
   };
