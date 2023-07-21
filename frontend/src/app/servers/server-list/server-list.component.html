@@ -5,7 +5,7 @@
     </mat-form-field>
   </div>
   <div fxFlex="10" class="app-right-align">
-      <img src="assets/svg/logout-svgrepo-com.svg" (click)="onClickLogout()" alt="logout">
+      <img src="assets/svg/logout-svgrepo-com.svg" (click)="onClickLogout()" alt="logout" (keyup.enter)="onClickLogout()" role="region">
   </div>
 </div>
 <table #serversTable mat-table

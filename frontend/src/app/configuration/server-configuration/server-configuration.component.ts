@@ -4,7 +4,7 @@ import {
   dialogSettings as autodiscoverDialogSettings,
 } from './dialogs/dialog-autodiscover';
 import {
-  FeatureScanDialog,
+  FeatureScanDialogComponent,
   dialogSettings as featurescanDialogSettings,
 } from './dialogs/dialog-feature-scan';
 import {
@@ -25,15 +25,11 @@ import { FlexModule } from '@angular/flex-layout/flex';
 import { ConfigurationGroupComponent } from '../configuration-group/configuration-group.component';
 
 @Component({
-    selector: 'app-server-configuration',
-    templateUrl: './server-configuration.component.html',
-    styleUrls: ['./server-configuration.component.scss'],
-    standalone: true,
-    imports: [
-        ConfigurationGroupComponent,
-        FlexModule,
-        MatButtonModule,
-    ],
+  selector: 'app-server-configuration',
+  templateUrl: './server-configuration.component.html',
+  styleUrls: ['./server-configuration.component.scss'],
+  standalone: true,
+  imports: [ConfigurationGroupComponent, FlexModule, MatButtonModule],
 })
 export class ServerConfigurationComponent {
   private dialog = inject(MatDialog);
@@ -47,7 +43,6 @@ export class ServerConfigurationComponent {
   buttonTextFeatureScan = 'Feature Scan';
   buttonTextConfigureFeatures = 'Configure Features';
 
-
   openDialogAutodiscovery = () => {
     this.dialog.open(AutoDiscoveryDialogComponent, {
       ...autodiscoverDialogSettings(),
@@ -55,7 +50,7 @@ export class ServerConfigurationComponent {
   };
 
   openDialogFeatureScan = () => {
-    this.dialog.open(FeatureScanDialog, {
+    this.dialog.open(FeatureScanDialogComponent, {
       ...featurescanDialogSettings(),
     });
   };

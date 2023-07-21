@@ -1,4 +1,4 @@
-<hr>
+<hr />
 <b>Add DNS Server</b>
 <br />
 <div fxLayout="row">
@@ -13,30 +13,38 @@
 
   <mat-form-field style="margin: 5px; min-width: 200px">
     <mat-label>{{ portLabel }}</mat-label>
-    <input matInput [placeholder]="portplaceholder.toString()" [formControl]="port" />
-    <mat-error *ngIf="port.invalid">{{
-      getPortErrorMessage()
-    }}</mat-error>
+    <input
+      matInput
+      [placeholder]="portplaceholder.toString()"
+      [formControl]="port"
+    />
+    <mat-error *ngIf="port.invalid">{{ getPortErrorMessage() }}</mat-error>
     <mat-hint>{{ portHint }}</mat-hint>
   </mat-form-field>
 </div>
 <div fxLayout="row">
   <button
-  mat-raised-button
-  color="primary"
-  style="margin: 5px"
-  (click)="onClickSaveDNSServer()"
-  [disabled]="!this.ipaddress.valid || !this.port.valid"
->
-  {{ buttonTextAddDNSServer }}
-</button>
+    mat-raised-button
+    color="primary"
+    style="margin: 5px"
+    (click)="onClickSaveDNSServer()"
+    [disabled]="!this.ipaddress.valid || !this.port.valid"
+  >
+    {{ buttonTextAddDNSServer }}
+  </button>
 </div>
-<hr>
+<hr />
 <b>Delete DNS Servers</b>
-<br/>
+<br />
 <div fxLayout="row">
   <div fxFlex="100" style="align-items: center; justify-content: center">
-    <button mat-raised-button color="primary" style="margin: 5px" (click)="onClickDeleteDNSServers()" [disabled]="dnsServersSelected() === 0">
+    <button
+      mat-raised-button
+      color="primary"
+      style="margin: 5px"
+      (click)="onClickDeleteDNSServers()"
+      [disabled]="dnsServersSelected() === 0"
+    >
       {{ buttonTextDeleteDNSServers }}
     </button>
   </div>
@@ -44,9 +52,24 @@
 <div fxLayout="row">
   <table mat-table [dataSource]="dnsservers" class="mat-elevation-z8">
     <ng-container matColumnDef="delete">
-      <th mat-header-cell *matHeaderCellDef><span (click)="onClickSelectAll()"  style="cursor: pointer;">{{ selectAll ? '&#9745;' : '&#9744;'}}</span>&nbsp;&nbsp;Delete</th>
+      <th mat-header-cell *matHeaderCellDef>
+        <span
+          (click)="onClickSelectAll()"
+          (keyup.enter)="onClickSelectAll()"
+          role="region"
+          style="cursor: pointer"
+          >{{ selectAll ? "&#9745;" : "&#9744;" }}</span
+        >&nbsp;&nbsp;Delete
+      </th>
       <td mat-cell *matCellDef="let dnsserver">
-        <div (click)="onClickSelectServer(dnsserver)" style="cursor: pointer;">{{ isSelected(dnsserver) ? '&#9745;' : '&#9744;'}}</div>
+        <div
+          (click)="onClickSelectServer(dnsserver)"
+          (keyup.enter)="onClickSelectServer(dnsserver)"
+          role="region"
+          style="cursor: pointer"
+        >
+          {{ isSelected(dnsserver) ? "&#9745;" : "&#9744;" }}
+        </div>
       </td>
     </ng-container>
     <ng-container matColumnDef="ipaddress">

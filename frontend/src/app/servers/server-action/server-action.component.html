@@ -1,3 +1,3 @@
-<div  [hidden]="!allDependenciesMet" (click)="onClickAction()">
+<div  [hidden]="!allDependenciesMet" (click)="onClickAction()" (keyup.enter)="onClickAction()" role="region">
   <div class="svg" [innerHTML]="guiAction?.icon" style="margin-right: 5px;"></div>
 </div>

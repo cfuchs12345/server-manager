@@ -1,13 +1,15 @@
 <div fxLayout="row wrap">
   <div fxFlex="100" fxFlex.gt-xs="70" fxFlexFill>
-    <mat-form-field style="margin: 5px;" fxFlexFill>
+    <mat-form-field style="margin: 5px" fxFlexFill>
       <mat-label>{{ inputHintNetworkmask }}</mat-label>
       <input
         matInput
         [placeholder]="inputPlaceholderNetworkmask"
         [formControl]="formControlNetworkmask"
       />
-      <mat-error *ngIf="formControlNetworkmask.invalid">{{ getErrorMessageNetworkMask() }}</mat-error>
+      <mat-error *ngIf="formControlNetworkmask.invalid">{{
+        getErrorMessageNetworkMask()
+      }}</mat-error>
       <mat-hint>{{ inputExampleNetworkmask }}</mat-hint>
     </mat-form-field>
   </div>
@@ -19,7 +21,7 @@
       [disabled]="loading"
       (click)="onClickAutoDiscover()"
     >
-      {{ loading ? buttonTextWorking: buttonTextStart}}
+      {{ loading ? buttonTextWorking : buttonTextStart }}
     </button>
     <button
       mat-raised-button
@@ -28,20 +30,33 @@
       [disabled]="loading || !serversFound()"
       (click)="onClickSaveServers()"
     >
-      {{ buttonTextSaveServer}}
+      {{ buttonTextSaveServer }}
     </button>
   </div>
 </div>
 
 <div *ngIf="loading; else showTable">
-  <img src="assets/svg/animated-spinner.svg" style="margin: 1rem" alt="spinner">
+  <img
+    src="assets/svg/animated-spinner.svg"
+    style="margin: 1rem"
+    alt="spinner"
+  />
 </div>
 <ng-template #showTable>
   <div fxLayout="row">
     <table mat-table [dataSource]="servers" class="mat-elevation-z8">
       <ng-container matColumnDef="selected">
         <th mat-header-cell *matHeaderCellDef>Save</th>
-        <td mat-cell *matCellDef="let server; let i = index;"><div (click)="onClickDeselectServer(i)" style="cursor: pointer;">{{ server.selected ? '&#9745;' : '&#9744;'}}</div></td>
+        <td mat-cell *matCellDef="let server; let i = index">
+          <div
+            role="region"
+            (click)="onClickDeselectServer(i)"
+            (keyup.enter)="onClickDeselectServer(i)"
+            style="cursor: pointer"
+          >
+            {{ server.selected ? "&#9745;" : "&#9744;" }}
+          </div>
+        </td>
       </ng-container>
       <ng-container matColumnDef="ipaddress">
         <th mat-header-cell *matHeaderCellDef>IP</th>
@@ -53,7 +68,9 @@
       </ng-container>
       <ng-container matColumnDef="running">
         <th mat-header-cell *matHeaderCellDef>Running</th>
-        <td mat-cell *matCellDef="let server">{{server.is_running ? '&#10003;' : '&#10005;'}}</td>
+        <td mat-cell *matCellDef="let server">
+          {{ server.is_running ? "&#10003;" : "&#10005;" }}
+        </td>
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>

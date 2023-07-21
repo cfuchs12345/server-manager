@@ -131,6 +131,7 @@ export class ServerListComponent implements OnInit, OnDestroy {
     this.turnDetail = event;
   };
 
+  /* eslint-disable @rx-angular/prefer-no-layout-sensitive-apis*/
   @HostListener('window:resize', ['$event'])
   onResize(event: UIEvent) {
     const target = event.target as Window;

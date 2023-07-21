@@ -3,7 +3,7 @@ import { FeatureScanModalComponent } from './feature-scan-modal/feature-scan-mod
 import { MatDialogModule } from '@angular/material/dialog';
 
 @Component({
-    selector: 'dialog-feature-scan',
+    selector: 'app-dialog-feature-scan',
     template: '<h1 mat-dialog-title>{{title}}</h1>\
   <div mat-dialog-content>\
     <app-feature-scan-modal></app-feature-scan-modal>\
@@ -12,7 +12,7 @@ import { MatDialogModule } from '@angular/material/dialog';
     standalone: true,
     imports: [MatDialogModule, FeatureScanModalComponent]
 })
-export class FeatureScanDialog {
+export class FeatureScanDialogComponent {
   title = 'Feature Scan';
 }
 

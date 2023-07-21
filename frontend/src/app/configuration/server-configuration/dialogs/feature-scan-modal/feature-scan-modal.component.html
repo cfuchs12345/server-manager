@@ -34,7 +34,7 @@
       <ng-container matColumnDef="selected">
         <th mat-header-cell *matHeaderCellDef>Save</th>
         <td mat-cell *matCellDef="let serverFeature; let i = index">
-          <div (click)="onClickDeselectServer(i)" style="cursor: pointer">
+          <div (click)="onClickDeselectServer(i)" (keyup.enter)="onClickDeselectServer(i)" role="region" style="cursor: pointer">
             {{ serverFeature.selected ? '&#9745;' : '&#9744;' }}
           </div>
         </td>

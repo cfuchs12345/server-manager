@@ -14,13 +14,21 @@
   <table mat-table [dataSource]="plugins$" class="mat-elevation-z8">
     <ng-container matColumnDef="disable">
       <th mat-header-cell *matHeaderCellDef>
-        <span (click)="onClickSelectAll()" style="cursor: pointer">{{
-          selectAll ? "&#9745;" : "&#9744;"
-        }}</span
+        <span
+          (click)="onClickSelectAll()"
+          (keyup.enter)="onClickSelectAll()"
+          role="region"
+          style="cursor: pointer"
+          >{{ selectAll ? "&#9745;" : "&#9744;" }}</span
         >&nbsp;&nbsp;Disable
       </th>
       <td mat-cell *matCellDef="let plugin">
-        <div (click)="onClickSelectPlugin(plugin)" style="cursor: pointer">
+        <div
+          (click)="onClickSelectPlugin(plugin)"
+          (keyup.enter)="onClickSelectPlugin(plugin)"
+          role="region"
+          style="cursor: pointer"
+        >
           {{ (isDisabled(plugin) | async) ? "&#10003;" : "&#10005;" }}
         </div>
       </td>
