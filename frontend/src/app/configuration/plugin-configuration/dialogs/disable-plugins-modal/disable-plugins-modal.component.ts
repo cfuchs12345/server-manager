@@ -24,6 +24,7 @@ import { MatTableModule } from '@angular/material/table';
 import { NgIf, AsyncPipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { FlexModule } from '@angular/flex-layout/flex';
+import { State } from 'src/app/state';
 
 @Component({
     selector: 'app-disable-plugins-modal',
@@ -41,7 +42,7 @@ import { FlexModule } from '@angular/flex-layout/flex';
 export class DisablePluginsModalComponent
   implements OnInit, OnDestroy, OnChanges
 {
-  private store = inject(Store);
+  private store:Store<State> = inject(Store<State>);
   private cdr = inject(ChangeDetectorRef);
   private subscriptionHandler = new SubscriptionHandler(this);
 

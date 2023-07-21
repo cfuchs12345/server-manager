@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ErrorComponent } from './error.component';
 import { ErrorService } from 'src/app/services/errors/error.service';
+import { LoggerTestingModule, NGXLoggerMock } from 'ngx-logger/testing';
 
 describe('ErrorComponent', () => {
   let component: ErrorComponent;
@@ -10,8 +11,8 @@ describe('ErrorComponent', () => {
   let errorService: ErrorService;
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-    imports: [ErrorComponent],
-    providers: [ErrorService]
+    imports: [ErrorComponent, LoggerTestingModule],
+    providers: [ErrorService, NGXLoggerMock]
 })
     .compileComponents();
 

@@ -11,7 +11,7 @@ import { AuthenticationService } from '../services/auth/authentication.service';
 export const errorInterceptor: HttpInterceptorFn = (
   request,
   next
-): Observable<HttpEvent<any>> => {
+): Observable<HttpEvent<any>> => { // eslint-disable-line  @typescript-eslint/no-explicit-any
   const authenticationService = inject( AuthenticationService);
 
   return next(request).pipe(

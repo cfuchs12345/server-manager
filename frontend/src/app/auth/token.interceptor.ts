@@ -10,7 +10,7 @@ import { selectToken } from '../state/usertoken/usertoken.selectors';
 export const tokenInterceptor: HttpInterceptorFn = (
   request,
   next
-): Observable<HttpEvent<any>> => {
+): Observable<HttpEvent<any>> => { // eslint-disable-line  @typescript-eslint/no-explicit-any
   // add header with basic auth credentials if user is logged in and request is to the api url
   const store = inject(Store);
 

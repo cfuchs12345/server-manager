@@ -12,25 +12,55 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { MockStore, provideMockStore } from '@ngrx/store/testing';
+import { State } from 'src/app/state';
+import { Store } from '@ngrx/store';
+import { ToastrModule } from 'ngx-toastr';
 
 describe('ConfigureFeaturesModalComponent', () => {
   let component: ConfigureFeaturesModalComponent;
   let fixture: ComponentFixture<ConfigureFeaturesModalComponent>;
 
-    // eslint-disable-next-line  @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let serverService: ServerService;
-    // eslint-disable-next-line  @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let pluginService: PluginService;
-    // eslint-disable-next-line  @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let formBuilder: FormBuilder;
-
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
+  let mockStore: MockStore<State>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-    imports: [LoggerTestingModule, HttpClientTestingModule, MatTableModule, BrowserAnimationsModule, MatFormFieldModule, MatSelectModule, ReactiveFormsModule, FormsModule, ConfigureFeaturesModalComponent],
-    providers: [ErrorService, EncryptionService]
-})
-    .compileComponents();
+      imports: [
+        LoggerTestingModule,
+        HttpClientTestingModule,
+        MatTableModule,
+        BrowserAnimationsModule,
+        MatFormFieldModule,
+        MatSelectModule,
+        ReactiveFormsModule,
+        FormsModule,
+        ConfigureFeaturesModalComponent,
+        ToastrModule.forRoot(),
+      ],
+      providers: [
+        ErrorService,
+        EncryptionService,
+        provideMockStore({
+          initialState: {
+            server: { ids: [], entities: {} },
+            plugin: { ids: [], entities: {} },
+            conditioncheckresult: { ids: [], entities: {} },
+            disabled_plugins: { ids: [], entities: {} },
+            notification: { ids: [], entities: {} },
+            status: { ids: [], entities: {} },
+            user: { ids: [], entities: {} },
+            usertoken: { ids: [], entities: {} },
+          } as State,
+        }),
+      ],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(ConfigureFeaturesModalComponent);
     component = fixture.componentInstance;
@@ -41,6 +71,7 @@ describe('ConfigureFeaturesModalComponent', () => {
     serverService = TestBed.inject(ServerService);
     pluginService = TestBed.inject(PluginService);
     formBuilder = TestBed.inject(FormBuilder);
+    mockStore = TestBed.inject(Store) as MockStore<State>;
   });
 
   it('should create', () => {

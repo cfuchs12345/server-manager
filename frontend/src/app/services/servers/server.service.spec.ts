@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideMockStore, MockStore } from '@ngrx/store/testing';
 import {
   HttpClientTestingModule,
   HttpTestingController,
@@ -10,6 +11,10 @@ import { HttpClient } from '@angular/common/http';
 import { EncryptionService } from '../encryption/encryption.service';
 import { AuthenticationService } from '../auth/authentication.service';
 import { getTestServer } from 'src/app/test/data';
+import { ToastrModule } from 'ngx-toastr';
+import { State } from 'src/app/state';
+import { Store } from '@ngrx/store';
+import { Server } from './types';
 
 describe('ServerServiceService', () => {
   let service: ServerService;
@@ -25,12 +30,40 @@ describe('ServerServiceService', () => {
   let authService: AuthenticationService;
 
   let httpTestingController: HttpTestingController;
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
+  let mockStore: MockStore<State>;
+
+  const testServer = getTestServer();
+
+  const servers: { [ip: string]: Server } = {};
+  servers[testServer.ipaddress] = testServer;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [LoggerTestingModule, HttpClientTestingModule],
-      providers: [ErrorService, EncryptionService, NGXLoggerMock],
+      imports: [
+        LoggerTestingModule,
+        HttpClientTestingModule,
+        ToastrModule.forRoot(),
+      ],
+      providers: [
+        ErrorService,
+        EncryptionService,
+        NGXLoggerMock,
+        provideMockStore({
+          initialState: {
+            server: { ids: [testServer.ipaddress], entities: servers },
+            plugin: { ids: [], entities: {} },
+            conditioncheckresult: { ids: [], entities: {} },
+            disabled_plugins: { ids: [], entities: {} },
+            notification: { ids: [], entities: {} },
+            status: { ids: [], entities: {} },
+            user: { ids: [], entities: {} },
+            usertoken: { ids: [], entities: {} },
+          } as State,
+        }),
+      ],
     });
+    mockStore = TestBed.inject(Store) as MockStore<State>;
     service = TestBed.inject(ServerService);
     logger = TestBed.inject(NGXLoggerMock);
     http = TestBed.inject(HttpClient);
@@ -56,15 +89,17 @@ describe('ServerServiceService', () => {
     const ipaddress = testServer.ipaddress;
 
     const obs = service.getServer(ipaddress, false);
-    obs.subscribe( {
+    obs.subscribe({
       next(value) {
-          expect(value).toBeTruthy();
-          expect(value).toEqual(testServer);
-          expect(value.name).toEqual(testServer.name);
+        expect(value).toBeTruthy();
+        expect(value).toEqual(testServer);
+        expect(value.name).toEqual(testServer.name);
       },
     });
 
-    const req = httpTestingController.expectOne(`/backend/servers/${ipaddress}`);
+    const req = httpTestingController.expectOne(
+      `/backend/servers/${ipaddress}?full_data=false`
+    );
 
     // Assert that the request is a GET.
     expect(req.request.method).toEqual('GET');

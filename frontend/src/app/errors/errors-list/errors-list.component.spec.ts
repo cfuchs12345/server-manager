@@ -6,6 +6,7 @@ import { ConfigurationGroupComponent } from 'src/app/configuration/configuration
 import { ErrorComponent } from '../error/error.component';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { LoggerTestingModule, NGXLoggerMock } from 'ngx-logger/testing';
 
 describe('ErrorsListComponent', () => {
   let component: ErrorsListComponent;
@@ -15,10 +16,16 @@ describe('ErrorsListComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-    imports: [MatExpansionModule, BrowserAnimationsModule, ErrorsListComponent, ConfigurationGroupComponent, ErrorComponent],
-    providers: [ErrorService]
-})
-    .compileComponents();
+      imports: [
+        MatExpansionModule,
+        BrowserAnimationsModule,
+        ErrorsListComponent,
+        ConfigurationGroupComponent,
+        ErrorComponent,
+        LoggerTestingModule,
+      ],
+      providers: [ErrorService, NGXLoggerMock],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(ErrorsListComponent);
     component = fixture.componentInstance;

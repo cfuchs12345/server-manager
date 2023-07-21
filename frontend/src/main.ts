@@ -30,9 +30,8 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { RouterModule } from '@angular/router';
 
 declare global {
-  // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   interface Window {
-    MyServerManagerNS: any;
+    MyServerManagerNS: any;// eslint-disable-line  @typescript-eslint/no-explicit-any
   }
 }
 window.MyServerManagerNS = window.MyServerManagerNS || {};

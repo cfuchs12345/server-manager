@@ -13,21 +13,53 @@ import { MatInputModule } from '@angular/material/input';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { MockStore, provideMockStore } from '@ngrx/store/testing';
+import { State } from 'src/app/state';
+import { Store } from '@ngrx/store';
+import { ToastrModule } from 'ngx-toastr';
 
 describe('AddServerModalComponent', () => {
   let component: AddServerModalComponent;
   let fixture: ComponentFixture<AddServerModalComponent>;
-    // eslint-disable-next-line  @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let serverService: ServerService;
-    // eslint-disable-next-line  @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   let pluginService: PluginService;
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
+  let mockStore: MockStore<State>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-    imports: [LoggerTestingModule, HttpClientTestingModule, MatFormFieldModule, MatTableModule, BrowserAnimationsModule, MatSelectModule, MatInputModule, ReactiveFormsModule, FormsModule, AddServerModalComponent],
-    providers: [ErrorService, EncryptionService]
-})
-    .compileComponents();
+      imports: [
+        LoggerTestingModule,
+        HttpClientTestingModule,
+        MatFormFieldModule,
+        MatTableModule,
+        BrowserAnimationsModule,
+        MatSelectModule,
+        MatInputModule,
+        ReactiveFormsModule,
+        FormsModule,
+        AddServerModalComponent,
+        ToastrModule.forRoot(),
+      ],
+      providers: [
+        ErrorService,
+        EncryptionService,
+        provideMockStore({
+          initialState: {
+            server: { ids: [], entities: {} },
+            plugin: { ids: [], entities: {} },
+            conditioncheckresult: { ids: [], entities: {} },
+            disabled_plugins: { ids: [], entities: {} },
+            notification: { ids: [], entities: {} },
+            status: { ids: [], entities: {} },
+            user: { ids: [], entities: {} },
+            usertoken: { ids: [], entities: {} },
+          } as State,
+        }),
+      ],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(AddServerModalComponent);
     component = fixture.componentInstance;
@@ -37,6 +69,7 @@ describe('AddServerModalComponent', () => {
 
     serverService = TestBed.inject(ServerService);
     pluginService = TestBed.inject(PluginService);
+    mockStore = TestBed.inject(Store) as MockStore<State>;
   });
 
   it('should create', () => {
